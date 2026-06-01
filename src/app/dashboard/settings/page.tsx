@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server"
 import { supabaseAdmin } from "@/lib/supabase/admin"
 import { getOfficeLocations } from "@/app/actions/geofence"
 import { getAdmins } from "@/app/actions/employees"
+import { redirect } from "next/navigation"
 import LocationSettings from "./LocationSettings"
 import PhilHealthRuleEditor from "./PhilHealthRuleEditor"
 import PagibigRuleEditor from "./PagibigRuleEditor"
@@ -12,18 +13,29 @@ export const revalidate = 0;
 
 export default async function SettingsPage() {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+
+  let user = null
+  try {
+    const { data, error } = await supabase.auth.getUser()
+    if (!error && data?.user) {
+      user = data.user
+    }
+  } catch (e) {
+    console.error("Auth session expired or database wiped")
+  }
+
+  if (!user) {
+    redirect('/login')
+  }
 
   let userRole = 'admin' // default fallback
-  if (user) {
-    const { data: profile } = await supabaseAdmin
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single()
-    if (profile) {
-      userRole = profile.role
-    }
+  const { data: profile } = await supabaseAdmin
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single()
+  if (profile) {
+    userRole = profile.role
   }
 
   // Fetch geofencing locations
