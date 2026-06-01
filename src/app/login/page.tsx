@@ -20,11 +20,11 @@ export default function LoginPage() {
 
       <div className="relative z-10 w-full max-w-md">
         <div className="mb-8 text-center">
-          <h1 className="text-4xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400 drop-shadow-sm">
-            Technosis HRIS
+          <h1 className="text-4xl font-black tracking-tight text-white flex items-center justify-center gap-2">
+            <span className="text-emerald-500">TechnoSys</span> HRIS
           </h1>
-          <p className="mt-3 text-zinc-400 font-medium text-sm uppercase tracking-widest">
-            Administrator Portal
+          <p className="mt-2 text-zinc-400 font-semibold text-xs uppercase tracking-widest">
+            Corporate Operations Portal
           </p>
         </div>
         
