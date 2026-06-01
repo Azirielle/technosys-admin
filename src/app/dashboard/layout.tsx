@@ -1,7 +1,30 @@
+"use client"
+
 import Link from 'next/link'
-import { LayoutDashboard, Users, Calendar, DollarSign, Settings, LogOut } from 'lucide-react'
+import { usePathname } from 'next/navigation'
+import { LayoutDashboard, Users, Calendar, DollarSign, Settings, LogOut, MessageSquare, Package } from 'lucide-react'
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname()
+
+  const navItems = [
+    { href: '/dashboard', label: 'Overview', icon: LayoutDashboard, exact: true },
+    { href: '/dashboard/employees', label: 'Employees', icon: Users },
+    { href: '/dashboard/schedules', label: 'Schedules', icon: Calendar },
+    { href: '/dashboard/payroll', label: 'Payroll', icon: DollarSign },
+    { href: '/dashboard/tickets', label: 'Tickets', icon: MessageSquare },
+    { href: '/dashboard/inventory', label: 'Inventory', icon: Package },
+  ]
+
+  const isActive = (item: typeof navItems[0]) => {
+    if (item.exact) {
+      return pathname === item.href
+    }
+    return pathname === item.href || pathname.startsWith(item.href + '/')
+  }
+
+  const settingsActive = pathname === '/dashboard/settings' || pathname.startsWith('/dashboard/settings/')
+
   return (
     <div className="flex h-screen bg-zinc-50 overflow-hidden">
       {/* Premium Light Sidebar */}
@@ -13,30 +36,44 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
           <p className="px-3 text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2 mt-4">Menu</p>
           
-          <Link href="/dashboard" className="flex items-center gap-3 px-3 py-2 rounded-md bg-emerald-50 text-emerald-700 font-medium">
-            <LayoutDashboard className="w-5 h-5" /> Overview
-          </Link>
-          <Link href="/dashboard/employees" className="flex items-center gap-3 px-3 py-2 rounded-md text-slate-500 hover:text-emerald-700 hover:bg-slate-50 transition-colors group">
-            <Users className="w-5 h-5 group-hover:text-emerald-600 transition-colors" /> Employees
-          </Link>
-          <Link href="/dashboard/schedules" className="flex items-center gap-3 px-3 py-2 rounded-md text-slate-500 hover:text-emerald-700 hover:bg-slate-50 transition-colors group">
-            <Calendar className="w-5 h-5 group-hover:text-emerald-600 transition-colors" /> Schedules
-          </Link>
-          <Link href="/dashboard/payroll" className="flex items-center gap-3 px-3 py-2 rounded-md text-slate-500 hover:text-emerald-700 hover:bg-slate-50 transition-colors group">
-            <DollarSign className="w-5 h-5 group-hover:text-emerald-600 transition-colors" /> Payroll
-          </Link>
+          {navItems.map((item) => {
+            const active = isActive(item)
+            const Icon = item.icon
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`flex items-center gap-3 px-3 py-2 rounded-md transition-all duration-200 group ${
+                  active
+                    ? 'bg-emerald-50 text-emerald-700 font-medium'
+                    : 'text-slate-500 hover:text-emerald-700 hover:bg-slate-50'
+                }`}
+              >
+                <Icon className={`w-5 h-5 transition-colors ${active ? 'text-emerald-600' : 'text-slate-400 group-hover:text-emerald-600'}`} />
+                {item.label}
+              </Link>
+            )
+          })}
           
           <p className="px-3 text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2 mt-8">System</p>
           
-          <Link href="/dashboard/settings" className="flex items-center gap-3 px-3 py-2 rounded-md text-slate-500 hover:text-emerald-700 hover:bg-slate-50 transition-colors">
-            <Settings className="w-5 h-5" /> Settings
+          <Link
+            href="/dashboard/settings"
+            className={`flex items-center gap-3 px-3 py-2 rounded-md transition-all duration-200 group ${
+              settingsActive
+                ? 'bg-emerald-50 text-emerald-700 font-medium'
+                : 'text-slate-500 hover:text-emerald-700 hover:bg-slate-50'
+            }`}
+          >
+            <Settings className={`w-5 h-5 transition-colors ${settingsActive ? 'text-emerald-600' : 'text-slate-400 group-hover:text-emerald-600'}`} />
+            Settings
           </Link>
         </nav>
 
         <div className="p-4 border-t border-slate-100">
           <form action="/auth/signout" method="post">
-             <button type="submit" className="flex items-center gap-3 px-3 py-2 w-full rounded-md text-slate-500 hover:text-red-600 hover:bg-red-50 transition-colors">
-              <LogOut className="w-5 h-5" /> Sign Out
+             <button type="submit" className="flex items-center gap-3 px-3 py-2 w-full rounded-md text-slate-500 hover:text-red-600 hover:bg-red-50 transition-colors group cursor-pointer">
+              <LogOut className="w-5 h-5 text-slate-400 group-hover:text-red-600 transition-colors" /> Sign Out
             </button>
           </form>
         </div>

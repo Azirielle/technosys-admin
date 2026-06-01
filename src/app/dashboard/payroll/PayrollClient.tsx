@@ -46,6 +46,7 @@ export default function PayrollClient({
             <thead className="bg-zinc-50 border-b border-zinc-200 text-zinc-500 uppercase text-[11px] font-bold tracking-wider">
               <tr>
                 <th className="px-6 py-4">Employee</th>
+                <th className="px-6 py-4">Hours Worked</th>
                 <th className="px-6 py-4">Gross Pay</th>
                 <th className="px-6 py-4 text-rose-500">SSS</th>
                 <th className="px-6 py-4 text-rose-500">PhilHealth</th>
@@ -57,13 +58,14 @@ export default function PayrollClient({
             <tbody className="divide-y divide-zinc-100">
               {technicians.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-6 py-8 text-center text-zinc-500">No technicians found.</td>
+                  <td colSpan={8} className="px-6 py-8 text-center text-zinc-500">No technicians found.</td>
                 </tr>
               ) : technicians.map(emp => {
                 const payrollRecord = payrolls.find(p => p.technician_id === emp.id)
                 const payroll = payrollRecord ? payrollRecord.calculation : {
                   grossPay: 0, sssDeduction: 0, philhealthDeduction: 0, pagibigDeduction: 0, netPay: 0
                 }
+                const totalHours = payrollRecord ? payrollRecord.totalHours : 0
                 const isPublished = publishedPayslips.some(p => p.technician_id === emp.id)
                 
                 return (
@@ -72,11 +74,12 @@ export default function PayrollClient({
                       <p className="font-bold text-zinc-900">{emp.full_name}</p>
                       <p className="text-xs text-zinc-500 font-medium">{emp.role}</p>
                     </td>
-                    <td className="px-6 py-4 font-bold text-zinc-700">{formatPhp(payroll.grossPay)}</td>
-                    <td className="px-6 py-4 text-rose-500 font-medium">-{formatPhp(payroll.sssDeduction)}</td>
-                    <td className="px-6 py-4 text-rose-500 font-medium">-{formatPhp(payroll.philhealthDeduction)}</td>
-                    <td className="px-6 py-4 text-rose-500 font-medium">-{formatPhp(payroll.pagibigDeduction)}</td>
-                    <td className="px-6 py-4 font-extrabold text-emerald-600 text-base">{formatPhp(payroll.netPay)}</td>
+                    <td className="px-6 py-4 font-semibold text-zinc-600 font-tabular">{totalHours} hrs</td>
+                    <td className="px-6 py-4 font-bold text-zinc-700 font-tabular">{formatPhp(payroll.grossPay)}</td>
+                    <td className="px-6 py-4 text-rose-500 font-medium font-tabular">-{formatPhp(payroll.sssDeduction)}</td>
+                    <td className="px-6 py-4 text-rose-500 font-medium font-tabular">-{formatPhp(payroll.philhealthDeduction)}</td>
+                    <td className="px-6 py-4 text-rose-500 font-medium font-tabular">-{formatPhp(payroll.pagibigDeduction)}</td>
+                    <td className="px-6 py-4 font-extrabold text-emerald-600 text-base font-tabular">{formatPhp(payroll.netPay)}</td>
                     <td className="px-6 py-4">
                       {isPublished ? (
                         <span className="flex items-center gap-1.5 text-xs font-bold text-emerald-600 bg-emerald-50 px-3 py-1.5 rounded-full w-max border border-emerald-200 shadow-sm">

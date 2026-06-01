@@ -24,23 +24,54 @@ export default async function DashboardPage() {
   }
 
   // Fetch Live Metrics
-  const { count: empCount } = await supabaseAdmin.from('profiles').select('*', { count: 'exact', head: true });
-  const { count: schedCount } = await supabaseAdmin.from('schedules').select('*', { count: 'exact', head: true });
-  const { count: payCount } = await supabaseAdmin.from('payslips').select('*', { count: 'exact', head: true });
+  let empCount = 0;
+  let schedCount = 0;
+  let payCount = 0;
+  let payslips: any[] = [];
+  let recentTechs: any[] = [];
+  let dbErrorMsg = "";
 
-  const { data: payslips } = await supabaseAdmin.from('payslips').select('*, technician:profiles(full_name)').order('created_at', { ascending: false }).limit(10);
-  const { data: recentTechs } = await supabaseAdmin.from('profiles').select('*').order('created_at', { ascending: false }).limit(5);
+  try {
+    const { count: eCount, error: eErr } = await supabaseAdmin.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'technician');
+    if (eErr) throw eErr;
+    empCount = eCount || 0;
+
+    const { count: sCount, error: sErr } = await supabaseAdmin.from('schedules').select('*', { count: 'exact', head: true });
+    if (sErr) throw sErr;
+    schedCount = sCount || 0;
+
+    const { count: pCount, error: pErr } = await supabaseAdmin.from('payslips').select('*', { count: 'exact', head: true });
+    if (pErr) throw pErr;
+    payCount = pCount || 0;
+
+    const { data: pData, error: psErr } = await supabaseAdmin.from('payslips').select('*, technician:profiles(full_name)').order('created_at', { ascending: false }).limit(10);
+    if (psErr) throw psErr;
+    payslips = pData || [];
+
+    const { data: rData, error: rtErr } = await supabaseAdmin.from('profiles').select('*').eq('role', 'technician').order('created_at', { ascending: false }).limit(5);
+    if (rtErr) throw rtErr;
+    recentTechs = rData || [];
+  } catch (err: any) {
+    console.error("Dashboard database fetch error:", err.message || err);
+    dbErrorMsg = err.message || "Database connection or tables incomplete. Please check your migrations.";
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 p-8">
       <h1 className="text-3xl font-extrabold tracking-tight text-slate-900">Command Center</h1>
       <p className="mt-2 text-slate-500 font-medium">Welcome back, {user.email}</p>
+
+      {dbErrorMsg && (
+        <div className="mt-6 p-4 bg-rose-50 border border-rose-200 text-rose-800 rounded-2xl text-sm font-medium">
+          ⚠️ <strong>Database Alert:</strong> {dbErrorMsg}. Please verify that all database migrations have been successfully executed.
+        </div>
+      )}
       
       <div className="mt-8 grid gap-4 grid-cols-1 md:grid-cols-3">
         <div className="p-6 bg-white rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between group hover:shadow-md transition-shadow">
           <div>
             <h3 className="font-semibold text-slate-500 text-sm uppercase tracking-wider">Employees</h3>
-            <p className="text-3xl font-bold text-slate-900 mt-2">{empCount || 0}</p>
+            <p className="text-3xl font-bold text-slate-900 mt-2">{empCount}</p>
           </div>
           <div className="w-12 h-12 rounded-xl bg-cyan-50 flex items-center justify-center text-cyan-600 group-hover:scale-110 transition-transform">
             <Users className="w-6 h-6" />
@@ -50,7 +81,7 @@ export default async function DashboardPage() {
         <div className="p-6 bg-white rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between group hover:shadow-md transition-shadow">
           <div>
             <h3 className="font-semibold text-slate-500 text-sm uppercase tracking-wider">Active Schedules</h3>
-            <p className="text-3xl font-bold text-slate-900 mt-2">{schedCount || 0}</p>
+            <p className="text-3xl font-bold text-slate-900 mt-2">{schedCount}</p>
           </div>
           <div className="w-12 h-12 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600 group-hover:scale-110 transition-transform">
             <Calendar className="w-6 h-6" />
@@ -60,7 +91,7 @@ export default async function DashboardPage() {
         <div className="p-6 bg-white rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between group hover:shadow-md transition-shadow">
           <div>
             <h3 className="font-semibold text-slate-500 text-sm uppercase tracking-wider">Total Payslips</h3>
-            <p className="text-3xl font-bold text-slate-900 mt-2">{payCount || 0}</p>
+            <p className="text-3xl font-bold text-slate-900 mt-2">{payCount}</p>
           </div>
           <div className="w-12 h-12 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600 group-hover:scale-110 transition-transform">
             <DollarSign className="w-6 h-6" />
@@ -68,7 +99,7 @@ export default async function DashboardPage() {
         </div>
       </div>
 
-      <DashboardCharts payslips={payslips || []} recentTechnicians={recentTechs || []} />
+      <DashboardCharts payslips={payslips} recentTechnicians={recentTechs} />
     </div>
   )
 }

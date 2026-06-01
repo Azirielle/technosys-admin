@@ -25,10 +25,26 @@ export default async function PayrollPage() {
   const cycleDate = new Date(); 
 
   // Pre-calculate payroll dynamically via the new engine
+  const firstDayOfMonth = new Date(cycleDate.getFullYear(), cycleDate.getMonth(), 1).toISOString();
+
   const payrolls = await Promise.all(safeTechnicians.map(async (emp) => {
+    // 1. Fetch total hours worked in the current month
+    const { data: logs } = await supabaseAdmin
+      .from('time_logs')
+      .select('total_hours')
+      .eq('technician_id', emp.id)
+      .gte('created_at', firstDayOfMonth);
+
+    const totalHours = logs?.reduce((sum, log) => sum + Number(log.total_hours || 0), 0) || 0;
+    
+    // 2. Compute gross pay based on standard 160 hours/month rate
+    const hourlyRate = Number(emp.base_salary || 0) / 160;
+    const computedGross = Number((hourlyRate * totalHours).toFixed(2));
+
     return {
       technician_id: emp.id,
-      calculation: await calculatePayrollDeductions(emp.id, Number(emp.base_salary), cycleDate)
+      totalHours: Number(totalHours.toFixed(2)),
+      calculation: await calculatePayrollDeductions(emp.id, computedGross, cycleDate)
     };
   }));
 

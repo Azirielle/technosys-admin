@@ -3,11 +3,17 @@ import { useState } from "react"
 import { AlertCircle, ShieldCheck } from "lucide-react"
 import { updatePhilHealthRules } from "@/app/actions/compliance"
 
-export default function PhilHealthRuleEditor() {
+interface PhilHealthRuleEditorProps {
+  userRole?: string
+}
+
+export default function PhilHealthRuleEditor({ userRole }: PhilHealthRuleEditorProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [formData, setFormData] = useState<FormData | null>(null);
   const [isPending, setIsPending] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  const isSuperAdmin = userRole === "super_admin"
 
   const handlePreSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -44,7 +50,7 @@ export default function PhilHealthRuleEditor() {
         </div>
       )}
 
-      <div className="bg-white rounded-xl border border-zinc-200 shadow-sm overflow-hidden">
+      <div className="bg-white rounded-xl border border-zinc-200 shadow-sm overflow-hidden h-full">
         <div className="p-6 border-b border-zinc-100 flex items-center justify-between bg-zinc-50/50">
           <div>
             <h2 className="text-lg font-bold text-zinc-900 flex items-center gap-2">
@@ -55,7 +61,7 @@ export default function PhilHealthRuleEditor() {
           </div>
         </div>
         
-        <form onSubmit={handlePreSubmit} className="p-6">
+        <form onSubmit={handlePreSubmit} className="p-6 flex flex-col h-[calc(100%-86px)] justify-between">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
             <div>
               <label className="block text-sm font-bold text-zinc-700 mb-2">Wage Floor (₱)</label>
@@ -64,7 +70,8 @@ export default function PhilHealthRuleEditor() {
                 name="wageFloor" 
                 defaultValue={10000}
                 required
-                className="w-full px-4 py-2 border border-zinc-300 rounded-md focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                disabled={!isSuperAdmin}
+                className="w-full px-4 py-2 border border-zinc-300 rounded-md focus:ring-2 focus:ring-emerald-500 focus:outline-none disabled:bg-zinc-100 disabled:text-zinc-500"
               />
             </div>
             <div>
@@ -74,7 +81,8 @@ export default function PhilHealthRuleEditor() {
                 name="wageCeiling" 
                 defaultValue={100000}
                 required
-                className="w-full px-4 py-2 border border-zinc-300 rounded-md focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                disabled={!isSuperAdmin}
+                className="w-full px-4 py-2 border border-zinc-300 rounded-md focus:ring-2 focus:ring-emerald-500 focus:outline-none disabled:bg-zinc-100 disabled:text-zinc-500"
               />
             </div>
             <div>
@@ -85,7 +93,8 @@ export default function PhilHealthRuleEditor() {
                 name="totalRatePercentage" 
                 defaultValue={5.0}
                 required
-                className="w-full px-4 py-2 border border-zinc-300 rounded-md focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                disabled={!isSuperAdmin}
+                className="w-full px-4 py-2 border border-zinc-300 rounded-md focus:ring-2 focus:ring-emerald-500 focus:outline-none disabled:bg-zinc-100 disabled:text-zinc-500"
               />
             </div>
             <div>
@@ -96,16 +105,19 @@ export default function PhilHealthRuleEditor() {
                 name="employeeSharePercentage" 
                 defaultValue={2.5}
                 required
-                className="w-full px-4 py-2 border border-zinc-300 rounded-md focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                disabled={!isSuperAdmin}
+                className="w-full px-4 py-2 border border-zinc-300 rounded-md focus:ring-2 focus:ring-emerald-500 focus:outline-none disabled:bg-zinc-100 disabled:text-zinc-500"
               />
             </div>
           </div>
           
-          <div className="flex justify-end pt-4 border-t border-zinc-100">
-            <button type="submit" className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-6 py-2.5 rounded-lg transition-colors">
-              Save Active Rules
-            </button>
-          </div>
+          {isSuperAdmin && (
+            <div className="flex justify-end pt-4 border-t border-zinc-100">
+              <button type="submit" className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-6 py-2.5 rounded-lg transition-colors cursor-pointer">
+                Save Active Rules
+              </button>
+            </div>
+          )}
         </form>
       </div>
 

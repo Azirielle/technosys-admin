@@ -2,8 +2,10 @@
 import { useState } from "react"
 import { Pencil, ShieldCheck } from "lucide-react"
 
-export default function SssDataTable({ initialData }: { initialData: any[] }) {
+export default function SssDataTable({ initialData, userRole }: { initialData: any[], userRole?: string }) {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+
+  const isSuperAdmin = userRole === "super_admin"
 
   const formatPhp = (amount: number) => {
     return new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(amount || 0);
@@ -31,7 +33,7 @@ export default function SssDataTable({ initialData }: { initialData: any[] }) {
                 <th className="px-6 py-4 text-emerald-600">Monthly Salary Credit</th>
                 <th className="px-6 py-4 text-rose-500">Employee Share</th>
                 <th className="px-6 py-4 text-amber-600">Employer Share</th>
-                <th className="px-6 py-4 text-center">Action</th>
+                {isSuperAdmin && <th className="px-6 py-4 text-center">Action</th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-100">
@@ -43,20 +45,22 @@ export default function SssDataTable({ initialData }: { initialData: any[] }) {
                     <td className="px-6 py-4 font-medium text-emerald-700">{formatPhp(bracket.monthly_salary_credit)}</td>
                     <td className="px-6 py-4 font-medium text-rose-600">{formatPhp(bracket.employee_share)}</td>
                     <td className="px-6 py-4 font-medium text-amber-600">{formatPhp(bracket.employer_share)}</td>
-                    <td className="px-6 py-4 text-center">
-                      <button 
-                        onClick={() => setIsEditModalOpen(true)}
-                        className="text-zinc-400 hover:text-emerald-600 transition-colors"
-                        title="Edit Bracket"
-                      >
-                        <Pencil className="w-4 h-4 mx-auto" />
-                      </button>
-                    </td>
+                    {isSuperAdmin && (
+                      <td className="px-6 py-4 text-center">
+                        <button 
+                          onClick={() => setIsEditModalOpen(true)}
+                          className="text-zinc-400 hover:text-emerald-600 transition-colors cursor-pointer"
+                          title="Edit Bracket"
+                        >
+                          <Pencil className="w-4 h-4 mx-auto" />
+                        </button>
+                      </td>
+                    )}
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan={6} className="px-6 py-8 text-center text-zinc-500">
+                  <td colSpan={isSuperAdmin ? 6 : 5} className="px-6 py-8 text-center text-zinc-500">
                     No SSS brackets loaded. Please run the database seed script.
                   </td>
                 </tr>
