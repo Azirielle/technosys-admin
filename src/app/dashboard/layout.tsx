@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, Users, Calendar, DollarSign, Settings, LogOut, MessageSquare, Package } from 'lucide-react'
+import { LayoutDashboard, Users, Calendar, DollarSign, Settings, LogOut, MessageSquare, Package, ClipboardList } from 'lucide-react'
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
@@ -11,6 +11,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     { href: '/dashboard', label: 'Overview', icon: LayoutDashboard, exact: true },
     { href: '/dashboard/employees', label: 'Employees', icon: Users },
     { href: '/dashboard/schedules', label: 'Schedules', icon: Calendar },
+    { href: '/dashboard/leaves', label: 'Leaves', icon: ClipboardList },
     { href: '/dashboard/payroll', label: 'Payroll', icon: DollarSign },
     { href: '/dashboard/tickets', label: 'Tickets', icon: MessageSquare },
     { href: '/dashboard/inventory', label: 'Inventory', icon: Package },
