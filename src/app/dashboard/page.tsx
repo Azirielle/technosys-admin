@@ -29,6 +29,7 @@ export default async function DashboardPage() {
   let payCount = 0;
   let payslips: any[] = [];
   let recentTechs: any[] = [];
+  let allTechs: any[] = [];
   let dbErrorMsg = "";
 
   try {
@@ -51,6 +52,10 @@ export default async function DashboardPage() {
     const { data: rData, error: rtErr } = await supabaseAdmin.from('profiles').select('*').eq('role', 'technician').order('created_at', { ascending: false }).limit(5);
     if (rtErr) throw rtErr;
     recentTechs = rData || [];
+
+    const { data: allTechsData, error: allTechsErr } = await supabaseAdmin.from('profiles').select('id, full_name, role').in('role', ['technician', 'helper']).order('full_name', { ascending: true });
+    if (allTechsErr) throw allTechsErr;
+    allTechs = allTechsData || [];
   } catch (err: any) {
     console.error("Dashboard database fetch error:", err.message || err);
     dbErrorMsg = err.message || "Database connection or tables incomplete. Please check your migrations.";
@@ -99,7 +104,7 @@ export default async function DashboardPage() {
         </div>
       </div>
 
-      <DashboardCharts payslips={payslips} recentTechnicians={recentTechs} />
+      <DashboardCharts payslips={payslips} recentTechnicians={recentTechs} allTechnicians={allTechs} />
     </div>
   )
 }

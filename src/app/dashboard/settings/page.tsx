@@ -2,12 +2,15 @@ import { createClient } from "@/lib/supabase/server"
 import { supabaseAdmin } from "@/lib/supabase/admin"
 import { getOfficeLocations } from "@/app/actions/geofence"
 import { getAdmins } from "@/app/actions/employees"
+import { getAnnouncements, getHolidays } from "@/app/actions/announcements"
 import { redirect } from "next/navigation"
 import LocationSettings from "./LocationSettings"
 import PhilHealthRuleEditor from "./PhilHealthRuleEditor"
 import PagibigRuleEditor from "./PagibigRuleEditor"
 import SssDataTable from "./SssDataTable"
 import AdminAccounts from "./AdminAccounts"
+import AnnouncementsEditor from "./AnnouncementsEditor"
+import HolidaysEditor from "./HolidaysEditor"
 
 export const revalidate = 0;
 
@@ -47,6 +50,10 @@ export default async function SettingsPage() {
     .select('*')
     .order('min_compensation', { ascending: true })
 
+  // Fetch announcements & holidays
+  const announcementsList = await getAnnouncements()
+  const holidaysList = await getHolidays()
+
   // Fetch admins list (Super Admins only)
   let adminsList: any[] = []
   if (userRole === 'super_admin') {
@@ -85,6 +92,29 @@ export default async function SettingsPage() {
         <div className="pt-4 border-t border-zinc-100">
           <SssDataTable initialData={sssBrackets || []} userRole={userRole} />
         </div>
+      </section>
+
+      {/* Announcements Board */}
+      <section className="bg-white rounded-2xl border border-zinc-200 p-6 shadow-sm">
+        <h2 className="text-xl font-bold text-zinc-800 mb-6 flex items-center gap-2">
+          📢 Company Announcements Board
+        </h2>
+        <AnnouncementsEditor 
+          initialAnnouncements={announcementsList} 
+          officeLocations={locations || []} 
+          userRole={userRole} 
+        />
+      </section>
+
+      {/* Holidays Calendar Manager */}
+      <section className="bg-white rounded-2xl border border-zinc-200 p-6 shadow-sm">
+        <h2 className="text-xl font-bold text-zinc-800 mb-6 flex items-center gap-2">
+          📅 Holidays & Salary Multipliers
+        </h2>
+        <HolidaysEditor 
+          initialHolidays={holidaysList} 
+          userRole={userRole} 
+        />
       </section>
 
       {/* Admin Accounts Management (Super Admin only) */}

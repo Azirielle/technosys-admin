@@ -1,6 +1,7 @@
 "use server"
 import { supabaseAdmin } from "@/lib/supabase/admin"
 import { revalidatePath } from "next/cache"
+import { createClient } from "@/lib/supabase/server"
 
 export interface TechnicianInfo {
   id: string
@@ -18,16 +19,43 @@ export interface TechnicianInfo {
   hasNbiClearance?: boolean
   hasResume?: boolean
   hasMedicalClearance?: boolean
+  branchId?: string | null
+  lifecycleStatus?: string
 }
 
 // 1. Fetch all technicians (combining Auth and Profile tables)
 export async function getTechnicians(): Promise<TechnicianInfo[]> {
   try {
+    // Determine the logged-in user's role and branch
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    
+    let userBranchId: string | null = null
+    let isSupervisor = false
+
+    if (user) {
+      const { data: logProfile } = await supabaseAdmin
+        .from('profiles')
+        .select('role, branch_id')
+        .eq('id', user.id)
+        .single()
+      
+      if (logProfile) {
+        isSupervisor = ['supervisor', 'branch_manager'].includes(logProfile.role)
+        userBranchId = logProfile.branch_id
+      }
+    }
+
     // Fetch profiles - technicians and helpers
-    const { data: profiles, error: profileError } = await supabaseAdmin
+    let query = supabaseAdmin
       .from('profiles')
       .select('*')
-      .order('created_at', { ascending: false })
+      
+    if (isSupervisor && userBranchId) {
+      query = query.eq('branch_id', userBranchId)
+    }
+
+    const { data: profiles, error: profileError } = await query.order('created_at', { ascending: false })
 
     if (profileError) throw profileError
 
@@ -58,6 +86,8 @@ export async function getTechnicians(): Promise<TechnicianInfo[]> {
         hasNbiClearance: p.has_nbi_clearance,
         hasResume: p.has_resume,
         hasMedicalClearance: p.has_medical_clearance,
+        branchId: p.branch_id,
+        lifecycleStatus: p.lifecycle_status || 'active'
       }
     })
 
@@ -181,8 +211,6 @@ export async function createAdmin(formData: FormData) {
 }
 
 // 5. Delete an Admin account
-import { createClient } from '@/lib/supabase/server'
-
 export async function deleteAdmin(id: string) {
   try {
     const supabase = await createClient()
@@ -226,6 +254,8 @@ export interface ChecklistData {
   employmentStatus: string
   managerId: string | null
   hireDate: string | null
+  branchId?: string | null
+  lifecycleStatus?: string
 }
 
 export async function getPotentialManagers() {
@@ -271,7 +301,9 @@ export async function update201Checklist(employeeId: string, data: ChecklistData
         has_medical_clearance: data.hasMedicalClearance,
         employment_status: data.employmentStatus,
         manager_id: data.managerId || null,
-        hire_date: data.hireDate || null
+        hire_date: data.hireDate || null,
+        branch_id: data.branchId || null,
+        lifecycle_status: data.lifecycleStatus || 'active'
       })
       .eq('id', employeeId)
 
@@ -347,6 +379,28 @@ export async function addManualDtrLog(employeeId: string, clockIn: string, clock
   } catch (err: any) {
     console.error(`Failed to add manual DTR log for employee ${employeeId}:`, err.message || err)
     return { error: err.message || "Failed to add manual DTR entry." }
+  }
+}
+
+// 6. Simulate a physical office biometric fingerprint scan
+export async function simulateBiometricScan(employeeId: string) {
+  try {
+    const { data, error } = await supabaseAdmin
+      .from('physical_biometric_scans')
+      .insert({ employee_id: employeeId })
+      .select()
+      .single()
+
+    if (error) throw error
+    
+    // Trigger revalidations
+    revalidatePath('/dashboard/employees')
+    revalidatePath('/dashboard')
+    
+    return { success: true, data }
+  } catch (err: any) {
+    console.error("Failed to simulate biometric scan:", err.message || err)
+    return { error: err.message || "Failed to trigger simulated scan" }
   }
 }
 

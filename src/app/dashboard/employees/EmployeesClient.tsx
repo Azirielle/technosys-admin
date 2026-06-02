@@ -33,9 +33,11 @@ import { createClient } from "@/lib/supabase/client"
 
 interface EmployeesClientProps {
   initialTechnicians: TechnicianInfo[]
+  officeLocations: any[]
+  activeTechnicianIds?: string[]
 }
 
-export default function EmployeesClient({ initialTechnicians }: EmployeesClientProps) {
+export default function EmployeesClient({ initialTechnicians, officeLocations, activeTechnicianIds = [] }: EmployeesClientProps) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
@@ -63,6 +65,8 @@ export default function EmployeesClient({ initialTechnicians }: EmployeesClientP
   const [nbi, setNbi] = useState(false)
   const [resume, setResume] = useState(false)
   const [medical, setMedical] = useState(false)
+  const [drawerLifecycleStatus, setDrawerLifecycleStatus] = useState('active')
+  const [drawerBranchId, setDrawerBranchId] = useState<string>('')
 
   // Attendance states
   const [timeLogs, setTimeLogs] = useState<any[]>([])
@@ -167,6 +171,8 @@ export default function EmployeesClient({ initialTechnicians }: EmployeesClientP
     setPagibig(!!employee.hasPagibigId)
     setMedical(!!employee.hasMedicalClearance)
     setResume(!!employee.hasResume)
+    setDrawerLifecycleStatus(employee.lifecycleStatus || 'active')
+    setDrawerBranchId(employee.branchId || '')
     
     // Reset manual DTR states
     setManualClockIn('')
@@ -195,7 +201,9 @@ export default function EmployeesClient({ initialTechnicians }: EmployeesClientP
       hasMedicalClearance: medical,
       employmentStatus: status,
       managerId: managerId || null,
-      hireDate: hireDate ? new Date(hireDate).toISOString() : null
+      hireDate: hireDate ? new Date(hireDate).toISOString() : null,
+      branchId: drawerBranchId || null,
+      lifecycleStatus: drawerLifecycleStatus
     }
     
     try {
@@ -215,7 +223,9 @@ export default function EmployeesClient({ initialTechnicians }: EmployeesClientP
           hasPagibigId: pagibig,
           hasNbiClearance: nbi,
           hasResume: resume,
-          hasMedicalClearance: medical
+          hasMedicalClearance: medical,
+          branchId: drawerBranchId || null,
+          lifecycleStatus: drawerLifecycleStatus
         })
         router.refresh()
       }
@@ -263,6 +273,11 @@ export default function EmployeesClient({ initialTechnicians }: EmployeesClientP
   // DTR manual overriding permission
   const canOverrideDtr = ['super_admin', 'admin', 'ceo', 'coo', 'svp', 'branch_manager', 'supervisor', 'coordinator'].includes(currentUserRole)
 
+  // Real-time status counts
+  const activeNowCount = initialTechnicians.filter(t => activeTechnicianIds.includes(t.id)).length
+  const onLeaveCount = initialTechnicians.filter(t => t.lifecycleStatus === 'on_leave').length
+  const offDutyCount = Math.max(0, initialTechnicians.length - activeNowCount - onLeaveCount)
+
   return (
     <div className="p-8 pb-20 max-w-7xl mx-auto relative">
       {/* Page Header */}
@@ -270,6 +285,45 @@ export default function EmployeesClient({ initialTechnicians }: EmployeesClientP
         <div>
           <h1 className="text-3xl font-extrabold tracking-tight text-zinc-900">Manage Employees</h1>
           <p className="text-zinc-500 mt-1">Configure status, manager relationships, 201 files, and manual DTR cards.</p>
+        </div>
+      </div>
+
+      {/* Real-time Employee Status Dashboard */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        <div className="bg-white p-5 rounded-2xl border border-zinc-200 shadow-xs">
+          <p className="text-2xs font-extrabold uppercase tracking-wider text-zinc-400">Total Force</p>
+          <p className="text-3xl font-extrabold text-zinc-900 mt-2">{initialTechnicians.length}</p>
+          <div className="flex items-center gap-1.5 mt-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
+            <span className="text-2xs text-zinc-500 font-semibold">Registered staff</span>
+          </div>
+        </div>
+
+        <div className="bg-emerald-50/50 p-5 rounded-2xl border border-emerald-100 shadow-xs">
+          <p className="text-2xs font-extrabold uppercase tracking-wider text-emerald-600/80">Active Now</p>
+          <p className="text-3xl font-extrabold text-emerald-800 mt-2">{activeNowCount}</p>
+          <div className="flex items-center gap-1.5 mt-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            <span className="text-2xs text-emerald-600 font-semibold">Currently clocked in</span>
+          </div>
+        </div>
+
+        <div className="bg-zinc-50/50 p-5 rounded-2xl border border-zinc-200 shadow-xs">
+          <p className="text-2xs font-extrabold uppercase tracking-wider text-zinc-500">Off Duty</p>
+          <p className="text-3xl font-extrabold text-zinc-800 mt-2">{offDutyCount}</p>
+          <div className="flex items-center gap-1.5 mt-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-zinc-400" />
+            <span className="text-2xs text-zinc-500 font-semibold">Inactive or off-shift</span>
+          </div>
+        </div>
+
+        <div className="bg-amber-50/50 p-5 rounded-2xl border border-amber-100 shadow-xs">
+          <p className="text-2xs font-extrabold uppercase tracking-wider text-amber-700">On Leave</p>
+          <p className="text-3xl font-extrabold text-amber-800 mt-2">{onLeaveCount}</p>
+          <div className="flex items-center gap-1.5 mt-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+            <span className="text-2xs text-amber-600 font-semibold">Rest/sick/leave status</span>
+          </div>
         </div>
       </div>
 
@@ -455,6 +509,19 @@ export default function EmployeesClient({ initialTechnicians }: EmployeesClientP
             </div>
 
             <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-zinc-500 mb-1.5">Branch Location</label>
+              <div className="relative">
+                <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-zinc-400" />
+                <select name="branchId" className="w-full pl-10 pr-4 py-2.5 border border-zinc-200 rounded-xl bg-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all text-zinc-800 text-sm">
+                  <option value="">No Branch / Global</option>
+                  {officeLocations.map((loc) => (
+                    <option key={loc.id} value={loc.id}>{loc.name}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div>
               <label className="block text-xs font-bold uppercase tracking-wider text-zinc-500 mb-1.5">Default Password</label>
               <div className="relative">
                 <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-zinc-400" />
@@ -572,6 +639,36 @@ export default function EmployeesClient({ initialTechnicians }: EmployeesClientP
                         onChange={(e) => setHireDate(e.target.value)}
                         className="w-full px-3.5 py-2 border border-zinc-200 rounded-xl bg-white text-zinc-850 text-sm focus:ring-2 focus:ring-emerald-500 outline-none"
                       />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold uppercase tracking-wider text-zinc-500 mb-1.5">Lifecycle Status</label>
+                      <select 
+                        disabled={!canEdit201 || loadingAction}
+                        value={drawerLifecycleStatus} 
+                        onChange={(e) => setDrawerLifecycleStatus(e.target.value)}
+                        className="w-full px-3.5 py-2 border border-zinc-200 rounded-xl bg-white text-zinc-850 text-sm focus:ring-2 focus:ring-emerald-500 outline-none"
+                      >
+                        <option value="active">Active</option>
+                        <option value="on_leave">On Leave</option>
+                        <option value="terminated">Terminated</option>
+                        <option value="archived">Archived</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold uppercase tracking-wider text-zinc-500 mb-1.5">Assigned Branch Location</label>
+                      <select 
+                        disabled={!canEdit201 || loadingAction}
+                        value={drawerBranchId} 
+                        onChange={(e) => setDrawerBranchId(e.target.value)}
+                        className="w-full px-3.5 py-2 border border-zinc-200 rounded-xl bg-white text-zinc-850 text-sm focus:ring-2 focus:ring-emerald-500 outline-none"
+                      >
+                        <option value="">No Branch / Global</option>
+                        {officeLocations.map((loc) => (
+                          <option key={loc.id} value={loc.id}>{loc.name}</option>
+                        ))}
+                      </select>
                     </div>
 
                     <div className="md:col-span-2">
