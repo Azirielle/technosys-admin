@@ -103,12 +103,38 @@ export default function GeofenceMap({ latitude, longitude, radius, onLocationCha
     setIsSearching(true)
     setSearchError(null)
 
+    const fetchGeocode = async (query: string) => {
+      try {
+        const res = await fetch(
+          `https://nominatim.openstreetmap.org/search?format=json&countrycodes=ph&q=${encodeURIComponent(query)}`
+        )
+        return await res.json()
+      } catch (err) {
+        console.error("Geocoding fetch error:", err)
+        return []
+      }
+    }
+
     try {
-      // Nominatim Search (OpenStreetMap Geocoding API)
-      const response = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}`
-      )
-      const data = await response.json()
+      // 1. Primary search with country code ph
+      let data = await fetchGeocode(searchQuery)
+
+      // Fallback 1: If search fails and it's a specific street address, remove the first element (e.g. house number/building name) and search again
+      if ((!data || data.length === 0) && searchQuery.includes(",")) {
+        const parts = searchQuery.split(",")
+        if (parts.length > 1) {
+          const fallbackQuery = parts.slice(1).join(",").trim()
+          data = await fetchGeocode(fallbackQuery)
+        }
+      }
+
+      // Fallback 2: If search still fails, try removing leading digit/letter street numbers from the query (e.g. "3 Macaria Ave" -> "Macaria Ave")
+      if (!data || data.length === 0) {
+        const fallbackQuery = searchQuery.replace(/^\d+[A-Za-z]?\s+/, "")
+        if (fallbackQuery !== searchQuery) {
+          data = await fetchGeocode(fallbackQuery)
+        }
+      }
 
       if (data && data.length > 0) {
         const firstResult = data[0]
@@ -116,11 +142,11 @@ export default function GeofenceMap({ latitude, longitude, radius, onLocationCha
         const lng = parseFloat(firstResult.lon)
         onLocationChange(lat, lng)
       } else {
-        setSearchError("Location not found. Try entering a more specific name or address.")
+        setSearchError("Location not found in the Philippines. Try searching for a broader street, barangay, or landmark name and drag the pin to position.")
       }
     } catch (err) {
       console.error("Geocoding error:", err)
-      setSearchError("Search service unavailable. Please drag the pin or click on the map.")
+      setSearchError("Search service unavailable. Please drag the pin or click on the map to set location coordinates.")
     } finally {
       setIsSearching(false)
     }
