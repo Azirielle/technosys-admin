@@ -1,6 +1,7 @@
 "use server"
 import { supabaseAdmin } from "@/lib/supabase/admin"
 import { revalidatePath } from "next/cache"
+import { isRangeOverlapping } from "@/lib/utils"
 
 export async function createSchedule(formData: FormData) {
   try {
@@ -10,6 +11,22 @@ export async function createSchedule(formData: FormData) {
     const startTime = formData.get("startTime") as string
     const endTime = formData.get("endTime") as string
     const isVip = formData.get("isVip") === "on"
+
+    const { error: leavesErr, data: leaves } = await supabaseAdmin
+      .from('leaves')
+      .select('*')
+      .eq('technician_id', technicianId)
+      .eq('status', 'approved')
+
+    if (leavesErr) throw leavesErr
+
+    const hasConflict = leaves?.some(leave => 
+      isRangeOverlapping(startTime, endTime, leave.start_date, leave.end_date)
+    )
+
+    if (hasConflict) {
+      throw new Error("The selected technician is on approved leave during this schedule's timeframe.")
+    }
 
     const { error } = await supabaseAdmin.from('schedules').insert({
       technician_id: technicianId,

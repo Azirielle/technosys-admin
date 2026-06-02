@@ -36,6 +36,8 @@ export default async function PayrollPage() {
 
   // Pre-calculate payroll dynamically via the new engine
   const firstDayOfMonth = new Date(cycleDate.getFullYear(), cycleDate.getMonth(), 1).toISOString();
+  const firstDay = new Date(cycleDate.getFullYear(), cycleDate.getMonth(), 1);
+  const lastDay = new Date(cycleDate.getFullYear(), cycleDate.getMonth() + 1, 0);
 
   const payrolls = await Promise.all(safeTechnicians.map(async (emp) => {
     // 1. Fetch total hours and app_time_in to determine holiday overlaps
@@ -45,12 +47,12 @@ export default async function PayrollPage() {
       .eq('technician_id', emp.id)
       .gte('created_at', firstDayOfMonth);
 
-    let totalHours = 0;
+    let workedHours = 0;
     let weightedHours = 0;
 
     (logs || []).forEach(log => {
       const hours = Number(log.total_hours || 0);
-      totalHours += hours;
+      workedHours += hours;
 
       if (log.app_time_in) {
         const dateStr = log.app_time_in.split('T')[0];
@@ -60,13 +62,49 @@ export default async function PayrollPage() {
         weightedHours += hours;
       }
     });
-    
-    // 2. Compute gross pay based on standard 160 hours/month rate (using weighted hours for holiday premium)
-    const hourlyRate = Number(emp.base_salary || 0) / 160;
-    const computedGross = Number((hourlyRate * weightedHours).toFixed(2));
 
-    return {
+    // 2. Fetch approved leaves for the current month
+    const { data: leaves } = await supabaseAdmin
+      .from('leaves')
+      .select('*')
+      .eq('technician_id', emp.id)
+      .eq('status', 'approved');
+
+    let paidLeaveDays = 0;
+    let unpaidLeaveDays = 0;
+
+    leaves?.forEach((leave) => {
+      const startParts = leave.start_date.split('-');
+      const endParts = leave.end_date.split('-');
+      const start = new Date(Number(startParts[0]), Number(startParts[1]) - 1, Number(startParts[2]));
+      const end = new Date(Number(endParts[0]), Number(endParts[1]) - 1, Number(endParts[2]));
+
+      const curr = new Date(start);
+      while (curr <= end) {
+        if (curr >= firstDay && curr <= lastDay) {
+          if (leave.leave_type === 'unpaid') {
+            unpaidLeaveDays++;
+          } else {
+            paidLeaveDays++;
+          }
+        }
+        curr.setDate(curr.getDate() + 1);
+      }
+    });
+
+    const paidLeaveHours = paidLeaveDays * 8;
+    const unpaidLeaveHours = unpaidLeaveDays * 8;
+    const totalHours = workedHours + paidLeaveHours;
+    
+    // 3. Compute gross pay based on standard 160 hours/month rate (using weighted hours + paid leave hours)
+    const hourlyRate = Number(emp.base_salary || 0) / 160;
+    const computedGross = Number((hourlyRate * (weightedHours + paidLeaveHours)).toFixed(2));   return {
       technician_id: emp.id,
+      workedHours: Number(workedHours.toFixed(2)),
+      paidLeaveDays,
+      unpaidLeaveDays,
+      paidLeaveHours,
+      unpaidLeaveHours,
       totalHours: Number(totalHours.toFixed(2)),
       calculation: await calculatePayrollDeductions(emp.id, computedGross, cycleDate)
     };
