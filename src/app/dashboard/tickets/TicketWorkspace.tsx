@@ -258,6 +258,74 @@ export default function TicketWorkspace({
     }
   }
 
+  // Helper to format stringified JSON descriptions in the sidebar list
+  const getDisplayDescription = (desc: string) => {
+    if (!desc) return ""
+    if (desc.trim().startsWith("{")) {
+      try {
+        const parsed = JSON.parse(desc)
+        if (parsed.details) {
+          return parsed.details
+        }
+        return Object.entries(parsed)
+          .map(([key, val]) => `${key.replace(/_/g, " ").toUpperCase()}: ${val}`)
+          .join(" | ")
+      } catch (e) {
+        return desc
+      }
+    }
+    return desc
+  }
+
+  // Helper to render parsed description details in a bento grid format
+  const renderDescription = (desc: string) => {
+    if (!desc || !desc.trim().startsWith("{")) {
+      return (
+        <p className="text-sm text-zinc-800 leading-relaxed whitespace-pre-wrap">
+          {desc || "No description provided."}
+        </p>
+      )
+    }
+
+    try {
+      const parsed = JSON.parse(desc)
+      return (
+        <div className="space-y-4">
+          <div className="grid gap-3 grid-cols-1 sm:grid-cols-2">
+            {Object.entries(parsed).map(([key, val]) => {
+              if (key === "details") return null
+              const label = key.replace(/_/g, " ")
+              return (
+                <div key={key} className="p-3.5 bg-zinc-50 border border-zinc-150 rounded-xl flex flex-col justify-center shadow-sm">
+                  <span className="text-[10px] font-extrabold text-zinc-400 uppercase tracking-wider">{label}</span>
+                  <span className="text-sm font-bold text-zinc-850 mt-1 capitalize">
+                    {key.toLowerCase().includes("amount") 
+                      ? `₱${Number(val).toLocaleString("en-PH", { minimumFractionDigits: 2 })}` 
+                      : String(val)}
+                  </span>
+                </div>
+              )
+            })}
+          </div>
+          {parsed.details && (
+            <div className="pt-3.5 border-t border-zinc-150">
+              <span className="text-[10px] font-extrabold text-zinc-400 uppercase tracking-wider block mb-1">Details & Context</span>
+              <p className="text-sm text-zinc-800 leading-relaxed whitespace-pre-wrap bg-zinc-50/50 p-4 rounded-xl border border-zinc-150">
+                {parsed.details}
+              </p>
+            </div>
+          )}
+        </div>
+      )
+    } catch (e) {
+      return (
+        <p className="text-sm text-zinc-800 leading-relaxed whitespace-pre-wrap">
+          {desc}
+        </p>
+      )
+    }
+  }
+
   return (
     <div className="flex h-[calc(100vh-4rem)] bg-zinc-50 overflow-hidden">
       
@@ -351,7 +419,7 @@ export default function TicketWorkspace({
                 </div>
 
                 <p className="text-xs text-zinc-500 line-clamp-2">
-                  {ticket.description}
+                  {getDisplayDescription(ticket.description)}
                 </p>
 
                 <div className="flex justify-between items-center text-[10px] text-zinc-400 pt-1">
@@ -488,9 +556,7 @@ export default function TicketWorkspace({
                 <h4 className="text-xs font-bold text-zinc-400 uppercase tracking-wider flex items-center gap-1.5">
                   <CornerDownRight className="w-3.5 h-3.5 text-zinc-400" /> Original Request
                 </h4>
-                <p className="text-sm text-zinc-800 leading-relaxed whitespace-pre-wrap">
-                  {selectedTicket.description}
-                </p>
+                {renderDescription(selectedTicket.description)}
               </div>
 
               {/* Discussion Segment */}

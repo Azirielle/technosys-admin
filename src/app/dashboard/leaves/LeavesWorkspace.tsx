@@ -207,9 +207,9 @@ export default function LeavesWorkspace({ initialLeaves, currentUserId }: Leaves
                   </div>
 
                   {/* Reason comment bubble */}
-                  <div className="bg-slate-50 border border-slate-100 rounded-xl p-3 mb-4">
-                    <p className="text-sm text-slate-700 whitespace-pre-wrap leading-relaxed">
-                      "{leave.reason}"
+                  <div className="bg-slate-50 rounded-xl p-3.5 mb-4">
+                    <p className="text-sm text-slate-600 italic whitespace-pre-wrap leading-relaxed">
+                      “{leave.reason}”
                     </p>
                   </div>
                 </div>

@@ -15,7 +15,7 @@ export async function getTickets(statusFilter?: string) {
       .order('created_at', { ascending: false })
 
     if (statusFilter && statusFilter !== 'all') {
-      if (statusFilter === 'open_assigned') {
+      if (statusFilter === 'open_assigned' || statusFilter === 'active') {
         query = query.in('status', ['open', 'assigned', 'in_progress'])
       } else {
         query = query.eq('status', statusFilter)
