@@ -98,10 +98,37 @@ export default function GeofenceMap({ latitude, longitude, radius, onLocationCha
       e.preventDefault()
       e.stopPropagation()
     }
-    if (!searchQuery.trim()) return
+    const queryStr = searchQuery.trim()
+    if (!queryStr) return
 
     setIsSearching(true)
     setSearchError(null)
+
+    // Helper to update location and exit loader
+    const updateCoords = (lat: number, lng: number) => {
+      onLocationChange(lat, lng)
+      setIsSearching(false)
+      return true
+    }
+
+    // 1. Direct Coordinates Parsing (e.g. "14.3392, 121.0597")
+    const coordsRegex = /^\s*(-?\d+\.\d+)\s*,\s*(-?\d+\.\d+)\s*$/
+    const coordsMatch = queryStr.match(coordsRegex)
+    if (coordsMatch) {
+      const lat = parseFloat(coordsMatch[1])
+      const lng = parseFloat(coordsMatch[2])
+      return updateCoords(lat, lng)
+    }
+
+    // 2. Maps URL Parsing (Extract coordinates from Google / Bing Maps URLs)
+    // Works with: ...@14.3392,121.0597... or ...point=14.3392%2C121.0597... or ...query=14.3392,121.0597...
+    const urlCoordsRegex = /[@=](-?\d+\.\d+)(?:,|%2C)(-?\d+\.\d+)/
+    const urlMatch = queryStr.match(urlCoordsRegex)
+    if (urlMatch) {
+      const lat = parseFloat(urlMatch[1])
+      const lng = parseFloat(urlMatch[2])
+      return updateCoords(lat, lng)
+    }
 
     const fetchGeocode = async (query: string) => {
       try {
@@ -116,22 +143,22 @@ export default function GeofenceMap({ latitude, longitude, radius, onLocationCha
     }
 
     try {
-      // 1. Primary search with country code ph
-      let data = await fetchGeocode(searchQuery)
+      // 3. Primary search scoped to Philippines
+      let data = await fetchGeocode(queryStr)
 
-      // Fallback 1: If search fails and it's a specific street address, remove the first element (e.g. house number/building name) and search again
-      if ((!data || data.length === 0) && searchQuery.includes(",")) {
-        const parts = searchQuery.split(",")
+      // Fallback 1: Remove leading street/building indicators if comma separated
+      if ((!data || data.length === 0) && queryStr.includes(",")) {
+        const parts = queryStr.split(",")
         if (parts.length > 1) {
           const fallbackQuery = parts.slice(1).join(",").trim()
           data = await fetchGeocode(fallbackQuery)
         }
       }
 
-      // Fallback 2: If search still fails, try removing leading digit/letter street numbers from the query (e.g. "3 Macaria Ave" -> "Macaria Ave")
+      // Fallback 2: Remove leading house numbers
       if (!data || data.length === 0) {
-        const fallbackQuery = searchQuery.replace(/^\d+[A-Za-z]?\s+/, "")
-        if (fallbackQuery !== searchQuery) {
+        const fallbackQuery = queryStr.replace(/^\d+[A-Za-z]?\s+/, "")
+        if (fallbackQuery !== queryStr) {
           data = await fetchGeocode(fallbackQuery)
         }
       }
@@ -142,7 +169,7 @@ export default function GeofenceMap({ latitude, longitude, radius, onLocationCha
         const lng = parseFloat(firstResult.lon)
         onLocationChange(lat, lng)
       } else {
-        setSearchError("Location not found in the Philippines. Try searching for a broader street, barangay, or landmark name and drag the pin to position.")
+        setSearchError("Location not found. Try pasting Google/Bing Maps coordinates (e.g. 14.3392, 121.0597) or a Maps link directly.")
       }
     } catch (err) {
       console.error("Geocoding error:", err)
