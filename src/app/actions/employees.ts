@@ -27,17 +27,20 @@ export async function getTechnicians(): Promise<TechnicianInfo[]> {
     const { data: profiles, error: profileError } = await supabaseAdmin
       .from('profiles')
       .select('*')
-      .in('role', ['technician', 'helper'])
       .order('created_at', { ascending: false })
 
     if (profileError) throw profileError
+
+    // Filter roles in memory to be resilient if the database migration is not yet run
+    const targetRoles = ['technician', 'helper']
+    const filteredProfiles = (profiles || []).filter(p => targetRoles.includes(p.role))
 
     // Fetch auth users to match emails
     const { data: { users }, error: authError } = await supabaseAdmin.auth.admin.listUsers()
     if (authError) throw authError
 
     // Map profiles to match with their emails
-    const mapped: TechnicianInfo[] = (profiles || []).map(p => {
+    const mapped: TechnicianInfo[] = (filteredProfiles).map(p => {
       const authUser = users.find(u => u.id === p.id)
       return {
         id: p.id,
