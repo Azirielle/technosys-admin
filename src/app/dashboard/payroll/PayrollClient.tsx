@@ -73,8 +73,25 @@ export default function PayrollClient({
                     <td className="px-6 py-4">
                       <p className="font-bold text-zinc-900">{emp.full_name}</p>
                       <p className="text-xs text-zinc-500 font-medium">{emp.role}</p>
+                      {payrollRecord && (payrollRecord.paidLeaveDays > 0 || payrollRecord.unpaidLeaveDays > 0) && (
+                        <div className="mt-1">
+                          <span className="inline-flex items-center gap-1 text-[10px] font-bold text-zinc-600 bg-zinc-100 border border-zinc-200 px-1.5 py-0.5 rounded-md shadow-sm">
+                            🌴 {payrollRecord.paidLeaveDays > 0 ? `${payrollRecord.paidLeaveDays} Paid` : ''}
+                            {payrollRecord.paidLeaveDays > 0 && payrollRecord.unpaidLeaveDays > 0 ? ' | ' : ''}
+                            {payrollRecord.unpaidLeaveDays > 0 ? `${payrollRecord.unpaidLeaveDays} Unpaid` : ''} Leave{payrollRecord.paidLeaveDays + payrollRecord.unpaidLeaveDays > 1 ? 's' : ''}
+                          </span>
+                        </div>
+                      )}
                     </td>
-                    <td className="px-6 py-4 font-semibold text-zinc-600 font-tabular">{totalHours} hrs</td>
+                    <td className="px-6 py-4">
+                      <p className="font-semibold text-zinc-600 font-tabular">{totalHours} hrs</p>
+                      {payrollRecord && (payrollRecord.paidLeaveDays > 0 || payrollRecord.unpaidLeaveDays > 0) && (
+                        <p className="text-[10px] text-zinc-400 font-medium mt-0.5 font-tabular">
+                          ({payrollRecord.workedHours}h work
+                          {payrollRecord.paidLeaveDays > 0 ? ` + ${payrollRecord.paidLeaveHours}h paid` : ''})
+                        </p>
+                      )}
+                    </td>
                     <td className="px-6 py-4 font-bold text-zinc-700 font-tabular">{formatPhp(payroll.grossPay)}</td>
                     <td className="px-6 py-4 text-rose-500 font-medium font-tabular">-{formatPhp(payroll.sssDeduction)}</td>
                     <td className="px-6 py-4 text-rose-500 font-medium font-tabular">-{formatPhp(payroll.philhealthDeduction)}</td>
