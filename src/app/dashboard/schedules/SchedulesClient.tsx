@@ -2,18 +2,45 @@
 import { useState, useTransition } from "react"
 import { Calendar as CalendarIcon, Clock, MapPin, Star, UserPlus, X, Loader2 } from "lucide-react"
 import { createSchedule, toggleVipHook } from "@/app/actions/schedules"
+import { isRangeOverlapping } from "@/lib/utils"
 
-export default function SchedulesClient({ initialTechnicians, initialSchedules }: { initialTechnicians: any[], initialSchedules: any[] }) {
+export default function SchedulesClient({ 
+  initialTechnicians, 
+  initialSchedules,
+  approvedLeaves
+}: { 
+  initialTechnicians: any[], 
+  initialSchedules: any[],
+  approvedLeaves: any[]
+}) {
   const [showModal, setShowModal] = useState(false)
   const [isPending, startTransition] = useTransition()
+  
+  const [techId, setTechId] = useState("")
+  const [startTime, setStartTime] = useState("")
+  const [endTime, setEndTime] = useState("")
+  const [errorMsg, setErrorMsg] = useState("")
+
+  const handleOpenModal = () => {
+    setTechId(initialTechnicians[0]?.id || "")
+    setStartTime("")
+    setEndTime("")
+    setErrorMsg("")
+    setShowModal(true)
+  }
 
   const handleCreate = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
+    setErrorMsg("")
     const formData = new FormData(e.currentTarget)
     
     startTransition(async () => {
-      await createSchedule(formData)
-      setShowModal(false)
+      const res = await createSchedule(formData)
+      if (res?.error) {
+        setErrorMsg(res.error)
+      } else {
+        setShowModal(false)
+      }
     })
   }
 
@@ -23,6 +50,16 @@ export default function SchedulesClient({ initialTechnicians, initialSchedules }
     })
   }
 
+  const getConflictingLeave = (technicianId: string) => {
+    if (!startTime || !endTime || !technicianId) return null
+    return approvedLeaves.find(leave => 
+      leave.technician_id === technicianId &&
+      isRangeOverlapping(startTime, endTime, leave.start_date, leave.end_date)
+    )
+  }
+
+  const currentConflict = getConflictingLeave(techId)
+
   return (
     <div className="p-8 pb-20">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
@@ -31,7 +68,7 @@ export default function SchedulesClient({ initialTechnicians, initialSchedules }
           <p className="text-zinc-500 mt-1">Manage technician schedules and insert live VIP hooks.</p>
         </div>
         <button 
-          onClick={() => setShowModal(true)}
+          onClick={handleOpenModal}
           className="bg-zinc-900 hover:bg-zinc-800 text-white px-5 py-2.5 rounded-lg font-medium shadow-md transition-all flex items-center gap-2"
         >
           <CalendarIcon className="w-4 h-4" /> New Schedule
@@ -156,8 +193,24 @@ export default function SchedulesClient({ initialTechnicians, initialSchedules }
             <form onSubmit={handleCreate} className="p-6 space-y-4 bg-zinc-50">
               <div>
                 <label className="block text-sm font-medium text-zinc-700 mb-1">Assign Technician</label>
-                <select name="technicianId" required className="w-full px-4 py-2.5 border border-zinc-300 rounded-lg bg-white focus:ring-2 focus:ring-emerald-500 outline-none">
-                  {initialTechnicians.map(t => <option key={t.id} value={t.id}>{t.full_name}</option>)}
+                <select 
+                  name="technicianId" 
+                  required 
+                  value={techId}
+                  onChange={(e) => setTechId(e.target.value)}
+                  className="w-full px-4 py-2.5 border border-zinc-300 rounded-lg bg-white focus:ring-2 focus:ring-emerald-500 outline-none"
+                >
+                  {initialTechnicians.map(t => {
+                    const hasConflict = approvedLeaves.some(leave => 
+                      leave.technician_id === t.id &&
+                      isRangeOverlapping(startTime, endTime, leave.start_date, leave.end_date)
+                    )
+                    return (
+                      <option key={t.id} value={t.id}>
+                        {t.full_name} {hasConflict ? "⚠️ (On Leave)" : ""}
+                      </option>
+                    )
+                  })}
                 </select>
               </div>
 
@@ -174,11 +227,25 @@ export default function SchedulesClient({ initialTechnicians, initialSchedules }
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-zinc-700 mb-1">Start Time</label>
-                  <input name="startTime" required type="datetime-local" className="w-full px-4 py-2.5 border border-zinc-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" />
+                  <input 
+                    name="startTime" 
+                    required 
+                    type="datetime-local" 
+                    value={startTime}
+                    onChange={(e) => setStartTime(e.target.value)}
+                    className="w-full px-4 py-2.5 border border-zinc-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" 
+                  />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-zinc-700 mb-1">End Time</label>
-                  <input name="endTime" required type="datetime-local" className="w-full px-4 py-2.5 border border-zinc-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" />
+                  <input 
+                    name="endTime" 
+                    required 
+                    type="datetime-local" 
+                    value={endTime}
+                    onChange={(e) => setEndTime(e.target.value)}
+                    className="w-full px-4 py-2.5 border border-zinc-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" 
+                  />
                 </div>
               </div>
 
@@ -189,9 +256,25 @@ export default function SchedulesClient({ initialTechnicians, initialSchedules }
                 </label>
               </div>
 
+              {currentConflict && (
+                <div className="p-3.5 bg-amber-50 border border-amber-200 text-amber-800 rounded-xl text-xs font-bold leading-relaxed">
+                  ⚠️ <strong>Conflict Warning:</strong> Selected technician has an approved leave ({currentConflict.leave_type}) from {new Date(currentConflict.start_date).toLocaleDateString()} to {new Date(currentConflict.end_date).toLocaleDateString()}. Please select another technician or change the schedule timeframe.
+                </div>
+              )}
+
+              {errorMsg && (
+                <div className="p-3.5 bg-rose-50 border border-rose-200 text-rose-800 rounded-xl text-xs font-bold leading-relaxed">
+                  ❌ <strong>Submission Failed:</strong> {errorMsg}
+                </div>
+              )}
+
               <div className="flex justify-end gap-3 pt-4">
                 <button type="button" onClick={() => setShowModal(false)} className="px-5 py-2.5 font-medium text-zinc-600 hover:text-zinc-900">Cancel</button>
-                <button type="submit" disabled={isPending} className="bg-zinc-900 hover:bg-zinc-800 text-white px-6 py-2.5 rounded-lg font-medium shadow-md flex items-center gap-2">
+                <button 
+                  type="submit" 
+                  disabled={isPending || !!currentConflict} 
+                  className="bg-zinc-900 hover:bg-zinc-800 disabled:opacity-50 text-white px-6 py-2.5 rounded-lg font-medium shadow-md flex items-center gap-2 cursor-pointer"
+                >
                   {isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : "Save Schedule"}
                 </button>
               </div>
