@@ -61,8 +61,11 @@ export default function GeofenceMap({ latitude, longitude, radius, onLocationCha
     [onLocationChange]
   )
 
-  const handleSearch = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleSearch = async (e?: React.FormEvent | React.KeyboardEvent) => {
+    if (e) {
+      e.preventDefault()
+      e.stopPropagation()
+    }
     if (!searchQuery.trim()) return
 
     setIsSearching(true)
@@ -91,28 +94,38 @@ export default function GeofenceMap({ latitude, longitude, radius, onLocationCha
     }
   }
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      e.preventDefault()
+      e.stopPropagation()
+      handleSearch()
+    }
+  }
+
   return (
     <div className="space-y-3">
       {/* Map Search input overlay */}
-      <form onSubmit={handleSearch} className="flex gap-2">
+      <div className="flex gap-2">
         <div className="relative flex-1">
           <input
             type="text"
             placeholder="Search address or branch (e.g. Pacita Branch)..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
+            onKeyDown={handleKeyDown}
             className="w-full pl-9 pr-3 py-1.5 border border-zinc-300 rounded-lg text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none"
           />
           <Search className="w-3.5 h-3.5 text-zinc-400 absolute left-3 top-2.5" />
         </div>
         <button
-          type="submit"
+          type="button"
+          onClick={() => handleSearch()}
           disabled={isSearching}
           className="bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-xs font-bold px-3 py-1.5 rounded-lg flex items-center gap-1 cursor-pointer transition-colors animate-none"
         >
           {isSearching ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Search"}
         </button>
-      </form>
+      </div>
 
       {searchError && (
         <p className="text-[10px] text-red-600 font-medium">{searchError}</p>
