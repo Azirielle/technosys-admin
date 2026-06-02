@@ -73,13 +73,13 @@ export async function getTicketComments(ticketId: string) {
   }
 }
 
-// 4. Fetch list of admins/staff
+// 4. Fetch list of admins/staff (operational staff responsible for handling tickets)
 export async function getStaffList() {
   try {
     const { data, error } = await supabaseAdmin
       .from('profiles')
       .select('id, full_name, role')
-      .neq('role', 'technician')
+      .in('role', ['admin', 'coordinator', 'supervisor', 'hr', 'accountant'])
       .order('full_name', { ascending: true })
 
     if (error) throw error
