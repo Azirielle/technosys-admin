@@ -105,7 +105,39 @@ export async function updateLeaveStatus(leaveId: string, status: 'approved' | 'r
 
     if (error) throw error
 
+    // If approved, automatically unassign technician from conflicting future schedules
+    if (status === 'approved') {
+      const { data: leave, error: getLeaveError } = await supabaseAdmin
+        .from('leaves')
+        .select('technician_id, start_date, end_date')
+        .eq('id', leaveId)
+        .single()
+
+      if (getLeaveError) {
+        console.error(`Failed to fetch details for leave request ${leaveId} for auto-unassignment:`, getLeaveError)
+      } else if (leave) {
+        const startISO = `${leave.start_date}T00:00:00.000Z`
+        const endISO = `${leave.end_date}T23:59:59.999Z`
+        const nowISO = new Date().toISOString()
+
+        const { error: reassignError } = await supabaseAdmin
+          .from('schedules')
+          .update({ technician_id: null })
+          .eq('technician_id', leave.technician_id)
+          .gte('start_time', startISO)
+          .lte('start_time', endISO)
+          .gte('start_time', nowISO) // crucial amendment: protect historical data
+
+        if (reassignError) {
+          console.error(`Failed to automatically unassign technician from conflicting schedules:`, reassignError)
+        } else {
+          console.log(`Successfully unassigned technician ${leave.technician_id} from conflicting schedules during approved leave period ${leave.start_date} to ${leave.end_date}`)
+        }
+      }
+    }
+
     revalidatePath("/dashboard/leaves")
+    revalidatePath("/dashboard/schedules")
     revalidatePath("/dashboard")
     return { success: true }
   } catch (err: any) {
