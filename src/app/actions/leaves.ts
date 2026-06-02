@@ -8,7 +8,7 @@ export interface LeaveRequest {
   technician_id: string
   start_date: string
   end_date: string
-  leave_type: 'sick' | 'vacation' | 'emergency' | 'unpaid'
+  leave_type: 'sick' | 'vacation' | 'wedding' | 'paternal' | 'maternal' | 'emergency' | 'unpaid'
   reason: string
   status: 'pending' | 'approved' | 'rejected'
   created_at: string
@@ -80,7 +80,7 @@ export async function updateLeaveStatus(leaveId: string, status: 'approved' | 'r
       return { error: "Authentication required." }
     }
 
-    // Get current user's profile to verify they are an admin or super_admin
+    // Get current user's profile to verify they are authorized
     const { data: profile, error: profileErr } = await supabaseAdmin
       .from('profiles')
       .select('role')
@@ -91,8 +91,8 @@ export async function updateLeaveStatus(leaveId: string, status: 'approved' | 'r
       return { error: "Failed to verify admin status." }
     }
 
-    if (!['admin', 'super_admin'].includes(profile.role)) {
-      return { error: "Unauthorized. Admin privileges required to update leaves." }
+    if (!['admin', 'super_admin', 'hr', 'ceo', 'coo'].includes(profile.role)) {
+      return { error: "Unauthorized. Leave manager privileges required to update leaves." }
     }
 
     const { error } = await supabaseAdmin
