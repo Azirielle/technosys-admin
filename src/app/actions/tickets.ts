@@ -73,17 +73,19 @@ export async function getTicketComments(ticketId: string) {
   }
 }
 
-// 4. Fetch list of admins/staff
+// 4. Fetch list of admins/staff (operational staff responsible for handling tickets)
 export async function getStaffList() {
   try {
     const { data, error } = await supabaseAdmin
       .from('profiles')
       .select('id, full_name, role')
-      .neq('role', 'technician')
       .order('full_name', { ascending: true })
 
     if (error) throw error
-    return data || []
+    
+    // Filter operational roles in memory to avoid SQL enum validation errors if DB migration is not yet run
+    const allowedRoles = ['admin', 'coordinator', 'supervisor', 'hr', 'accountant']
+    return (data || []).filter(p => allowedRoles.includes(p.role))
   } catch (err: any) {
     console.error("Failed to fetch staff list:", err.message || err)
     return []

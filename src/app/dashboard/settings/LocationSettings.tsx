@@ -3,6 +3,9 @@
 import { useState, useTransition } from "react"
 import { MapPin, Navigation, Target, AlertCircle, CheckCircle2, Plus, Power, Trash2, ToggleLeft, ToggleRight } from "lucide-react"
 import { addOfficeLocation, toggleLocationActive } from "@/app/actions/geofence"
+import dynamic from "next/dynamic"
+
+const GeofenceMap = dynamic(() => import("./GeofenceMap"), { ssr: false })
 
 interface OfficeLocation {
   id: string
@@ -27,11 +30,18 @@ export default function LocationSettings({ initialLocations, userRole }: Locatio
 
   // Form states for adding a new location
   const [name, setName] = useState("")
-  const [latitude, setLatitude] = useState("")
-  const [longitude, setLongitude] = useState("")
+  const [latitude, setLatitude] = useState(initialLocations[0]?.latitude?.toString() || "14.5995")
+  const [longitude, setLongitude] = useState(initialLocations[0]?.longitude?.toString() || "120.9842")
   const [radius, setRadius] = useState("50")
 
   const isSuperAdmin = userRole === "super_admin"
+
+  const handleSelectLocation = (loc: OfficeLocation) => {
+    setName(loc.name)
+    setLatitude(loc.latitude.toString())
+    setLongitude(loc.longitude.toString())
+    setRadius(loc.radius_meters.toString())
+  }
 
   const handleAddLocation = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -46,11 +56,8 @@ export default function LocationSettings({ initialLocations, userRole }: Locatio
         setErrorMsg(result.error)
       } else {
         setSuccessMsg(`Geofence location "${name}" added successfully.`)
-        // Clear fields
+        // Clear name
         setName("")
-        setLatitude("")
-        setLongitude("")
-        setRadius("50")
         
         // Refresh local list (we can reload the window to keep in sync with server revalidation)
         window.location.reload()
@@ -128,37 +135,41 @@ export default function LocationSettings({ initialLocations, userRole }: Locatio
                 />
               </div>
 
+              {/* Interactive Leaflet Map Editor */}
+              <div>
+                <label className="block text-xs font-bold text-zinc-700 mb-1.5 flex items-center gap-1">
+                  <MapPin className="w-3.5 h-3.5 text-zinc-400" /> Interactive Geofence Editor
+                </label>
+                <GeofenceMap
+                  latitude={parseFloat(latitude) || 14.5995}
+                  longitude={parseFloat(longitude) || 120.9842}
+                  radius={parseFloat(radius) || 50}
+                  onLocationChange={(lat, lng) => {
+                    setLatitude(lat.toString())
+                    setLongitude(lng.toString())
+                  }}
+                />
+              </div>
+
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-bold text-zinc-700 mb-1.5 flex items-center gap-1">
                     <Navigation className="w-3.5 h-3.5 text-zinc-400" /> Latitude
                   </label>
-                  <input
-                    type="number"
-                    name="latitude"
-                    step="any"
-                    value={latitude}
-                    onChange={e => setLatitude(e.target.value)}
-                    placeholder="e.g. 14.6760"
-                    required
-                    className="w-full px-3 py-2 border border-zinc-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none"
-                  />
+                  <div className="w-full px-3 py-2 bg-zinc-50 border border-zinc-200 rounded-lg text-xs font-mono text-zinc-500">
+                    {latitude ? parseFloat(latitude).toFixed(6) : "14.599500"}
+                  </div>
+                  <input type="hidden" name="latitude" value={latitude} />
                 </div>
 
                 <div>
                   <label className="block text-xs font-bold text-zinc-700 mb-1.5 flex items-center gap-1">
                     <Navigation className="w-3.5 h-3.5 text-zinc-400" /> Longitude
                   </label>
-                  <input
-                    type="number"
-                    name="longitude"
-                    step="any"
-                    value={longitude}
-                    onChange={e => setLongitude(e.target.value)}
-                    placeholder="e.g. 121.0437"
-                    required
-                    className="w-full px-3 py-2 border border-zinc-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none"
-                  />
+                  <div className="w-full px-3 py-2 bg-zinc-50 border border-zinc-200 rounded-lg text-xs font-mono text-zinc-500">
+                    {longitude ? parseFloat(longitude).toFixed(6) : "120.984200"}
+                  </div>
+                  <input type="hidden" name="longitude" value={longitude} />
                 </div>
               </div>
 
@@ -222,7 +233,11 @@ export default function LocationSettings({ initialLocations, userRole }: Locatio
                 </thead>
                 <tbody className="divide-y divide-zinc-100 text-sm">
                   {locations.map(loc => (
-                    <tr key={loc.id} className="hover:bg-slate-50/50 transition-colors">
+                    <tr 
+                      key={loc.id} 
+                      onClick={() => handleSelectLocation(loc)}
+                      className="hover:bg-slate-50/50 transition-colors cursor-pointer"
+                    >
                       <td className="p-4 font-bold text-zinc-800">{loc.name}</td>
                       <td className="p-4 font-mono text-xs text-zinc-500">
                         {loc.latitude.toFixed(6)}, {loc.longitude.toFixed(6)}

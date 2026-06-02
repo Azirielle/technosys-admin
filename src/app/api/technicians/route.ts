@@ -3,7 +3,7 @@ import { supabaseAdmin } from '@/lib/supabase/admin';
 
 export async function POST(request: Request) {
   try {
-    const { email, password, fullName, baseSalary } = await request.json();
+    const { email, password, fullName, baseSalary, role } = await request.json();
 
     let authUser = null;
     let createdNewAuth = false;
@@ -47,7 +47,7 @@ export async function POST(request: Request) {
     const { error: profileError } = await supabaseAdmin.from('profiles').upsert({
       id: authUser.id,
       full_name: fullName,
-      role: 'technician',
+      role: role || 'technician',
       base_salary: baseSalary
     });
 
