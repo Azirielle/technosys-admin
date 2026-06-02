@@ -1,11 +1,38 @@
 "use client"
 
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { LayoutDashboard, Users, Calendar, DollarSign, Settings, LogOut, MessageSquare, Package, ClipboardList } from 'lucide-react'
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
+  const [profile, setProfile] = useState<{ full_name: string; role: string } | null>(null)
+
+  useEffect(() => {
+    async function loadProfile() {
+      try {
+        const { createClient } = await import('@/lib/supabase/client')
+        const supabase = createClient()
+        
+        const { data: { user } } = await supabase.auth.getUser()
+        if (user) {
+          const { data } = await supabase
+            .from('profiles')
+            .select('full_name, role')
+            .eq('id', user.id)
+            .single()
+          
+          if (data) {
+            setProfile(data)
+          }
+        }
+      } catch (e) {
+        console.error("Error loading user profile:", e)
+      }
+    }
+    loadProfile()
+  }, [])
 
   const navItems = [
     { href: '/dashboard', label: 'Overview', icon: LayoutDashboard, exact: true },
@@ -71,9 +98,31 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </Link>
         </nav>
 
-        <div className="p-4 border-t border-slate-100">
+        <div className="p-4 border-t border-slate-100 space-y-4">
+          {profile && (
+            <div className="flex items-center gap-3 px-3 py-1.5 bg-zinc-50 rounded-xl border border-zinc-100">
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-extrabold text-xs shadow-sm shrink-0 ${
+                profile.role === "super_admin" ? "bg-gradient-to-tr from-purple-600 to-indigo-600" : "bg-gradient-to-tr from-zinc-700 to-zinc-900"
+              }`}>
+                {profile.full_name.charAt(0).toUpperCase()}
+              </div>
+              <div className="min-w-0">
+                <p className="text-xs font-bold text-slate-900 truncate">{profile.full_name}</p>
+                <div className="mt-0.5">
+                  <span className={`text-[8px] px-1.5 py-0.5 rounded-full border font-extrabold uppercase tracking-wider ${
+                    profile.role === "super_admin" 
+                      ? "bg-indigo-50 border-indigo-100 text-indigo-700" 
+                      : "bg-zinc-100 border-zinc-200 text-zinc-600"
+                  }`}>
+                    {profile.role === "super_admin" ? "Super Admin" : "Admin"}
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
+          
           <form action="/auth/signout" method="post">
-             <button type="submit" className="flex items-center gap-3 px-3 py-2 w-full rounded-md text-slate-500 hover:text-red-600 hover:bg-red-50 transition-colors group cursor-pointer">
+             <button type="submit" className="flex items-center gap-3 px-3 py-2 w-full rounded-md text-slate-500 hover:text-red-600 hover:bg-red-50 transition-colors group cursor-pointer text-sm">
               <LogOut className="w-5 h-5 text-slate-400 group-hover:text-red-600 transition-colors" /> Sign Out
             </button>
           </form>
@@ -85,11 +134,24 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <header className="h-16 bg-white border-b border-zinc-200 flex items-center justify-end px-8 z-10 shadow-sm">
           <div className="flex items-center gap-4">
              <div className="text-right hidden md:block">
-               <p className="text-sm font-medium text-zinc-900">Administrator</p>
-               <p className="text-xs text-zinc-500">System Access</p>
+               <div className="flex items-center gap-2">
+                 <p className="text-sm font-bold text-zinc-900">{profile ? profile.full_name : "Loading..."}</p>
+                 {profile && (
+                   <span className={`text-[8px] px-1.5 py-0.5 rounded-full border font-extrabold uppercase tracking-wider ${
+                     profile.role === "super_admin" 
+                       ? "bg-indigo-50 border-indigo-100 text-indigo-700" 
+                       : "bg-zinc-100 border-zinc-200 text-zinc-600"
+                   }`}>
+                     {profile.role === "super_admin" ? "Super Admin" : "Admin"}
+                   </span>
+                 )}
+               </div>
+               <p className="text-[10px] text-zinc-500 font-medium mt-0.5">System Access</p>
              </div>
-             <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-emerald-500 to-cyan-500 flex items-center justify-center text-white font-bold shadow-md ring-2 ring-white">
-               A
+             <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-extrabold shadow-md ring-2 ring-white ${
+               profile?.role === "super_admin" ? "bg-gradient-to-tr from-purple-600 to-indigo-600" : "bg-gradient-to-tr from-emerald-500 to-cyan-500"
+             }`}>
+               {profile ? profile.full_name.charAt(0).toUpperCase() : "A"}
              </div>
           </div>
         </header>
