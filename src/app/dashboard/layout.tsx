@@ -4,10 +4,12 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { LayoutDashboard, Users, Calendar, DollarSign, Settings, LogOut, MessageSquare, Package, ClipboardList } from 'lucide-react'
+import { createClient } from '@/lib/supabase/client'
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const [profile, setProfile] = useState<{ full_name: string; role: string } | null>(null)
+  const [pendingLeavesCount, setPendingLeavesCount] = useState<number>(0)
 
   useEffect(() => {
     async function loadProfile() {
@@ -32,6 +34,38 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       }
     }
     loadProfile()
+
+    // Setup pending leaves count loading
+    const supabase = createClient()
+
+    const fetchPendingLeavesCount = async () => {
+      const { count, error } = await supabase
+        .from('leaves')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'pending')
+
+      if (!error && count !== null) {
+        setPendingLeavesCount(count)
+      }
+    }
+
+    fetchPendingLeavesCount()
+
+    // Realtime channel subscription to update the badge count automatically
+    const channel = supabase
+      .channel('leaves-pending-changes')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'leaves' },
+        () => {
+          fetchPendingLeavesCount()
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
   }, [])
 
   const navItems = [
@@ -67,18 +101,26 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           {navItems.map((item) => {
             const active = isActive(item)
             const Icon = item.icon
+            const isLeavesTab = item.href === '/dashboard/leaves'
             return (
               <Link
                 key={item.href}
                 href={item.href}
-                className={`flex items-center gap-3 px-3 py-2 rounded-md transition-all duration-200 group ${
+                className={`flex items-center justify-between px-3 py-2 rounded-md transition-all duration-200 group ${
                   active
                     ? 'bg-emerald-50 text-emerald-700 font-medium'
                     : 'text-slate-500 hover:text-emerald-700 hover:bg-slate-50'
                 }`}
               >
-                <Icon className={`w-5 h-5 transition-colors ${active ? 'text-emerald-600' : 'text-slate-400 group-hover:text-emerald-600'}`} />
-                {item.label}
+                <div className="flex items-center gap-3">
+                  <Icon className={`w-5 h-5 transition-colors ${active ? 'text-emerald-600' : 'text-slate-400 group-hover:text-emerald-600'}`} />
+                  <span>{item.label}</span>
+                </div>
+                {isLeavesTab && pendingLeavesCount > 0 && (
+                  <span className="bg-rose-500 text-white text-[10px] font-extrabold px-1.5 py-0.5 rounded-full shadow-sm min-w-[18px] text-center animate-pulse">
+                    {pendingLeavesCount}
+                  </span>
+                )}
               </Link>
             )
           })}
