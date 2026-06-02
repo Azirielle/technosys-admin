@@ -3,7 +3,20 @@
 import { useState, useEffect, useMemo, useRef } from "react"
 import { MapContainer, TileLayer, Marker, Circle, useMap, useMapEvents } from "react-leaflet"
 import L from "leaflet"
-import { Search, Loader2 } from "lucide-react"
+import { Search, Loader2, Maximize2, Minimize2 } from "lucide-react"
+
+// Subcomponent to trigger leaflet size recalculation when resizing or toggling fullscreen
+function MapResizeHandler({ isFullscreen }: { isFullscreen: boolean }) {
+  const map = useMap()
+  useEffect(() => {
+    map.invalidateSize()
+    const timer = setTimeout(() => {
+      map.invalidateSize()
+    }, 200)
+    return () => clearTimeout(timer)
+  }, [isFullscreen, map])
+  return null
+}
 
 // Fix default Leaflet icon paths
 const markerIcon = L.icon({
@@ -41,6 +54,7 @@ function MapEventsHandler({ onMapClick }: { onMapClick: (lat: number, lng: numbe
 
 export default function GeofenceMap({ latitude, longitude, radius, onLocationChange }: GeofenceMapProps) {
   const [searchQuery, setSearchQuery] = useState("")
+  const [isFullscreen, setIsFullscreen] = useState(false)
   const [isSearching, setIsSearching] = useState(false)
   const [searchError, setSearchError] = useState<string | null>(null)
   
@@ -103,9 +117,27 @@ export default function GeofenceMap({ latitude, longitude, radius, onLocationCha
   }
 
   return (
-    <div className="space-y-3">
+    <div className={isFullscreen ? "fixed inset-0 z-[9999] bg-white flex flex-col p-4 md:p-6 space-y-3 overflow-hidden animate-in fade-in duration-200" : "space-y-3"}>
+      {/* Header for Full Screen Mode */}
+      {isFullscreen && (
+        <div className="flex justify-between items-center bg-zinc-50 border border-zinc-200 rounded-xl p-3 shadow-sm shrink-0">
+          <div>
+            <h3 className="text-sm font-bold text-zinc-900">Geofence Interactive Map (Full Screen)</h3>
+            <p className="text-[10px] text-zinc-500 mt-0.5">Search location, drag the marker pin, or double click the map to position coordinates.</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setIsFullscreen(false)}
+            className="bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-bold px-3 py-2 rounded-lg flex items-center gap-1.5 transition-all cursor-pointer"
+          >
+            <Minimize2 className="w-3.5 h-3.5" />
+            Exit Full Screen
+          </button>
+        </div>
+      )}
+
       {/* Map Search input overlay */}
-      <div className="flex gap-2">
+      <div className="flex gap-2 shrink-0">
         <div className="relative flex-1">
           <input
             type="text"
@@ -128,17 +160,18 @@ export default function GeofenceMap({ latitude, longitude, radius, onLocationCha
       </div>
 
       {searchError && (
-        <p className="text-[10px] text-red-600 font-medium">{searchError}</p>
+        <p className="text-[10px] text-red-600 font-medium shrink-0">{searchError}</p>
       )}
 
       {/* Actual Map Panel */}
-      <div className="h-[280px] w-full rounded-lg border border-zinc-200 overflow-hidden relative z-10">
+      <div className={`w-full rounded-lg border border-zinc-200 overflow-hidden relative z-10 ${isFullscreen ? "flex-1 min-h-0" : "h-[280px]"}`}>
         <MapContainer
           center={position}
           zoom={15}
           style={{ height: "100%", width: "100%" }}
         >
           <ChangeMapView center={position} />
+          <MapResizeHandler isFullscreen={isFullscreen} />
           <TileLayer
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -162,8 +195,18 @@ export default function GeofenceMap({ latitude, longitude, radius, onLocationCha
             }}
           />
         </MapContainer>
+
+        {/* Toggle Full Screen Button Overlay on Map */}
+        <button
+          type="button"
+          onClick={() => setIsFullscreen(!isFullscreen)}
+          className="absolute top-3 right-3 z-[1000] bg-white border border-zinc-200 hover:bg-zinc-50 text-zinc-700 p-2 rounded-lg shadow-md transition-all hover:scale-105 active:scale-95 cursor-pointer flex items-center justify-center"
+          title={isFullscreen ? "Exit Full Screen" : "Enter Full Screen"}
+        >
+          {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+        </button>
       </div>
-      <p className="text-[10px] text-zinc-400 italic text-center">
+      <p className="text-[10px] text-zinc-400 italic text-center shrink-0">
         💡 Drag the pin or click on the map to set geofence coordinates.
       </p>
     </div>
