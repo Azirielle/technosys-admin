@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo, useRef } from "react"
 import { MapContainer, TileLayer, Marker, Circle, useMap, useMapEvents } from "react-leaflet"
 import L from "leaflet"
-import { Search, Loader2, Maximize2, Minimize2 } from "lucide-react"
+import { Search, Loader2, Maximize2, Minimize2, MapPin } from "lucide-react"
 
 // Subcomponent to trigger leaflet size recalculation when resizing or toggling fullscreen
 function MapResizeHandler({ isFullscreen }: { isFullscreen: boolean }) {
@@ -55,8 +55,26 @@ function MapEventsHandler({ onMapClick }: { onMapClick: (lat: number, lng: numbe
 export default function GeofenceMap({ latitude, longitude, radius, onLocationChange }: GeofenceMapProps) {
   const [searchQuery, setSearchQuery] = useState("")
   const [isFullscreen, setIsFullscreen] = useState(false)
+  const [isClosing, setIsClosing] = useState(false)
+  const [isAnimatingIn, setIsAnimatingIn] = useState(false)
   const [isSearching, setIsSearching] = useState(false)
   const [searchError, setSearchError] = useState<string | null>(null)
+
+  const enterFullscreen = () => {
+    setIsFullscreen(true)
+    setIsAnimatingIn(true)
+    setTimeout(() => {
+      setIsAnimatingIn(false)
+    }, 20)
+  }
+
+  const exitFullscreen = () => {
+    setIsClosing(true)
+    setTimeout(() => {
+      setIsFullscreen(false)
+      setIsClosing(false)
+    }, 200)
+  }
   
   const markerRef = useRef<L.Marker>(null)
 
@@ -117,47 +135,83 @@ export default function GeofenceMap({ latitude, longitude, radius, onLocationCha
   }
 
   return (
-    <div className={isFullscreen ? "fixed inset-0 z-[9999] bg-white flex flex-col p-4 md:p-6 space-y-3 overflow-hidden animate-in fade-in duration-200" : "space-y-3"}>
-      {/* Header for Full Screen Mode */}
-      {isFullscreen && (
-        <div className="flex justify-between items-center bg-zinc-50 border border-zinc-200 rounded-xl p-3 shadow-sm shrink-0">
-          <div>
-            <h3 className="text-sm font-bold text-zinc-900">Geofence Interactive Map (Full Screen)</h3>
-            <p className="text-[10px] text-zinc-500 mt-0.5">Search location, drag the marker pin, or double click the map to position coordinates.</p>
+    <div 
+      className={isFullscreen ? "fixed inset-0 z-[9999] bg-zinc-50 flex flex-col p-4 md:p-6 space-y-4 overflow-hidden" : "space-y-3"}
+      style={isFullscreen ? {
+        transition: "opacity 200ms cubic-bezier(0.16, 1, 0.3, 1), transform 200ms cubic-bezier(0.16, 1, 0.3, 1)",
+        opacity: isClosing ? 0 : (isAnimatingIn ? 0 : 1),
+        transform: isClosing ? "scale(0.97)" : (isAnimatingIn ? "scale(0.97)" : "scale(1)")
+      } : undefined}
+    >
+      {/* Full Screen Mode Combined Header */}
+      {isFullscreen ? (
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white border border-zinc-200 rounded-xl p-4 shadow-sm shrink-0">
+          <div className="flex items-center gap-3">
+            <div className="bg-emerald-50 text-emerald-700 p-2 rounded-lg shrink-0">
+              <MapPin className="w-4 h-4" />
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-zinc-900">Geofence Editor</h3>
+              <p className="text-[10px] text-zinc-500">Search location or adjust pin coordinates.</p>
+            </div>
           </div>
+
+          {/* Search bar inside header */}
+          <div className="flex gap-2 max-w-md w-full">
+            <div className="relative flex-1">
+              <input
+                type="text"
+                placeholder="Search address or branch..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={handleKeyDown}
+                className="w-full pl-9 pr-3 py-1.5 border border-zinc-200 bg-zinc-50 rounded-lg text-xs focus:ring-2 focus:ring-emerald-500 focus:bg-white focus:outline-none transition-all"
+              />
+              <Search className="w-3.5 h-3.5 text-zinc-400 absolute left-3 top-2.5" />
+            </div>
+            <button
+              type="button"
+              onClick={() => handleSearch()}
+              disabled={isSearching}
+              className="bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-xs font-bold px-4 py-1.5 rounded-lg flex items-center gap-1 transition-colors shadow-sm"
+            >
+              {isSearching ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Search"}
+            </button>
+          </div>
+
           <button
             type="button"
-            onClick={() => setIsFullscreen(false)}
-            className="bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-bold px-3 py-2 rounded-lg flex items-center gap-1.5 transition-all cursor-pointer"
+            onClick={exitFullscreen}
+            className="bg-zinc-950 hover:bg-zinc-800 text-white text-xs font-bold px-3.5 py-2 rounded-lg flex items-center gap-1.5 transition-all cursor-pointer shadow-sm hover:scale-105 active:scale-95"
           >
             <Minimize2 className="w-3.5 h-3.5" />
             Exit Full Screen
           </button>
         </div>
-      )}
-
-      {/* Map Search input overlay */}
-      <div className="flex gap-2 shrink-0">
-        <div className="relative flex-1">
-          <input
-            type="text"
-            placeholder="Search address or branch (e.g. Pacita Branch)..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            onKeyDown={handleKeyDown}
-            className="w-full pl-9 pr-3 py-1.5 border border-zinc-300 rounded-lg text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none"
-          />
-          <Search className="w-3.5 h-3.5 text-zinc-400 absolute left-3 top-2.5" />
+      ) : (
+        /* Inline Search Bar */
+        <div className="flex gap-2">
+          <div className="relative flex-1">
+            <input
+              type="text"
+              placeholder="Search address or branch (e.g. Pacita Branch)..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={handleKeyDown}
+              className="w-full pl-9 pr-3 py-1.5 border border-zinc-300 rounded-lg text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+            />
+            <Search className="w-3.5 h-3.5 text-zinc-400 absolute left-3 top-2.5" />
+          </div>
+          <button
+            type="button"
+            onClick={() => handleSearch()}
+            disabled={isSearching}
+            className="bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-xs font-bold px-3 py-1.5 rounded-lg flex items-center gap-1 cursor-pointer transition-colors animate-none"
+          >
+            {isSearching ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Search"}
+          </button>
         </div>
-        <button
-          type="button"
-          onClick={() => handleSearch()}
-          disabled={isSearching}
-          className="bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-xs font-bold px-3 py-1.5 rounded-lg flex items-center gap-1 cursor-pointer transition-colors animate-none"
-        >
-          {isSearching ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Search"}
-        </button>
-      </div>
+      )}
 
       {searchError && (
         <p className="text-[10px] text-red-600 font-medium shrink-0">{searchError}</p>
@@ -199,16 +253,20 @@ export default function GeofenceMap({ latitude, longitude, radius, onLocationCha
         {/* Toggle Full Screen Button Overlay on Map */}
         <button
           type="button"
-          onClick={() => setIsFullscreen(!isFullscreen)}
+          onClick={isFullscreen ? exitFullscreen : enterFullscreen}
           className="absolute top-3 right-3 z-[1000] bg-white border border-zinc-200 hover:bg-zinc-50 text-zinc-700 p-2 rounded-lg shadow-md transition-all hover:scale-105 active:scale-95 cursor-pointer flex items-center justify-center"
           title={isFullscreen ? "Exit Full Screen" : "Enter Full Screen"}
         >
           {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
         </button>
       </div>
-      <p className="text-[10px] text-zinc-400 italic text-center shrink-0">
-        💡 Drag the pin or click on the map to set geofence coordinates.
-      </p>
+
+      {/* Centered Instructions text at the bottom */}
+      <div className="flex items-center justify-center gap-1 shrink-0">
+        <span className="text-[10px] text-zinc-400 italic text-center">
+          💡 Drag the pin or click on the map to set geofence coordinates.
+        </span>
+      </div>
     </div>
   )
 }
