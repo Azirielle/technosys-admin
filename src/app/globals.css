@@ -8,7 +8,12 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-inter);
+  --font-sans: var(--font-plus-jakarta);
+  --color-obsidian-bg: #060608;
+  --color-obsidian-card: #0a0a0f;
+  --color-obsidian-border: rgba(255, 255, 255, 0.06);
+  --color-obsidian-border-hover: rgba(255, 255, 255, 0.12);
+  --animate-radial-glow: radial-glow 16s infinite alternate ease-in-out;
   --font-mono: monospace;
   --font-heading: var(--font-sans);
   --color-sidebar-ring: var(--sidebar-ring);
@@ -132,4 +137,39 @@
 
 @utility font-tabular {
   font-variant-numeric: tabular-nums;
+}
+
+@utility transition-spring {
+  transition: all 0.6s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+@utility shadow-ambient-soft {
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.015), 
+              0 20px 50px rgba(0, 0, 0, 0.03), 
+              0 1px 3px rgba(0, 0, 0, 0.02);
+}
+
+@utility ring-bezel-white {
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.06), 
+              inset 0 1px 0 0 rgba(255, 255, 255, 0.1);
+}
+
+@utility ring-bezel-black {
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.04), 
+              inset 0 1px 0 0 rgba(255, 255, 255, 0.6);
+}
+
+@keyframes radial-glow {
+  0% {
+    transform: translate(0px, 0px) scale(1);
+    opacity: 0.5;
+  }
+  50% {
+    transform: translate(30px, -45px) scale(1.1);
+    opacity: 0.8;
+  }
+  100% {
+    transform: translate(0px, 0px) scale(1);
+    opacity: 0.5;
+  }
 }

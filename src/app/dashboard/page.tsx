@@ -62,44 +62,47 @@ export default async function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 p-8">
-      <h1 className="text-3xl font-extrabold tracking-tight text-slate-900">Command Center</h1>
-      <p className="mt-2 text-slate-500 font-medium">Welcome back, {user.email}</p>
+    <div className="min-h-screen bg-[#f8fafc] p-8 transition-spring">
+      <h1 className="text-3xl font-extrabold tracking-tight text-slate-800">Command Center</h1>
+      <p className="mt-1.5 text-sm text-slate-400 font-medium">Welcome back, <span className="text-slate-600 font-semibold">{user.email}</span></p>
 
       {dbErrorMsg && (
-        <div className="mt-6 p-4 bg-rose-50 border border-rose-200 text-rose-800 rounded-2xl text-sm font-medium">
-          ⚠️ <strong>Database Alert:</strong> {dbErrorMsg}. Please verify that all database migrations have been successfully executed.
+        <div className="mt-6 p-4.5 bg-rose-500/5 border border-rose-500/10 text-rose-800 rounded-2xl text-sm font-semibold flex items-center gap-3">
+          <span>⚠️ <strong>Database Alert:</strong> {dbErrorMsg}. Please verify that all database migrations have been successfully executed.</span>
         </div>
       )}
       
-      <div className="mt-8 grid gap-4 grid-cols-1 md:grid-cols-3">
-        <div className="p-6 bg-white rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between group hover:shadow-md transition-shadow">
+      <div className="mt-8 grid gap-6 grid-cols-1 md:grid-cols-3">
+        {/* Card 1: Employees */}
+        <div className="p-6 bg-white rounded-[2rem] border border-slate-100/50 shadow-ambient-soft flex items-center justify-between group hover:translate-y-[-2px] hover:shadow-lg hover:shadow-slate-100/50 transition-spring">
           <div>
-            <h3 className="font-semibold text-slate-500 text-sm uppercase tracking-wider">Employees</h3>
-            <p className="text-3xl font-bold text-slate-900 mt-2">{empCount}</p>
+            <h3 className="font-bold text-slate-400 text-[10px] uppercase tracking-[0.15em]">Employees</h3>
+            <p className="text-4xl font-extrabold text-slate-800 mt-2 font-tabular">{empCount}</p>
           </div>
-          <div className="w-12 h-12 rounded-xl bg-cyan-50 flex items-center justify-center text-cyan-600 group-hover:scale-110 transition-transform">
-            <Users className="w-6 h-6" />
+          <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center group-hover:scale-105 group-hover:bg-emerald-500 group-hover:text-white shadow-sm transition-spring">
+            <Users className="w-5.5 h-5.5" />
           </div>
         </div>
         
-        <div className="p-6 bg-white rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between group hover:shadow-md transition-shadow">
+        {/* Card 2: Active Schedules */}
+        <div className="p-6 bg-white rounded-[2rem] border border-slate-100/50 shadow-ambient-soft flex items-center justify-between group hover:translate-y-[-2px] hover:shadow-lg hover:shadow-slate-100/50 transition-spring">
           <div>
-            <h3 className="font-semibold text-slate-500 text-sm uppercase tracking-wider">Active Schedules</h3>
-            <p className="text-3xl font-bold text-slate-900 mt-2">{schedCount}</p>
+            <h3 className="font-bold text-slate-400 text-[10px] uppercase tracking-[0.15em]">Active Schedules</h3>
+            <p className="text-4xl font-extrabold text-slate-800 mt-2 font-tabular">{schedCount}</p>
           </div>
-          <div className="w-12 h-12 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600 group-hover:scale-110 transition-transform">
-            <Calendar className="w-6 h-6" />
+          <div className="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center group-hover:scale-105 group-hover:bg-indigo-500 group-hover:text-white shadow-sm transition-spring">
+            <Calendar className="w-5.5 h-5.5" />
           </div>
         </div>
         
-        <div className="p-6 bg-white rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between group hover:shadow-md transition-shadow">
+        {/* Card 3: Total Payslips */}
+        <div className="p-6 bg-white rounded-[2rem] border border-slate-100/50 shadow-ambient-soft flex items-center justify-between group hover:translate-y-[-2px] hover:shadow-lg hover:shadow-slate-100/50 transition-spring">
           <div>
-            <h3 className="font-semibold text-slate-500 text-sm uppercase tracking-wider">Total Payslips</h3>
-            <p className="text-3xl font-bold text-slate-900 mt-2">{payCount}</p>
+            <h3 className="font-bold text-slate-400 text-[10px] uppercase tracking-[0.15em]">Total Payslips</h3>
+            <p className="text-4xl font-extrabold text-slate-800 mt-2 font-tabular">{payCount}</p>
           </div>
-          <div className="w-12 h-12 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600 group-hover:scale-110 transition-transform">
-            <DollarSign className="w-6 h-6" />
+          <div className="w-12 h-12 rounded-2xl bg-cyan-50 text-cyan-600 flex items-center justify-center group-hover:scale-105 group-hover:bg-cyan-500 group-hover:text-white shadow-sm transition-spring">
+            <DollarSign className="w-5.5 h-5.5" />
           </div>
         </div>
       </div>
