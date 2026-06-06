@@ -1,6 +1,8 @@
 "use server"
 import { supabaseAdmin } from "@/lib/supabase/admin"
+import { createClient } from "@/lib/supabase/server"
 import { revalidatePath } from "next/cache"
+import { z } from "zod"
 
 // 1. Fetch all inventory items
 export async function getInventoryItems() {
@@ -43,6 +45,7 @@ export async function createOrUpdateInventoryItem(formData: FormData) {
     const quantity = Number(formData.get("quantity"))
     const unit = formData.get("unit")?.toString().trim() || "pcs"
     const low_stock_threshold = Number(formData.get("low_stock_threshold"))
+    const image_url = formData.get("image_url")?.toString() || null
 
     if (!name || !sku) {
       return { error: "Name and SKU are required." }
@@ -64,6 +67,7 @@ export async function createOrUpdateInventoryItem(formData: FormData) {
           quantity,
           unit,
           low_stock_threshold,
+          image_url,
           updated_at: new Date().toISOString()
         })
         .eq('id', id)
@@ -77,7 +81,8 @@ export async function createOrUpdateInventoryItem(formData: FormData) {
           sku,
           quantity,
           unit,
-          low_stock_threshold
+          low_stock_threshold,
+          image_url
         })
       dbError = error
     }
@@ -262,6 +267,89 @@ export async function createInventoryAudit(
   } catch (err: any) {
     console.error("Reconciliation audit transaction failed:", err.message)
     return { error: "Transaction aborted: " + err.message }
+  }
+}
+
+const inventoryImportSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  sku: z.string().min(1, "SKU is required").transform(val => val.toUpperCase().trim()),
+  quantity: z.preprocess((val) => Number(val), z.number().min(0, "Quantity must be at least 0")),
+  unit: z.string().optional().default("pcs"),
+  low_stock_threshold: z.preprocess((val) => val === undefined || val === "" || isNaN(Number(val)) ? 5 : Number(val), z.number().min(0, "Low stock threshold must be at least 0"))
+})
+
+export async function bulkRegisterInventory(itemsRaw: any[]) {
+  try {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return { error: "Not authenticated" }
+
+    const { data: profile } = await supabaseAdmin
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single()
+
+    if (!profile || !['super_admin', 'admin', 'ceo', 'coo', 'hr', 'coordinator', 'accountant', 'branch_manager', 'supervisor'].includes(profile.role)) {
+      return { error: "Security Restriction: You do not have permission to register inventory items." }
+    }
+
+    const results = []
+    let successCount = 0
+    let failureCount = 0
+
+    // Fetch existing inventory items to check for duplicate SKUs
+    const { data: existingItems } = await supabaseAdmin.from('inventory_items').select('sku')
+    const existingSkus = new Set((existingItems || []).map(i => i.sku.toUpperCase().trim()))
+
+    for (let index = 0; index < itemsRaw.length; index++) {
+      const row = itemsRaw[index]
+      const rowNum = index + 1
+
+      // Zod validation
+      const parseResult = inventoryImportSchema.safeParse(row)
+      if (!parseResult.success) {
+        const errors = parseResult.error.issues.map((e: any) => e.message).join(', ')
+        results.push({ rowNum, sku: row.sku || 'Unknown', success: false, error: `Validation error: ${errors}` })
+        failureCount++
+        continue
+      }
+
+      const item = parseResult.data
+
+      if (existingSkus.has(item.sku)) {
+        results.push({ rowNum, sku: item.sku, success: false, error: `Duplicate SKU: "${item.sku}" already exists in inventory.` })
+        failureCount++
+        continue
+      }
+
+      try {
+        const { error: insertError } = await supabaseAdmin.from('inventory_items').insert({
+          name: item.name,
+          sku: item.sku,
+          quantity: item.quantity,
+          unit: item.unit,
+          low_stock_threshold: item.low_stock_threshold
+        })
+
+        if (insertError) throw insertError
+
+        // Add to existingSkus to prevent duplicates within the same batch upload
+        existingSkus.add(item.sku)
+
+        results.push({ rowNum, sku: item.sku, success: true })
+        successCount++
+      } catch (err: any) {
+        results.push({ rowNum, sku: item.sku, success: false, error: err.message || "Failed to insert item." })
+        failureCount++
+      }
+    }
+
+    revalidatePath('/dashboard/inventory')
+    return { success: true, successCount, failureCount, results }
+  } catch (err: any) {
+    console.error("Bulk inventory registration failed:", err.message)
+    return { error: "Bulk registration failed: " + err.message }
   }
 }
 

@@ -9,35 +9,31 @@ export const metadata: Metadata = {
 
 export default function LoginPage() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#060608] p-4 overflow-hidden relative">
-      {/* Precision Dark Grid Pattern Background */}
-      <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:32px_32px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_50%,#000_60%,transparent_100%)] opacity-80"></div>
+    <div className="flex min-h-screen items-center justify-center bg-zinc-50 p-4 overflow-hidden relative">
+      {/* Subtle Corporate Grid Pattern Background */}
+      <div className="absolute inset-0 bg-[linear-gradient(to_right,#e2e8f0_1px,transparent_1px),linear-gradient(to_bottom,#e2e8f0_1px,transparent_1px)] bg-[size:24px_24px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)] opacity-60"></div>
       
-      {/* Cinematic, hardware-feeling radial highlights */}
-      <div className="absolute top-1/4 left-1/4 w-[400px] h-[400px] bg-emerald-500/8 rounded-full blur-[100px] animate-radial-glow"></div>
-      <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] bg-indigo-500/8 rounded-full blur-[100px] animate-radial-glow" style={{ animationDelay: '-8s' }}></div>
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-cyan-500/3 rounded-full blur-[140px]"></div>
+      {/* Decorative corporate blur highlights */}
+      <div className="absolute top-1/3 left-1/3 w-[350px] h-[350px] bg-emerald-500/5 rounded-full blur-[80px]"></div>
+      <div className="absolute bottom-1/3 right-1/3 w-[350px] h-[350px] bg-cyan-500/5 rounded-full blur-[80px]"></div>
 
       <div className="relative z-10 w-full max-w-md">
         <div className="mb-8 text-center flex flex-col items-center">
-          {/* Double-Bezel Logo Container */}
-          <div className="mb-5 bg-white/5 p-1.5 rounded-[2rem] border border-white/10 shadow-[inset_0_1px_1px_rgba(255,255,255,0.15)] flex items-center justify-center">
-            <div className="bg-[#0f0f15]/90 px-6 py-4 rounded-[calc(2rem-0.375rem)] flex items-center justify-center border border-white/5 shadow-inner">
-              <img src="/logo.png" alt="Technocycle" className="h-16 w-auto object-contain filter drop-shadow-[0_4px_12px_rgba(16,185,129,0.15)]" />
-            </div>
+          {/* Logo container */}
+          <div className="mb-4 bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-center">
+            <img src="/logo.png" alt="Technocycle" className="h-20 w-auto object-contain" />
           </div>
-          <h1 className="text-3xl font-extrabold tracking-tight text-white flex items-center gap-1.5">
-            <span className="bg-gradient-to-r from-emerald-400 to-emerald-500 bg-clip-text text-transparent">TechnoSys</span> 
-            <span className="font-light text-slate-400 text-2xl tracking-wide">HRIS</span>
+          <h1 className="text-3xl font-black tracking-tight text-slate-900 flex items-center gap-1">
+            <span className="text-emerald-600">TechnoSys</span> <span className="font-semibold text-slate-500">HRIS</span>
           </h1>
-          <p className="mt-2 text-slate-500 font-semibold text-[10px] uppercase tracking-[0.25em]">
+          <p className="mt-1 text-slate-400 font-bold text-[10px] uppercase tracking-[0.2em]">
             Enterprise Administration Console
           </p>
         </div>
         
         <Suspense fallback={
-          <div className="bg-[#0a0a0f]/60 backdrop-blur-xl border border-white/10 rounded-3xl p-8 h-64 flex items-center justify-center shadow-2xl">
-            <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
+          <div className="bg-white border border-slate-200 rounded-2xl p-8 h-64 flex items-center justify-center shadow-md">
+            <div className="w-8 h-8 border-4 border-emerald-600 border-t-transparent rounded-full animate-spin"></div>
           </div>
         }>
           <LoginForm />

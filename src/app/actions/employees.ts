@@ -2,6 +2,8 @@
 import { supabaseAdmin } from "@/lib/supabase/admin"
 import { revalidatePath } from "next/cache"
 import { createClient } from "@/lib/supabase/server"
+import { z } from "zod"
+import { logActivity } from "./activity"
 
 export interface TechnicianInfo {
   id: string
@@ -152,9 +154,15 @@ export async function createAdmin(formData: FormData) {
     const email = formData.get("email") as string
     const password = formData.get("password") as string
     const fullName = formData.get("fullName") as string
+    const role = (formData.get("role") as string) || "admin"
 
     if (!email || !password || !fullName) {
       return { error: "All fields are required." }
+    }
+
+    const allowedRoles = ['admin', 'super_admin', 'hr', 'coordinator', 'accountant', 'branch_manager', 'supervisor']
+    if (!allowedRoles.includes(role)) {
+      return { error: "Invalid administrator role selected." }
     }
 
     // A. Check if user already exists in auth
@@ -187,11 +195,11 @@ export async function createAdmin(formData: FormData) {
       createdNewAuth = true
     }
 
-    // B. Insert/restore profile with admin role
+    // B. Insert/restore profile with selected role
     const { error: profileError } = await supabaseAdmin.from('profiles').upsert({
       id: authUser.id,
       full_name: fullName,
-      role: 'admin',
+      role: role,
       base_salary: 0
     })
 
@@ -332,7 +340,7 @@ export async function getEmployeeTimeLogs(employeeId: string) {
   }
 }
 
-export async function addManualDtrLog(employeeId: string, clockIn: string, clockOut: string) {
+export async function addManualDtrLog(employeeId: string, clockIn: string, clockOut: string, justification: string) {
   try {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
@@ -360,7 +368,8 @@ export async function addManualDtrLog(employeeId: string, clockIn: string, clock
     const diffMs = timeOut.getTime() - timeIn.getTime()
     const totalHours = Number((diffMs / (1000 * 60 * 60)).toFixed(2))
 
-    const { error } = await supabaseAdmin
+    // A. Insert time log
+    const { data: newLog, error: insertError } = await supabaseAdmin
       .from('time_logs')
       .insert({
         technician_id: employeeId,
@@ -371,8 +380,29 @@ export async function addManualDtrLog(employeeId: string, clockIn: string, clock
         is_manual_entry: true,
         verified_with_machine: true
       })
+      .select()
+      .single()
 
-    if (error) throw error
+    if (insertError) throw insertError
+
+    // B. Write override history
+    const { error: historyErr } = await supabaseAdmin
+      .from('dtr_override_logs')
+      .insert({
+        modifier_id: user.id,
+        target_id: employeeId,
+        log_id: newLog.id,
+        original_time_in: null,
+        original_time_out: null,
+        new_time_in: clockIn,
+        new_time_out: clockOut,
+        justification: justification
+      })
+
+    if (historyErr) throw historyErr
+
+    // C. Log activity
+    await logActivity('insert_manual_dtr', 'employee', `Inserted manual DTR log for target "${employeeId}" (In: ${clockIn}, Out: ${clockOut})`)
 
     revalidatePath('/dashboard/employees')
     return { success: true }
@@ -381,6 +411,107 @@ export async function addManualDtrLog(employeeId: string, clockIn: string, clock
     return { error: err.message || "Failed to add manual DTR entry." }
   }
 }
+
+export async function overrideDtrLog(
+  employeeId: string,
+  logId: string,
+  newClockIn: string,
+  newClockOut: string,
+  justification: string
+) {
+  try {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return { error: "Not authenticated" }
+
+    const { data: profile } = await supabaseAdmin
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single()
+
+    if (!profile || !['super_admin', 'admin', 'ceo', 'coo', 'svp', 'branch_manager', 'supervisor', 'coordinator'].includes(profile.role)) {
+      return { error: "Security Restriction: You do not have permission to override DTR logs." }
+    }
+
+    const timeIn = new Date(newClockIn)
+    const timeOut = new Date(newClockOut)
+    if (isNaN(timeIn.getTime()) || isNaN(timeOut.getTime())) {
+      return { error: "Invalid clock-in or clock-out timestamp format." }
+    }
+    if (timeOut <= timeIn) {
+      return { error: "Clock-out timestamp must be after clock-in timestamp." }
+    }
+
+    // A. Get original times
+    const { data: origLog, error: origError } = await supabaseAdmin
+      .from('time_logs')
+      .select('*')
+      .eq('id', logId)
+      .single()
+
+    if (origError || !origLog) {
+      return { error: "Original DTR log not found." }
+    }
+
+    const diffMs = timeOut.getTime() - timeIn.getTime()
+    const totalHours = Number((diffMs / (1000 * 60 * 60)).toFixed(2))
+
+    // B. Update time_log
+    const { error: updateErr } = await supabaseAdmin
+      .from('time_logs')
+      .update({
+        app_time_in: newClockIn,
+        app_time_out: newClockOut,
+        total_hours: totalHours,
+        is_manual_entry: true
+      })
+      .eq('id', logId)
+
+    if (updateErr) throw updateErr
+
+    // C. Write override history
+    const { error: historyErr } = await supabaseAdmin
+      .from('dtr_override_logs')
+      .insert({
+        modifier_id: user.id,
+        target_id: employeeId,
+        log_id: logId,
+        original_time_in: origLog.app_time_in,
+        original_time_out: origLog.app_time_out,
+        new_time_in: newClockIn,
+        new_time_out: newClockOut,
+        justification: justification
+      })
+
+    if (historyErr) throw historyErr
+
+    // D. Log activity
+    await logActivity('override_dtr', 'employee', `Overrode DTR log for target "${employeeId}" from (In: ${origLog.app_time_in}, Out: ${origLog.app_time_out}) to (In: ${newClockIn}, Out: ${newClockOut})`)
+
+    revalidatePath('/dashboard/employees')
+    return { success: true }
+  } catch (err: any) {
+    console.error(`Failed to override DTR log:`, err.message || err)
+    return { error: err.message || "Failed to override DTR record." }
+  }
+}
+
+export async function getDtrOverrideHistories(employeeId: string) {
+  try {
+    const { data, error } = await supabaseAdmin
+      .from('dtr_override_logs')
+      .select('*, modifier:profiles!modifier_id(full_name)')
+      .eq('target_id', employeeId)
+      .order('created_at', { ascending: false })
+    if (error) throw error
+    return data || []
+  } catch (err: any) {
+    console.error("Failed to fetch DTR override histories:", err)
+    return []
+  }
+}
+
 
 // 6. Simulate a physical office biometric fingerprint scan
 export async function simulateBiometricScan(employeeId: string) {
@@ -401,6 +532,127 @@ export async function simulateBiometricScan(employeeId: string) {
   } catch (err: any) {
     console.error("Failed to simulate biometric scan:", err.message || err)
     return { error: err.message || "Failed to trigger simulated scan" }
+  }
+}
+
+// Zod validation schema for bulk import
+const employeeImportSchema = z.object({
+  fullName: z.string().min(2, "Full Name must be at least 2 characters"),
+  email: z.string().email("Invalid email address"),
+  role: z.enum(['technician', 'helper']),
+  baseSalary: z.number().min(0, "Base Salary must be at least 0"),
+  branchName: z.string().optional().nullable()
+})
+
+// Bulk Register Employees Server Action
+export async function bulkRegisterEmployees(employeesRaw: any[]) {
+  try {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return { error: "Not authenticated" }
+
+    const { data: profile } = await supabaseAdmin
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single()
+
+    if (!profile || !['super_admin', 'admin', 'ceo', 'coo', 'hr'].includes(profile.role)) {
+      return { error: "Security Restriction: You do not have permission to register employees." }
+    }
+
+    // Load office locations for mapping branch names to branch IDs
+    const { data: locations } = await supabaseAdmin.from('office_locations').select('id, name')
+    const locationMap = new Map((locations || []).map(loc => [loc.name.toLowerCase().trim(), loc.id]))
+
+    const results = []
+    let successCount = 0
+    let failureCount = 0
+
+    // Fetch list of all users once to optimize existing user check speed
+    const { data: listData, error: listError } = await supabaseAdmin.auth.admin.listUsers()
+    if (listError) throw listError
+    const allAuthUsers = listData?.users || []
+
+    for (let index = 0; index < employeesRaw.length; index++) {
+      const row = employeesRaw[index]
+      const rowNum = index + 1
+
+      // Zod validation
+      const parseResult = employeeImportSchema.safeParse(row)
+      if (!parseResult.success) {
+        const errors = parseResult.error.issues.map((e: any) => e.message).join(', ')
+        results.push({ rowNum, name: row.fullName || 'Unknown', success: false, error: `Validation error: ${errors}` })
+        failureCount++
+        continue
+      }
+
+      const emp = parseResult.data
+      const branchId = emp.branchName ? locationMap.get(emp.branchName.toLowerCase().trim()) : null
+
+      try {
+        let authUser = null
+        let createdNewAuth = false
+
+        // Check if user already exists in auth list locally
+        const existingUser = allAuthUsers.find(u => u.email?.toLowerCase() === emp.email.toLowerCase())
+
+        if (existingUser) {
+          authUser = existingUser
+          // Update password/metadata
+          const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(existingUser.id, {
+            password: 'Password123!',
+            user_metadata: { full_name: emp.fullName }
+          })
+          if (updateError) throw updateError
+        } else {
+          // Create new user
+          const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
+            email: emp.email,
+            password: 'Password123!',
+            email_confirm: true,
+            user_metadata: { full_name: emp.fullName }
+          })
+          if (authError) throw authError
+          authUser = authData.user
+          createdNewAuth = true
+        }
+
+        // Upsert profile
+        const { error: profileError } = await supabaseAdmin.from('profiles').upsert({
+          id: authUser.id,
+          full_name: emp.fullName,
+          role: emp.role,
+          base_salary: emp.baseSalary,
+          branch_id: branchId || null,
+          lifecycle_status: 'active'
+        })
+
+        if (profileError) {
+          if (createdNewAuth && authUser?.id) {
+            await supabaseAdmin.auth.admin.deleteUser(authUser.id)
+          }
+          throw profileError
+        }
+
+        // Log individual activity
+        await logActivity('register_employee', 'employee', `Registered employee "${emp.fullName}" (${emp.role}) via bulk import`)
+
+        results.push({ rowNum, name: emp.fullName, success: true })
+        successCount++
+      } catch (e: any) {
+        results.push({ rowNum, name: emp.fullName, success: false, error: e.message || 'Database error' })
+        failureCount++
+      }
+    }
+
+    revalidatePath('/dashboard/employees')
+    revalidatePath('/dashboard')
+
+    return { success: true, results, successCount, failureCount }
+  } catch (err: any) {
+    console.error("Bulk registration error:", err)
+    return { error: err.message || "Failed to process bulk registration request." }
   }
 }
 

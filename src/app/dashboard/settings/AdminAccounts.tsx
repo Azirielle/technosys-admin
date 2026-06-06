@@ -72,6 +72,16 @@ export default function AdminAccounts({ initialAdmins }: AdminAccountsProps) {
           <div className="divide-y divide-zinc-200">
             {initialAdmins.map((admin) => {
               const isSuper = admin.role === "super_admin"
+              const roleLabels: Record<string, string> = {
+                super_admin: "Super Admin",
+                admin: "Standard Admin",
+                hr: "HR Admin",
+                coordinator: "Coordinator",
+                accountant: "Accountant",
+                supervisor: "Supervisor",
+                branch_manager: "Branch Manager",
+              }
+              const displayRole = roleLabels[admin.role] || admin.role
               return (
                 <div key={admin.id} className="p-4 flex items-center justify-between hover:bg-zinc-100/50 transition-colors group">
                   <div className="flex items-center gap-3">
@@ -88,7 +98,7 @@ export default function AdminAccounts({ initialAdmins }: AdminAccountsProps) {
                             ? "bg-indigo-50 border-indigo-200 text-indigo-700" 
                             : "bg-zinc-100 border-zinc-200 text-zinc-600"
                         }`}>
-                          {isSuper ? "Super Admin" : "Admin"}
+                          {displayRole}
                         </span>
                       </div>
                       <p className="text-xs text-zinc-500 flex items-center gap-1 mt-0.5">
@@ -171,7 +181,21 @@ export default function AdminAccounts({ initialAdmins }: AdminAccountsProps) {
             <label className="block text-[10px] font-bold uppercase tracking-wider text-zinc-500 mb-1">Full Name</label>
             <div className="relative">
               <UserCheck className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
-              <input name="fullName" required type="text" className="w-full pl-9 pr-3 py-2 border border-zinc-200 rounded-lg text-xs focus:ring-2 focus:ring-indigo-500 outline-none bg-white text-zinc-800" placeholder="Operational Admin" />
+              <input name="fullName" required type="text" className="w-full pl-9 pr-3 py-2 border border-zinc-200 rounded-lg text-xs focus:ring-2 focus:ring-indigo-500 outline-none bg-white text-zinc-800" placeholder="e.g. Juan Dela Cruz" />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-[10px] font-bold uppercase tracking-wider text-zinc-500 mb-1">Administrative Role</label>
+            <div className="relative">
+              <Shield className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 pointer-events-none" />
+              <select name="role" required className="w-full pl-9 pr-3 py-2 border border-zinc-200 rounded-lg text-xs focus:ring-2 focus:ring-indigo-500 outline-none bg-white text-zinc-800 appearance-none cursor-pointer">
+                <option value="admin">Standard Admin</option>
+                <option value="hr">HR Admin</option>
+                <option value="coordinator">Coordinator</option>
+                <option value="accountant">Accountant</option>
+                <option value="super_admin">Super Admin</option>
+              </select>
             </div>
           </div>
 
@@ -195,7 +219,7 @@ export default function AdminAccounts({ initialAdmins }: AdminAccountsProps) {
             disabled={loading}
             className="w-full bg-zinc-950 hover:bg-zinc-800 disabled:opacity-50 text-white font-bold py-2 rounded-lg text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer"
           >
-            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Register Standard Admin"}
+            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Register Administrator"}
           </button>
         </form>
       </div>

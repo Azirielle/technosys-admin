@@ -1,8 +1,8 @@
 "use client"
 import { useState, useTransition } from "react"
-import { Calendar as CalendarIcon, Clock, MapPin, Star, UserPlus, X, Loader2 } from "lucide-react"
-import { createSchedule, toggleVipHook } from "@/app/actions/schedules"
-import { isRangeOverlapping } from "@/lib/utils"
+import { Calendar as CalendarIcon, Clock, MapPin, Star, UserPlus, X, Loader2, Users, User, Check, AlertCircle } from "lucide-react"
+import { createSchedule, bulkCreateSchedules, toggleVipHook } from "@/app/actions/schedules"
+import { useRouter } from "next/navigation"
 
 export default function SchedulesClient({ 
   initialTechnicians, 
@@ -13,33 +13,115 @@ export default function SchedulesClient({
   initialSchedules: any[],
   approvedLeaves: any[]
 }) {
+  const router = useRouter()
   const [showModal, setShowModal] = useState(false)
   const [isPending, startTransition] = useTransition()
   
+  // Modal toggle state
+  const [scheduleType, setScheduleType] = useState<'single' | 'bulk'>('single')
+  
+  // Single creation form states
   const [techId, setTechId] = useState("")
   const [startTime, setStartTime] = useState("")
-  const [endTime, setEndTime] = useState("")
+  const [clientName, setClientName] = useState("")
+  const [location, setLocation] = useState("")
+  const [attendanceMode, setAttendanceMode] = useState("hq")
+  const [seniorPartnerId, setSeniorPartnerId] = useState("")
+  const [isVip, setIsVip] = useState(false)
+  
+  // Bulk creation form states
+  const [selectedStaffIds, setSelectedStaffIds] = useState<string[]>([])
+  const [bulkSeniorPartnerMap, setBulkSeniorPartnerMap] = useState<Record<string, string>>({})
+  
   const [errorMsg, setErrorMsg] = useState("")
+  const [successMsg, setSuccessMsg] = useState("")
+
+  const techniciansOnly = initialTechnicians.filter(t => t.role === 'technician')
 
   const handleOpenModal = () => {
     setTechId(initialTechnicians[0]?.id || "")
     setStartTime("")
-    setEndTime("")
+    setClientName("")
+    setLocation("")
+    setAttendanceMode("hq")
+    setSeniorPartnerId("")
+    setIsVip(false)
+    setSelectedStaffIds([])
+    setBulkSeniorPartnerMap({})
     setErrorMsg("")
+    setSuccessMsg("")
     setShowModal(true)
   }
 
-  const handleCreate = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleCreateSingle = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setErrorMsg("")
-    const formData = new FormData(e.currentTarget)
+    setSuccessMsg("")
+
+    const selectedStaff = initialTechnicians.find(t => t.id === techId)
+    const isHelper = selectedStaff?.role === 'helper'
+
+    const formData = new FormData()
+    formData.append("technicianId", techId)
+    formData.append("clientName", clientName)
+    formData.append("location", location)
+    formData.append("startTime", startTime)
+    formData.append("attendanceMode", attendanceMode)
+    if (isHelper && seniorPartnerId) {
+      formData.append("seniorPartnerId", seniorPartnerId)
+    }
+    if (isVip) {
+      formData.append("isVip", "on")
+    }
     
     startTransition(async () => {
       const res = await createSchedule(formData)
       if (res?.error) {
         setErrorMsg(res.error)
       } else {
-        setShowModal(false)
+        setSuccessMsg("Schedule saved successfully!")
+        setTimeout(() => {
+          setShowModal(false)
+          router.refresh()
+        }, 1000)
+      }
+    })
+  }
+
+  const handleCreateBulk = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setErrorMsg("")
+    setSuccessMsg("")
+
+    if (selectedStaffIds.length === 0) {
+      setErrorMsg("Please select at least one staff member to dispatch.")
+      return
+    }
+
+    startTransition(async () => {
+      const res = await bulkCreateSchedules({
+        staffIds: selectedStaffIds,
+        clientName,
+        location,
+        startTime,
+        attendanceMode,
+        seniorPartnerMap: bulkSeniorPartnerMap,
+        isVip
+      })
+
+      if (res.error) {
+        setErrorMsg(res.error)
+      } else {
+        if (res.failureCount && res.failureCount > 0) {
+          const failures = res.results?.filter(r => !r.success).map(r => `${r.name}: ${r.error}`).join(", ")
+          setErrorMsg(`Partial Success: Scheduled ${res.successCount} staff. Failures: ${failures}`)
+        } else {
+          setSuccessMsg(`Successfully scheduled ${res.successCount} staff members!`)
+          setTimeout(() => {
+            setShowModal(false)
+            router.refresh()
+          }, 1000)
+        }
       }
     })
   }
@@ -47,31 +129,40 @@ export default function SchedulesClient({
   const handleToggleVip = (id: string, currentStatus: boolean) => {
     startTransition(async () => {
       await toggleVipHook(id, currentStatus)
+      router.refresh()
     })
   }
 
   const getConflictingLeave = (technicianId: string) => {
-    if (!startTime || !endTime || !technicianId) return null
+    if (!startTime || !technicianId) return null
     return approvedLeaves.find(leave => 
       leave.technician_id === technicianId &&
-      isRangeOverlapping(startTime, endTime, leave.start_date, leave.end_date)
+      new Date(startTime).getTime() >= new Date(leave.start_date).getTime() &&
+      new Date(startTime).getTime() <= new Date(leave.end_date).getTime()
     )
   }
 
-  const currentConflict = getConflictingLeave(techId)
+  const currentConflict = scheduleType === 'single' ? getConflictingLeave(techId) : null
+  const selectedStaffHasHelper = initialTechnicians.find(t => t.id === techId)?.role === 'helper'
+
+  const toggleStaffSelection = (id: string) => {
+    setSelectedStaffIds(prev => 
+      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+    )
+  }
 
   return (
-    <div className="p-8 pb-20">
+    <div className="p-8 pb-20 max-w-7xl mx-auto">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-zinc-900">Schedules & Dispatch</h1>
-          <p className="text-zinc-500 mt-1">Manage technician schedules and insert live VIP hooks.</p>
+          <p className="text-zinc-500 mt-1">Manage technician itineraries, pair helper-tech teams, and set custom DTR modes.</p>
         </div>
         <button 
           onClick={handleOpenModal}
-          className="bg-zinc-900 hover:bg-zinc-800 text-white px-5 py-2.5 rounded-lg font-medium shadow-md transition-all flex items-center gap-2"
+          className="bg-zinc-950 hover:bg-zinc-800 text-white px-5 py-2.5 rounded-xl font-bold shadow-md transition-all flex items-center gap-2 cursor-pointer active:scale-98"
         >
-          <CalendarIcon className="w-4 h-4" /> New Schedule
+          <CalendarIcon className="w-4 h-4" /> Dispatch Assignment
         </button>
       </div>
 
@@ -79,15 +170,15 @@ export default function SchedulesClient({
         
         {/* Main Schedule List */}
         <div className="lg:col-span-2 space-y-4">
-          <div className="bg-white rounded-xl border border-zinc-200 p-6 shadow-sm">
+          <div className="bg-white rounded-2xl border border-zinc-200 p-6 shadow-sm">
             <h2 className="text-lg font-bold text-zinc-900 flex items-center gap-2 mb-6">
               <CalendarIcon className="w-5 h-5 text-emerald-500" /> Active Itinerary
             </h2>
             
             <div className="space-y-4">
               {initialSchedules.length === 0 ? (
-                <div className="p-8 text-center border-2 border-dashed border-zinc-200 rounded-xl text-zinc-500">
-                  No schedules yet. Click "New Schedule" to create one.
+                <div className="p-8 text-center border border-dashed border-zinc-200 rounded-xl text-zinc-500 italic">
+                  No active dispatches. Click "Dispatch Assignment" to schedule staff.
                 </div>
               ) : (
                 initialSchedules.map(sched => (
@@ -101,48 +192,77 @@ export default function SchedulesClient({
                   >
                     {sched.is_vip_hook && (
                       <div className="absolute top-0 right-0 bg-gradient-to-r from-cyan-500 to-blue-500 text-white text-[10px] font-bold px-3 py-1.5 rounded-bl-lg uppercase tracking-wider flex items-center gap-1 shadow-sm">
-                        <Star className="w-3 h-3 fill-white" /> VIP Hook Inserted
+                        <Star className="w-3 h-3 fill-white" /> VIP Hook Active
                       </div>
                     )}
                     
                     <div className="flex justify-between items-start">
-                      <h3 className={`font-bold text-lg mb-3 ${sched.is_vip_hook ? "text-cyan-900 pr-32" : "text-zinc-800"}`}>
-                        {sched.client_name}
-                      </h3>
+                      <div>
+                        <h3 className={`font-bold text-lg ${sched.is_vip_hook ? "text-cyan-900 pr-32" : "text-zinc-800"}`}>
+                          {sched.client_name}
+                        </h3>
+                        <div className="mt-1 flex flex-wrap gap-2">
+                          <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider border ${
+                            sched.attendance_mode === 'hq' 
+                              ? 'bg-zinc-50 border-zinc-200 text-zinc-600'
+                              : sched.attendance_mode === 'direct_dispatch'
+                              ? 'bg-blue-50 border-blue-100 text-blue-700'
+                              : 'bg-amber-50 border-amber-100 text-amber-700'
+                          }`}>
+                            DTR Mode: {sched.attendance_mode === 'hq' ? 'Pacita HQ' : sched.attendance_mode === 'direct_dispatch' ? 'Direct Dispatch' : 'Out of Town'}
+                          </span>
+                        </div>
+                      </div>
                       
                       <button 
                         onClick={() => handleToggleVip(sched.id, sched.is_vip_hook)}
                         disabled={isPending}
-                        className={`text-xs font-bold px-3 py-1 rounded-full transition-colors ${
+                        className={`text-xs font-bold px-3 py-1 rounded-full transition-colors border cursor-pointer ${
                           sched.is_vip_hook 
-                            ? "bg-red-100 text-red-600 hover:bg-red-200" 
-                            : "bg-cyan-100 text-cyan-700 hover:bg-cyan-200"
+                            ? "bg-red-50 text-red-600 border-red-100 hover:bg-red-100" 
+                            : "bg-cyan-50 text-cyan-700 border-cyan-100 hover:bg-cyan-100"
                         }`}
                       >
                         {sched.is_vip_hook ? "Remove VIP" : "Make VIP"}
                       </button>
                     </div>
                     
-                    <div className="flex flex-col sm:flex-row gap-3 sm:gap-6 text-sm text-zinc-600 mb-4">
-                      <div className="flex items-center gap-2 bg-zinc-100/80 px-3 py-1.5 rounded-md">
-                        <Clock className="w-4 h-4 text-zinc-500" /> 
-                        <span className="font-medium">
-                          {new Date(sched.start_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})} - 
-                          {new Date(sched.end_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                    <div className="flex flex-col sm:flex-row gap-3 sm:gap-6 text-xs text-zinc-500 my-4">
+                      <div className="flex items-center gap-2 bg-zinc-50 px-3 py-1.5 rounded-xl border border-zinc-100">
+                        <Clock className="w-4 h-4 text-zinc-400" /> 
+                        <span className="font-semibold text-zinc-700">
+                          {new Date(sched.start_time).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                          {sched.end_time ? ` - ${new Date(sched.end_time).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}` : " (Continuous / Clock-out required)"}
                         </span>
                       </div>
-                      <div className="flex items-center gap-2 bg-zinc-100/80 px-3 py-1.5 rounded-md">
-                        <MapPin className="w-4 h-4 text-zinc-500" /> 
-                        <span className="font-medium">{sched.location}</span>
+                      <div className="flex items-center gap-2 bg-zinc-50 px-3 py-1.5 rounded-xl border border-zinc-100">
+                        <MapPin className="w-4 h-4 text-zinc-400" /> 
+                        <span className="font-semibold text-zinc-700">{sched.location}</span>
                       </div>
                     </div>
                     
-                    <div className="pt-4 border-t border-zinc-100 flex items-center gap-2 text-sm">
-                      <div className="w-6 h-6 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700 font-bold text-xs">
-                        {sched.technician?.full_name?.charAt(0) || '?'}
+                    <div className="pt-4 border-t border-zinc-150 flex flex-wrap items-center justify-between text-xs gap-3">
+                      <div className="flex items-center gap-2">
+                        <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-zinc-700 to-zinc-900 flex items-center justify-center text-white font-bold text-xs">
+                          {sched.technician?.full_name?.charAt(0) || '?'}
+                        </div>
+                        <span className="text-zinc-500">Assigned: </span>
+                        <span className="font-bold text-zinc-700">{sched.technician?.full_name || 'Unknown'}</span>
+                        <span className={`text-[9px] px-1.5 py-0.5 rounded border uppercase font-extrabold tracking-wider ${
+                          sched.technician?.role === 'helper' 
+                            ? 'bg-teal-50 border-teal-100 text-teal-700' 
+                            : 'bg-indigo-50 border-indigo-100 text-indigo-700'
+                        }`}>
+                          {sched.technician?.role || 'Technician'}
+                        </span>
                       </div>
-                      <span className="text-zinc-500">Assigned to: </span>
-                      <span className="font-semibold text-zinc-700">{sched.technician?.full_name || 'Unknown'}</span>
+
+                      {sched.senior_partner?.full_name && (
+                        <div className="flex items-center gap-1.5 bg-indigo-50/50 border border-indigo-100/60 px-2.5 py-1 rounded-xl text-indigo-950">
+                          <span className="font-bold text-[10px] uppercase">Partnered with:</span>
+                          <span className="font-bold">{sched.senior_partner.full_name}</span>
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))
@@ -151,26 +271,33 @@ export default function SchedulesClient({
           </div>
         </div>
 
-        {/* Side Panel for Technicians */}
+        {/* Side Panel for Staff List */}
         <div className="space-y-6">
-          <div className="bg-white rounded-xl border border-zinc-200 p-6 shadow-sm">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-bold text-zinc-900">Live Technicians</h2>
-            </div>
+          <div className="bg-white rounded-2xl border border-zinc-200 p-6 shadow-sm">
+            <h2 className="text-lg font-bold text-zinc-900 mb-4">Field workforce</h2>
             
-            <div className="space-y-3">
+            <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-1">
               {initialTechnicians.length === 0 ? (
-                <p className="text-sm text-zinc-500">No technicians found. Go to Employees to register one.</p>
+                <p className="text-sm text-zinc-500">No staff found. Register profiles in Employees page first.</p>
               ) : (
                 initialTechnicians.map((tech) => (
-                  <div key={tech.id} className="flex items-center gap-3 p-3 bg-zinc-50 rounded-lg border border-zinc-200">
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-zinc-200 to-zinc-300 flex items-center justify-center text-zinc-600 font-bold text-xs shadow-inner">
-                      {tech.full_name.charAt(0)}
+                  <div key={tech.id} className="flex items-center justify-between p-3 bg-zinc-50 rounded-xl border border-zinc-200">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-zinc-200 to-zinc-300 flex items-center justify-center text-zinc-600 font-bold text-xs shadow-inner">
+                        {tech.full_name.charAt(0)}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="font-bold text-zinc-900 text-sm truncate">{tech.full_name}</p>
+                        <p className="text-[10px] text-zinc-500 font-semibold">{tech.email}</p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-bold text-zinc-900 text-sm">{tech.full_name}</p>
-                      <p className="text-xs text-zinc-500 font-medium">Technician</p>
-                    </div>
+                    <span className={`text-[9px] px-2 py-0.5 rounded border font-extrabold uppercase shrink-0 ${
+                      tech.role === 'helper' 
+                        ? 'bg-teal-50 border-teal-150 text-teal-700' 
+                        : 'bg-indigo-50 border-indigo-150 text-indigo-700'
+                    }`}>
+                      {tech.role}
+                    </span>
                   </div>
                 ))
               )}
@@ -179,106 +306,271 @@ export default function SchedulesClient({
         </div>
       </div>
 
-      {/* New Schedule Modal */}
+      {/* Dispatch Modal (Dual Tab: Single / Bulk) */}
       {showModal && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden">
-            <div className="flex items-center justify-between p-6 border-b border-zinc-100">
-              <h2 className="text-xl font-bold">New Schedule</h2>
-              <button onClick={() => setShowModal(false)} className="text-zinc-400 hover:text-zinc-600">
+        <div className="fixed inset-0 bg-slate-900/40 z-50 flex items-center justify-end backdrop-blur-xs">
+          <div className="bg-white h-full w-full max-w-xl shadow-2xl flex flex-col animate-in slide-in-from-right duration-300">
+            {/* Header */}
+            <div className="p-6 border-b border-zinc-150 flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-bold text-zinc-950">Dispatch Assignment</h2>
+                <p className="text-xs text-zinc-500 mt-0.5">Deploy technicians or helper pairings to site itineraries.</p>
+              </div>
+              <button onClick={() => setShowModal(false)} className="p-2 hover:bg-zinc-100 text-zinc-500 hover:text-zinc-800 rounded-xl transition-colors">
                 <X className="w-5 h-5" />
               </button>
             </div>
-            
-            <form onSubmit={handleCreate} className="p-6 space-y-4 bg-zinc-50">
-              <div>
-                <label className="block text-sm font-medium text-zinc-700 mb-1">Assign Technician</label>
-                <select 
-                  name="technicianId" 
-                  required 
-                  value={techId}
-                  onChange={(e) => setTechId(e.target.value)}
-                  className="w-full px-4 py-2.5 border border-zinc-300 rounded-lg bg-white focus:ring-2 focus:ring-emerald-500 outline-none"
-                >
-                  {initialTechnicians.map(t => {
-                    const hasConflict = approvedLeaves.some(leave => 
-                      leave.technician_id === t.id &&
-                      isRangeOverlapping(startTime, endTime, leave.start_date, leave.end_date)
-                    )
-                    return (
-                      <option key={t.id} value={t.id}>
-                        {t.full_name} {hasConflict ? "⚠️ (On Leave)" : ""}
-                      </option>
-                    )
-                  })}
-                </select>
-              </div>
 
-              <div>
-                <label className="block text-sm font-medium text-zinc-700 mb-1">Client Name / Job Title</label>
-                <input name="clientName" required type="text" className="w-full px-4 py-2.5 border border-zinc-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" placeholder="Acme Corp Maintenance" />
-              </div>
+            {/* Form Tabs */}
+            <div className="flex border-b border-zinc-150 px-6">
+              <button 
+                type="button"
+                onClick={() => {
+                  setScheduleType('single')
+                  setErrorMsg("")
+                  setSuccessMsg("")
+                }}
+                className={`py-3 px-4 text-xs font-bold uppercase tracking-wider border-b-2 -mb-px transition-colors flex items-center gap-2 cursor-pointer ${
+                  scheduleType === 'single' ? 'border-emerald-600 text-emerald-700' : 'border-transparent text-zinc-400 hover:text-zinc-800'
+                }`}
+              >
+                <User className="w-4 h-4" /> Single Staff Dispatch
+              </button>
+              <button 
+                type="button"
+                onClick={() => {
+                  setScheduleType('bulk')
+                  setErrorMsg("")
+                  setSuccessMsg("")
+                }}
+                className={`py-3 px-4 text-xs font-bold uppercase tracking-wider border-b-2 -mb-px transition-colors flex items-center gap-2 cursor-pointer ${
+                  scheduleType === 'bulk' ? 'border-emerald-600 text-emerald-700' : 'border-transparent text-zinc-400 hover:text-zinc-800'
+                }`}
+              >
+                <Users className="w-4 h-4" /> Bulk Team Dispatch
+              </button>
+            </div>
 
-              <div>
-                <label className="block text-sm font-medium text-zinc-700 mb-1">Location</label>
-                <input name="location" required type="text" className="w-full px-4 py-2.5 border border-zinc-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" placeholder="123 Ayala Ave, Makati" />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-zinc-700 mb-1">Start Time</label>
-                  <input 
-                    name="startTime" 
-                    required 
-                    type="datetime-local" 
-                    value={startTime}
-                    onChange={(e) => setStartTime(e.target.value)}
-                    className="w-full px-4 py-2.5 border border-zinc-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" 
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-zinc-700 mb-1">End Time</label>
-                  <input 
-                    name="endTime" 
-                    required 
-                    type="datetime-local" 
-                    value={endTime}
-                    onChange={(e) => setEndTime(e.target.value)}
-                    className="w-full px-4 py-2.5 border border-zinc-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" 
-                  />
-                </div>
-              </div>
-
-              <div className="flex items-center gap-3 p-4 bg-cyan-50 border border-cyan-100 rounded-xl mt-2">
-                <input type="checkbox" name="isVip" id="isVip" className="w-5 h-5 rounded border-cyan-300 text-cyan-600 focus:ring-cyan-500" />
-                <label htmlFor="isVip" className="text-sm font-semibold text-cyan-900 cursor-pointer">
-                  Flag as VIP Hook (High Priority)
-                </label>
-              </div>
-
-              {currentConflict && (
-                <div className="p-3.5 bg-amber-50 border border-amber-200 text-amber-800 rounded-xl text-xs font-bold leading-relaxed">
-                  ⚠️ <strong>Conflict Warning:</strong> Selected technician has an approved leave ({currentConflict.leave_type}) from {new Date(currentConflict.start_date).toLocaleDateString()} to {new Date(currentConflict.end_date).toLocaleDateString()}. Please select another technician or change the schedule timeframe.
-                </div>
-              )}
-
+            {/* Scrollable Form Container */}
+            <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-zinc-50/50">
               {errorMsg && (
-                <div className="p-3.5 bg-rose-50 border border-rose-200 text-rose-800 rounded-xl text-xs font-bold leading-relaxed">
-                  ❌ <strong>Submission Failed:</strong> {errorMsg}
+                <div className="p-4 bg-rose-50 border border-rose-200 text-rose-800 rounded-xl text-xs font-semibold flex items-start gap-2.5 animate-in fade-in">
+                  <AlertCircle className="w-4.5 h-4.5 mt-0.5 shrink-0" />
+                  <div>
+                    <p className="font-bold">Dispatch Failed</p>
+                    <p className="mt-0.5">{errorMsg}</p>
+                  </div>
                 </div>
               )}
 
-              <div className="flex justify-end gap-3 pt-4">
-                <button type="button" onClick={() => setShowModal(false)} className="px-5 py-2.5 font-medium text-zinc-600 hover:text-zinc-900">Cancel</button>
-                <button 
-                  type="submit" 
-                  disabled={isPending || !!currentConflict} 
-                  className="bg-zinc-900 hover:bg-zinc-800 disabled:opacity-50 text-white px-6 py-2.5 rounded-lg font-medium shadow-md flex items-center gap-2 cursor-pointer"
-                >
-                  {isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : "Save Schedule"}
-                </button>
+              {successMsg && (
+                <div className="p-4 bg-emerald-50 border border-emerald-250 text-emerald-800 rounded-xl text-xs font-semibold flex items-start gap-2.5 animate-in fade-in">
+                  <Check className="w-4.5 h-4.5 mt-0.5 shrink-0" />
+                  <div>
+                    <p className="font-bold">Dispatch Scheduled</p>
+                    <p className="mt-0.5">{successMsg}</p>
+                  </div>
+                </div>
+              )}
+
+              {/* SHARED GENERAL JOB DETAILS */}
+              <div className="space-y-4 bg-white p-5 rounded-2xl border border-zinc-200 shadow-2xs">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-400 mb-2">Itinerary & Location Details</h3>
+                
+                <div>
+                  <label className="block text-2xs font-bold uppercase tracking-wider text-zinc-500 mb-1.5">Client Name / Job Title</label>
+                  <input 
+                    required
+                    type="text" 
+                    value={clientName}
+                    onChange={(e) => setClientName(e.target.value)}
+                    className="w-full px-3.5 py-2 border border-zinc-200 rounded-xl bg-white text-zinc-800 text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all" 
+                    placeholder="e.g. Pacita Mall Aircon Cleaning" 
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-2xs font-bold uppercase tracking-wider text-zinc-500 mb-1.5">Location / Site Address</label>
+                  <input 
+                    required
+                    type="text" 
+                    value={location}
+                    onChange={(e) => setLocation(e.target.value)}
+                    className="w-full px-3.5 py-2 border border-zinc-200 rounded-xl bg-white text-zinc-800 text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all" 
+                    placeholder="e.g. San Pedro, Laguna" 
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-2xs font-bold uppercase tracking-wider text-zinc-500 mb-1.5">Start Time</label>
+                    <input 
+                      required
+                      type="datetime-local" 
+                      value={startTime}
+                      onChange={(e) => setStartTime(e.target.value)}
+                      className="w-full px-3.5 py-2 border border-zinc-200 rounded-xl bg-white text-zinc-800 text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all" 
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-2xs font-bold uppercase tracking-wider text-zinc-500 mb-1.5">Attendance Tracking Mode</label>
+                    <select 
+                      value={attendanceMode}
+                      onChange={(e) => setAttendanceMode(e.target.value)}
+                      className="w-full px-3.5 py-2 border border-zinc-200 rounded-xl bg-white text-zinc-800 text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+                    >
+                      <option value="hq">HQ Biometric Standard (Pacita)</option>
+                      <option value="direct_dispatch">On-Site Direct Dispatch (No Bio)</option>
+                      <option value="out_of_town">Out-of-Town Mode (Continuous)</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3 p-3.5 bg-cyan-50/40 border border-cyan-150 rounded-xl">
+                  <input 
+                    type="checkbox" 
+                    id="isVip" 
+                    checked={isVip}
+                    onChange={(e) => setIsVip(e.target.checked)}
+                    className="w-5 h-5 rounded border-cyan-300 text-cyan-600 focus:ring-cyan-500 cursor-pointer" 
+                  />
+                  <label htmlFor="isVip" className="text-xs font-bold text-cyan-900 cursor-pointer select-none">
+                    Flag as VIP Hook (High Priority Dispatch)
+                  </label>
+                </div>
               </div>
-            </form>
+
+              {/* SINGLE DISPATCH TAB */}
+              {scheduleType === 'single' && (
+                <form onSubmit={handleCreateSingle} className="space-y-4 bg-white p-5 rounded-2xl border border-zinc-200 shadow-2xs">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-400 mb-2">Staff & Pairing Configuration</h3>
+                  
+                  <div>
+                    <label className="block text-2xs font-bold uppercase tracking-wider text-zinc-500 mb-1.5">Deploy Employee</label>
+                    <select 
+                      required 
+                      value={techId}
+                      onChange={(e) => {
+                        setTechId(e.target.value)
+                        setSeniorPartnerId("")
+                      }}
+                      className="w-full px-3.5 py-2 border border-zinc-200 rounded-xl bg-white text-zinc-800 text-sm focus:ring-2 focus:ring-emerald-500 outline-none"
+                    >
+                      {initialTechnicians.map(t => {
+                        const hasConflict = approvedLeaves.some(leave => 
+                          leave.technician_id === t.id &&
+                          new Date(startTime).getTime() >= new Date(leave.start_date).getTime() &&
+                          new Date(startTime).getTime() <= new Date(leave.end_date).getTime()
+                        )
+                        return (
+                          <option key={t.id} value={t.id}>
+                            {t.full_name} ({t.role}){hasConflict ? " ⚠️ (On Leave)" : ""}
+                          </option>
+                        )
+                      })}
+                    </select>
+                  </div>
+
+                  {selectedStaffHasHelper && (
+                    <div className="animate-in fade-in slide-in-from-top duration-200">
+                      <label className="block text-2xs font-bold uppercase tracking-wider text-zinc-500 mb-1.5">Assign Senior Technician Partner</label>
+                      <select 
+                        value={seniorPartnerId}
+                        onChange={(e) => setSeniorPartnerId(e.target.value)}
+                        className="w-full px-3.5 py-2 border border-zinc-250 rounded-xl bg-white text-zinc-800 text-sm focus:ring-2 focus:ring-emerald-500 outline-none"
+                      >
+                        <option value="">No Senior Partner (Independent Helper)</option>
+                        {techniciansOnly.map(tech => (
+                          <option key={tech.id} value={tech.id}>{tech.full_name}</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+
+                  {currentConflict && (
+                    <div className="p-3 bg-amber-50 border border-amber-200 text-amber-800 rounded-xl text-2xs font-semibold leading-normal flex items-start gap-2">
+                      <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                      <span>The selected worker is on approved leave during this time. Please adjust schedule or change worker.</span>
+                    </div>
+                  )}
+
+                  <button 
+                    type="submit" 
+                    disabled={isPending || !!currentConflict || !clientName.trim() || !location.trim() || !startTime}
+                    className="w-full bg-zinc-950 hover:bg-zinc-800 disabled:opacity-50 text-white py-3 rounded-xl font-bold transition-all shadow-sm flex items-center justify-center gap-2 cursor-pointer active:scale-98"
+                  >
+                    {isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : "Save Dispatch Schedule"}
+                  </button>
+                </form>
+              )}
+
+              {/* BULK DISPATCH TAB */}
+              {scheduleType === 'bulk' && (
+                <form onSubmit={handleCreateBulk} className="space-y-4 bg-white p-5 rounded-2xl border border-zinc-200 shadow-2xs">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-400 mb-2">Team Selection & Individual Pairings</h3>
+                  
+                  <div className="space-y-2 max-h-52 overflow-y-auto border border-zinc-200 rounded-xl p-3 bg-zinc-50/30 pr-1">
+                    {initialTechnicians.map((t) => {
+                      const isChecked = selectedStaffIds.includes(t.id)
+                      const isHelper = t.role === 'helper'
+                      const hasConflict = approvedLeaves.some(leave => 
+                        leave.technician_id === t.id &&
+                        new Date(startTime).getTime() >= new Date(leave.start_date).getTime() &&
+                        new Date(startTime).getTime() <= new Date(leave.end_date).getTime()
+                      )
+
+                      return (
+                        <div key={t.id} className="space-y-2 border-b border-zinc-150 pb-2 last:border-0 last:pb-0">
+                          <label className={`flex items-center gap-3 p-2 rounded-lg transition-colors select-none cursor-pointer ${
+                            hasConflict ? 'opacity-60 bg-amber-50/20' : 'hover:bg-zinc-50'
+                          }`}>
+                            <input 
+                              type="checkbox" 
+                              checked={isChecked}
+                              disabled={hasConflict}
+                              onChange={() => toggleStaffSelection(t.id)}
+                              className="w-4.5 h-4.5 rounded text-emerald-600 border-zinc-300 focus:ring-emerald-500 cursor-pointer"
+                            />
+                            <div className="min-w-0 flex-1 flex items-center justify-between text-xs font-semibold text-zinc-700">
+                              <span>{t.full_name} ({t.role}) {hasConflict ? "⚠️ (On Leave)" : ""}</span>
+                            </div>
+                          </label>
+
+                          {isChecked && isHelper && (
+                            <div className="ml-7 animate-in fade-in slide-in-from-top duration-200">
+                              <label className="block text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1">Senior Partner for {t.full_name}</label>
+                              <select 
+                                value={bulkSeniorPartnerMap[t.id] || ""}
+                                onChange={(e) => {
+                                  const val = e.target.value
+                                  setBulkSeniorPartnerMap(prev => ({ ...prev, [t.id]: val }))
+                                }}
+                                className="w-full px-2.5 py-1.5 border border-zinc-250 rounded-lg bg-white text-zinc-800 text-2xs focus:ring-2 focus:ring-emerald-500 outline-none"
+                              >
+                                <option value="">No Senior Partner (Independent Helper)</option>
+                                {techniciansOnly.map(tech => (
+                                  <option key={tech.id} value={tech.id}>{tech.full_name}</option>
+                                ))}
+                              </select>
+                            </div>
+                          )}
+                        </div>
+                      )
+                    })}
+                  </div>
+
+                  <button 
+                    type="submit" 
+                    disabled={isPending || selectedStaffIds.length === 0 || !clientName.trim() || !location.trim() || !startTime}
+                    className="w-full bg-zinc-950 hover:bg-zinc-800 disabled:opacity-50 text-white py-3 rounded-xl font-bold transition-all shadow-sm flex items-center justify-center gap-2 cursor-pointer active:scale-98"
+                  >
+                    {isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : `Dispatch Selected Team (${selectedStaffIds.length})`}
+                  </button>
+                </form>
+              )}
+
+            </div>
           </div>
         </div>
       )}
