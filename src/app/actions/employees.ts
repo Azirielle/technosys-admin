@@ -355,7 +355,7 @@ export async function addManualDtrLog(employeeId: string, clockIn: string, clock
 const employeeSchema = z.object({
   fullName: z.string().min(2, "Full name must be at least 2 characters").trim(),
   email: z.string().email("Invalid email format").trim(),
-  role: z.enum(["technician", "helper"], { errorMap: () => ({ message: "Role must be either technician or helper" }) }),
+  role: z.enum(["technician", "helper"], { message: "Role must be either technician or helper" }),
   baseSalary: z.number().nonnegative("Base salary must be non-negative"),
   password: z.string().min(6, "Password must be at least 6 characters")
 })
