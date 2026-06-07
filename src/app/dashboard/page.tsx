@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { supabaseAdmin } from '@/lib/supabase/admin'
 import { redirect } from 'next/navigation'
+import Link from 'next/link'
 import DashboardCharts from './DashboardCharts'
 import { Users, Calendar, DollarSign } from 'lucide-react'
 
@@ -68,7 +69,10 @@ export default async function DashboardPage() {
       )}
       
       <div className="mt-8 grid gap-4 grid-cols-1 md:grid-cols-3">
-        <div className="p-6 bg-white rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between group hover:shadow-md transition-shadow">
+        <Link 
+          href="/dashboard/employees"
+          className="p-6 bg-white rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between group hover:shadow-md hover:scale-[1.02] transition-all duration-200"
+        >
           <div>
             <h3 className="font-semibold text-slate-500 text-sm uppercase tracking-wider">Employees</h3>
             <p className="text-3xl font-bold text-slate-900 mt-2">{empCount}</p>
@@ -76,9 +80,12 @@ export default async function DashboardPage() {
           <div className="w-12 h-12 rounded-xl bg-cyan-50 flex items-center justify-center text-cyan-600 group-hover:scale-110 transition-transform">
             <Users className="w-6 h-6" />
           </div>
-        </div>
+        </Link>
         
-        <div className="p-6 bg-white rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between group hover:shadow-md transition-shadow">
+        <Link 
+          href="/dashboard/schedules"
+          className="p-6 bg-white rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between group hover:shadow-md hover:scale-[1.02] transition-all duration-200"
+        >
           <div>
             <h3 className="font-semibold text-slate-500 text-sm uppercase tracking-wider">Active Schedules</h3>
             <p className="text-3xl font-bold text-slate-900 mt-2">{schedCount}</p>
@@ -86,9 +93,12 @@ export default async function DashboardPage() {
           <div className="w-12 h-12 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600 group-hover:scale-110 transition-transform">
             <Calendar className="w-6 h-6" />
           </div>
-        </div>
+        </Link>
         
-        <div className="p-6 bg-white rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between group hover:shadow-md transition-shadow">
+        <Link 
+          href="/dashboard/payroll"
+          className="p-6 bg-white rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between group hover:shadow-md hover:scale-[1.02] transition-all duration-200"
+        >
           <div>
             <h3 className="font-semibold text-slate-500 text-sm uppercase tracking-wider">Total Payslips</h3>
             <p className="text-3xl font-bold text-slate-900 mt-2">{payCount}</p>
@@ -96,7 +106,7 @@ export default async function DashboardPage() {
           <div className="w-12 h-12 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600 group-hover:scale-110 transition-transform">
             <DollarSign className="w-6 h-6" />
           </div>
-        </div>
+        </Link>
       </div>
 
       <DashboardCharts payslips={payslips} recentTechnicians={recentTechs} />
