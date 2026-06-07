@@ -89,6 +89,114 @@ export default function EmployeesClient({ initialTechnicians }: EmployeesClientP
     setRegisterBaseSalary(e.target.value)
   }
 
+  // CSV Import States
+  const [isImportDrawerOpen, setIsImportDrawerOpen] = useState(false)
+  const [csvText, setCsvText] = useState("")
+  const [parsedEmployees, setParsedEmployees] = useState<any[]>([])
+  const [parseError, setParseError] = useState<string | null>(null)
+  const [importing, setImporting] = useState(false)
+  const [importResult, setImportResult] = useState<{ success?: boolean; message?: string } | null>(null)
+
+  const handleParseCsv = (text: string) => {
+    setParseError(null)
+    setImportResult(null)
+    try {
+      const lines = text.split(/\r?\n/).filter(line => line.trim().length > 0)
+      if (lines.length === 0) {
+        setParsedEmployees([])
+        return
+      }
+
+      // Check headers
+      const headers = lines[0].split(',').map(h => h.trim().toLowerCase())
+      
+      const fullNameIdx = headers.indexOf('fullname')
+      const emailIdx = headers.indexOf('email')
+      const roleIdx = headers.indexOf('role')
+      const salaryIdx = headers.indexOf('basesalary')
+      const passwordIdx = headers.indexOf('password')
+
+      if (fullNameIdx === -1 || emailIdx === -1 || roleIdx === -1 || salaryIdx === -1 || passwordIdx === -1) {
+        throw new Error("CSV must contain headers: fullName, email, role, baseSalary, password")
+      }
+
+      const results = []
+      for (let i = 1; i < lines.length; i++) {
+        const line = lines[i]
+        const values = parseCsvLine(line)
+        if (values.length < 5) continue
+
+        const fullName = values[fullNameIdx]?.trim()
+        const email = values[emailIdx]?.trim()
+        const role = values[roleIdx]?.trim().toLowerCase()
+        const baseSalary = Number(values[salaryIdx]?.trim())
+        const password = values[passwordIdx]?.trim()
+
+        if (!fullName || !email || !role || isNaN(baseSalary) || !password) {
+          throw new Error(`Row ${i + 1} has invalid or missing values.`)
+        }
+        if (role !== 'technician' && role !== 'helper') {
+          throw new Error(`Row ${i + 1} role must be 'technician' or 'helper'.`)
+        }
+        if (baseSalary < 0) {
+          throw new Error(`Row ${i + 1} baseSalary must be non-negative.`)
+        }
+        if (password.length < 6) {
+          throw new Error(`Row ${i + 1} password must be at least 6 characters.`)
+        }
+
+        results.push({ fullName, email, role, baseSalary, password })
+      }
+
+      setParsedEmployees(results)
+    } catch (err: any) {
+      setParseError(err.message)
+      setParsedEmployees([])
+    }
+  }
+
+  function parseCsvLine(line: string) {
+    const result = []
+    let current = ''
+    let inQuotes = false
+    for (let i = 0; i < line.length; i++) {
+      const char = line[i]
+      if (char === '"') {
+        inQuotes = !inQuotes
+      } else if (char === ',' && !inQuotes) {
+        result.push(current)
+        current = ''
+      } else {
+        current += char
+      }
+    }
+    result.push(current)
+    return result
+  }
+
+  const handleBulkImport = async () => {
+    if (parsedEmployees.length === 0) return
+    setImporting(true)
+    setParseError(null)
+    setImportResult(null)
+
+    try {
+      const res = await bulkRegisterEmployees(parsedEmployees)
+      if (res.error) {
+        setImportResult({ success: false, message: res.error })
+      } else {
+        setImportResult({ success: true, message: `Successfully registered ${res.count} employees!` })
+        setCsvText("")
+        setParsedEmployees([])
+        router.refresh()
+      }
+    } catch (err: any) {
+      setImportResult({ success: false, message: err.message || "Bulk import failed." })
+    } finally {
+      setImporting(false)
+    }
+  }
+
   // Load current user role and potential managers
   useEffect(() => {
     async function initData() {
@@ -423,9 +531,22 @@ export default function EmployeesClient({ initialTechnicians }: EmployeesClientP
 
         {/* Right: Registration Panel */}
         <div className="bg-white rounded-2xl border border-zinc-200 p-6 shadow-sm">
-          <h2 className="text-lg font-bold text-zinc-900 flex items-center gap-2 mb-6">
-            <UserPlus className="w-5 h-5 text-emerald-500" /> Register Employee
-          </h2>
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-lg font-bold text-zinc-900 flex items-center gap-2">
+              <UserPlus className="w-5 h-5 text-emerald-500" /> Register Employee
+            </h2>
+            <button
+              onClick={() => {
+                setIsImportDrawerOpen(true)
+                setParseError(null)
+                setImportResult(null)
+                setParsedEmployees([])
+              }}
+              className="text-xs px-3 py-1.5 bg-zinc-150 hover:bg-zinc-200 border border-zinc-250 text-zinc-700 font-bold rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer"
+            >
+              <FileText className="w-3.5 h-3.5" /> Bulk Import
+            </button>
+          </div>
 
           {success && (
             <div className="mb-6 p-4 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-xl flex items-start gap-3 transition-all duration-300 animate-in fade-in">
@@ -790,6 +911,156 @@ export default function EmployeesClient({ initialTechnicians }: EmployeesClientP
                   </div>
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Slide-over Right CSV Import Drawer */}
+      {isImportDrawerOpen && (
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-50 transition-opacity flex justify-end">
+          {/* Drawer Panel */}
+          <div className="w-full max-w-xl bg-white h-full shadow-2xl flex flex-col animate-in slide-in-from-right duration-300">
+            
+            {/* Header */}
+            <div className="p-6 border-b border-zinc-150 flex items-center justify-between">
+              <div>
+                <h3 className="text-xl font-bold text-zinc-900 flex items-center gap-2">
+                  <FileText className="w-5 h-5 text-indigo-500" />
+                  Bulk Import Employees
+                </h3>
+                <p className="text-xs text-zinc-500 mt-0.5">Upload a CSV file or paste raw CSV text to register multiple employees.</p>
+              </div>
+              <button 
+                onClick={() => {
+                  setIsImportDrawerOpen(false)
+                  setCsvText("")
+                  setParsedEmployees([])
+                  setParseError(null)
+                  setImportResult(null)
+                }} 
+                className="p-2 hover:bg-zinc-100 text-zinc-500 hover:text-zinc-800 rounded-xl transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="flex-1 overflow-y-auto p-6 space-y-6">
+              
+              {/* Instructions */}
+              <div className="p-4 bg-zinc-50 border border-zinc-200 rounded-xl text-xs text-zinc-650 space-y-2">
+                <p className="font-bold text-zinc-800 flex items-center gap-1">
+                  <AlertCircle className="w-4 h-4 text-indigo-500" /> CSV Format requirements:
+                </p>
+                <p>Ensure your CSV starts with a header row matching exactly: <code className="font-mono bg-zinc-200 px-1 py-0.5 rounded text-zinc-800">fullName, email, role, baseSalary, password</code></p>
+                <p>Example row: <code className="font-mono bg-zinc-200 px-1 py-0.5 rounded text-zinc-800">Juan Dela Cruz, juan@gmail.com, technician, 25000, securePass123</code></p>
+              </div>
+
+              {/* CSV Input Area */}
+              <div className="space-y-2">
+                <label className="block text-xs font-bold uppercase tracking-wider text-zinc-500">Paste CSV Contents</label>
+                <textarea
+                  value={csvText}
+                  onChange={(e) => {
+                    setCsvText(e.target.value)
+                    handleParseCsv(e.target.value)
+                  }}
+                  placeholder="fullName,email,role,baseSalary,password&#10;Juan Dela Cruz,juan@gmail.com,technician,25000,password123&#10;Maria Santos,maria@gmail.com,helper,18000,password456"
+                  className="w-full h-44 px-3.5 py-2.5 border border-zinc-250 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none text-zinc-850 text-xs font-mono resize-y"
+                />
+              </div>
+
+              {/* Error messages */}
+              {parseError && (
+                <div className="p-4 rounded-xl border border-rose-200 bg-rose-50 text-rose-800 text-xs flex items-start gap-2.5">
+                  <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
+                  <div>
+                    <p className="font-bold">CSV Parsing Error</p>
+                    <p className="mt-0.5 leading-relaxed">{parseError}</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Import Results */}
+              {importResult && (
+                <div className={`p-4 rounded-xl border text-xs flex items-start gap-2.5 ${
+                  importResult.success 
+                    ? 'bg-emerald-50 border-emerald-250 text-emerald-800' 
+                    : 'bg-rose-50 border-rose-250 text-rose-800'
+                }`}>
+                  {importResult.success ? <Check className="w-4 h-4 mt-0.5 shrink-0" /> : <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />}
+                  <div>
+                    <p className="font-bold">{importResult.success ? 'Import Completed' : 'Import Failed'}</p>
+                    <p className="mt-0.5 leading-relaxed">{importResult.message}</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Preview Table */}
+              {parsedEmployees.length > 0 && (
+                <div className="space-y-3">
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-zinc-500 flex items-center gap-1">
+                    Previewing {parsedEmployees.length} Row(s)
+                  </h4>
+                  <div className="border border-zinc-200 rounded-xl overflow-hidden max-h-60 overflow-y-auto">
+                    <table className="w-full text-left border-collapse text-2xs">
+                      <thead>
+                        <tr className="bg-zinc-50 border-b border-zinc-150 font-bold text-zinc-500 uppercase">
+                          <th className="p-2.5">Name</th>
+                          <th className="p-2.5">Email</th>
+                          <th className="p-2.5">Role</th>
+                          <th className="p-2.5 text-right">Salary</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-zinc-100 text-zinc-700">
+                        {parsedEmployees.map((emp, idx) => (
+                          <tr key={idx} className="hover:bg-zinc-50/50">
+                            <td className="p-2.5 font-bold">{emp.fullName}</td>
+                            <td className="p-2.5 font-mono">{emp.email}</td>
+                            <td className="p-2.5 uppercase font-semibold">{emp.role}</td>
+                            <td className="p-2.5 text-right font-mono">{formatPhp(emp.baseSalary)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Footer Actions */}
+            <div className="p-6 border-t border-zinc-150 bg-zinc-50 flex items-center justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsImportDrawerOpen(false)
+                  setCsvText("")
+                  setParsedEmployees([])
+                  setParseError(null)
+                  setImportResult(null)
+                }}
+                disabled={importing}
+                className="px-4 py-2.5 border border-zinc-250 bg-white hover:bg-zinc-100 text-zinc-700 text-xs font-bold rounded-xl transition-all cursor-pointer disabled:opacity-50"
+              >
+                Close
+              </button>
+              <button
+                type="button"
+                onClick={handleBulkImport}
+                disabled={parsedEmployees.length === 0 || importing || !!parseError}
+                className="px-4 py-2.5 bg-zinc-950 hover:bg-zinc-800 text-white text-xs font-bold rounded-xl transition-all cursor-pointer disabled:opacity-50 flex items-center gap-1.5 shadow-sm"
+              >
+                {importing ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" /> Importing...
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 className="w-3.5 h-3.5" /> Import {parsedEmployees.length} Accounts
+                  </>
+                )}
+              </button>
             </div>
           </div>
         </div>
