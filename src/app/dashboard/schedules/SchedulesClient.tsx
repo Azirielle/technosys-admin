@@ -19,12 +19,14 @@ export default function SchedulesClient({
   const [isPending, startTransition] = useTransition()
   
   const [techId, setTechId] = useState("")
+  const [seniorPartnerId, setSeniorPartnerId] = useState("")
   const [startTime, setStartTime] = useState("")
   const [endTime, setEndTime] = useState("")
   const [errorMsg, setErrorMsg] = useState("")
 
   const handleOpenModal = () => {
     setTechId(initialTechnicians[0]?.id || initialHelpers[0]?.id || "")
+    setSeniorPartnerId("")
     setStartTime("")
     setEndTime("")
     setErrorMsg("")
@@ -61,6 +63,7 @@ export default function SchedulesClient({
   }
 
   const currentConflict = getConflictingLeave(techId)
+  const partnerConflict = getConflictingLeave(seniorPartnerId)
 
   return (
     <div className="p-8 pb-20">
@@ -139,8 +142,8 @@ export default function SchedulesClient({
                       </div>
                     </div>
                     
-                    <div className="pt-4 border-t border-zinc-100 flex items-center justify-between text-sm">
-                      <div className="flex items-center gap-2">
+                    <div className="pt-4 border-t border-zinc-100 flex flex-col gap-2 text-sm">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <div className={`w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs ${
                           sched.technician?.role === 'helper'
                             ? 'bg-teal-100 text-teal-700'
@@ -160,6 +163,19 @@ export default function SchedulesClient({
                           </span>
                         )}
                       </div>
+
+                      {sched.senior_partner && (
+                        <div className="flex items-center gap-2 pl-8 flex-wrap mt-1">
+                          <span className="text-zinc-400 text-xs font-medium">↳ Partnered with:</span>
+                          <div className="w-5 h-5 rounded-full flex items-center justify-center font-bold text-[10px] bg-indigo-100 text-indigo-700">
+                            {sched.senior_partner.full_name?.charAt(0)}
+                          </div>
+                          <span className="font-semibold text-zinc-700">{sched.senior_partner.full_name}</span>
+                          <span className="px-1.5 py-0.2 text-[9px] font-extrabold tracking-wider uppercase rounded-full border bg-indigo-50 text-indigo-700 border-indigo-200">
+                            Lead Tech
+                          </span>
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))
@@ -246,7 +262,15 @@ export default function SchedulesClient({
                   name="technicianId" 
                   required 
                   value={techId}
-                  onChange={(e) => setTechId(e.target.value)}
+                  onChange={(e) => {
+                    const newVal = e.target.value;
+                    setTechId(newVal);
+                    // Reset senior partner if selected person is not a helper
+                    const isHelper = initialHelpers.some(h => h.id === newVal);
+                    if (!isHelper) {
+                      setSeniorPartnerId("");
+                    }
+                  }}
                   className="w-full px-4 py-2.5 border border-zinc-300 rounded-lg bg-white focus:ring-2 focus:ring-emerald-500 outline-none"
                 >
                   <optgroup label="Technicians">
@@ -277,6 +301,31 @@ export default function SchedulesClient({
                   </optgroup>
                 </select>
               </div>
+
+              {initialHelpers.some(h => h.id === techId) && (
+                <div>
+                  <label className="block text-sm font-medium text-zinc-700 mb-1">Assign Senior Partner</label>
+                  <select 
+                    name="seniorPartnerId" 
+                    value={seniorPartnerId}
+                    onChange={(e) => setSeniorPartnerId(e.target.value)}
+                    className="w-full px-4 py-2.5 border border-zinc-300 rounded-lg bg-white focus:ring-2 focus:ring-emerald-500 outline-none"
+                  >
+                    <option value="none">No Senior Partner (None)</option>
+                    {initialTechnicians.map(t => {
+                      const hasConflict = approvedLeaves.some(leave => 
+                        leave.technician_id === t.id &&
+                        isRangeOverlapping(startTime, endTime, leave.start_date, leave.end_date)
+                      )
+                      return (
+                        <option key={t.id} value={t.id}>
+                          {t.full_name} {hasConflict ? "⚠️ (On Leave)" : ""}
+                        </option>
+                      )
+                    })}
+                  </select>
+                </div>
+              )}
 
               <div>
                 <label className="block text-sm font-medium text-zinc-700 mb-1">Client Name / Job Title</label>
@@ -326,6 +375,12 @@ export default function SchedulesClient({
                 </div>
               )}
 
+              {partnerConflict && (
+                <div className="p-3.5 bg-amber-50 border border-amber-200 text-amber-800 rounded-xl text-xs font-bold leading-relaxed">
+                  ⚠️ <strong>Partner Conflict Warning:</strong> Selected senior partner has an approved leave ({partnerConflict.leave_type}) from {new Date(partnerConflict.start_date).toLocaleDateString()} to {new Date(partnerConflict.end_date).toLocaleDateString()}. Please select another senior partner or change the schedule timeframe.
+                </div>
+              )}
+
               {errorMsg && (
                 <div className="p-3.5 bg-rose-50 border border-rose-200 text-rose-800 rounded-xl text-xs font-bold leading-relaxed">
                   ❌ <strong>Submission Failed:</strong> {errorMsg}
@@ -336,7 +391,7 @@ export default function SchedulesClient({
                 <button type="button" onClick={() => setShowModal(false)} className="px-5 py-2.5 font-medium text-zinc-600 hover:text-zinc-900">Cancel</button>
                 <button 
                   type="submit" 
-                  disabled={isPending || !!currentConflict} 
+                  disabled={isPending || !!currentConflict || (!!seniorPartnerId && seniorPartnerId !== "none" && !!partnerConflict)} 
                   className="bg-zinc-900 hover:bg-zinc-800 disabled:opacity-50 text-white px-6 py-2.5 rounded-lg font-medium shadow-md flex items-center gap-2 cursor-pointer"
                 >
                   {isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : "Save Schedule"}

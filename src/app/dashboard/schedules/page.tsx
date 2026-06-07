@@ -19,7 +19,7 @@ export default async function SchedulesPage() {
 
   const { data: schedules } = await supabaseAdmin
     .from('schedules')
-    .select('*, technician:profiles(full_name, role)')
+    .select('*, technician:profiles!technician_id(full_name, role), senior_partner:profiles!senior_partner_id(full_name, role)')
     .order('start_time', { ascending: true })
 
   const { data: approvedLeaves } = await supabaseAdmin
