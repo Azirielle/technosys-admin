@@ -2,6 +2,7 @@
 import { supabaseAdmin } from "@/lib/supabase/admin"
 import { revalidatePath } from "next/cache"
 import { logActivity } from "./activity"
+import { sendPushNotification } from "@/lib/push"
 
 // Helper to check if a single time conflicts with a leave range
 function isTimeConflictingWithLeave(timeStr: string, leaveStart: string, leaveEnd: string) {
@@ -74,6 +75,20 @@ export async function createSchedule(formData: FormData) {
 
     const { error } = await supabaseAdmin.from('schedules').insert(insertData)
     if (error) throw error
+
+    // Look up target profile and send push notification
+    const { data: targetProfile } = await supabaseAdmin
+      .from('profiles')
+      .select('push_token')
+      .eq('id', technicianId)
+      .single();
+    if (targetProfile?.push_token) {
+      await sendPushNotification(
+        targetProfile.push_token,
+        "New Dispatch Assigned",
+        "You have been assigned to a new schedule. Please check dispatches on home screen."
+      );
+    }
 
     // 4. Log administrative activity
     await logActivity('create_schedule', 'schedule', `Scheduled ${techName} to client "${clientName}" (Mode: ${attendanceMode})`)
@@ -156,6 +171,20 @@ export async function bulkCreateSchedules(data: {
           senior_partner_id: seniorPartnerId,
           is_vip_hook: isVip
         })
+
+        // Look up target profile and send push notification
+        const { data: targetProfile } = await supabaseAdmin
+          .from('profiles')
+          .select('push_token')
+          .eq('id', staffId)
+          .single();
+        if (targetProfile?.push_token) {
+          await sendPushNotification(
+            targetProfile.push_token,
+            "New Dispatch Assigned",
+            "You have been assigned to a new schedule. Please check dispatches on home screen."
+          );
+        }
 
         results.push({ id: staffId, name: staffName, success: true })
         successCount++

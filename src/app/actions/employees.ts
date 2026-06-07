@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache"
 import { createClient } from "@/lib/supabase/server"
 import { z } from "zod"
 import { logActivity } from "./activity"
+import { sendPushNotification } from "@/lib/push"
 
 export interface TechnicianInfo {
   id: string
@@ -401,6 +402,20 @@ export async function addManualDtrLog(employeeId: string, clockIn: string, clock
 
     if (historyErr) throw historyErr
 
+    // Look up target profile and send push notification
+    const { data: targetProfile } = await supabaseAdmin
+      .from('profiles')
+      .select('push_token')
+      .eq('id', employeeId)
+      .single();
+    if (targetProfile?.push_token) {
+      await sendPushNotification(
+        targetProfile.push_token,
+        "DTR Log Adjusted",
+        "Your supervisor has manually adjusted your daily attendance record."
+      );
+    }
+
     // C. Log activity
     await logActivity('insert_manual_dtr', 'employee', `Inserted manual DTR log for target "${employeeId}" (In: ${clockIn}, Out: ${clockOut})`)
 
@@ -485,6 +500,20 @@ export async function overrideDtrLog(
       })
 
     if (historyErr) throw historyErr
+
+    // Look up target profile and send push notification
+    const { data: targetProfile } = await supabaseAdmin
+      .from('profiles')
+      .select('push_token')
+      .eq('id', employeeId)
+      .single();
+    if (targetProfile?.push_token) {
+      await sendPushNotification(
+        targetProfile.push_token,
+        "DTR Log Adjusted",
+        "Your supervisor has manually adjusted your daily attendance record."
+      );
+    }
 
     // D. Log activity
     await logActivity('override_dtr', 'employee', `Overrode DTR log for target "${employeeId}" from (In: ${origLog.app_time_in}, Out: ${origLog.app_time_out}) to (In: ${newClockIn}, Out: ${newClockOut})`)
