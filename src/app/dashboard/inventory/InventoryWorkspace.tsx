@@ -6,7 +6,7 @@ import {
   ArrowDownLeft, History, FileText, ClipboardList, CheckCircle2, AlertCircle,
   TrendingDown, Check, X, Clipboard, User
 } from "lucide-react"
-import { createOrUpdateInventoryItem, restockItem, createInventoryAudit } from "@/app/actions/inventory"
+import { createOrUpdateInventoryItem, restockItem, createInventoryAudit, bulkImportInventoryItems } from "@/app/actions/inventory"
 
 interface InventoryItem {
   id: string
@@ -15,6 +15,7 @@ interface InventoryItem {
   quantity: number
   unit: string
   low_stock_threshold: number
+  image_url?: string | null
   created_at: string
 }
 
@@ -91,6 +92,125 @@ export default function InventoryWorkspace({
   const [auditNotes, setAuditNotes] = useState("")
   const [auditItemsState, setAuditItemsState] = useState<Array<{ itemId: string; name: string; sku: string; unit: string; systemQty: number; physicalQty: number }>>([])
   const [expandedAuditId, setExpandedAuditId] = useState<string | null>(null)
+
+  // Bulk Import States
+  const [isImporting, setIsImporting] = useState(false)
+  const [importFile, setImportFile] = useState<File | null>(null)
+  const [importPreview, setImportPreview] = useState<Array<{ name: string; sku: string; quantity: number; unit: string; low_stock_threshold: number; error?: string }>>([])
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setImportFile(file)
+    setErrorMsg(null)
+    setSuccessMsg(null)
+
+    const reader = new FileReader()
+    reader.onload = (event) => {
+      try {
+        const text = event.target?.result as string
+        let parsed: Array<{ name: string; sku: string; quantity: number; unit?: string; low_stock_threshold?: number }> = []
+
+        if (file.name.endsWith('.json')) {
+          const raw = JSON.parse(text)
+          if (!Array.isArray(raw)) {
+            throw new Error("JSON import must be an array of items.")
+          }
+          parsed = raw
+        } else {
+          // CSV parser
+          const lines = text.split('\n').map(l => l.trim()).filter(Boolean)
+          if (lines.length <= 1) {
+            throw new Error("CSV file is empty or only contains headers.")
+          }
+
+          for (let i = 1; i < lines.length; i++) {
+            // Regex to parse comma-separated values, respecting quotes
+            const matches = lines[i].match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g)
+            if (!matches) continue
+            
+            const values = matches.map(v => v.replace(/^"|"$/g, '').trim())
+            
+            const item: any = {
+              name: values[0] || "",
+              sku: values[1] || "",
+              quantity: Number(values[2]),
+              unit: values[3] || "pcs",
+              low_stock_threshold: values[4] ? Number(values[4]) : 5
+            }
+            parsed.push(item)
+          }
+        }
+
+        if (parsed.length > 200) {
+          throw new Error("Bulk import exceeds maximum limit of 200 rows.")
+        }
+
+        // Validate and build preview
+        const previewList = parsed.map(item => {
+          const name = item.name?.trim() || ""
+          const sku = item.sku?.trim().toUpperCase() || ""
+          const quantity = Number(item.quantity)
+          const unit = item.unit?.trim() || "pcs"
+          const low_stock_threshold = Number(item.low_stock_threshold ?? 5)
+
+          let error = undefined
+          if (!name) {
+            error = "Missing Name"
+          } else if (!sku) {
+            error = "Missing SKU"
+          } else if (isNaN(quantity) || quantity < 0) {
+            error = "Invalid Qty"
+          } else if (isNaN(low_stock_threshold) || low_stock_threshold < 0) {
+            error = "Invalid Limit"
+          }
+
+          return {
+            name,
+            sku,
+            quantity: isNaN(quantity) ? 0 : quantity,
+            unit,
+            low_stock_threshold: isNaN(low_stock_threshold) ? 5 : low_stock_threshold,
+            error
+          }
+        })
+
+        setImportPreview(previewList)
+      } catch (err: any) {
+        setErrorMsg("File parse error: " + err.message)
+        setImportPreview([])
+      }
+    }
+
+    reader.readAsText(file)
+  }
+
+  const handleImportSubmit = async () => {
+    if (importPreview.length === 0 || importPreview.some(x => x.error)) return
+    setErrorMsg(null)
+    setSuccessMsg(null)
+
+    startTransition(async () => {
+      const payload = importPreview.map(x => ({
+        name: x.name,
+        sku: x.sku,
+        quantity: x.quantity,
+        unit: x.unit,
+        low_stock_threshold: x.low_stock_threshold
+      }))
+
+      const res = await bulkImportInventoryItems(payload)
+      if (res.error) {
+        setErrorMsg(res.error)
+      } else {
+        setSuccessMsg(`Successfully imported ${res.count} items.`)
+        setIsImporting(false)
+        setImportFile(null)
+        setImportPreview([])
+        window.location.reload()
+      }
+    })
+  }
 
   const handleCreateOrUpdate = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -419,7 +539,7 @@ export default function InventoryWorkspace({
               <p className="text-xs text-zinc-500 mt-0.5">Define part specifications and stock limits.</p>
             </div>
 
-            <form onSubmit={handleCreateOrUpdate} className="p-5 space-y-4">
+            <form onSubmit={handleCreateOrUpdate} encType="multipart/form-data" className="p-5 space-y-4">
               <div>
                 <label className="block text-xs font-bold text-zinc-700 mb-1.5">Item Name</label>
                 <input
@@ -431,6 +551,25 @@ export default function InventoryWorkspace({
                   required
                   className="w-full px-3 py-2 border border-zinc-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none"
                 />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-zinc-700 mb-1.5">Item Photo (Optional)</label>
+                <div className="flex items-center gap-3">
+                  {editingItem?.image_url && (
+                    <img 
+                      src={editingItem.image_url} 
+                      alt="Current preview" 
+                      className="w-10 h-10 rounded-lg object-cover border border-zinc-200 shrink-0" 
+                    />
+                  )}
+                  <input
+                    type="file"
+                    name="image"
+                    accept="image/*"
+                    className="w-full text-xs text-zinc-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-bold file:bg-zinc-100 file:text-zinc-700 hover:file:bg-zinc-200 cursor-pointer"
+                  />
+                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
@@ -563,17 +702,28 @@ export default function InventoryWorkspace({
             )}
 
             <div className="bg-white rounded-xl border border-zinc-200 shadow-sm overflow-hidden">
-              <div className="p-5 border-b border-zinc-150 bg-zinc-50/50 flex justify-between items-center">
+              <div className="p-5 border-b border-zinc-150 bg-zinc-50/50 flex justify-between items-center flex-wrap gap-2">
                 <div>
                   <h3 className="text-sm font-bold text-zinc-900">Registered Stock Items</h3>
                   <p className="text-xs text-zinc-500 mt-0.5">Browse quantities and low-stock alerts.</p>
                 </div>
+                <button
+                  onClick={() => {
+                    setIsImporting(true)
+                    setImportFile(null)
+                    setImportPreview([])
+                  }}
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-all shadow-sm"
+                >
+                  <Plus className="w-3.5 h-3.5" /> Bulk Import CSV
+                </button>
               </div>
 
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="bg-zinc-50/50 border-b border-zinc-150 text-[10px] uppercase font-bold text-zinc-400">
+                      <th className="p-4 w-12">Photo</th>
                       <th className="p-4">SKU</th>
                       <th className="p-4">Item Details</th>
                       <th className="p-4">Stock Level</th>
@@ -591,6 +741,19 @@ export default function InventoryWorkspace({
                             isLowStock ? "bg-amber-50/20" : ""
                           }`}
                         >
+                          <td className="p-4">
+                            {item.image_url ? (
+                              <img 
+                                src={item.image_url} 
+                                alt={item.name} 
+                                className="w-10 h-10 rounded-lg object-cover border border-zinc-200" 
+                              />
+                            ) : (
+                              <div className="w-10 h-10 rounded-lg bg-zinc-100 border border-zinc-200 flex items-center justify-center text-zinc-400">
+                                <Package className="w-5 h-5" />
+                              </div>
+                            )}
+                          </td>
                           <td className="p-4 font-mono font-bold text-xs text-zinc-600">{item.sku}</td>
                           <td className="p-4">
                             <span className="font-bold text-zinc-800 block">{item.name}</span>
@@ -816,6 +979,138 @@ export default function InventoryWorkspace({
                   )
                 })
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Bulk Import Modal */}
+      {isImporting && (
+        <div className="fixed inset-0 bg-black/55 flex items-center justify-center p-4 z-50 animate-fade-in">
+          <div className="bg-white rounded-2xl border border-zinc-200 shadow-xl max-w-2xl w-full max-h-[85vh] flex flex-col overflow-hidden">
+            <div className="p-5 border-b border-zinc-150 bg-zinc-50/50 flex justify-between items-center">
+              <div>
+                <h3 className="text-base font-bold text-zinc-900 flex items-center gap-2">
+                  <ClipboardList className="w-5 h-5 text-emerald-600" />
+                  Bulk Import Stock Registry
+                </h3>
+                <p className="text-xs text-zinc-500 mt-0.5">Upload a CSV or JSON file to register or update stock items in bulk.</p>
+              </div>
+              <button 
+                onClick={() => setIsImporting(false)}
+                className="p-1 rounded-lg border border-zinc-200 hover:bg-zinc-50 text-zinc-400 hover:text-zinc-700"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-6 overflow-y-auto space-y-6 flex-1 text-zinc-700">
+              {/* Template instructions */}
+              <div className="bg-zinc-50 border border-zinc-200 rounded-xl p-4 text-xs text-zinc-600 space-y-2">
+                <span className="font-bold text-zinc-700 block">Expected CSV Format (Max 200 rows):</span>
+                <p className="font-mono bg-white p-2 rounded border border-zinc-250 block overflow-x-auto text-[11px] text-zinc-800">
+                  Name, SKU, Quantity, Unit, Low Stock Limit<br />
+                  Cat6 UTP Cable Roll, CAB-CAT6-01, 15, rolls, 3<br />
+                  RJ45 Connectors Pack, CON-RJ45-100, 50, pcs, 10
+                </p>
+                <div className="flex gap-4 pt-1 text-zinc-500">
+                  <span>• SKU is used as the unique identifier.</span>
+                  <span>• Existing SKUs will update quantity and specifications.</span>
+                </div>
+              </div>
+
+              {/* File input */}
+              <div className="space-y-2">
+                <label className="block text-xs font-bold text-zinc-700 uppercase tracking-wider">Select Import File</label>
+                <input 
+                  type="file" 
+                  accept=".csv,.json"
+                  onChange={handleFileSelect}
+                  className="w-full text-sm text-zinc-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border file:border-zinc-300 file:text-xs file:font-bold file:bg-white file:text-zinc-700 hover:file:bg-zinc-50 cursor-pointer"
+                />
+              </div>
+
+              {/* Preview and Errors */}
+              {importPreview.length > 0 && (
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="font-bold text-zinc-700 uppercase tracking-wider">Preview Delta ({importPreview.length} Items Staged)</span>
+                    <span className="text-zinc-500 font-semibold">
+                      {importPreview.filter(x => x.error).length > 0 
+                        ? `${importPreview.filter(x => x.error).length} error(s) found` 
+                        : "Ready to import"}
+                    </span>
+                  </div>
+
+                  <div className="border border-zinc-200 rounded-xl overflow-hidden max-h-60 overflow-y-auto">
+                    <table className="w-full text-left border-collapse text-xs">
+                      <thead>
+                        <tr className="bg-zinc-50 border-b border-zinc-150 text-[10px] uppercase font-bold text-zinc-400">
+                          <th className="p-3">SKU</th>
+                          <th className="p-3">Name</th>
+                          <th className="p-3 w-20">Qty</th>
+                          <th className="p-3 w-16">Unit</th>
+                          <th className="p-3 w-16">Limit</th>
+                          <th className="p-3 text-right">Status</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-zinc-100">
+                        {importPreview.map((item, idx) => {
+                          const existingItem = items.find(x => x.sku === item.sku)
+                          return (
+                            <tr key={idx} className={`hover:bg-zinc-50/50 ${item.error ? "bg-rose-50/20" : ""}`}>
+                              <td className="p-3 font-mono font-bold text-zinc-600">{item.sku || "N/A"}</td>
+                              <td className="p-3 font-bold text-zinc-800 line-clamp-1">{item.name || "N/A"}</td>
+                              <td className="p-3 font-bold text-zinc-700">{item.quantity}</td>
+                              <td className="p-3 text-zinc-500">{item.unit}</td>
+                              <td className="p-3 text-zinc-500">{item.low_stock_threshold}</td>
+                              <td className="p-3 text-right">
+                                {item.error ? (
+                                  <span className="text-[10px] text-rose-600 font-bold uppercase">{item.error}</span>
+                                ) : existingItem ? (
+                                  <span className="text-[10px] text-amber-600 font-bold uppercase flex items-center justify-end gap-0.5">
+                                    <RefreshCw className="w-3 h-3 animate-spin" /> Sync (~)
+                                  </span>
+                                ) : (
+                                  <span className="text-[10px] text-emerald-600 font-bold uppercase flex items-center justify-end gap-0.5">
+                                    <Check className="w-3 h-3" /> New (+)
+                                  </span>
+                                )}
+                              </td>
+                            </tr>
+                          )
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="p-5 border-t border-zinc-150 bg-zinc-50/50 flex justify-between items-center">
+              <span className="text-xs text-zinc-500">
+                {importPreview.length > 0 && (
+                  <>
+                    Staging: {importPreview.filter(x => !x.error && items.some(e => e.sku === x.sku)).length} syncs,{' '}
+                    {importPreview.filter(x => !x.error && !items.some(e => e.sku === x.sku)).length} additions.
+                  </>
+                )}
+              </span>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setIsImporting(false)}
+                  className="px-4 py-2 rounded-xl border border-zinc-200 text-sm font-bold hover:bg-zinc-100 text-zinc-700 transition-all"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleImportSubmit}
+                  disabled={importPreview.length === 0 || importPreview.some(x => x.error) || isPending}
+                  className="bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-bold px-6 py-2 rounded-xl text-sm transition-all flex items-center gap-1.5 shadow-sm"
+                >
+                  {isPending ? "Importing..." : "Confirm Import"}
+                </button>
+              </div>
             </div>
           </div>
         </div>

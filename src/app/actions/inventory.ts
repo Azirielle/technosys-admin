@@ -2,6 +2,7 @@
 import { supabaseAdmin } from "@/lib/supabase/admin"
 import { revalidatePath } from "next/cache"
 import { logActivity } from "./activity"
+import crypto from "crypto"
 
 // 1. Fetch all inventory items
 export async function getInventoryItems() {
@@ -44,6 +45,7 @@ export async function createOrUpdateInventoryItem(formData: FormData) {
     const quantity = Number(formData.get("quantity"))
     const unit = formData.get("unit")?.toString().trim() || "pcs"
     const low_stock_threshold = Number(formData.get("low_stock_threshold"))
+    const imageFile = formData.get("image") as File | null
 
     if (!name || !sku) {
       return { error: "Name and SKU are required." }
@@ -54,8 +56,51 @@ export async function createOrUpdateInventoryItem(formData: FormData) {
     }
 
     let dbError
+    let finalImageUrl = null
 
     if (id) {
+      // Fetch existing item to check for old image
+      const { data: existingItem } = await supabaseAdmin
+        .from('inventory_items')
+        .select('image_url')
+        .eq('id', id)
+        .single()
+      
+      finalImageUrl = existingItem?.image_url || null
+
+      if (imageFile && imageFile.size > 0) {
+        // Delete old image if it exists to clean up storage
+        if (existingItem?.image_url) {
+          try {
+            const oldPath = existingItem.image_url.split('/').pop()
+            if (oldPath) {
+              await supabaseAdmin.storage
+                .from('inventory-photos')
+                .remove([oldPath])
+            }
+          } catch (e) {
+            console.error("Failed to delete old image:", e)
+          }
+        }
+
+        // Upload new image
+        const fileExt = imageFile.name.split('.').pop()
+        const fileName = `${crypto.randomUUID()}.${fileExt}`
+        const { error: uploadErr } = await supabaseAdmin.storage
+          .from('inventory-photos')
+          .upload(fileName, imageFile, {
+            contentType: imageFile.type,
+            upsert: true
+          })
+        if (uploadErr) throw uploadErr
+
+        const { data: { publicUrl } } = supabaseAdmin.storage
+          .from('inventory-photos')
+          .getPublicUrl(fileName)
+        
+        finalImageUrl = publicUrl
+      }
+
       // Update
       const { error } = await supabaseAdmin
         .from('inventory_items')
@@ -65,11 +110,31 @@ export async function createOrUpdateInventoryItem(formData: FormData) {
           quantity,
           unit,
           low_stock_threshold,
+          image_url: finalImageUrl,
           updated_at: new Date().toISOString()
         })
         .eq('id', id)
       dbError = error
     } else {
+      if (imageFile && imageFile.size > 0) {
+        // Upload image
+        const fileExt = imageFile.name.split('.').pop()
+        const fileName = `${crypto.randomUUID()}.${fileExt}`
+        const { error: uploadErr } = await supabaseAdmin.storage
+          .from('inventory-photos')
+          .upload(fileName, imageFile, {
+            contentType: imageFile.type,
+            upsert: true
+          })
+        if (uploadErr) throw uploadErr
+
+        const { data: { publicUrl } } = supabaseAdmin.storage
+          .from('inventory-photos')
+          .getPublicUrl(fileName)
+        
+        finalImageUrl = publicUrl
+      }
+
       // Insert
       const { error } = await supabaseAdmin
         .from('inventory_items')
@@ -78,7 +143,8 @@ export async function createOrUpdateInventoryItem(formData: FormData) {
           sku,
           quantity,
           unit,
-          low_stock_threshold
+          low_stock_threshold,
+          image_url: finalImageUrl
         })
       dbError = error
     }
@@ -289,6 +355,70 @@ export async function createInventoryAudit(
   } catch (err: any) {
     console.error("Reconciliation audit transaction failed:", err.message)
     return { error: "Transaction aborted: " + err.message }
+  }
+}
+
+// 8. Bulk import inventory items
+export async function bulkImportInventoryItems(items: Array<{
+  name: string
+  sku: string
+  quantity: number
+  unit?: string
+  low_stock_threshold?: number
+  image_url?: string
+}>) {
+  try {
+    const validatedItems = []
+    for (const item of items) {
+      const name = item.name?.trim()
+      const sku = item.sku?.trim().toUpperCase()
+      const quantity = Number(item.quantity)
+      const unit = item.unit?.trim() || "pcs"
+      const low_stock_threshold = Number(item.low_stock_threshold ?? 5)
+      const image_url = item.image_url || null
+
+      if (!name || !sku) {
+        return { error: "Name and SKU are required for all items." }
+      }
+
+      if (isNaN(quantity) || isNaN(low_stock_threshold) || quantity < 0 || low_stock_threshold < 0) {
+        return { error: `Invalid numeric values for SKU ${sku}.` }
+      }
+
+      validatedItems.push({
+        name,
+        sku,
+        quantity,
+        unit,
+        low_stock_threshold,
+        image_url,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      })
+    }
+
+    if (validatedItems.length === 0) {
+      return { error: "No items to import." }
+    }
+
+    // Upsert into inventory_items on sku conflict
+    const { error } = await supabaseAdmin
+      .from('inventory_items')
+      .upsert(validatedItems, { onConflict: 'sku' })
+
+    if (error) throw error
+
+    await logActivity({
+      category: 'inventory',
+      action: 'imported',
+      description: `Bulk imported ${validatedItems.length} inventory items`
+    })
+
+    revalidatePath('/dashboard/inventory')
+    return { success: true, count: validatedItems.length }
+  } catch (err: any) {
+    console.error("Failed to bulk import items:", err.message)
+    return { error: "Transaction failed: " + err.message }
   }
 }
 
