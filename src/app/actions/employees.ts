@@ -1,6 +1,7 @@
 "use server"
 import { supabaseAdmin } from "@/lib/supabase/admin"
 import { revalidatePath } from "next/cache"
+import { z } from "zod"
 
 export interface TechnicianInfo {
   id: string
@@ -347,6 +348,120 @@ export async function addManualDtrLog(employeeId: string, clockIn: string, clock
   } catch (err: any) {
     console.error(`Failed to add manual DTR log for employee ${employeeId}:`, err.message || err)
     return { error: err.message || "Failed to add manual DTR entry." }
+  }
+}
+
+// 7. Bulk Register Employees
+const employeeSchema = z.object({
+  fullName: z.string().min(2, "Full name must be at least 2 characters").trim(),
+  email: z.string().email("Invalid email format").trim(),
+  role: z.enum(["technician", "helper"], { errorMap: () => ({ message: "Role must be either technician or helper" }) }),
+  baseSalary: z.number().nonnegative("Base salary must be non-negative"),
+  password: z.string().min(6, "Password must be at least 6 characters")
+})
+
+const bulkImportSchema = z.array(employeeSchema)
+
+export async function bulkRegisterEmployees(employeesData: any[]) {
+  try {
+    const supabase = await createClient()
+    const { data: { user: currentUser } } = await supabase.auth.getUser()
+    if (!currentUser) {
+      return { error: "Unauthorized access." }
+    }
+
+    const { data: profile } = await supabaseAdmin
+      .from('profiles')
+      .select('role')
+      .eq('id', currentUser.id)
+      .single()
+
+    const allowedRoles = ['super_admin', 'admin', 'ceo', 'coo', 'hr']
+    if (!profile || !allowedRoles.includes(profile.role)) {
+      return { error: "Permission Denied: Only Administrators can bulk import employees." }
+    }
+
+    const parseResult = bulkImportSchema.safeParse(employeesData)
+    if (!parseResult.success) {
+      const issues = parseResult.error.issues.map(issue => `${issue.path.join('.')}: ${issue.message}`).join(', ')
+      return { error: `Validation failed: ${issues}` }
+    }
+
+    const validatedEmployees = parseResult.data
+    const results = []
+    const errors = []
+
+    for (const emp of validatedEmployees) {
+      let authUser = null
+      let createdNewAuth = false
+
+      try {
+        const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
+          email: emp.email,
+          password: emp.password,
+          email_confirm: true,
+          user_metadata: { full_name: emp.fullName }
+        })
+
+        if (authError) {
+          if (authError.message.includes('already exists') || authError.status === 422) {
+            const { data: listData, error: listError } = await supabaseAdmin.auth.admin.listUsers()
+            if (listError) throw listError
+
+            const existingUser = listData.users.find(u => u.email?.toLowerCase() === emp.email.toLowerCase())
+            if (!existingUser) throw authError
+
+            authUser = existingUser
+            const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(existingUser.id, {
+              password: emp.password,
+              user_metadata: { full_name: emp.fullName }
+            })
+            if (updateError) throw updateError
+          } else {
+            throw authError
+          }
+        } else {
+          authUser = authData.user
+          createdNewAuth = true
+        }
+
+        const { error: profileError } = await supabaseAdmin.from('profiles').upsert({
+          id: authUser.id,
+          full_name: emp.fullName,
+          role: emp.role,
+          base_salary: emp.baseSalary
+        })
+
+        if (profileError) {
+          if (createdNewAuth && authUser?.id) {
+            await supabaseAdmin.auth.admin.deleteUser(authUser.id)
+          }
+          throw profileError
+        }
+
+        results.push({ email: emp.email, status: 'success' })
+      } catch (err: any) {
+        console.error(`Failed to register ${emp.email}:`, err.message || err)
+        errors.push({ email: emp.email, error: err.message || "Unknown error" })
+      }
+    }
+
+    revalidatePath('/dashboard/employees')
+    revalidatePath('/dashboard')
+
+    if (errors.length > 0) {
+      return { 
+        success: false, 
+        error: `Import completed with errors. Registered: ${results.length}, Failed: ${errors.length}. First error: ${errors[0].error}`,
+        results,
+        errors
+      }
+    }
+
+    return { success: true, count: results.length }
+  } catch (err: any) {
+    console.error("Bulk import failed:", err.message || err)
+    return { error: "Bulk import execution failed: " + err.message }
   }
 }
 

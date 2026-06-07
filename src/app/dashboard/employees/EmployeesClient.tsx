@@ -27,7 +27,8 @@ import {
   getPotentialManagers, 
   getEmployeeTimeLogs, 
   addManualDtrLog,
-  ChecklistData
+  ChecklistData,
+  bulkRegisterEmployees
 } from "@/app/actions/employees"
 import { createClient } from "@/lib/supabase/client"
 
