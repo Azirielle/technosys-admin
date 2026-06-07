@@ -123,7 +123,7 @@ export default function SchedulesClient({
                       </button>
                     </div>
                     
-                    <div className="flex flex-col sm:flex-row gap-3 sm:gap-6 text-sm text-zinc-600 mb-4">
+                    <div className="flex flex-col sm:flex-row gap-3 sm:gap-6 text-sm text-zinc-600 mb-4 flex-wrap">
                       <div className="flex items-center gap-2 bg-zinc-100/80 px-3 py-1.5 rounded-md">
                         <Clock className="w-4 h-4 text-zinc-500" /> 
                         <span className="font-medium">
@@ -134,6 +134,12 @@ export default function SchedulesClient({
                       <div className="flex items-center gap-2 bg-zinc-100/80 px-3 py-1.5 rounded-md">
                         <MapPin className="w-4 h-4 text-zinc-500" /> 
                         <span className="font-medium">{sched.location}</span>
+                      </div>
+                      <div className="flex items-center gap-2 bg-zinc-100/80 px-3 py-1.5 rounded-md">
+                        <span className="text-zinc-500 text-xs font-bold">DTR:</span>
+                        <span className="font-semibold text-zinc-700 capitalize">
+                          {sched.attendance_tracking_mode ? sched.attendance_tracking_mode.replace(/_/g, ' ') : 'Pacita HQ'}
+                        </span>
                       </div>
                     </div>
                     
@@ -222,6 +228,19 @@ export default function SchedulesClient({
               <div>
                 <label className="block text-sm font-medium text-zinc-700 mb-1">Location</label>
                 <input name="location" required type="text" className="w-full px-4 py-2.5 border border-zinc-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" placeholder="123 Ayala Ave, Makati" />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-zinc-700 mb-1">Attendance Tracking Mode</label>
+                <select 
+                  name="trackingMode" 
+                  required 
+                  className="w-full px-4 py-2.5 border border-zinc-300 rounded-lg bg-white focus:ring-2 focus:ring-emerald-500 outline-none text-sm font-medium"
+                >
+                  <option value="pacita_hq">Pacita HQ (Strict Geofence)</option>
+                  <option value="direct_on_site">Direct On-site (Verification Only)</option>
+                  <option value="out_of_town">Out-of-town (No Geofence)</option>
+                </select>
               </div>
 
               <div className="grid grid-cols-2 gap-4">

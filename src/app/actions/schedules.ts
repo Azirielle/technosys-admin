@@ -12,6 +12,7 @@ export async function createSchedule(formData: FormData) {
     const startTime = formData.get("startTime") as string
     const endTime = formData.get("endTime") as string
     const isVip = formData.get("isVip") === "on"
+    const trackingMode = (formData.get("trackingMode") as string) || "pacita_hq"
 
     const { error: leavesErr, data: leaves } = await supabaseAdmin
       .from('leaves')
@@ -35,7 +36,8 @@ export async function createSchedule(formData: FormData) {
       location,
       start_time: new Date(startTime).toISOString(),
       end_time: new Date(endTime).toISOString(),
-      is_vip_hook: isVip
+      is_vip_hook: isVip,
+      attendance_tracking_mode: trackingMode
     })
 
     if (error) throw error
@@ -45,7 +47,7 @@ export async function createSchedule(formData: FormData) {
     await logActivity({
       category: 'schedules',
       action: 'created',
-      description: `Created schedule for client "${clientName}" at "${location}" assigned to ${techName}`
+      description: `Created schedule for client "${clientName}" at "${location}" assigned to ${techName} (DTR Mode: ${trackingMode.replace('_', ' ')})`
     })
 
     revalidatePath("/dashboard/schedules")
