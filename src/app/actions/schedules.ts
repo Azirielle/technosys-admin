@@ -11,7 +11,6 @@ export async function createSchedule(formData: FormData) {
     const clientName = formData.get("clientName") as string
     const location = formData.get("location") as string
     const startTime = formData.get("startTime") as string
-    const endTime = formData.get("endTime") as string
     const isVip = formData.get("isVip") === "on"
 
     const targetIds = [technicianId, seniorPartnerId].filter(Boolean) as string[]
@@ -26,7 +25,7 @@ export async function createSchedule(formData: FormData) {
 
     const hasTechnicianConflict = leaves?.some(leave => 
       leave.technician_id === technicianId &&
-      isRangeOverlapping(startTime, endTime, leave.start_date, leave.end_date)
+      isRangeOverlapping(startTime, null, leave.start_date, leave.end_date)
     )
 
     if (hasTechnicianConflict) {
@@ -36,7 +35,7 @@ export async function createSchedule(formData: FormData) {
     if (seniorPartnerId) {
       const hasPartnerConflict = leaves?.some(leave => 
         leave.technician_id === seniorPartnerId &&
-        isRangeOverlapping(startTime, endTime, leave.start_date, leave.end_date)
+        isRangeOverlapping(startTime, null, leave.start_date, leave.end_date)
       )
 
       if (hasPartnerConflict) {
@@ -50,7 +49,7 @@ export async function createSchedule(formData: FormData) {
       client_name: clientName,
       location,
       start_time: new Date(startTime).toISOString(),
-      end_time: new Date(endTime).toISOString(),
+      end_time: null,
       is_vip_hook: isVip
     })
 

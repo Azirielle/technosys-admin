@@ -21,14 +21,12 @@ export default function SchedulesClient({
   const [techId, setTechId] = useState("")
   const [seniorPartnerId, setSeniorPartnerId] = useState("")
   const [startTime, setStartTime] = useState("")
-  const [endTime, setEndTime] = useState("")
   const [errorMsg, setErrorMsg] = useState("")
 
   const handleOpenModal = () => {
     setTechId(initialTechnicians[0]?.id || initialHelpers[0]?.id || "")
     setSeniorPartnerId("")
     setStartTime("")
-    setEndTime("")
     setErrorMsg("")
     setShowModal(true)
   }
@@ -55,10 +53,10 @@ export default function SchedulesClient({
   }
 
   const getConflictingLeave = (technicianId: string) => {
-    if (!startTime || !endTime || !technicianId) return null
+    if (!startTime || !technicianId) return null
     return approvedLeaves.find(leave => 
       leave.technician_id === technicianId &&
-      isRangeOverlapping(startTime, endTime, leave.start_date, leave.end_date)
+      isRangeOverlapping(startTime, null, leave.start_date, leave.end_date)
     )
   }
 
@@ -132,8 +130,8 @@ export default function SchedulesClient({
                       <div className="flex items-center gap-2 bg-zinc-100/80 px-3 py-1.5 rounded-md">
                         <Clock className="w-4 h-4 text-zinc-500" /> 
                         <span className="font-medium">
-                          {new Date(sched.start_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})} - 
-                          {new Date(sched.end_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                          {new Date(sched.start_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                          {sched.end_time ? ` - ${new Date(sched.end_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}` : ' (Open-Ended)'}
                         </span>
                       </div>
                       <div className="flex items-center gap-2 bg-zinc-100/80 px-3 py-1.5 rounded-md">
@@ -277,7 +275,7 @@ export default function SchedulesClient({
                     {initialTechnicians.map(t => {
                       const hasConflict = approvedLeaves.some(leave => 
                         leave.technician_id === t.id &&
-                        isRangeOverlapping(startTime, endTime, leave.start_date, leave.end_date)
+                        isRangeOverlapping(startTime, null, leave.start_date, leave.end_date)
                       )
                       return (
                         <option key={t.id} value={t.id}>
@@ -290,7 +288,7 @@ export default function SchedulesClient({
                     {initialHelpers.map(h => {
                       const hasConflict = approvedLeaves.some(leave => 
                         leave.technician_id === h.id &&
-                        isRangeOverlapping(startTime, endTime, leave.start_date, leave.end_date)
+                        isRangeOverlapping(startTime, null, leave.start_date, leave.end_date)
                       )
                       return (
                         <option key={h.id} value={h.id}>
@@ -315,7 +313,7 @@ export default function SchedulesClient({
                     {initialTechnicians.map(t => {
                       const hasConflict = approvedLeaves.some(leave => 
                         leave.technician_id === t.id &&
-                        isRangeOverlapping(startTime, endTime, leave.start_date, leave.end_date)
+                        isRangeOverlapping(startTime, null, leave.start_date, leave.end_date)
                       )
                       return (
                         <option key={t.id} value={t.id}>
@@ -337,29 +335,16 @@ export default function SchedulesClient({
                 <input name="location" required type="text" className="w-full px-4 py-2.5 border border-zinc-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" placeholder="123 Ayala Ave, Makati" />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-zinc-700 mb-1">Start Time</label>
-                  <input 
-                    name="startTime" 
-                    required 
-                    type="datetime-local" 
-                    value={startTime}
-                    onChange={(e) => setStartTime(e.target.value)}
-                    className="w-full px-4 py-2.5 border border-zinc-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" 
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-zinc-700 mb-1">End Time</label>
-                  <input 
-                    name="endTime" 
-                    required 
-                    type="datetime-local" 
-                    value={endTime}
-                    onChange={(e) => setEndTime(e.target.value)}
-                    className="w-full px-4 py-2.5 border border-zinc-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" 
-                  />
-                </div>
+              <div>
+                <label className="block text-sm font-medium text-zinc-700 mb-1">Start Time</label>
+                <input 
+                  name="startTime" 
+                  required 
+                  type="datetime-local" 
+                  value={startTime}
+                  onChange={(e) => setStartTime(e.target.value)}
+                  className="w-full px-4 py-2.5 border border-zinc-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" 
+                />
               </div>
 
               <div className="flex items-center gap-3 p-4 bg-cyan-50 border border-cyan-100 rounded-xl mt-2">
