@@ -1,6 +1,7 @@
 "use server"
 import { supabaseAdmin } from "@/lib/supabase/admin"
 import { revalidatePath } from "next/cache"
+import { logActivity } from "./activity"
 
 // 1. Fetch all tickets
 export async function getTickets(statusFilter?: string) {
@@ -91,7 +92,6 @@ export async function getStaffList() {
     return []
   }
 }
-
 // 5. Update ticket status
 export async function updateTicketStatus(ticketId: string, status: string) {
   try {
@@ -101,6 +101,13 @@ export async function updateTicketStatus(ticketId: string, status: string) {
       .eq('id', ticketId)
 
     if (error) throw error
+
+    const { data: ticket } = await supabaseAdmin.from('tickets').select('title').eq('id', ticketId).single()
+    await logActivity({
+      category: 'tickets',
+      action: 'status_updated',
+      description: `Updated status of ticket "${ticket?.title || ticketId}" to ${status}`
+    })
 
     revalidatePath('/dashboard/tickets')
     return { success: true }
@@ -139,6 +146,18 @@ export async function assignTicket(ticketId: string, adminId: string | null) {
 
     if (error) throw error
 
+    const { data: ticketDetails } = await supabaseAdmin.from('tickets').select('title').eq('id', ticketId).single()
+    let assigneeName = "unassigned"
+    if (adminId) {
+      const { data: profile } = await supabaseAdmin.from('profiles').select('full_name').eq('id', adminId).single()
+      assigneeName = profile?.full_name || adminId
+    }
+    await logActivity({
+      category: 'tickets',
+      action: 'assigned',
+      description: `Assigned ticket "${ticketDetails?.title || ticketId}" to ${assigneeName}`
+    })
+
     revalidatePath('/dashboard/tickets')
     return { success: true }
   } catch (err: any) {
@@ -169,6 +188,13 @@ export async function addTicketComment(ticketId: string, authorId: string, conte
       .from('tickets')
       .update({ updated_at: new Date().toISOString() })
       .eq('id', ticketId)
+
+    const { data: ticket } = await supabaseAdmin.from('tickets').select('title').eq('id', ticketId).single()
+    await logActivity({
+      category: 'tickets',
+      action: 'comment_added',
+      description: `Added a comment on ticket "${ticket?.title || ticketId}"`
+    })
 
     revalidatePath('/dashboard/tickets')
     return { success: true }

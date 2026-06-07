@@ -3,6 +3,7 @@ import { supabaseAdmin } from '@/lib/supabase/admin'
 import { redirect } from 'next/navigation'
 import DashboardCharts from './DashboardCharts'
 import { Users, Calendar, DollarSign } from 'lucide-react'
+import { getActivityLogs } from '@/app/actions/activity'
 
 export const revalidate = 0;
 
@@ -29,6 +30,7 @@ export default async function DashboardPage() {
   let payCount = 0;
   let payslips: any[] = [];
   let recentTechs: any[] = [];
+  let recentActivities: any[] = [];
   let dbErrorMsg = "";
 
   try {
@@ -51,6 +53,9 @@ export default async function DashboardPage() {
     const { data: rData, error: rtErr } = await supabaseAdmin.from('profiles').select('*').eq('role', 'technician').order('created_at', { ascending: false }).limit(5);
     if (rtErr) throw rtErr;
     recentTechs = rData || [];
+
+    const logs = await getActivityLogs();
+    recentActivities = logs.slice(0, 10);
   } catch (err: any) {
     console.error("Dashboard database fetch error:", err.message || err);
     dbErrorMsg = err.message || "Database connection or tables incomplete. Please check your migrations.";
@@ -99,7 +104,7 @@ export default async function DashboardPage() {
         </div>
       </div>
 
-      <DashboardCharts payslips={payslips} recentTechnicians={recentTechs} />
+      <DashboardCharts payslips={payslips} recentTechnicians={recentTechs} recentActivities={recentActivities} />
     </div>
   )
 }

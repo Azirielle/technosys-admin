@@ -1,6 +1,7 @@
 "use server"
 import { supabaseAdmin } from "@/lib/supabase/admin"
 import { revalidatePath } from "next/cache"
+import { logActivity } from "./activity"
 
 export interface TechnicianInfo {
   id: string
@@ -71,9 +72,18 @@ export async function getTechnicians(): Promise<TechnicianInfo[]> {
 // 2. Delete a technician
 export async function deleteTechnician(id: string) {
   try {
+    const { data: profile } = await supabaseAdmin.from('profiles').select('full_name').eq('id', id).single()
+    const name = profile?.full_name || id
+
     // Deleting the auth user automatically deletes the public.profile due to CASCADE delete
     const { error } = await supabaseAdmin.auth.admin.deleteUser(id)
     if (error) throw error
+
+    await logActivity({
+      category: 'employees',
+      action: 'deleted',
+      description: `Deleted employee ${name}`
+    })
 
     revalidatePath('/dashboard/employees')
     revalidatePath('/dashboard')
@@ -172,6 +182,12 @@ export async function createAdmin(formData: FormData) {
       throw profileError
     }
 
+    await logActivity({
+      category: 'employees',
+      action: 'created',
+      description: `Registered new administrator ${fullName} (${email})`
+    })
+
     revalidatePath('/dashboard/settings')
     return { success: true }
   } catch (err: any) {
@@ -195,7 +211,7 @@ export async function deleteAdmin(id: string) {
     // Ensure we are deleting a standard admin and not a super admin
     const { data: targetProfile, error: profileErr } = await supabaseAdmin
       .from('profiles')
-      .select('role')
+      .select('role, full_name')
       .eq('id', id)
       .single()
 
@@ -205,8 +221,16 @@ export async function deleteAdmin(id: string) {
       return { error: "Security Restriction: Super Administrator accounts cannot be deleted through this interface." }
     }
 
+    const name = targetProfile?.full_name || id
+
     const { error } = await supabaseAdmin.auth.admin.deleteUser(id)
     if (error) throw error
+
+    await logActivity({
+      category: 'employees',
+      action: 'deleted',
+      description: `Deleted administrator ${name}`
+    })
 
     revalidatePath('/dashboard/settings')
     return { success: true }
@@ -260,6 +284,14 @@ export async function update201Checklist(employeeId: string, data: ChecklistData
       return { error: "Security Restriction: Only HR, CEO, COO or Admins can update compliance checklists." }
     }
 
+    const { data: empProfile } = await supabaseAdmin
+      .from('profiles')
+      .select('full_name')
+      .eq('id', employeeId)
+      .single()
+
+    const empName = empProfile?.full_name || employeeId
+
     const { error } = await supabaseAdmin
       .from('profiles')
       .update({
@@ -276,6 +308,12 @@ export async function update201Checklist(employeeId: string, data: ChecklistData
       .eq('id', employeeId)
 
     if (error) throw error
+
+    await logActivity({
+      category: 'compliance',
+      action: 'updated',
+      description: `Updated 201 compliance checklist for ${empName}`
+    })
 
     revalidatePath('/dashboard/employees')
     return { success: true }
@@ -328,6 +366,14 @@ export async function addManualDtrLog(employeeId: string, clockIn: string, clock
     const diffMs = timeOut.getTime() - timeIn.getTime()
     const totalHours = Number((diffMs / (1000 * 60 * 60)).toFixed(2))
 
+    const { data: empProfile } = await supabaseAdmin
+      .from('profiles')
+      .select('full_name')
+      .eq('id', employeeId)
+      .single()
+
+    const empName = empProfile?.full_name || employeeId
+
     const { error } = await supabaseAdmin
       .from('time_logs')
       .insert({
@@ -341,6 +387,12 @@ export async function addManualDtrLog(employeeId: string, clockIn: string, clock
       })
 
     if (error) throw error
+
+    await logActivity({
+      category: 'employees',
+      action: 'updated',
+      description: `Inserted manual DTR override log for employee ${empName} (${clockIn} to ${clockOut})`
+    })
 
     revalidatePath('/dashboard/employees')
     return { success: true }

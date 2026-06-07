@@ -1,6 +1,7 @@
 "use server"
 import { supabaseAdmin } from "@/lib/supabase/admin"
 import { revalidatePath } from "next/cache"
+import { logActivity } from "./activity"
 
 // 1. Fetch all inventory items
 export async function getInventoryItems() {
@@ -84,6 +85,12 @@ export async function createOrUpdateInventoryItem(formData: FormData) {
 
     if (dbError) throw dbError
 
+    await logActivity({
+      category: 'inventory',
+      action: id ? 'updated' : 'created',
+      description: `${id ? 'Updated' : 'Created'} inventory item "${name}" (SKU: ${sku}, Quantity: ${quantity})`
+    })
+
     revalidatePath('/dashboard/inventory')
     return { success: true }
   } catch (err: any) {
@@ -99,10 +106,10 @@ export async function restockItem(itemId: string, quantity: number, notes?: stri
       return { error: "Restock quantity must be greater than zero." }
     }
 
-    // Fetch current quantity
+    // Fetch current quantity and name
     const { data: item, error: fetchErr } = await supabaseAdmin
       .from('inventory_items')
-      .select('quantity')
+      .select('name, quantity')
       .eq('id', itemId)
       .single()
 
@@ -131,6 +138,12 @@ export async function restockItem(itemId: string, quantity: number, notes?: stri
       })
 
     if (txErr) throw txErr
+
+    await logActivity({
+      category: 'inventory',
+      action: 'restocked',
+      description: `Restocked ${quantity} units of "${item.name}" (Notes: ${notes?.trim() || 'Restocked via admin panel'})`
+    })
 
     revalidatePath('/dashboard/inventory')
     return { success: true }
@@ -256,6 +269,20 @@ export async function createInventoryAudit(
         if (txErr) throw txErr
       }
     }
+
+    // Fetch auditor full name
+    const { data: auditor } = await supabaseAdmin
+      .from('profiles')
+      .select('full_name')
+      .eq('id', auditorId)
+      .single()
+    const auditorName = auditor?.full_name || 'Admin'
+
+    await logActivity({
+      category: 'inventory',
+      action: 'audited',
+      description: `Completed physical stocktake reconciliation audit by ${auditorName} (${auditItems.length} items audited)`
+    })
 
     revalidatePath('/dashboard/inventory')
     return { success: true, auditId: audit.id }

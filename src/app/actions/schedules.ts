@@ -2,6 +2,7 @@
 import { supabaseAdmin } from "@/lib/supabase/admin"
 import { revalidatePath } from "next/cache"
 import { isRangeOverlapping } from "@/lib/utils"
+import { logActivity } from "./activity"
 
 export async function createSchedule(formData: FormData) {
   try {
@@ -38,6 +39,15 @@ export async function createSchedule(formData: FormData) {
     })
 
     if (error) throw error
+
+    const { data: techProfile } = await supabaseAdmin.from('profiles').select('full_name').eq('id', technicianId).single()
+    const techName = techProfile?.full_name || technicianId
+    await logActivity({
+      category: 'schedules',
+      action: 'created',
+      description: `Created schedule for client "${clientName}" at "${location}" assigned to ${techName}`
+    })
+
     revalidatePath("/dashboard/schedules")
     return { success: true }
   } catch (err: any) {
@@ -48,11 +58,20 @@ export async function createSchedule(formData: FormData) {
 
 export async function toggleVipHook(scheduleId: string, currentStatus: boolean) {
   try {
+    const { data: sched } = await supabaseAdmin.from('schedules').select('client_name').eq('id', scheduleId).single()
+
     const { error } = await supabaseAdmin.from('schedules').update({
       is_vip_hook: !currentStatus
     }).eq('id', scheduleId)
 
     if (error) throw error
+
+    await logActivity({
+      category: 'schedules',
+      action: 'updated',
+      description: `Toggled VIP dispatch status for client "${sched?.client_name || scheduleId}" to ${!currentStatus ? 'Active' : 'Inactive'}`
+    })
+
     revalidatePath("/dashboard/schedules")
     return { success: true }
   } catch (err: any) {

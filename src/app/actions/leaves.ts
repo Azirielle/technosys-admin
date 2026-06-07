@@ -2,6 +2,7 @@
 import { supabaseAdmin } from "@/lib/supabase/admin"
 import { revalidatePath } from "next/cache"
 import { createClient } from '@/lib/supabase/server'
+import { logActivity } from "./activity"
 
 export interface LeaveRequest {
   id: string
@@ -104,6 +105,17 @@ export async function updateLeaveStatus(leaveId: string, status: 'approved' | 'r
       .eq('id', leaveId)
 
     if (error) throw error
+
+    const { data: leaveData } = await supabaseAdmin.from('leaves').select('technician_id, start_date, end_date').eq('id', leaveId).single()
+    if (leaveData) {
+      const { data: techProfile } = await supabaseAdmin.from('profiles').select('full_name').eq('id', leaveData.technician_id).single()
+      const techName = techProfile?.full_name || leaveData.technician_id
+      await logActivity({
+        category: 'leaves',
+        action: status,
+        description: `${status === 'approved' ? 'Approved' : 'Rejected'} leave request for ${techName} (${leaveData.start_date} to ${leaveData.end_date})`
+      })
+    }
 
     // If approved, automatically unassign technician from conflicting future schedules
     if (status === 'approved') {
