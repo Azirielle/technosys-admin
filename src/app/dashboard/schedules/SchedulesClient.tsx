@@ -6,10 +6,12 @@ import { isRangeOverlapping } from "@/lib/utils"
 
 export default function SchedulesClient({ 
   initialTechnicians, 
+  initialHelpers,
   initialSchedules,
   approvedLeaves
 }: { 
   initialTechnicians: any[], 
+  initialHelpers: any[],
   initialSchedules: any[],
   approvedLeaves: any[]
 }) {
@@ -22,7 +24,7 @@ export default function SchedulesClient({
   const [errorMsg, setErrorMsg] = useState("")
 
   const handleOpenModal = () => {
-    setTechId(initialTechnicians[0]?.id || "")
+    setTechId(initialTechnicians[0]?.id || initialHelpers[0]?.id || "")
     setStartTime("")
     setEndTime("")
     setErrorMsg("")
@@ -137,12 +139,27 @@ export default function SchedulesClient({
                       </div>
                     </div>
                     
-                    <div className="pt-4 border-t border-zinc-100 flex items-center gap-2 text-sm">
-                      <div className="w-6 h-6 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700 font-bold text-xs">
-                        {sched.technician?.full_name?.charAt(0) || '?'}
+                    <div className="pt-4 border-t border-zinc-100 flex items-center justify-between text-sm">
+                      <div className="flex items-center gap-2">
+                        <div className={`w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs ${
+                          sched.technician?.role === 'helper'
+                            ? 'bg-teal-100 text-teal-700'
+                            : 'bg-indigo-100 text-indigo-700'
+                        }`}>
+                          {sched.technician?.full_name?.charAt(0) || '?'}
+                        </div>
+                        <span className="text-zinc-500">Assigned to: </span>
+                        <span className="font-semibold text-zinc-700">{sched.technician?.full_name || 'Unknown'}</span>
+                        {sched.technician?.role && (
+                          <span className={`px-2 py-0.5 text-[10px] font-extrabold tracking-wider uppercase rounded-full border ${
+                            sched.technician.role === 'helper' 
+                              ? 'bg-teal-50 text-teal-700 border-teal-200' 
+                              : 'bg-indigo-50 text-indigo-700 border-indigo-200'
+                          }`}>
+                            {sched.technician.role}
+                          </span>
+                        )}
                       </div>
-                      <span className="text-zinc-500">Assigned to: </span>
-                      <span className="font-semibold text-zinc-700">{sched.technician?.full_name || 'Unknown'}</span>
                     </div>
                   </div>
                 ))
@@ -151,11 +168,15 @@ export default function SchedulesClient({
           </div>
         </div>
 
-        {/* Side Panel for Technicians */}
+        {/* Side Panel for Technicians & Helpers */}
         <div className="space-y-6">
+          {/* Technicians Category */}
           <div className="bg-white rounded-xl border border-zinc-200 p-6 shadow-sm">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-bold text-zinc-900">Live Technicians</h2>
+              <span className="bg-indigo-100 text-indigo-800 text-xs font-semibold px-2.5 py-0.5 rounded-full">
+                {initialTechnicians.length}
+              </span>
             </div>
             
             <div className="space-y-3">
@@ -163,13 +184,41 @@ export default function SchedulesClient({
                 <p className="text-sm text-zinc-500">No technicians found. Go to Employees to register one.</p>
               ) : (
                 initialTechnicians.map((tech) => (
-                  <div key={tech.id} className="flex items-center gap-3 p-3 bg-zinc-50 rounded-lg border border-zinc-200">
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-zinc-200 to-zinc-300 flex items-center justify-center text-zinc-600 font-bold text-xs shadow-inner">
+                  <div key={tech.id} className="flex items-center gap-3 p-3 bg-indigo-50/20 rounded-lg border border-indigo-100 transition-colors hover:bg-indigo-50/40">
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-100 to-indigo-200 flex items-center justify-center text-indigo-700 font-bold text-xs shadow-inner">
                       {tech.full_name.charAt(0)}
                     </div>
                     <div>
                       <p className="font-bold text-zinc-900 text-sm">{tech.full_name}</p>
-                      <p className="text-xs text-zinc-500 font-medium">Technician</p>
+                      <p className="text-xs text-indigo-600 font-semibold">Technician</p>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
+          {/* Helpers Category */}
+          <div className="bg-white rounded-xl border border-zinc-200 p-6 shadow-sm">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-bold text-zinc-900">Live Helpers</h2>
+              <span className="bg-teal-100 text-teal-800 text-xs font-semibold px-2.5 py-0.5 rounded-full">
+                {initialHelpers.length}
+              </span>
+            </div>
+            
+            <div className="space-y-3">
+              {initialHelpers.length === 0 ? (
+                <p className="text-sm text-zinc-500">No helpers found. Go to Employees to register one.</p>
+              ) : (
+                initialHelpers.map((helper) => (
+                  <div key={helper.id} className="flex items-center gap-3 p-3 bg-teal-50/20 rounded-lg border border-teal-100 transition-colors hover:bg-teal-50/40">
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-teal-100 to-teal-200 flex items-center justify-center text-teal-700 font-bold text-xs shadow-inner">
+                      {helper.full_name.charAt(0)}
+                    </div>
+                    <div>
+                      <p className="font-bold text-zinc-900 text-sm">{helper.full_name}</p>
+                      <p className="text-xs text-teal-600 font-semibold">Helper</p>
                     </div>
                   </div>
                 ))
@@ -192,7 +241,7 @@ export default function SchedulesClient({
             
             <form onSubmit={handleCreate} className="p-6 space-y-4 bg-zinc-50">
               <div>
-                <label className="block text-sm font-medium text-zinc-700 mb-1">Assign Technician</label>
+                <label className="block text-sm font-medium text-zinc-700 mb-1">Assign Personnel</label>
                 <select 
                   name="technicianId" 
                   required 
@@ -200,17 +249,32 @@ export default function SchedulesClient({
                   onChange={(e) => setTechId(e.target.value)}
                   className="w-full px-4 py-2.5 border border-zinc-300 rounded-lg bg-white focus:ring-2 focus:ring-emerald-500 outline-none"
                 >
-                  {initialTechnicians.map(t => {
-                    const hasConflict = approvedLeaves.some(leave => 
-                      leave.technician_id === t.id &&
-                      isRangeOverlapping(startTime, endTime, leave.start_date, leave.end_date)
-                    )
-                    return (
-                      <option key={t.id} value={t.id}>
-                        {t.full_name} {hasConflict ? "⚠️ (On Leave)" : ""}
-                      </option>
-                    )
-                  })}
+                  <optgroup label="Technicians">
+                    {initialTechnicians.map(t => {
+                      const hasConflict = approvedLeaves.some(leave => 
+                        leave.technician_id === t.id &&
+                        isRangeOverlapping(startTime, endTime, leave.start_date, leave.end_date)
+                      )
+                      return (
+                        <option key={t.id} value={t.id}>
+                          {t.full_name} {hasConflict ? "⚠️ (On Leave)" : ""}
+                        </option>
+                      )
+                    })}
+                  </optgroup>
+                  <optgroup label="Helpers">
+                    {initialHelpers.map(h => {
+                      const hasConflict = approvedLeaves.some(leave => 
+                        leave.technician_id === h.id &&
+                        isRangeOverlapping(startTime, endTime, leave.start_date, leave.end_date)
+                      )
+                      return (
+                        <option key={h.id} value={h.id}>
+                          {h.full_name} {hasConflict ? "⚠️ (On Leave)" : ""}
+                        </option>
+                      )
+                    })}
+                  </optgroup>
                 </select>
               </div>
 
@@ -258,7 +322,7 @@ export default function SchedulesClient({
 
               {currentConflict && (
                 <div className="p-3.5 bg-amber-50 border border-amber-200 text-amber-800 rounded-xl text-xs font-bold leading-relaxed">
-                  ⚠️ <strong>Conflict Warning:</strong> Selected technician has an approved leave ({currentConflict.leave_type}) from {new Date(currentConflict.start_date).toLocaleDateString()} to {new Date(currentConflict.end_date).toLocaleDateString()}. Please select another technician or change the schedule timeframe.
+                  ⚠️ <strong>Conflict Warning:</strong> Selected {initialHelpers.some(h => h.id === techId) ? "helper" : "technician"} has an approved leave ({currentConflict.leave_type}) from {new Date(currentConflict.start_date).toLocaleDateString()} to {new Date(currentConflict.end_date).toLocaleDateString()}. Please select another person or change the schedule timeframe.
                 </div>
               )}
 

@@ -11,9 +11,15 @@ export default async function SchedulesPage() {
     .eq('role', 'technician')
     .order('full_name')
 
+  const { data: helpers } = await supabaseAdmin
+    .from('profiles')
+    .select('*')
+    .eq('role', 'helper')
+    .order('full_name')
+
   const { data: schedules } = await supabaseAdmin
     .from('schedules')
-    .select('*, technician:profiles(full_name)')
+    .select('*, technician:profiles(full_name, role)')
     .order('start_time', { ascending: true })
 
   const { data: approvedLeaves } = await supabaseAdmin
@@ -24,6 +30,7 @@ export default async function SchedulesPage() {
   return (
     <SchedulesClient 
       initialTechnicians={technicians || []} 
+      initialHelpers={helpers || []}
       initialSchedules={schedules || []} 
       approvedLeaves={approvedLeaves || []}
     />
