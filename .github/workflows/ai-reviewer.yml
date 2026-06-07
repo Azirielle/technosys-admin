@@ -28,6 +28,10 @@ jobs:
 
       - name: Run Build and Type Check
         id: typecheck
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: https://ggknkdyuglzcnkwhvdak.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: dummy-anon-key
+          SUPABASE_SERVICE_ROLE_KEY: dummy-service-role-key
         run: |
           npm run build
         continue-on-error: true
