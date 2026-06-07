@@ -18,7 +18,8 @@ import {
   AlertCircle, 
   Plus, 
   ChevronRight, 
-  UserCheck 
+  UserCheck,
+  Users
 } from "lucide-react"
 import { 
   deleteTechnician, 
@@ -43,6 +44,19 @@ export default function EmployeesClient({ initialTechnicians }: EmployeesClientP
   const [error, setError] = useState("")
   const [deleteId, setDeleteId] = useState<string | null>(null)
   const [deleting, setDeleting] = useState(false)
+
+  // Filtering states
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'on_leave' | 'off_duty'>('all')
+
+  const totalForceCount = initialTechnicians.length
+  const activeCount = initialTechnicians.filter(t => t.currentStatus === 'active').length
+  const onLeaveCount = initialTechnicians.filter(t => t.currentStatus === 'on_leave').length
+  const offDutyCount = initialTechnicians.filter(t => t.currentStatus === 'off_duty').length
+
+  const filteredTechnicians = initialTechnicians.filter(tech => {
+    if (statusFilter === 'all') return true
+    return tech.currentStatus === statusFilter
+  })
 
   // Current logged in admin role
   const [currentUserRole, setCurrentUserRole] = useState<string>("")
@@ -402,25 +416,88 @@ export default function EmployeesClient({ initialTechnicians }: EmployeesClientP
         </div>
       </div>
 
+      {/* Status Metric Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        <button
+          onClick={() => setStatusFilter('all')}
+          className={`p-5 rounded-2xl border transition-all text-left group cursor-pointer ${
+            statusFilter === 'all'
+              ? 'bg-zinc-950 border-zinc-950 text-white shadow-md'
+              : 'bg-white border-zinc-200 text-zinc-900 hover:border-zinc-350 hover:shadow-sm'
+          }`}
+        >
+          <div className="flex items-center justify-between">
+            <span className={`text-2xs font-extrabold tracking-wider uppercase ${statusFilter === 'all' ? 'text-zinc-400' : 'text-zinc-500'}`}>Total Force</span>
+            <Users className={`w-5 h-5 ${statusFilter === 'all' ? 'text-zinc-300' : 'text-zinc-400 group-hover:scale-110 transition-transform'}`} />
+          </div>
+          <p className="text-2xl font-bold mt-2">{totalForceCount}</p>
+        </button>
+
+        <button
+          onClick={() => setStatusFilter('active')}
+          className={`p-5 rounded-2xl border transition-all text-left group cursor-pointer ${
+            statusFilter === 'active'
+              ? 'bg-emerald-600 border-emerald-600 text-white shadow-md'
+              : 'bg-white border-zinc-200 text-zinc-900 hover:border-zinc-350 hover:shadow-sm'
+          }`}
+        >
+          <div className="flex items-center justify-between">
+            <span className={`text-2xs font-extrabold tracking-wider uppercase ${statusFilter === 'active' ? 'text-emerald-200' : 'text-zinc-500'}`}>Active Now</span>
+            <div className={`w-2 h-2 rounded-full ${statusFilter === 'active' ? 'bg-white animate-pulse' : 'bg-emerald-500 animate-pulse'}`} />
+          </div>
+          <p className="text-2xl font-bold mt-2">{activeCount}</p>
+        </button>
+
+        <button
+          onClick={() => setStatusFilter('off_duty')}
+          className={`p-5 rounded-2xl border transition-all text-left group cursor-pointer ${
+            statusFilter === 'off_duty'
+              ? 'bg-zinc-600 border-zinc-600 text-white shadow-md'
+              : 'bg-white border-zinc-200 text-zinc-900 hover:border-zinc-350 hover:shadow-sm'
+          }`}
+        >
+          <div className="flex items-center justify-between">
+            <span className={`text-2xs font-extrabold tracking-wider uppercase ${statusFilter === 'off_duty' ? 'text-zinc-300' : 'text-zinc-500'}`}>Off-Duty</span>
+            <Clock className={`w-5 h-5 ${statusFilter === 'off_duty' ? 'text-zinc-300' : 'text-zinc-400 group-hover:scale-110 transition-transform'}`} />
+          </div>
+          <p className="text-2xl font-bold mt-2">{offDutyCount}</p>
+        </button>
+
+        <button
+          onClick={() => setStatusFilter('on_leave')}
+          className={`p-5 rounded-2xl border transition-all text-left group cursor-pointer ${
+            statusFilter === 'on_leave'
+              ? 'bg-amber-600 border-amber-600 text-white shadow-md'
+              : 'bg-white border-zinc-200 text-zinc-900 hover:border-zinc-350 hover:shadow-sm'
+          }`}
+        >
+          <div className="flex items-center justify-between">
+            <span className={`text-2xs font-extrabold tracking-wider uppercase ${statusFilter === 'on_leave' ? 'text-amber-200' : 'text-zinc-500'}`}>On-Leave</span>
+            <Calendar className={`w-5 h-5 ${statusFilter === 'on_leave' ? 'text-amber-300' : 'text-zinc-400 group-hover:scale-110 transition-transform'}`} />
+          </div>
+          <p className="text-2xl font-bold mt-2">{onLeaveCount}</p>
+        </button>
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
         {/* Left: Registered Technicians List */}
         <div className="lg:col-span-2 space-y-6">
           <div className="bg-white rounded-2xl border border-zinc-200 shadow-sm overflow-hidden">
             <div className="p-6 border-b border-zinc-100 flex items-center justify-between">
               <h2 className="text-lg font-bold text-zinc-900 flex items-center gap-2">
-                <Briefcase className="w-5 h-5 text-indigo-500" /> Employees Directory ({initialTechnicians.length})
+                <Briefcase className="w-5 h-5 text-indigo-500" /> Employees Directory ({filteredTechnicians.length})
               </h2>
             </div>
 
-            {initialTechnicians.length === 0 ? (
+            {filteredTechnicians.length === 0 ? (
               <div className="p-12 text-center">
                 <UserPlus className="w-12 h-12 text-zinc-300 mx-auto mb-4" />
-                <p className="text-zinc-600 font-semibold">No registered employees found</p>
-                <p className="text-sm text-zinc-400 mt-1">Use the registration panel to create an account.</p>
+                <p className="text-zinc-600 font-semibold">No matching employees found</p>
+                <p className="text-sm text-zinc-400 mt-1">Try changing the status filter above.</p>
               </div>
             ) : (
               <div className="divide-y divide-zinc-100">
-                {initialTechnicians.map((tech) => {
+                {filteredTechnicians.map((tech) => {
                   const sssVal = tech.hasSssId ? 1 : 0
                   const philVal = tech.hasPhilhealthId ? 1 : 0
                   const pagVal = tech.hasPagibigId ? 1 : 0
@@ -446,9 +523,18 @@ export default function EmployeesClient({ initialTechnicians }: EmployeesClientP
                       className="p-6 flex items-center justify-between hover:bg-zinc-50/50 transition-all group cursor-pointer"
                     >
                       <div className="flex items-center gap-4">
-                        {/* Initial circle avatar */}
-                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-indigo-500 to-cyan-500 flex items-center justify-center text-white font-extrabold shadow-sm ring-2 ring-white">
-                          {tech.fullName.charAt(0).toUpperCase()}
+                        {/* Initial circle avatar with status indicator */}
+                        <div className="relative">
+                          <div className="w-12 h-12 rounded-full bg-gradient-to-br from-indigo-500 to-cyan-500 flex items-center justify-center text-white font-extrabold shadow-sm ring-2 ring-white">
+                            {tech.fullName.charAt(0).toUpperCase()}
+                          </div>
+                          <span className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-white ${
+                            tech.currentStatus === 'active'
+                              ? 'bg-emerald-500'
+                              : tech.currentStatus === 'on_leave'
+                              ? 'bg-amber-550'
+                              : 'bg-zinc-400'
+                          }`} />
                         </div>
                         <div>
                           <div className="flex items-center flex-wrap gap-1">
