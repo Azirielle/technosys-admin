@@ -55,7 +55,10 @@ export async function addOfficeLocation(formData: FormData) {
       return { error: "Permission Denied: Only Super Administrators can modify geofence locations." }
     }
 
-    const name = formData.get("name")?.toString().trim() || "Main Office"
+    const name = formData.get("name")?.toString().trim()
+    if (!name) {
+      return { error: "Branch name is required." }
+    }
     const latitude = Number(formData.get("latitude"))
     const longitude = Number(formData.get("longitude"))
     const radius_meters = Number(formData.get("radius_meters"))
@@ -74,6 +77,21 @@ export async function addOfficeLocation(formData: FormData) {
 
     if (radius_meters <= 0 || radius_meters > 10000) {
       return { error: "Radius must be between 1 and 10,000 meters." }
+    }
+
+    // Check for duplicate branch name (case-insensitive)
+    const { data: existingLocation, error: checkError } = await supabaseAdmin
+      .from('office_locations')
+      .select('id')
+      .ilike('name', name)
+      .maybeSingle()
+
+    if (checkError) {
+      console.error("Error checking duplicate branch name:", checkError.message)
+    }
+
+    if (existingLocation) {
+      return { error: `A branch with the name "${name}" already exists.` }
     }
 
     const { error } = await supabaseAdmin
