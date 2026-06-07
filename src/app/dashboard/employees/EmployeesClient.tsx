@@ -70,6 +70,24 @@ export default function EmployeesClient({ initialTechnicians }: EmployeesClientP
   const [manualClockIn, setManualClockIn] = useState('')
   const [manualClockOut, setManualClockOut] = useState('')
 
+  // Registration Form States
+  const [registerRole, setRegisterRole] = useState("technician")
+  const [registerBaseSalary, setRegisterBaseSalary] = useState("20000")
+
+  const handleRoleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const val = e.target.value
+    setRegisterRole(val)
+    if (val === "technician") {
+      setRegisterBaseSalary("20000")
+    } else if (val === "helper") {
+      setRegisterBaseSalary("15000")
+    }
+  }
+
+  const handleSalaryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setRegisterBaseSalary(e.target.value)
+  }
+
   // Load current user role and potential managers
   useEffect(() => {
     async function initData() {
@@ -123,6 +141,8 @@ export default function EmployeesClient({ initialTechnicians }: EmployeesClientP
       
       setSuccess(true)
       form.reset()
+      setRegisterRole("technician")
+      setRegisterBaseSalary("20000")
       router.refresh()
     } catch (err: any) {
       setError(err.message)
@@ -447,7 +467,13 @@ export default function EmployeesClient({ initialTechnicians }: EmployeesClientP
               <label className="block text-xs font-bold uppercase tracking-wider text-zinc-500 mb-1.5">Role Type</label>
               <div className="relative">
                 <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-zinc-400" />
-                <select name="role" required className="w-full pl-10 pr-4 py-2.5 border border-zinc-200 rounded-xl bg-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all text-zinc-800 text-sm">
+                <select 
+                  name="role" 
+                  required 
+                  value={registerRole}
+                  onChange={handleRoleChange}
+                  className="w-full pl-10 pr-4 py-2.5 border border-zinc-200 rounded-xl bg-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all text-zinc-800 text-sm"
+                >
                   <option value="technician">Technician</option>
                   <option value="helper">Helper</option>
                 </select>
@@ -465,8 +491,17 @@ export default function EmployeesClient({ initialTechnicians }: EmployeesClientP
             <div>
               <label className="block text-xs font-bold uppercase tracking-wider text-zinc-500 mb-1.5">Base Salary (₱)</label>
               <div className="relative">
-                <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-zinc-400" />
-                <input name="baseSalary" required type="number" min="0" className="w-full pl-10 pr-4 py-2.5 border border-zinc-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all text-zinc-800 text-sm font-mono" placeholder="25000" />
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400 font-bold text-sm select-none">₱</span>
+                <input 
+                  name="baseSalary" 
+                  required 
+                  type="number" 
+                  min="0" 
+                  value={registerBaseSalary}
+                  onChange={handleSalaryChange}
+                  className="w-full pl-10 pr-4 py-2.5 border border-zinc-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all text-zinc-800 text-sm font-mono" 
+                  placeholder="25000" 
+                />
               </div>
             </div>
 
