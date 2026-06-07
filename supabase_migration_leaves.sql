@@ -43,3 +43,6 @@ CREATE POLICY "Admins can manage all leaves" ON leaves
       WHERE id = auth.uid() AND (role IN ('admin', 'super_admin'))
     )
   );
+
+-- 5. Enable Realtime updates for leaves table
+ALTER PUBLICATION supabase_realtime ADD TABLE leaves;
