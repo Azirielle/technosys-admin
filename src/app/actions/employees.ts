@@ -100,7 +100,8 @@ export async function getAdmins() {
     const { data: profiles, error: profileError } = await supabaseAdmin
       .from('profiles')
       .select('*')
-      .in('role', ['admin', 'super_admin'])
+      .neq('role', 'technician')
+      .neq('role', 'helper')
       .order('created_at', { ascending: false })
 
     if (profileError) throw profileError
@@ -132,9 +133,19 @@ export async function createAdmin(formData: FormData) {
     const email = formData.get("email") as string
     const password = formData.get("password") as string
     const fullName = formData.get("fullName") as string
+    const role = (formData.get("role") as string) || "admin"
 
     if (!email || !password || !fullName) {
       return { error: "All fields are required." }
+    }
+
+    // Role validation checklist
+    const validRoles = [
+      'admin', 'super_admin', 'hr', 'ceo', 'coo', 'svp', 
+      'branch_manager', 'supervisor', 'accountant', 'coordinator'
+    ]
+    if (!validRoles.includes(role)) {
+      return { error: "Security Restriction: Invalid role type specified." }
     }
 
     // A. Check if user already exists in auth
@@ -167,11 +178,11 @@ export async function createAdmin(formData: FormData) {
       createdNewAuth = true
     }
 
-    // B. Insert/restore profile with admin role
+    // B. Insert/restore profile with selected admin role
     const { error: profileError } = await supabaseAdmin.from('profiles').upsert({
       id: authUser.id,
       full_name: fullName,
-      role: 'admin',
+      role: role,
       base_salary: 0
     })
 
@@ -185,7 +196,7 @@ export async function createAdmin(formData: FormData) {
     await logActivity({
       category: 'employees',
       action: 'created',
-      description: `Registered new administrator ${fullName} (${email})`
+      description: `Registered new administrator ${fullName} (${email}) as ${role}`
     })
 
     revalidatePath('/dashboard/settings')

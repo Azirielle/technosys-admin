@@ -16,6 +16,33 @@ interface AdminAccountsProps {
   initialAdmins: AdminInfo[]
 }
 
+const getRoleBadge = (role: string) => {
+  switch (role) {
+    case "super_admin":
+      return { label: "Super Admin", className: "bg-indigo-50 border-indigo-200 text-indigo-700" }
+    case "admin":
+      return { label: "Admin", className: "bg-zinc-100 border-zinc-200 text-zinc-600" }
+    case "hr":
+      return { label: "HR Admin", className: "bg-emerald-50 border-emerald-200 text-emerald-700" }
+    case "ceo":
+      return { label: "CEO", className: "bg-amber-50 border-amber-200 text-amber-700" }
+    case "coo":
+      return { label: "COO", className: "bg-orange-50 border-orange-200 text-orange-700" }
+    case "svp":
+      return { label: "SVP", className: "bg-cyan-50 border-cyan-200 text-cyan-700" }
+    case "branch_manager":
+      return { label: "Branch Manager", className: "bg-blue-50 border-blue-200 text-blue-700" }
+    case "supervisor":
+      return { label: "Supervisor", className: "bg-sky-50 border-sky-200 text-sky-700" }
+    case "accountant":
+      return { label: "Accountant", className: "bg-rose-50 border-rose-200 text-rose-700" }
+    case "coordinator":
+      return { label: "Coordinator", className: "bg-fuchsia-50 border-fuchsia-200 text-fuchsia-700" }
+    default:
+      return { label: role.toUpperCase(), className: "bg-zinc-100 border-zinc-200 text-zinc-600" }
+  }
+}
+
 export default function AdminAccounts({ initialAdmins }: AdminAccountsProps) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
@@ -71,6 +98,7 @@ export default function AdminAccounts({ initialAdmins }: AdminAccountsProps) {
         <div className="bg-zinc-50 border border-zinc-200 rounded-xl overflow-hidden">
           <div className="divide-y divide-zinc-200">
             {initialAdmins.map((admin) => {
+              const badge = getRoleBadge(admin.role)
               const isSuper = admin.role === "super_admin"
               return (
                 <div key={admin.id} className="p-4 flex items-center justify-between hover:bg-zinc-100/50 transition-colors group">
@@ -83,12 +111,8 @@ export default function AdminAccounts({ initialAdmins }: AdminAccountsProps) {
                     <div>
                       <div className="flex items-center gap-2">
                         <h4 className="font-bold text-zinc-900 text-sm">{admin.fullName}</h4>
-                        <span className={`text-[9px] px-2 py-0.5 rounded-full border font-extrabold uppercase ${
-                          isSuper 
-                            ? "bg-indigo-50 border-indigo-200 text-indigo-700" 
-                            : "bg-zinc-100 border-zinc-200 text-zinc-600"
-                        }`}>
-                          {isSuper ? "Super Admin" : "Admin"}
+                        <span className={`text-[9px] px-2 py-0.5 rounded-full border font-extrabold uppercase ${badge.className}`}>
+                          {badge.label}
                         </span>
                       </div>
                       <p className="text-xs text-zinc-500 flex items-center gap-1 mt-0.5">
@@ -171,7 +195,30 @@ export default function AdminAccounts({ initialAdmins }: AdminAccountsProps) {
             <label className="block text-[10px] font-bold uppercase tracking-wider text-zinc-500 mb-1">Full Name</label>
             <div className="relative">
               <UserCheck className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
-              <input name="fullName" required type="text" className="w-full pl-9 pr-3 py-2 border border-zinc-200 rounded-lg text-xs focus:ring-2 focus:ring-indigo-500 outline-none bg-white text-zinc-800" placeholder="Operational Admin" />
+              <input name="fullName" required type="text" className="w-full pl-9 pr-3 py-2 border border-zinc-200 rounded-lg text-xs focus:ring-2 focus:ring-indigo-500 outline-none bg-white text-zinc-800" placeholder="e.g. John Doe" />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-[10px] font-bold uppercase tracking-wider text-zinc-500 mb-1">Admin Role Type</label>
+            <div className="relative">
+              <Shield className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
+              <select 
+                name="role" 
+                required 
+                className="w-full pl-9 pr-3 py-2 border border-zinc-200 rounded-lg text-xs focus:ring-2 focus:ring-indigo-500 outline-none bg-white text-zinc-850"
+              >
+                <option value="super_admin">Super Admin</option>
+                <option value="ceo">Chief Executive Officer (CEO)</option>
+                <option value="coo">Chief Operating Officer (COO)</option>
+                <option value="svp">Senior Vice President (SVP)</option>
+                <option value="hr">HR Admin</option>
+                <option value="branch_manager">Branch Manager</option>
+                <option value="accountant">Accountant</option>
+                <option value="admin">Standard Admin</option>
+                <option value="supervisor">Supervisor</option>
+                <option value="coordinator">Coordinator</option>
+              </select>
             </div>
           </div>
 
@@ -195,7 +242,7 @@ export default function AdminAccounts({ initialAdmins }: AdminAccountsProps) {
             disabled={loading}
             className="w-full bg-zinc-950 hover:bg-zinc-800 disabled:opacity-50 text-white font-bold py-2 rounded-lg text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer"
           >
-            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Register Standard Admin"}
+            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Register Admin Account"}
           </button>
         </form>
       </div>
