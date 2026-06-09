@@ -48,6 +48,14 @@ export default function LocationSettings({ initialLocations, userRole }: Locatio
     setErrorMsg(null)
     setSuccessMsg(null)
 
+    const trimmedName = name.trim()
+    const nameLower = trimmedName.toLowerCase()
+    const duplicate = locations.some(loc => loc.name.trim().toLowerCase() === nameLower)
+    if (duplicate) {
+      setErrorMsg(`A branch location named "${trimmedName}" already exists. Please use a unique name.`)
+      return
+    }
+
     const formData = new FormData(e.currentTarget)
     
     startTransition(async () => {
@@ -55,7 +63,7 @@ export default function LocationSettings({ initialLocations, userRole }: Locatio
       if (result?.error) {
         setErrorMsg(result.error)
       } else {
-        setSuccessMsg(`Geofence location "${name}" added successfully.`)
+        setSuccessMsg(`Geofence location "${trimmedName}" added successfully.`)
         // Clear name
         setName("")
         

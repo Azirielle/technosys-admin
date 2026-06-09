@@ -3,7 +3,7 @@ import { supabaseAdmin } from '@/lib/supabase/admin';
 
 export async function POST(request: Request) {
   try {
-    const { email, password, fullName, baseSalary, role } = await request.json();
+    const { email, password, fullName, baseSalary, role, branchId, lifecycleStatus } = await request.json();
 
     let authUser = null;
     let createdNewAuth = false;
@@ -48,7 +48,9 @@ export async function POST(request: Request) {
       id: authUser.id,
       full_name: fullName,
       role: role || 'technician',
-      base_salary: baseSalary
+      base_salary: baseSalary,
+      branch_id: branchId || null,
+      lifecycle_status: lifecycleStatus || 'active'
     });
 
     if (profileError) {

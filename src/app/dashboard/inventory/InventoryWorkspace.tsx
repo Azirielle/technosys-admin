@@ -4,9 +4,10 @@ import { useState, useTransition } from "react"
 import { 
   Package, Plus, Settings, RefreshCw, AlertTriangle, ArrowUpRight, 
   ArrowDownLeft, History, FileText, ClipboardList, CheckCircle2, AlertCircle,
-  TrendingDown, Check, X, Clipboard, User
+  TrendingDown, Check, X, Clipboard, User, Upload, Image, FileSpreadsheet
 } from "lucide-react"
-import { createOrUpdateInventoryItem, restockItem, createInventoryAudit } from "@/app/actions/inventory"
+import { createOrUpdateInventoryItem, restockItem, createInventoryAudit, bulkRegisterInventory } from "@/app/actions/inventory"
+import { createClient } from "@/lib/supabase/client"
 
 interface InventoryItem {
   id: string
@@ -15,6 +16,7 @@ interface InventoryItem {
   quantity: number
   unit: string
   low_stock_threshold: number
+  image_url?: string | null
   created_at: string
 }
 
@@ -79,6 +81,8 @@ export default function InventoryWorkspace({
   const [qty, setQty] = useState("0")
   const [unit, setUnit] = useState("pcs")
   const [threshold, setThreshold] = useState("5")
+  const [imageUrl, setImageUrl] = useState("")
+  const [uploadingImage, setUploadingImage] = useState(false)
   const [editingItem, setEditingItem] = useState<InventoryItem | null>(null)
 
   // Quick restock modal/state
@@ -92,6 +96,96 @@ export default function InventoryWorkspace({
   const [auditItemsState, setAuditItemsState] = useState<Array<{ itemId: string; name: string; sku: string; unit: string; systemQty: number; physicalQty: number }>>([])
   const [expandedAuditId, setExpandedAuditId] = useState<string | null>(null)
 
+  // Bulk Register drawer states
+  const [isBulkDrawerOpen, setIsBulkDrawerOpen] = useState(false)
+  const [bulkCsvData, setBulkCsvData] = useState("")
+  const [bulkLoading, setBulkLoading] = useState(false)
+  const [bulkResults, setBulkResults] = useState<{
+    successCount: number
+    failureCount: number
+    results: any[]
+  } | null>(null)
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    
+    setUploadingImage(true)
+    setErrorMsg(null)
+    setSuccessMsg(null)
+    
+    try {
+      const supabase = createClient()
+      const fileExt = file.name.split('.').pop()
+      const fileName = `items/${Date.now()}.${fileExt}`
+      
+      const { data, error } = await supabase.storage
+        .from('inventory')
+        .upload(fileName, file, { cacheControl: '3650000', upsert: true })
+        
+      if (error) throw error
+      
+      const { data: { publicUrl } } = supabase.storage
+        .from('inventory')
+        .getPublicUrl(fileName)
+        
+      setImageUrl(publicUrl)
+    } catch (err: any) {
+      setErrorMsg("Failed to upload image: " + err.message)
+    } finally {
+      setUploadingImage(false)
+    }
+  }
+
+  const handleBulkImport = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setBulkLoading(true)
+    setBulkResults(null)
+    setErrorMsg(null)
+    setSuccessMsg(null)
+
+    try {
+      const lines = bulkCsvData.split('\n')
+      const parsedData = []
+      for (const line of lines) {
+        const rowText = line.trim()
+        if (!rowText) continue
+        const [name, sku, quantity, unit, lowStockLimit] = rowText.split(',').map(s => s.trim())
+        parsedData.push({
+          name,
+          sku,
+          quantity: quantity ? Number(quantity) : 0,
+          unit: unit || "pcs",
+          low_stock_threshold: lowStockLimit ? Number(lowStockLimit) : 5
+        })
+      }
+
+      if (parsedData.length === 0) {
+        throw new Error("No data parsed from text area. Please check your CSV format.")
+      }
+
+      const res = await bulkRegisterInventory(parsedData)
+      if (res.error) {
+        throw new Error(res.error)
+      } else {
+        setBulkResults({
+          successCount: res.successCount || 0,
+          failureCount: res.failureCount || 0,
+          results: res.results || []
+        })
+        setBulkCsvData("")
+        // Give a short delay to see success results before reloading
+        setTimeout(() => {
+          window.location.reload()
+        }, 1500)
+      }
+    } catch (err: any) {
+      setErrorMsg(err.message || "Failed to process bulk import.")
+    } finally {
+      setBulkLoading(false)
+    }
+  }
+
   const handleCreateOrUpdate = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setErrorMsg(null)
@@ -101,6 +195,7 @@ export default function InventoryWorkspace({
     if (editingItem) {
       formData.append("id", editingItem.id)
     }
+    formData.append("image_url", imageUrl)
 
     startTransition(async () => {
       const res = await createOrUpdateInventoryItem(formData)
@@ -115,6 +210,7 @@ export default function InventoryWorkspace({
         setQty("0")
         setUnit("pcs")
         setThreshold("5")
+        setImageUrl("")
         setEditingItem(null)
         
         // Refresh page
@@ -153,6 +249,7 @@ export default function InventoryWorkspace({
     setQty(String(item.quantity))
     setUnit(item.unit)
     setThreshold(String(item.low_stock_threshold))
+    setImageUrl(item.image_url || "")
   }
 
   const cancelEdit = () => {
@@ -162,6 +259,7 @@ export default function InventoryWorkspace({
     setQty("0")
     setUnit("pcs")
     setThreshold("5")
+    setImageUrl("")
   }
 
   const startNewAudit = () => {
@@ -489,6 +587,42 @@ export default function InventoryWorkspace({
                 </div>
               </div>
 
+              <div>
+                <label className="block text-xs font-bold text-zinc-700 mb-1.5 font-bold uppercase tracking-wider">Item Photo</label>
+                <div className="flex items-center gap-3">
+                  {imageUrl ? (
+                    <div className="relative w-16 h-16 border border-zinc-200 rounded-lg overflow-hidden shrink-0">
+                      <img src={imageUrl} alt="Preview" className="w-full h-full object-cover" />
+                      <button 
+                        type="button" 
+                        onClick={() => setImageUrl("")}
+                        className="absolute top-0.5 right-0.5 bg-rose-600 text-white rounded-full p-0.5 hover:bg-rose-700 transition-colors cursor-pointer"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="w-16 h-16 bg-zinc-105 border border-dashed border-zinc-300 rounded-lg flex items-center justify-center text-zinc-400 shrink-0">
+                      <Image className="w-6 h-6" />
+                    </div>
+                  )}
+                  
+                  <label className="flex-1 flex flex-col items-center justify-center border border-zinc-200 border-dashed rounded-lg p-3 hover:bg-zinc-50 transition-colors cursor-pointer">
+                    <div className="flex items-center gap-1.5 text-xs text-zinc-650 font-bold">
+                      <Upload className="w-3.5 h-3.5 text-emerald-600" />
+                      {uploadingImage ? "Uploading..." : "Upload Photo"}
+                    </div>
+                    <input 
+                      type="file" 
+                      accept="image/*" 
+                      onChange={handleImageUpload} 
+                      disabled={uploadingImage} 
+                      className="hidden" 
+                    />
+                  </label>
+                </div>
+              </div>
+
               <div className="flex gap-2 pt-2">
                 {editingItem && (
                   <button
@@ -501,8 +635,8 @@ export default function InventoryWorkspace({
                 )}
                 <button
                   type="submit"
-                  disabled={isPending}
-                  className="flex-1 bg-zinc-950 hover:bg-zinc-800 disabled:opacity-50 text-white font-bold py-2.5 rounded-lg text-sm transition-all flex items-center justify-center gap-1.5"
+                  disabled={isPending || uploadingImage}
+                  className="flex-1 bg-zinc-950 hover:bg-zinc-800 disabled:opacity-50 text-white font-bold py-2.5 rounded-lg text-sm transition-all flex items-center justify-center gap-1.5 cursor-pointer"
                 >
                   {isPending ? "Saving..." : (editingItem ? "Update Item" : "Add Item")}
                 </button>
@@ -568,6 +702,12 @@ export default function InventoryWorkspace({
                   <h3 className="text-sm font-bold text-zinc-900">Registered Stock Items</h3>
                   <p className="text-xs text-zinc-500 mt-0.5">Browse quantities and low-stock alerts.</p>
                 </div>
+                <button 
+                  onClick={() => { setIsBulkDrawerOpen(true); setBulkResults(null); }}
+                  className="inline-flex items-center gap-1.5 bg-zinc-950 hover:bg-zinc-800 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer"
+                >
+                  <FileSpreadsheet className="w-3.5 h-3.5" /> Bulk CSV Import
+                </button>
               </div>
 
               <div className="overflow-x-auto">
@@ -592,9 +732,18 @@ export default function InventoryWorkspace({
                           }`}
                         >
                           <td className="p-4 font-mono font-bold text-xs text-zinc-600">{item.sku}</td>
-                          <td className="p-4">
-                            <span className="font-bold text-zinc-800 block">{item.name}</span>
-                            <span className="text-[10px] text-zinc-400">Registered {formatDate(item.created_at)}</span>
+                          <td className="p-4 flex items-center gap-3">
+                            {item.image_url ? (
+                              <img src={item.image_url} alt={item.name} className="w-10 h-10 object-cover rounded-lg border border-zinc-200 shrink-0" />
+                            ) : (
+                              <div className="w-10 h-10 bg-zinc-100 border border-zinc-200 rounded-lg flex items-center justify-center text-zinc-400 shrink-0">
+                                <Package className="w-5 h-5" />
+                              </div>
+                            )}
+                            <div>
+                              <span className="font-bold text-zinc-800 block">{item.name}</span>
+                              <span className="text-[10px] text-zinc-400 font-medium">Registered {formatDate(item.created_at)}</span>
+                            </div>
                           </td>
                           <td className="p-4">
                             <div className="flex items-center gap-1.5">
@@ -614,14 +763,14 @@ export default function InventoryWorkspace({
                           </td>
                           <td className="p-4 text-right space-x-2">
                             <button
-                              onClick={() => { setRestockTarget(item); setRestockQty(""); setRestockNotes(""); }}
-                              className="inline-flex items-center gap-1 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-700 px-2.5 py-1 rounded text-xs font-bold transition-all"
+                               onClick={() => { setRestockTarget(item); setRestockQty(""); setRestockNotes(""); }}
+                              className="inline-flex items-center gap-1 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-700 px-2.5 py-1 rounded text-xs font-bold transition-all cursor-pointer"
                             >
                               Restock
                             </button>
                             <button
                               onClick={() => startEdit(item)}
-                              className="inline-flex items-center gap-1 bg-zinc-50 hover:bg-zinc-100 border border-zinc-200 text-zinc-600 px-2.5 py-1 rounded text-xs font-bold transition-all"
+                              className="inline-flex items-center gap-1 bg-zinc-50 hover:bg-zinc-100 border border-zinc-200 text-zinc-600 px-2.5 py-1 rounded text-xs font-bold transition-all cursor-pointer"
                             >
                               Edit
                             </button>
@@ -816,6 +965,113 @@ export default function InventoryWorkspace({
                   )
                 })
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Slide-over Bulk Import Drawer */}
+      {isBulkDrawerOpen && (
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-50 transition-opacity flex justify-end animate-in fade-in">
+          <div className="w-full max-w-xl bg-white h-full shadow-2xl flex flex-col animate-in slide-in-from-right duration-300">
+            {/* Header */}
+            <div className="p-6 border-b border-zinc-150 flex items-center justify-between">
+              <div>
+                <h3 className="text-xl font-bold text-zinc-900">Bulk Import Stock Items</h3>
+                <p className="text-sm text-zinc-500 mt-0.5">Register multiple parts at once using CSV paste format.</p>
+              </div>
+              <button 
+                onClick={() => setIsBulkDrawerOpen(false)} 
+                className="p-2 hover:bg-zinc-100 text-zinc-500 hover:text-zinc-800 rounded-xl transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Scrollable Drawer Body */}
+            <div className="flex-1 overflow-y-auto p-6 space-y-6">
+              <div className="p-4 bg-zinc-50 border border-zinc-200 rounded-xl text-xs space-y-2 text-zinc-650">
+                <p className="font-bold text-zinc-800">CSV Input Specifications:</p>
+                <p>Provide comma-separated values (one stock item per line) in this order:</p>
+                <p className="font-mono bg-zinc-100 p-1.5 rounded border border-zinc-200">Item Name, SKU, Initial Quantity, Unit, Low Stock Limit</p>
+                <p className="font-bold text-zinc-800 mt-2">Example Paste:</p>
+                <pre className="font-mono bg-zinc-100 p-2 rounded border border-zinc-200 text-[10px] whitespace-pre-wrap leading-relaxed">
+Cat6 UTP Cable Roll, CAB-CAT6-01, 15, rolls, 3
+Fiber Patch Cord 3m, FIP-PAT-03, 100, pcs, 10
+RJ45 Connectors Box, CON-RJ45-100, 20, boxes, 5</pre>
+                <p className="text-[10px] text-zinc-500 italic mt-2">Note: SKU must be unique across all inventory records. Low Stock Limit is optional (defaults to 5 if empty). Unit is optional (defaults to 'pcs' if empty).</p>
+              </div>
+
+              {/* Bulk Results Summary */}
+              {bulkResults && (
+                <div className="space-y-4 animate-in fade-in">
+                  <div className="p-4 bg-zinc-50 border border-zinc-200 rounded-xl flex items-center justify-between">
+                    <div>
+                      <p className="text-xs font-bold text-zinc-800">Import Job Complete</p>
+                      <p className="text-2xs text-zinc-500 mt-0.5">Processed {bulkResults.results.length} rows</p>
+                    </div>
+                    <div className="flex gap-2">
+                      <span className="text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-100 px-2.5 py-1 rounded-full">
+                        {bulkResults.successCount} Success
+                      </span>
+                      {bulkResults.failureCount > 0 && (
+                        <span className="text-xs font-bold text-rose-700 bg-rose-50 border border-rose-100 px-2.5 py-1 rounded-full">
+                          {bulkResults.failureCount} Failed
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="border border-zinc-200 rounded-xl overflow-hidden max-h-48 overflow-y-auto">
+                    <table className="w-full text-left border-collapse text-xs">
+                      <thead>
+                        <tr className="bg-zinc-50 border-b border-zinc-150 text-zinc-400 font-bold uppercase tracking-wider">
+                          <th className="p-3">Row</th>
+                          <th className="p-3">SKU</th>
+                          <th className="p-3 text-right">Status</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-zinc-100">
+                        {bulkResults.results.map((res: any, idx: number) => (
+                          <tr key={idx} className="hover:bg-zinc-50/50">
+                            <td className="p-3 font-mono text-zinc-400">{res.rowNum}</td>
+                            <td className="p-3 font-bold text-zinc-800 truncate max-w-[150px]">{res.sku}</td>
+                            <td className="p-3 text-right">
+                              {res.success ? (
+                                <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">Success</span>
+                              ) : (
+                                <span className="text-[10px] font-bold text-rose-700 bg-rose-50 px-2 py-0.5 rounded-full border border-rose-100" title={res.error}>Failed</span>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              <form onSubmit={handleBulkImport} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-zinc-500 mb-1.5">Paste CSV Data</label>
+                  <textarea
+                    required
+                    rows={8}
+                    value={bulkCsvData}
+                    onChange={(e) => setBulkCsvData(e.target.value)}
+                    placeholder="Item Name, SKU, Quantity, Unit, Low Stock Limit&#10;e.g. Cat6 UTP Cable Roll, CAB-CAT6-01, 15, rolls, 3"
+                    className="w-full p-3 border border-zinc-300 rounded-xl text-xs font-mono focus:ring-2 focus:ring-emerald-500 focus:outline-none bg-white text-zinc-800 leading-relaxed animate-in fade-in"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={bulkLoading || !bulkCsvData.trim()}
+                  className="w-full bg-zinc-950 hover:bg-zinc-800 disabled:opacity-50 text-white font-bold py-3 rounded-xl text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                  {bulkLoading ? <RefreshCw className="w-4 h-4 animate-spin" /> : "Run Bulk Registration"}
+                </button>
+              </form>
             </div>
           </div>
         </div>
