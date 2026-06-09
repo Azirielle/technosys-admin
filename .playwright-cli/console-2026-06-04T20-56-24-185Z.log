@@ -1,0 +1,128 @@
+[-5606096ms] [ERROR] Failed to load resource: net::ERR_NETWORK_IO_SUSPENDED @ https://127.0.0.1:57347/exa.language_server_pb.LanguageServerService/JetboxSubscribeToSummaries:0
+[-5605966ms] [ERROR] Failed to load resource: net::ERR_NETWORK_IO_SUSPENDED @ https://127.0.0.1:57347/exa.language_server_pb.LanguageServerService/JetboxSubscribeToState:0
+[-5605965ms] [ERROR] Failed to load resource: net::ERR_NETWORK_IO_SUSPENDED @ https://127.0.0.1:57347/exa.language_server_pb.LanguageServerService/ProjectUpdatesStream:0
+[-5605963ms] [ERROR] Failed to load resource: net::ERR_NETWORK_IO_SUSPENDED @ https://127.0.0.1:57347/exa.language_server_pb.LanguageServerService/SubscribeToSidecars:0
+[-5605869ms] [ERROR] Failed to load resource: net::ERR_NETWORK_IO_SUSPENDED @ https://127.0.0.1:57347/exa.language_server_pb.LanguageServerService/StreamAgentStateUpdates:0
+[-5601474ms] [ERROR] Failed to load resource: net::ERR_NETWORK_IO_SUSPENDED @ https://127.0.0.1:57347/exa.language_server_pb.LanguageServerService/JetboxSubscribeToSummaries:0
+[-5601473ms] [ERROR] Failed to load resource: net::ERR_NETWORK_IO_SUSPENDED @ https://127.0.0.1:57347/exa.language_server_pb.LanguageServerService/JetboxSubscribeToState:0
+[-5601472ms] [ERROR] Failed to load resource: net::ERR_NETWORK_IO_SUSPENDED @ https://127.0.0.1:57347/exa.language_server_pb.LanguageServerService/ProjectUpdatesStream:0
+[-5601472ms] [ERROR] Failed to load resource: net::ERR_NETWORK_IO_SUSPENDED @ https://127.0.0.1:57347/exa.language_server_pb.LanguageServerService/SubscribeToSidecars:0
+[-5601471ms] [ERROR] Failed to load resource: net::ERR_NETWORK_IO_SUSPENDED @ https://127.0.0.1:57347/exa.language_server_pb.LanguageServerService/StreamAgentStateUpdates:0
+[-5600207ms] [ERROR] Failed to load resource: net::ERR_NETWORK_IO_SUSPENDED @ https://127.0.0.1:57347/exa.language_server_pb.LanguageServerService/JetboxSubscribeToSummaries:0
+[-5600206ms] [ERROR] Failed to load resource: net::ERR_NETWORK_IO_SUSPENDED @ https://127.0.0.1:57347/exa.language_server_pb.LanguageServerService/JetboxSubscribeToState:0
+[-5600206ms] [ERROR] Failed to load resource: net::ERR_NETWORK_IO_SUSPENDED @ https://127.0.0.1:57347/exa.language_server_pb.LanguageServerService/ProjectUpdatesStream:0
+[-5600206ms] [ERROR] Failed to load resource: net::ERR_NETWORK_IO_SUSPENDED @ https://127.0.0.1:57347/exa.language_server_pb.LanguageServerService/SubscribeToSidecars:0
+[-5600206ms] [ERROR] Failed to load resource: net::ERR_NETWORK_IO_SUSPENDED @ https://127.0.0.1:57347/exa.language_server_pb.LanguageServerService/StreamAgentStateUpdates:0
+[-9212938ms] [LOG] [TrajectorySummaries] connecting... @ https://127.0.0.1:57347/main.js:11740
+[-9212936ms] [LOG] [AppState] connecting... @ https://127.0.0.1:57347/main.js:11740
+[-9212902ms] [LOG] [ProjectUpdates] connecting... @ https://127.0.0.1:57347/main.js:11740
+[-9212345ms] [LOG] [ExtensibilityPlugins] connecting... @ https://127.0.0.1:57347/main.js:11740
+[-9109600ms] [LOG] [FileWatch:file:///c%3A/Users/ANDREW/.gemini/antigravity/brain/4f6fcee2-dedd-40cd-9b07-4708cbf60373/task.md] connecting... @ https://127.0.0.1:57347/main.js:11740
+[-9091872ms] [LOG] [FileWatch:file:///c%3A/Users/ANDREW/.gemini/antigravity/brain/4f6fcee2-dedd-40cd-9b07-4708cbf60373/walkthrough.md] connecting... @ https://127.0.0.1:57347/main.js:11740
+[-7702692ms] [LOG] [CloudCodeService] recordConversationInteraction: 1  undefined @ https://127.0.0.1:57347/main.js:11740
+[-6905326ms] [LOG] [CloudCodeService] recordConversationInteraction: 1  undefined @ https://127.0.0.1:57347/main.js:11740
+[-5605967ms] [ERROR] [TrajectorySummaries] stream error: ConnectError: [unknown] network error
+    at qA (https://127.0.0.1:57347/main.js:4399:408)
+    at https://127.0.0.1:57347/main.js:4412:106
+    at async https://127.0.0.1:57347/main.js:4408:228
+    at async xm (https://127.0.0.1:57347/main.js:3351:898) @ https://127.0.0.1:57347/main.js:11740
+[-5605967ms] [WARNING] [TrajectorySummaries] disconnected, retrying in 1000ms... @ https://127.0.0.1:57347/main.js:11740
+[-5605965ms] [ERROR] [AppState] stream error: ConnectError: [unknown] network error
+    at qA (https://127.0.0.1:57347/main.js:4399:408)
+    at https://127.0.0.1:57347/main.js:4412:106
+    at async https://127.0.0.1:57347/main.js:4408:228
+    at async xm (https://127.0.0.1:57347/main.js:3351:898) @ https://127.0.0.1:57347/main.js:11740
+[-5605965ms] [WARNING] [AppState] disconnected, retrying in 1000ms... @ https://127.0.0.1:57347/main.js:11740
+[-5605964ms] [ERROR] [ProjectUpdates] stream error: ConnectError: [unknown] network error
+    at qA (https://127.0.0.1:57347/main.js:4399:408)
+    at https://127.0.0.1:57347/main.js:4412:106
+    at async https://127.0.0.1:57347/main.js:4408:228
+    at async xm (https://127.0.0.1:57347/main.js:3351:898) @ https://127.0.0.1:57347/main.js:11740
+[-5605964ms] [WARNING] [ProjectUpdates] Disconnected @ https://127.0.0.1:57347/main.js:11740
+[-5605964ms] [WARNING] [ProjectUpdates] disconnected, retrying in 1000ms... @ https://127.0.0.1:57347/main.js:11740
+[-5605963ms] [ERROR] [ExtensibilityPlugins] stream error: ConnectError: [unknown] network error
+    at qA (https://127.0.0.1:57347/main.js:4399:408)
+    at https://127.0.0.1:57347/main.js:4412:106
+    at async https://127.0.0.1:57347/main.js:4408:228
+    at async xm (https://127.0.0.1:57347/main.js:3351:898) @ https://127.0.0.1:57347/main.js:11740
+[-5605890ms] [WARNING] [ExtensibilityPlugins] disconnected, retrying in 1000ms... @ https://127.0.0.1:57347/main.js:11740
+[-5605867ms] [ERROR] [consumeAgentStateStream] streamAgentStateUpdates error for afbb49ba-ed5d-486f-b593-ba624270770f: ConnectError: [unknown] network error
+    at qA (https://127.0.0.1:57347/main.js:4399:408)
+    at https://127.0.0.1:57347/main.js:4412:106
+    at async https://127.0.0.1:57347/main.js:4408:228
+    at async oca (https://127.0.0.1:57347/main.js:2910:495) @ https://127.0.0.1:57347/main.js:11740
+[-5603974ms] [LOG] [TrajectorySummaries] connecting... @ https://127.0.0.1:57347/main.js:11740
+[-5603968ms] [LOG] [AppState] connecting... @ https://127.0.0.1:57347/main.js:11740
+[-5603928ms] [LOG] [ProjectUpdates] connecting... @ https://127.0.0.1:57347/main.js:11740
+[-5603866ms] [LOG] [ExtensibilityPlugins] connecting... @ https://127.0.0.1:57347/main.js:11740
+[-5601473ms] [ERROR] [TrajectorySummaries] stream error: ConnectError: [unknown] network error
+    at qA (https://127.0.0.1:57347/main.js:4399:408)
+    at https://127.0.0.1:57347/main.js:4412:106
+    at async https://127.0.0.1:57347/main.js:4408:228
+    at async xm (https://127.0.0.1:57347/main.js:3351:898) @ https://127.0.0.1:57347/main.js:11740
+[-5601473ms] [WARNING] [TrajectorySummaries] disconnected, retrying in 1000ms... @ https://127.0.0.1:57347/main.js:11740
+[-5601473ms] [ERROR] [AppState] stream error: ConnectError: [unknown] network error
+    at qA (https://127.0.0.1:57347/main.js:4399:408)
+    at https://127.0.0.1:57347/main.js:4412:106
+    at async https://127.0.0.1:57347/main.js:4408:228
+    at async xm (https://127.0.0.1:57347/main.js:3351:898) @ https://127.0.0.1:57347/main.js:11740
+[-5601473ms] [WARNING] [AppState] disconnected, retrying in 1000ms... @ https://127.0.0.1:57347/main.js:11740
+[-5601472ms] [ERROR] [ProjectUpdates] stream error: ConnectError: [unknown] network error
+    at qA (https://127.0.0.1:57347/main.js:4399:408)
+    at https://127.0.0.1:57347/main.js:4412:106
+    at async https://127.0.0.1:57347/main.js:4408:228
+    at async xm (https://127.0.0.1:57347/main.js:3351:898) @ https://127.0.0.1:57347/main.js:11740
+[-5601472ms] [WARNING] [ProjectUpdates] Disconnected @ https://127.0.0.1:57347/main.js:11740
+[-5601472ms] [WARNING] [ProjectUpdates] disconnected, retrying in 1000ms... @ https://127.0.0.1:57347/main.js:11740
+[-5601472ms] [ERROR] [ExtensibilityPlugins] stream error: ConnectError: [unknown] network error
+    at qA (https://127.0.0.1:57347/main.js:4399:408)
+    at https://127.0.0.1:57347/main.js:4412:106
+    at async https://127.0.0.1:57347/main.js:4408:228
+    at async xm (https://127.0.0.1:57347/main.js:3351:898) @ https://127.0.0.1:57347/main.js:11740
+[-5601471ms] [WARNING] [ExtensibilityPlugins] disconnected, retrying in 1000ms... @ https://127.0.0.1:57347/main.js:11740
+[-5601471ms] [ERROR] [consumeAgentStateStream] streamAgentStateUpdates error for afbb49ba-ed5d-486f-b593-ba624270770f: ConnectError: [unknown] network error
+    at qA (https://127.0.0.1:57347/main.js:4399:408)
+    at https://127.0.0.1:57347/main.js:4412:106
+    at async https://127.0.0.1:57347/main.js:4408:228
+    at async oca (https://127.0.0.1:57347/main.js:2910:495) @ https://127.0.0.1:57347/main.js:11740
+[-5600211ms] [LOG] [TrajectorySummaries] connecting... @ https://127.0.0.1:57347/main.js:11740
+[-5600210ms] [LOG] [AppState] connecting... @ https://127.0.0.1:57347/main.js:11740
+[-5600210ms] [LOG] [ProjectUpdates] connecting... @ https://127.0.0.1:57347/main.js:11740
+[-5600209ms] [LOG] [ExtensibilityPlugins] connecting... @ https://127.0.0.1:57347/main.js:11740
+[-5600207ms] [ERROR] [TrajectorySummaries] stream error: ConnectError: [unknown] Failed to fetch
+    at qA (https://127.0.0.1:57347/main.js:4399:408)
+    at https://127.0.0.1:57347/main.js:4412:106
+    at async https://127.0.0.1:57347/main.js:4408:190
+    at async xm (https://127.0.0.1:57347/main.js:3351:898) @ https://127.0.0.1:57347/main.js:11740
+[-5600207ms] [WARNING] [TrajectorySummaries] disconnected, retrying in 1000ms... @ https://127.0.0.1:57347/main.js:11740
+[-5600206ms] [ERROR] [AppState] stream error: ConnectError: [unknown] Failed to fetch
+    at qA (https://127.0.0.1:57347/main.js:4399:408)
+    at https://127.0.0.1:57347/main.js:4412:106
+    at async https://127.0.0.1:57347/main.js:4408:190
+    at async xm (https://127.0.0.1:57347/main.js:3351:898) @ https://127.0.0.1:57347/main.js:11740
+[-5600206ms] [WARNING] [AppState] disconnected, retrying in 1000ms... @ https://127.0.0.1:57347/main.js:11740
+[-5600206ms] [ERROR] [ProjectUpdates] stream error: ConnectError: [unknown] Failed to fetch
+    at qA (https://127.0.0.1:57347/main.js:4399:408)
+    at https://127.0.0.1:57347/main.js:4412:106
+    at async https://127.0.0.1:57347/main.js:4408:190
+    at async xm (https://127.0.0.1:57347/main.js:3351:898) @ https://127.0.0.1:57347/main.js:11740
+[-5600206ms] [WARNING] [ProjectUpdates] Disconnected @ https://127.0.0.1:57347/main.js:11740
+[-5600206ms] [WARNING] [ProjectUpdates] disconnected, retrying in 1000ms... @ https://127.0.0.1:57347/main.js:11740
+[-5600206ms] [ERROR] [ExtensibilityPlugins] stream error: ConnectError: [unknown] Failed to fetch
+    at qA (https://127.0.0.1:57347/main.js:4399:408)
+    at https://127.0.0.1:57347/main.js:4412:106
+    at async https://127.0.0.1:57347/main.js:4408:190
+    at async xm (https://127.0.0.1:57347/main.js:3351:898) @ https://127.0.0.1:57347/main.js:11740
+[-5600206ms] [WARNING] [ExtensibilityPlugins] disconnected, retrying in 1000ms... @ https://127.0.0.1:57347/main.js:11740
+[-5600205ms] [ERROR] [consumeAgentStateStream] streamAgentStateUpdates error for afbb49ba-ed5d-486f-b593-ba624270770f: ConnectError: [unknown] Failed to fetch
+    at qA (https://127.0.0.1:57347/main.js:4399:408)
+    at https://127.0.0.1:57347/main.js:4412:106
+    at async https://127.0.0.1:57347/main.js:4408:190
+    at async oca (https://127.0.0.1:57347/main.js:2910:495) @ https://127.0.0.1:57347/main.js:11740
+[-4509324ms] [LOG] [TrajectorySummaries] connecting... @ https://127.0.0.1:57347/main.js:11740
+[-4509288ms] [LOG] [AppState] connecting... @ https://127.0.0.1:57347/main.js:11740
+[-4509286ms] [LOG] [ProjectUpdates] connecting... @ https://127.0.0.1:57347/main.js:11740
+[-4509285ms] [LOG] [ExtensibilityPlugins] connecting... @ https://127.0.0.1:57347/main.js:11740
+[-3932962ms] [LOG] [CloudCodeService] recordConversationInteraction: 3  undefined @ https://127.0.0.1:57347/main.js:11740
+[-1972952ms] [LOG] [FileWatch:file:///c%3A/Users/ANDREW/.gemini/antigravity/brain/4f6fcee2-dedd-40cd-9b07-4708cbf60373/implementation_plan.md] connecting... @ https://127.0.0.1:57347/main.js:11740
+[-1590589ms] [LOG] [CloudCodeService] recordConversationInteraction: 1  undefined @ https://127.0.0.1:57347/main.js:11740

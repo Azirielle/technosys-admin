@@ -1,8 +1,25 @@
 "use server"
 import { supabaseAdmin } from "@/lib/supabase/admin"
 import { revalidatePath } from "next/cache"
-import { isRangeOverlapping } from "@/lib/utils"
 import { logActivity } from "./activity"
+import { sendPushNotification } from "@/lib/push"
+
+// Helper to check if a single time conflicts with a leave range
+function isTimeConflictingWithLeave(timeStr: string, leaveStart: string, leaveEnd: string) {
+  const t = new Date(timeStr).getTime()
+  const start = new Date(leaveStart).getTime()
+  const end = new Date(leaveEnd).getTime()
+  return t >= start && t <= end
+}
+
+// Helper to check if range overlaps with a leave range
+function isRangeOverlappingWithLeave(startStr: string, endStr: string, leaveStart: string, leaveEnd: string) {
+  const s = new Date(startStr).getTime()
+  const e = new Date(endStr).getTime()
+  const lStart = new Date(leaveStart).getTime()
+  const lEnd = new Date(leaveEnd).getTime()
+  return s < lEnd && e > lStart
+}
 
 export async function createSchedule(formData: FormData) {
   try {
@@ -10,11 +27,22 @@ export async function createSchedule(formData: FormData) {
     const clientName = formData.get("clientName") as string
     const location = formData.get("location") as string
     const startTime = formData.get("startTime") as string
-    const endTime = formData.get("endTime") as string
+    const endTime = formData.get("endTime") as string // Can be empty / null
+    const attendanceMode = (formData.get("attendanceMode") as string) || 'hq'
+    const seniorPartnerId = formData.get("seniorPartnerId") as string // Can be empty / null
     const isVip = formData.get("isVip") === "on"
     const trackingMode = (formData.get("trackingMode") as string) || "pacita_hq"
 
-    const { error: leavesErr, data: leaves } = await supabaseAdmin
+    // 1. Fetch technician profile to get name for activity logs
+    const { data: techProfile } = await supabaseAdmin
+      .from('profiles')
+      .select('full_name')
+      .eq('id', technicianId)
+      .single()
+    const techName = techProfile?.full_name || 'Staff'
+
+    // 2. Fetch approved leaves for conflict checking
+    const { data: leaves, error: leavesErr } = await supabaseAdmin
       .from('leaves')
       .select('*')
       .eq('technician_id', technicianId)
@@ -22,33 +50,49 @@ export async function createSchedule(formData: FormData) {
 
     if (leavesErr) throw leavesErr
 
-    const hasConflict = leaves?.some(leave => 
-      isRangeOverlapping(startTime, endTime, leave.start_date, leave.end_date)
-    )
+    const hasConflict = leaves?.some(leave => {
+      if (endTime) {
+        return isRangeOverlappingWithLeave(startTime, endTime, leave.start_date, leave.end_date)
+      } else {
+        return isTimeConflictingWithLeave(startTime, leave.start_date, leave.end_date)
+      }
+    })
 
     if (hasConflict) {
-      throw new Error("The selected technician is on approved leave during this schedule's timeframe.")
+      throw new Error(`The selected employee "${techName}" is on approved leave during this schedule's timeframe.`)
     }
 
-    const { error } = await supabaseAdmin.from('schedules').insert({
+    // 3. Insert schedule
+    const insertData: any = {
       technician_id: technicianId,
       client_name: clientName,
       location,
       start_time: new Date(startTime).toISOString(),
-      end_time: new Date(endTime).toISOString(),
-      is_vip_hook: isVip,
-      attendance_tracking_mode: trackingMode
-    })
+      end_time: endTime ? new Date(endTime).toISOString() : null,
+      attendance_mode: attendanceMode,
+      senior_partner_id: seniorPartnerId || null,
+      is_vip_hook: isVip
+    }
 
+    const { error } = await supabaseAdmin.from('schedules').insert(insertData)
     if (error) throw error
 
-    const { data: techProfile } = await supabaseAdmin.from('profiles').select('full_name').eq('id', technicianId).single()
-    const techName = techProfile?.full_name || technicianId
-    await logActivity({
-      category: 'schedules',
-      action: 'created',
-      description: `Created schedule for client "${clientName}" at "${location}" assigned to ${techName} (DTR Mode: ${trackingMode.replace('_', ' ')})`
-    })
+    // Look up target profile and send push notification
+    const { data: targetProfile } = await supabaseAdmin
+      .from('profiles')
+      .select('push_token')
+      .eq('id', technicianId)
+      .single();
+    if (targetProfile?.push_token) {
+      await sendPushNotification(
+        targetProfile.push_token,
+        "New Dispatch Assigned",
+        "You have been assigned to a new schedule. Please check dispatches on home screen."
+      );
+    }
+
+    // 4. Log administrative activity
+    await logActivity('create_schedule', 'schedule', `Scheduled ${techName} to client "${clientName}" (Mode: ${attendanceMode})`)
 
     revalidatePath("/dashboard/schedules")
     return { success: true }
@@ -58,9 +102,114 @@ export async function createSchedule(formData: FormData) {
   }
 }
 
+// Bulk Create Schedules Server Action
+export async function bulkCreateSchedules(data: {
+  staffIds: string[]
+  clientName: string
+  location: string
+  startTime: string
+  endTime?: string
+  attendanceMode: string
+  seniorPartnerMap?: Record<string, string> // maps helperId -> seniorPartnerId
+  isVip?: boolean
+}) {
+  try {
+    const { staffIds, clientName, location, startTime, endTime, attendanceMode, seniorPartnerMap = {}, isVip = false } = data
+
+    if (!staffIds || staffIds.length === 0) {
+      return { error: "Please select at least one staff member to schedule." }
+    }
+
+    const results = []
+    let successCount = 0
+    let failureCount = 0
+
+    // Fetch staff names for activity logs
+    const { data: profiles } = await supabaseAdmin
+      .from('profiles')
+      .select('id, full_name')
+      .in('id', staffIds)
+    const profileMap = new Map((profiles || []).map(p => [p.id, p.full_name]))
+
+    // Fetch leaves for all selected staff
+    const { data: leaves, error: leavesErr } = await supabaseAdmin
+      .from('leaves')
+      .select('*')
+      .in('technician_id', staffIds)
+      .eq('status', 'approved')
+
+    if (leavesErr) throw leavesErr
+
+    for (const staffId of staffIds) {
+      const staffName = profileMap.get(staffId) || 'Staff'
+
+      // Check conflict
+      const staffLeaves = leaves?.filter(l => l.technician_id === staffId) || []
+      const hasConflict = staffLeaves.some(leave => {
+        if (endTime) {
+          return isRangeOverlappingWithLeave(startTime, endTime, leave.start_date, leave.end_date)
+        } else {
+          return isTimeConflictingWithLeave(startTime, leave.start_date, leave.end_date)
+        }
+      })
+
+      if (hasConflict) {
+        results.push({ id: staffId, name: staffName, success: false, error: "On approved leave during this time." })
+        failureCount++
+        continue
+      }
+
+      try {
+        const seniorPartnerId = seniorPartnerMap[staffId] || null
+        
+        await supabaseAdmin.from('schedules').insert({
+          technician_id: staffId,
+          client_name: clientName,
+          location,
+          start_time: new Date(startTime).toISOString(),
+          end_time: endTime ? new Date(endTime).toISOString() : null,
+          attendance_mode: attendanceMode,
+          senior_partner_id: seniorPartnerId,
+          is_vip_hook: isVip
+        })
+
+        // Look up target profile and send push notification
+        const { data: targetProfile } = await supabaseAdmin
+          .from('profiles')
+          .select('push_token')
+          .eq('id', staffId)
+          .single();
+        if (targetProfile?.push_token) {
+          await sendPushNotification(
+            targetProfile.push_token,
+            "New Dispatch Assigned",
+            "You have been assigned to a new schedule. Please check dispatches on home screen."
+          );
+        }
+
+        results.push({ id: staffId, name: staffName, success: true })
+        successCount++
+      } catch (e: any) {
+        results.push({ id: staffId, name: staffName, success: false, error: e.message || 'Database insert failed' })
+        failureCount++
+      }
+    }
+
+    // Log administrative activity
+    await logActivity('create_schedule', 'schedule', `Bulk scheduled ${successCount} staff to client "${clientName}" (Mode: ${attendanceMode})`)
+
+    revalidatePath("/dashboard/schedules")
+    return { success: true, results, successCount, failureCount }
+  } catch (err: any) {
+    console.error("Bulk create schedules error:", err)
+    return { error: err.message || "Failed to process bulk scheduling request." }
+  }
+}
+
 export async function toggleVipHook(scheduleId: string, currentStatus: boolean) {
   try {
     const { data: sched } = await supabaseAdmin.from('schedules').select('client_name').eq('id', scheduleId).single()
+    const clientName = sched?.client_name || 'Client'
 
     const { error } = await supabaseAdmin.from('schedules').update({
       is_vip_hook: !currentStatus
@@ -68,11 +217,8 @@ export async function toggleVipHook(scheduleId: string, currentStatus: boolean) 
 
     if (error) throw error
 
-    await logActivity({
-      category: 'schedules',
-      action: 'updated',
-      description: `Toggled VIP dispatch status for client "${sched?.client_name || scheduleId}" to ${!currentStatus ? 'Active' : 'Inactive'}`
-    })
+    // Log administrative activity
+    await logActivity('toggle_vip', 'schedule', `${!currentStatus ? 'Activated' : 'Deactivated'} VIP Hook for client "${clientName}"`)
 
     revalidatePath("/dashboard/schedules")
     return { success: true }

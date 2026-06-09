@@ -4,16 +4,16 @@ import SchedulesClient from "./SchedulesClient"
 export const revalidate = 0; // Prevent caching so we see real-time VIP Hooks
 
 export default async function SchedulesPage() {
-  // Fetch real data from our live Supabase
-  const { data: technicians } = await supabaseAdmin
+  // Fetch both technicians and helpers
+  const { data: staff } = await supabaseAdmin
     .from('profiles')
     .select('*')
-    .eq('role', 'technician')
+    .in('role', ['technician', 'helper'])
     .order('full_name')
 
   const { data: schedules } = await supabaseAdmin
     .from('schedules')
-    .select('*, technician:profiles(full_name)')
+    .select('*, technician:profiles!technician_id(full_name, role), senior_partner:profiles!senior_partner_id(full_name)')
     .order('start_time', { ascending: true })
 
   const { data: approvedLeaves } = await supabaseAdmin
@@ -23,7 +23,7 @@ export default async function SchedulesPage() {
 
   return (
     <SchedulesClient 
-      initialTechnicians={technicians || []} 
+      initialTechnicians={staff || []} 
       initialSchedules={schedules || []} 
       approvedLeaves={approvedLeaves || []}
     />

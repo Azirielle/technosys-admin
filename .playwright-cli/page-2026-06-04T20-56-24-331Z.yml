@@ -1,0 +1,486 @@
+- generic [ref=e1]:
+  - generic [ref=e8]:
+    - generic [ref=e10]:
+      - button "Antigravity" [ref=e12] [cursor=pointer]
+      - button "File" [ref=e14] [cursor=pointer]
+      - button "View" [ref=e16] [cursor=pointer]
+      - button "Window" [ref=e18] [cursor=pointer]
+    - generic [ref=e20]:
+      - navigation "Sidebar" [ref=e23]:
+        - generic [ref=e26]:
+          - button "Toggle Sidebar" [ref=e27] [cursor=pointer]:
+            - img [ref=e28]
+          - generic [ref=e30]:
+            - button "Go Back" [ref=e31] [cursor=pointer]:
+              - img [ref=e32]
+            - button "Go Forward" [disabled]:
+              - img
+        - generic [ref=e35]:
+          - button "New Conversation" [ref=e36] [cursor=pointer]:
+            - img [ref=e37]
+            - generic [ref=e39]: New Conversation
+          - button "Conversation History" [ref=e40] [cursor=pointer]:
+            - img [ref=e41]
+            - generic [ref=e43]: Conversation History
+          - button "Scheduled Tasks" [ref=e44] [cursor=pointer]:
+            - img [ref=e45]
+            - generic [ref=e47]: Scheduled Tasks
+        - generic [ref=e49]:
+          - generic [ref=e50]:
+            - generic [ref=e51]:
+              - heading "Projects" [level=2] [ref=e52]
+              - generic [ref=e53]:
+                - button "Display Options" [ref=e54] [cursor=pointer]:
+                  - img [ref=e55]
+                - button [ref=e57] [cursor=pointer]:
+                  - img [ref=e58]
+            - generic [ref=e62]:
+              - generic [ref=e63]:
+                - button "figma-mcp" [ref=e64] [cursor=pointer]:
+                  - generic [ref=e66]:
+                    - img [ref=e68]
+                    - generic [ref=e71]: figma-mcp
+                - generic [ref=e73]: No conversations yet
+              - generic [ref=e74]:
+                - button "hris-admin" [expanded] [ref=e75] [cursor=pointer]:
+                  - generic [ref=e77]:
+                    - img [ref=e79]
+                    - generic [ref=e82]: hris-admin
+                - generic [ref=e87]:
+                  - button "Assessing TechnoSys Research Progress Loading" [ref=e89] [cursor=pointer]:
+                    - generic [ref=e92]: Assessing TechnoSys Research Progress
+                    - generic [ref=e95]:
+                      - img [ref=e96]
+                      - generic "Loading" [ref=e98]
+                  - button "Creating Antigravity Portfolio Website Loading" [ref=e103] [cursor=pointer]:
+                    - generic [ref=e106]: Creating Antigravity Portfolio Website
+                    - generic [ref=e109]:
+                      - img [ref=e110]
+                      - generic "Loading" [ref=e112]
+                  - button "Listing Installed CLIs and MCPs 1h" [ref=e117] [cursor=pointer]:
+                    - generic [ref=e120]: Listing Installed CLIs and MCPs
+                    - generic [ref=e123]:
+                      - img [ref=e124]
+                      - generic [ref=e126]: 1h
+                  - button "https://github.com/browser-use/browser-harness you need this 4d" [ref=e128] [cursor=pointer]:
+                    - generic [ref=e131]: https://github.com/browser-use/browser-harness you need this
+                    - generic [ref=e134]:
+                      - img [ref=e135]
+                      - generic [ref=e137]: 4d
+              - generic [ref=e138]:
+                - button "HRISSS-main" [expanded] [ref=e139] [cursor=pointer]:
+                  - generic [ref=e141]:
+                    - img [ref=e143]
+                    - generic [ref=e146]: HRISSS-main
+                - button "Running Project Locally 3mo" [ref=e153] [cursor=pointer]:
+                  - generic [ref=e156]: Running Project Locally
+                  - generic [ref=e159]:
+                    - img [ref=e160]
+                    - generic [ref=e162]: 3mo
+              - generic [ref=e163]:
+                - button "stress_detector" [expanded] [ref=e164] [cursor=pointer]:
+                  - generic [ref=e166]:
+                    - img [ref=e168]
+                    - generic [ref=e171]: stress_detector
+                - generic [ref=e176]:
+                  - button "Setting Heart Rate Baseline Floor 55m" [ref=e178] [cursor=pointer]:
+                    - generic [ref=e181]: Setting Heart Rate Baseline Floor
+                    - generic [ref=e184]:
+                      - img [ref=e185]
+                      - generic [ref=e187]: 55m
+                  - button "Fixing Development Environment Dependencies 2mo" [ref=e189] [cursor=pointer]:
+                    - generic [ref=e192]: Fixing Development Environment Dependencies
+                    - generic [ref=e195]:
+                      - img [ref=e196]
+                      - generic [ref=e198]: 2mo
+                  - button "Fixing Gamer Dashboard CSS 2mo" [ref=e200] [cursor=pointer]:
+                    - generic [ref=e203]: Fixing Gamer Dashboard CSS
+                    - generic [ref=e206]:
+                      - img [ref=e207]
+                      - generic [ref=e209]: 2mo
+              - generic [ref=e210]:
+                - button "stress_detector-master" [expanded] [ref=e211] [cursor=pointer]:
+                  - generic [ref=e213]:
+                    - img [ref=e215]
+                    - generic [ref=e218]: stress_detector-master
+                - button "Troubleshooting PHP Artisan Serve 2mo" [ref=e225] [cursor=pointer]:
+                  - generic [ref=e228]: Troubleshooting PHP Artisan Serve
+                  - generic [ref=e231]:
+                    - img [ref=e232]
+                    - generic [ref=e234]: 2mo
+              - generic [ref=e235]:
+                - button "Technosis" [expanded] [ref=e236] [cursor=pointer]:
+                  - generic [ref=e238]:
+                    - img [ref=e240]
+                    - generic [ref=e243]: Technosis
+                - generic [ref=e248]:
+                  - button "I want to connect Figma's official remote MCP server to my active workspace. Please check my workspace directory for an mcp.json file. If it doesn't exist, create it, and populate it with the official Figma HTTP remote server configuration (https://mcp.figma.com/mcp). Give me step-by-step instructions on where I need to generate my Figma Personal Access Token and how to apply it so we don't hit permission errors. 13d" [ref=e250] [cursor=pointer]:
+                    - generic [ref=e253]: I want to connect Figma's official remote MCP server to my active workspace. Please check my workspace directory for an mcp.json file. If it doesn't exist, create it, and populate it with the official Figma HTTP remote server configuration (https://mcp.figma.com/mcp). Give me step-by-step instructions on where I need to generate my Figma Personal Access Token and how to apply it so we don't hit permission errors.
+                    - generic [ref=e256]:
+                      - img [ref=e257]
+                      - generic [ref=e259]: 13d
+                  - button "can you make an mcp to connect to my app Framer? 13d" [ref=e261] [cursor=pointer]:
+                    - generic [ref=e264]: can you make an mcp to connect to my app Framer?
+                    - generic [ref=e267]:
+                      - img [ref=e268]
+                      - generic [ref=e270]: 13d
+          - generic [ref=e271]:
+            - generic [ref=e272]:
+              - heading "Conversations" [level=2] [ref=e273]
+              - button "New Conversation" [ref=e274] [cursor=pointer]:
+                - img [ref=e275]
+            - generic [ref=e277]:
+              - button "Creating Antigravity Portfolio Website Loading" [ref=e279] [cursor=pointer]:
+                - generic [ref=e282]: Creating Antigravity Portfolio Website
+                - generic "Loading" [ref=e286]
+              - button "Integrating Browser Harness" [ref=e291] [cursor=pointer]:
+                - generic [ref=e294]: Integrating Browser Harness
+              - button "Learning Impeccable Design Skill Loading" [ref=e302] [cursor=pointer]:
+                - generic [ref=e305]: Learning Impeccable Design Skill
+                - generic "Loading" [ref=e309]
+              - button "Explaining Assistant Capabilities" [ref=e314] [cursor=pointer]:
+                - generic [ref=e317]: Explaining Assistant Capabilities
+              - button "Planning a Modern HRIS Stack Loading" [ref=e325] [cursor=pointer]:
+                - generic [ref=e328]: Planning a Modern HRIS Stack
+                - generic "Loading" [ref=e332]
+              - button "Connecting Figma Remote MCP Server 13d" [ref=e337] [cursor=pointer]:
+                - generic [ref=e340]: Connecting Figma Remote MCP Server
+                - generic [ref=e344]: 13d
+              - button "See all (83)" [ref=e345] [cursor=pointer]
+        - button "Settings" [ref=e348] [cursor=pointer]:
+          - img [ref=e349]
+          - generic [ref=e351]: Settings
+      - generic [ref=e360]:
+        - generic [ref=e363]:
+          - generic [ref=e366]:
+            - generic [ref=e367]:
+              - generic [ref=e369] [cursor=pointer]: hris-admin
+              - generic [ref=e370]: /
+            - generic [ref=e371]:
+              - generic [ref=e373] [cursor=pointer]: Assessing TechnoSys Research Progress
+              - generic [ref=e374]: /
+            - generic [ref=e377] [cursor=pointer]: Managing JIRA Kanban Board
+          - generic [ref=e379]:
+            - button "Open IDE" [ref=e380] [cursor=pointer]:
+              - img [ref=e382]
+              - text: Open IDE
+            - button "Toggle Auxiliary Pane" [ref=e408] [cursor=pointer]:
+              - img [ref=e409]
+        - generic [ref=e418]:
+          - generic [ref=e426]:
+            - article "User message" [ref=e427]:
+              - generic [ref=e433]:
+                - generic [ref=e437] [cursor=pointer]: "1. Check your available tools to locate the Chrome DevTools/browser automation tools. 2. Locate the browser tab displaying the JIRA board (andrewsadarayan.atlassian.net/jira/software/projects/KAN/boards/2). 3. Create the following four tasks in the 'TO DO' column of the JIRA board: - Task 1: Title: 'Implement DTR Override Audit Log Ledger' Description: 'Create a database table dtr_override_logs to record manual DTR override histories: modifier, target, original and new times, and override justification. Expose a history viewer inside the Employee details drawer.' - Task 2: Title: 'Build Admin Settings Panel for Holidays & Announcements' Description: 'Create visual management screens in the Admin dashboard settings (/settings) to add/remove/edit holidays and publish branch-specific announcements.' - Task 3: Title: 'Enforce Offline Clock-Tampering NTP Verification' Description: 'Calculate temporal drift in the mobile syncQueue.ts on log sync. Flag entries with > 15m drift as is_suspicious and highlight them in the Admin DTR list.' - Task 4: Title: 'Integrate Overrides Push Notification Pipeline' Description: 'Configure Expo notifications and PostgreSQL database listener webhooks to alert technicians of schedule overrides immediately.' 4. Verify that all 4 tasks are visible in the 'TO DO' column. 5. Send me a message when done with screenshots or verification results."
+                - generic:
+                  - generic: 4:52 AM
+                  - button "Copy" [ref=e438] [cursor=pointer]:
+                    - img [ref=e439]
+                  - button [ref=e441] [cursor=pointer]:
+                    - img [ref=e442]
+            - article "Agent response" [ref=e444]:
+              - button "Worked for 2m" [ref=e446] [cursor=pointer]:
+                - generic [ref=e447]: Worked for 2m
+                - img [ref=e448]
+              - paragraph [ref=e452]: "[System Notification] Background task python -c \" import os for root, dirs, files in os.walk(r'C:\\Users\\ANDREW.gemini\\config\\plugins'): for f in files: if f.endswith('.json') or f.endswith('.md') or f.endswith('.js') or f.endswith('.ts'): path = os.path.join(root, f) try: content = open(path, 'r', encoding='utf-8').read() if 'chrome' in content or 'devtools' in content or 'mcp' in content: print(path) except Exception: pass \" (84d6a9f9-a1f8-4283-af41-a7e446368e80/task-55) completed. Exit Code: 0 Stdout: C:\\Users\\ANDREW.gemini\\config\\plugins\\agent-skills\\plugin.json C:\\Users\\ANDREW.gemini\\config\\plugins\\agent-skills\\skills\\browser-testing-with-devtools\\SKILL.md C:\\Users\\ANDREW.gemini\\config\\plugins\\chrome-devtools-plugin\\plugin.json C:\\Users\\ANDREW.gemini\\config\\plugins\\google-antigravity-sdk\\plugin.json C:\\Users\\ANDREW.gemini\\config\\plugins\\google-antigravity-sdk\\references\\chrome-devtools.md C:\\Users\\ANDREW.gemini\\config\\plugins\\playwright-cli\\plugin.json C:\\Users\\ANDREW.gemini\\config\\plugins\\playwright-cli\\skills\\SKILL.md C:\\Users\\ANDREW.gemini\\config\\plugins\\prompt-skills\\plugin.json C:\\Users\\ANDREW.gemini\\config\\plugins\\promptfoo\\plugin.json C:\\Users\\ANDREW.gemini\\config\\plugins\\science\\plugin.json C:\\Users\\ANDREW.gemini\\config\\plugins\\science\\skills\\chembl_database\\SKILL.md C:\\Users\\ANDREW.gemini\\config\\plugins\\science\\skills\\foldseek_structural_search\\SKILL.md C:\\Users\\ANDREW.gemini\\config\\plugins\\science\\skills\\gnomad_database\\SKILL.md C:\\Users\\ANDREW.gemini\\config\\plugins\\science\\skills\\openfda_database\\SKILL.md C:\\Users\\ANDREW.gemini\\config\\plugins\\science\\skills\\pdb_database\\SKILL.md C:\\Users\\ANDREW.gemini\\config\\plugins\\science\\skills\\pubchem_database\\SKILL.md C:\\Users\\ANDREW.gemini\\config\\plugins\\science\\skills\\pubmed_database\\SKILL.md C:\\Users\\ANDREW.gemini\\config\\plugins\\science\\skills\\quickgo_database\\SKILL.md C:\\Users\\ANDREW.gemini\\config\\plugins\\science\\skills\\uniprot_database\\SKILL.md C:\\Users\\ANDREW.gemini\\config\\plugins\\science\\skills\\workflow_skill_creator\\SKILL.md C:\\Users\\ANDREW.gemini\\config\\plugins\\superpowers\\plugin.json C:\\Users\\ANDREW.gemini\\config\\plugins\\taste-skill\\plugin.json C:\\Users\\ANDREW.gemini\\config\\plugins\\taste-skill\\skills\\image-to-code-skill\\SKILL.md C:\\Users\\ANDREW.gemini\\config\\plugins\\taste-skill\\skills\\imagegen-frontend-mobile\\SKILL.md C:\\Users\\ANDREW.gemini\\config\\plugins\\taste-skill\\skills\\imagegen-frontend-web\\SKILL.md C:\\Users\\ANDREW.gemini\\config\\plugins\\taste-skill\\skills\\output-skill\\SKILL.md C:\\Users\\ANDREW.gemini\\config\\plugins\\taste-skill\\skills\\redesign-skill\\SKILL.md C:\\Users\\ANDREW.gemini\\config\\plugins\\taste-skill\\skills\\taste-skill\\SKILL.md C:\\Users\\ANDREW.gemini\\config\\plugins\\vercel-skills\\plugin.json C:\\Users\\ANDREW.gemini\\config\\plugins\\vercel\\plugin.json"
+              - generic [ref=e458]: Search plugin files finished
+              - generic [ref=e464]:
+                - generic [ref=e467]:
+                  - generic [ref=e468] [cursor=pointer]:
+                    - generic [ref=e471]:
+                      - generic [ref=e472]: Ran
+                      - generic [ref=e474]: dir C:\Users\ANDREW\.gemini\config\plugins\google-antigravity-sdk
+                    - img [ref=e476]
+                  - generic [ref=e480]:
+                    - generic [ref=e481]:
+                      - generic [ref=e482]:
+                        - text: …\hris-admin
+                        - generic [ref=e483]: ">"
+                        - text: dir C:\Users\ANDREW\.gemini\config\plugins\google-antigravity-sdk
+                      - button [ref=e484] [cursor=pointer]:
+                        - img [ref=e485]
+                    - generic [ref=e489]: "Directory: C:\\Users\\ANDREW\\.gemini\\config\\plugins\\google-antigravity-sdk Mode LastWriteTime Length Name ---- ------------- ------ ---- -a---- 5/23/2026 4:04 PM 285 plugin.json"
+                - button "Explored 1 file" [ref=e491] [cursor=pointer]:
+                  - generic [ref=e492]: Explored
+                  - generic [ref=e493]: 1 file
+                  - img [ref=e494]
+                - generic [ref=e498]:
+                  - generic [ref=e499] [cursor=pointer]:
+                    - generic [ref=e502]:
+                      - generic [ref=e503]: Ran
+                      - generic [ref=e505]: python -c "import json; print(json.load(open(r'C:\Users\ANDREW\.gemini\config\plugins\playwright-cli\plugin.json')))"
+                    - img [ref=e507]
+                  - generic [ref=e511]:
+                    - generic [ref=e512]:
+                      - generic [ref=e513]:
+                        - text: …\hris-admin
+                        - generic [ref=e514]: ">"
+                        - text: python -c "import json; print(json.load(open(r'C:\Users\ANDREW\.gemini\config\plugins\playwright-cli\plugin.json')))"
+                      - button [ref=e515] [cursor=pointer]:
+                        - img [ref=e516]
+                    - generic [ref=e520]: "{'name': 'playwright-cli-plugin', 'version': '1.0.0', 'description': 'Automate browser interactions, test web pages, and work with Playwright tests using playwright-cli', 'author': {'name': 'Microsoft'}, 'license': 'MIT', 'keywords': ['playwright', 'cli', 'browser', 'automation', 'testing']}"
+                - generic [ref=e523]:
+                  - generic [ref=e524] [cursor=pointer]:
+                    - generic [ref=e527]:
+                      - generic [ref=e528]: Ran
+                      - generic [ref=e530]: playwright-cli list
+                    - img [ref=e532]
+                  - generic [ref=e538]:
+                    - generic [ref=e539]:
+                      - generic [ref=e540]:
+                        - text: …\hris-admin
+                        - generic [ref=e541]: ">"
+                        - text: playwright-cli list
+                      - generic:
+                        - button [ref=e542] [cursor=pointer]:
+                          - img [ref=e543]
+                        - generic:
+                          - img
+                    - generic [ref=e547]: "playwright-cli : The term 'playwright-cli' is not recognized as the name of a cmdlet, function, script file, or operable program. Check the spelling of the name, or if a path was included, verify that the path is correct and try again. At line:1 char:1 + playwright-cli list + ~~~~~~~~~~~~~~ + CategoryInfo : ObjectNotFound: (playwright-cli:String) [], CommandNotFoundException + FullyQualifiedErrorId : CommandNotFoundException"
+                - generic [ref=e550]:
+                  - generic [ref=e551] [cursor=pointer]:
+                    - generic [ref=e554]:
+                      - generic [ref=e555]: Ran
+                      - generic [ref=e557]: npx --no-install playwright-cli list
+                    - img [ref=e559]
+                  - generic [ref=e565]:
+                    - generic [ref=e566]:
+                      - generic [ref=e567]:
+                        - text: …\hris-admin
+                        - generic [ref=e568]: ">"
+                        - text: npx --no-install playwright-cli list
+                      - generic:
+                        - button [ref=e569] [cursor=pointer]:
+                          - img [ref=e570]
+                        - generic:
+                          - img
+                    - generic [ref=e574]: "npm error could not determine executable to run npm error A complete log of this run can be found in: C:\\Users\\ANDREW\\AppData\\Local\\npm-cache\\_logs\\2026-06-04T20_55_13_150Z-debug-0.log"
+                - generic [ref=e577]:
+                  - generic [ref=e578] [cursor=pointer]:
+                    - generic [ref=e581]:
+                      - generic [ref=e582]: Ran
+                      - generic [ref=e584]: dir C:\Users\ANDREW\.gemini\config\plugins\playwright-cli\node_modules\.bin
+                    - img [ref=e586]
+                  - generic [ref=e590]:
+                    - generic [ref=e591]:
+                      - generic [ref=e592]:
+                        - text: …\hris-admin
+                        - generic [ref=e593]: ">"
+                        - text: dir C:\Users\ANDREW\.gemini\config\plugins\playwright-cli\node_modules\.bin
+                      - button [ref=e594] [cursor=pointer]:
+                        - img [ref=e595]
+                    - generic [ref=e599]: "Directory: C:\\Users\\ANDREW\\.gemini\\config\\plugins\\playwright-cli\\node_modules\\.bin Mode LastWriteTime Length Name ---- ------------- ------ ---- -a---- 6/5/2026 4:46 AM 395 playwright -a---- 6/5/2026 4:46 AM 393 playwright-core -a---- 6/5/2026 4:46 AM 327 playwright-core.cmd -a---- 6/5/2026 4:46 AM 813 playwright-core.ps1 -a---- 6/5/2026 4:46 AM 328 playwright.cmd -a---- 6/5/2026 4:46 AM 817 playwright.ps1"
+                - generic [ref=e602]:
+                  - generic [ref=e603] [cursor=pointer]:
+                    - generic [ref=e606]:
+                      - generic [ref=e607]: Ran
+                      - generic [ref=e609]: dir C:\Users\ANDREW\.gemini\config\plugins\playwright-cli
+                    - img [ref=e611]
+                  - generic [ref=e615]:
+                    - generic [ref=e616]:
+                      - generic [ref=e617]:
+                        - text: …\hris-admin
+                        - generic [ref=e618]: ">"
+                        - text: dir C:\Users\ANDREW\.gemini\config\plugins\playwright-cli
+                      - button [ref=e619] [cursor=pointer]:
+                        - img [ref=e620]
+                    - generic [ref=e624]: "Directory: C:\\Users\\ANDREW\\.gemini\\config\\plugins\\playwright-cli Mode LastWriteTime Length Name ---- ------------- ------ ---- d----- 5/31/2026 2:12 PM .claude d----- 5/31/2026 2:12 PM .github d----- 6/5/2026 4:46 AM node_modules d----- 5/31/2026 2:12 PM scripts d----- 5/31/2026 2:12 PM skills d----- 5/31/2026 2:12 PM tests -a---- 5/31/2026 2:12 PM 139 .gitignore -a---- 5/31/2026 2:12 PM 60 .npmignore -a---- 5/31/2026 2:12 PM 792 CLAUDE.md -a---- 5/31/2026 2:12 PM 1487 CONTRIBUTING.md -a---- 5/31/2026 2:12 PM 11552 LICENSE -a---- 6/5/2026 4:46 AM 3483 package-lock.json -a---- 5/31/2026 2:12 PM 733 package.json -a---- 5/31/2026 2:12 PM 820 playwright-cli.js -a---- 5/31/2026 2:12 PM 852 playwright.config.ts -a---- 5/31/2026 2:12 PM 339 plugin.json -a---- 5/31/2026 2:12 PM 23136 README.md -a---- 5/31/2026 2:12 PM 557 SECURITY.md"
+                - generic [ref=e627]:
+                  - generic [ref=e628] [cursor=pointer]:
+                    - generic [ref=e631]:
+                      - generic [ref=e632]: Ran
+                      - generic [ref=e634]: node C:\Users\ANDREW\.gemini\config\plugins\playwright-cli\playwright-cli.js --help
+                    - img [ref=e636]
+                  - generic [ref=e640]:
+                    - generic [ref=e641]:
+                      - generic [ref=e642]:
+                        - text: …\hris-admin
+                        - generic [ref=e643]: ">"
+                        - text: node C:\Users\ANDREW\.gemini\config\plugins\playwright-cli\playwright-cli.js --help
+                      - button [ref=e644] [cursor=pointer]:
+                        - img [ref=e645]
+                    - generic [ref=e649]: "playwright-cli - run playwright mcp commands from terminal Usage: playwright-cli <command> [args] [options] Usage: playwright-cli -s=<session> <command> [args] [options] Core: open [url] open the browser attach [name] attach to a running playwright browser close close the browser detach detach from an attached browser goto <url> navigate to a url type <text> type text into editable element click <target> [button] perform click on a web page dblclick <target> [button] perform double click on a web page fill <target> <text> fill text into editable element drag <startTarget> <endTarget> perform drag and drop between two elements drop <target> drop files or data onto an element hover <target> hover over element on page select <target> <val> select an option in a dropdown upload <file> upload one or multiple files check <target> check a checkbox or radio button uncheck <target> uncheck a checkbox or radio button snapshot [target] capture page snapshot to obtain element ref eval <func> [target] evaluate javascript expression on page or element dialog-accept [prompt] accept a dialog dialog-dismiss dismiss a dialog resize <w> <h> resize the browser window delete-data delete session data Navigation: go-back go back to the previous page go-forward go forward to the next page reload reload the current page Keyboard: press <key> press a key on the keyboard, `a`, `arrowleft` keydown <key> press a key down on the keyboard keyup <key> press a key up on the keyboard Mouse: mousemove <x> <y> move mouse to a given position mousedown [button] press mouse down mouseup [button] press mouse up mousewheel <dx> <dy> scroll mouse wheel Save as: screenshot [target] screenshot of the current page or element pdf save page as pdf Tabs: tab-list list all tabs tab-new [url] create a new tab tab-close [index] close a browser tab tab-select <index> select a browser tab Storage: state-load <filename> loads browser storage (authentication) state from a file state-save [filename] saves the current storage (authentication) state to a file cookie-list list all cookies (optionally filtered by domain/path) cookie-get <name> get a specific cookie by name cookie-set <name> <value> set a cookie with optional flags cookie-delete <name> delete a specific cookie cookie-clear clear all cookies localstorage-list list all localstorage key-value pairs localstorage-get <key> get a localstorage item by key localstorage-set <key> <value> set a localstorage item localstorage-delete <key> delete a localstorage item localstorage-clear clear all localstorage sessionstorage-list list all sessionstorage key-value pairs sessionstorage-get <key> get a sessionstorage item by key sessionstorage-set <key> <value> set a sessionstorage item sessionstorage-delete <key> delete a sessionstorage item sessionstorage-clear clear all sessionstorage Network: requests list all network requests since loading the page. each request is numbered for use with the `request` command. request <index> show full details (headers, body, response) of a single network request by its number from the `requests` command. request-headers <index> print only the request headers for a single network request by its number from the `requests` command. request-body <index> print only the request body for a single network request by its number from the `requests` command. response-headers <index> print only the response headers for a single network request by its number from the `requests` command. response-body <index> print the response body for a single network request by its number from the `requests` command. textual bodies are inlined; binary bodies are saved to a file and the path is printed. route <pattern> mock network requests matching a url pattern route-list list all active network routes unroute [pattern] remove routes matching a pattern (or all routes) network-state-set <state> set the browser network state to online or offline DevTools: console [min-level] list console messages run-code [code] run playwright code snippet tracing-start start trace recording tracing-stop stop trace recording video-start [filename] start video recording video-stop stop video recording video-chapter <title> add a chapter marker to the video recording show show playwright dashboard pause-at <location> run the test up to a specific location and pause there resume resume the test execution step-over step over the next call in the test generate-locator <target> generate a playwright locator for the given element highlight [target] show (or with --hide, remove) a highlight overlay for an element; `--hide` without a target hides all page highlights. Install: install initialize workspace install-browser [browser] install browser Browser sessions: list list browser sessions close-all close all browser sessions kill-all forcefully kill all browser sessions (for stale/zombie processes) Global options: --help [command] print help --json output response as JSON --raw output only the result value, without status and code --version print version"
+                - generic [ref=e652]:
+                  - generic [ref=e653] [cursor=pointer]:
+                    - generic [ref=e656]:
+                      - generic [ref=e657]: Ran
+                      - generic [ref=e659]: node C:\Users\ANDREW\.gemini\config\plugins\playwright-cli\playwright-cli.js list
+                    - img [ref=e661]
+                  - generic [ref=e665]:
+                    - generic [ref=e666]:
+                      - generic [ref=e667]:
+                        - text: …\hris-admin
+                        - generic [ref=e668]: ">"
+                        - text: node C:\Users\ANDREW\.gemini\config\plugins\playwright-cli\playwright-cli.js list
+                      - button [ref=e669] [cursor=pointer]:
+                        - img [ref=e670]
+                    - generic [ref=e674]: (no browsers)
+                - generic [ref=e677]:
+                  - generic [ref=e678] [cursor=pointer]:
+                    - generic [ref=e681]:
+                      - generic [ref=e682]: Ran
+                      - generic [ref=e684]: Get-CimInstance Win32_Process -Filter "Name = 'msedge.exe'" | Select-Object ProcessId, CommandLine | Format-List
+                    - img [ref=e686]
+                  - generic [ref=e690]:
+                    - generic [ref=e691]:
+                      - generic [ref=e692]:
+                        - text: …\hris-admin
+                        - generic [ref=e693]: ">"
+                        - text: Get-CimInstance Win32_Process -Filter "Name = 'msedge.exe'" | Select-Object ProcessId, CommandLine | Format-List
+                      - button [ref=e694] [cursor=pointer]:
+                        - img [ref=e695]
+                    - generic [ref=e699]: "<truncated 28 lines> AAAAAAAA== --startup-read-main-dll --metrics-shmem-handle=1900,i,784945318128559027,12301038127009997084,262144 --field-trial-handle=2224,i,1013933317757304933,2679964850607389502,262144 --variations-seed-version --pseudonymization-salt-handle=2228,i,16806481623415997936,4083168848908561111,4 --trace-process-track-uuid=3190708988185955192 --mojo-platform-channel-handle=2220 /prefetch:2 ProcessId : 8372 CommandLine : \"C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe\" --type=utility --utility-sub-type=storage.mojom.StorageService --lang=en-US --service-sandbox-type=service --startup-read-main-dll --metrics-shmem-handle=2812,i,663379353575591185,8219821430702946694,524288 --field-trial-handle=2224,i,1013933317757304933,2679964850607389502,262144 --variations-seed-version --pseudonymization-salt-handle=2228,i,16806481623415997936,4083168848908561111,4 --trace-process-track-uuid=3190708990060038890 --mojo-platform-channel-handle=2860 /prefetch:13 ProcessId : 26840 CommandLine : \"C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe\" --type=renderer --extension-process --renderer-sub-type=extension --pdf-upsell-enabled --video-capture-use-gpu-memory-buffer --lang=en-US --js-flags --device-scale-factor=1.25 --num-raster-threads=4 --enable-main-frame-before-activation --renderer-client-id=9 --time-ticks-at-unix-epoch=-1780595702964553 --launch-time-ticks=943741138 --skip-read-main-dll --metrics-shmem-handle=4680,i,17769269322093945842,11985359797139235354,2097152 --field-trial-handle=2224,i,1013933317757304933,2679964850607389502,262144 --variations-seed-version --pseudonymization-salt-handle=2228,i,16806481623415997936,4083168848908561111,4 --trace-process-track-uuid=3190708994745248135 --mojo-platform-channel-handle=4524 /prefetch:9 ProcessId : 17168 CommandLine : \"C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe\" --type=renderer --pdf-upsell-enabled --video-capture-use-gpu-memory-buffer --lang=en-US --js-flags --device-scale-factor=1.25 --num-raster-threads=4 --enable-main-frame-before-activation --renderer-client-id=17 --time-ticks-at-unix-epoch=-1780595702964553 --launch-time-ticks=949028987 --skip-read-main-dll --metrics-shmem-handle=8892,i,1073326844784773201,9404332463957175479,2097152 --field-trial-handle=2224,i,1013933317757304933,2679964850607389502,262144 --variations-seed-version --pseudonymization-salt-handle=2228,i,16806481623415997936,4083168848908561111,4 --trace-process-track-uuid=3190709002241582927 --mojo-platform-channel-handle=8900 /prefetch:1 ProcessId : 22008 CommandLine : \"C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe\" --type=renderer --pdf-upsell-enabled --video-capture-use-gpu-memory-buffer --lang=en-US --js-flags --device-scale-factor=1.25 --num-raster-threads=4 --enable-main-frame-before-activation --renderer-client-id=18 --time-ticks-at-unix-epoch=-1780595702964553 --launch-time-ticks=949039472 --skip-read-main-dll --metrics-shmem-handle=7304,i,13839426918114034872,16709181280780346846,2097152 --field-trial-handle=2224,i,1013933317757304933,2679964850607389502,262144 --variations-seed-version --pseudonymization-salt-handle=2228,i,16806481623415997936,4083168848908561111,4 --trace-process-track-uuid=3190709003178624776 --mojo-platform-channel-handle=9032 /prefetch:1 ProcessId : 6768 CommandLine : \"C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe\" --type=utility --utility-sub-type=edge_search_indexer.mojom.SearchIndexerInterfaceBroker --lang=en-US --service-sandbox-type=search_indexer --message-loop-type-ui --video-capture-use-gpu-memory-buffer --ssd-no-pressure-read-main-dll --metrics-shmem-handle=8620,i,2040571103871255241,706187428773867927,524288 --field-trial-handle=2224,i,1013933317757304933,2679964850607389502,262144 --variations-seed-version --pseudonymization-salt-handle=2228,i,16806481623415997936,4083168848908561111,4 --trace-process-track-uuid=3190709005052708474 --mojo-platform-channel-handle=2244 /prefetch:14 ProcessId : 24964 CommandLine : \"C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe\" --type=renderer --pdf-upsell-enabled --video-capture-use-gpu-memory-buffer --lang=en-US --js-flags --device-scale-factor=1.25 --num-raster-threads=4 --enable-main-frame-before-activation --renderer-client-id=31 --time-ticks-at-unix-epoch=-1780595702964553 --launch-time-ticks=3043414709 --skip-read-main-dll --metrics-shmem-handle=6856,i,14587614983737133819,6828982910038767265,2097152 --field-trial-handle=2224,i,1013933317757304933,2679964850607389502,262144 --variations-seed-version --pseudonymization-salt-handle=2228,i,16806481623415997936,4083168848908561111,4 --trace-process-track-uuid=3190709015360168813 --mojo-platform-channel-handle=7668 /prefetch:1 ProcessId : 30784 CommandLine : \"C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe\" --type=renderer --pdf-upsell-enabled --video-capture-use-gpu-memory-buffer --lang=en-US --js-flags --device-scale-factor=1.25 --num-raster-threads=4 --enable-main-frame-before-activation --renderer-client-id=53 --time-ticks-at-unix-epoch=-1780595702964553 --launch-time-ticks=8505532740 --skip-read-main-dll --metrics-shmem-handle=10204,i,12412799352224054330,5618853390712656703,2097152 --field-trial-handle=2224,i,1013933317757304933,2679964850607389502,262144 --variations-seed-version --pseudonymization-salt-handle=2228,i,16806481623415997936,4083168848908561111,4 --trace-process-track-uuid=3190709035975089491 --mojo-platform-channel-handle=8088 /prefetch:1 ProcessId : 29660 CommandLine : \"C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe\" --type=renderer --pdf-upsell-enabled --video-capture-use-gpu-memory-buffer --lang=en-US --js-flags --device-scale-factor=1.25 --num-raster-threads=4 --enable-main-frame-before-activation --renderer-client-id=54 --time-ticks-at-unix-epoch=-1780595702964553 --launch-time-ticks=8505560337 --skip-read-main-dll --metrics-shmem-handle=6092,i,127054940374008062,15879016541189255750,2097152 --field-trial-handle=2224,i,1013933317757304933,2679964850607389502,262144 --variations-seed-version --pseudonymization-salt-handle=2228,i,16806481623415997936,4083168848908561111,4 --trace-process-track-uuid=3190709036912131340 --mojo-platform-channel-handle=5668 /prefetch:1 ProcessId : 22116 CommandLine : \"C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe\" --type=renderer --pdf-upsell-enabled --video-capture-use-gpu-memory-buffer --lang=en-US --js-flags --device-scale-factor=1.25 --num-raster-threads=4 --enable-main-frame-before-activation --renderer-client-id=55 --time-ticks-at-unix-epoch=-1780595702964553 --launch-time-ticks=8505599839 --skip-read-main-dll --metrics-shmem-handle=10036,i,11942685568477037517,14040066493845376086,2097152 --field-trial-handle=2224,i,1013933317757304933,2679964850607389502,262144 --variations-seed-version --pseudonymization-salt-handle=2228,i,16806481623415997936,4083168848908561111,4 --trace-process-track-uuid=3190709037849173189 --mojo-platform-channel-handle=8364 /prefetch:1"
+                - generic [ref=e702]:
+                  - generic [ref=e703] [cursor=pointer]:
+                    - generic [ref=e706]:
+                      - generic [ref=e707]: Ran
+                      - generic [ref=e709]: "Get-CimInstance Win32_Process -Filter \"Name = 'brave.exe' or Name = 'chrome.exe' or Name = 'msedge.exe'\" | Where-Object {$_.CommandLine -notlike \"*--type=*\"} | Select-Object ProcessId, Name, CommandLine | Format-List"
+                    - img [ref=e711]
+                  - generic [ref=e715]:
+                    - generic [ref=e716]:
+                      - generic [ref=e717]:
+                        - text: …\hris-admin
+                        - generic [ref=e718]: ">"
+                        - text: "Get-CimInstance Win32_Process -Filter \"Name = 'brave.exe' or Name = 'chrome.exe' or Name = 'msedge.exe'\" | Where-Object {$_.CommandLine -notlike \"*--type=*\"} | Select-Object ProcessId, Name, CommandLine | Format-List"
+                      - button [ref=e719] [cursor=pointer]:
+                        - img [ref=e720]
+                    - generic [ref=e724]: "ProcessId : 25168 Name : msedge.exe CommandLine : \"C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe\" --embedded-browser-edgeview=1 --edge-webview-host-pid=9200 --embedded-browser-edgeview-handle=3428 ProcessId : 28052 Name : brave.exe CommandLine : \"C:\\Program Files\\BraveSoftware\\Brave-Browser\\Application\\brave.exe\" ProcessId : 4684 Name : chrome.exe CommandLine : \"C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe\""
+                - generic [ref=e727]:
+                  - generic [ref=e728] [cursor=pointer]:
+                    - generic [ref=e731]:
+                      - generic [ref=e732]: Ran
+                      - generic [ref=e734]: Get-CimInstance Win32_Process -Filter "Name = 'chrome.exe'" | Select-Object ProcessId, CommandLine | Format-List
+                    - img [ref=e736]
+                  - generic [ref=e740]:
+                    - generic [ref=e741]:
+                      - generic [ref=e742]:
+                        - text: …\hris-admin
+                        - generic [ref=e743]: ">"
+                        - text: Get-CimInstance Win32_Process -Filter "Name = 'chrome.exe'" | Select-Object ProcessId, CommandLine | Format-List
+                      - button [ref=e744] [cursor=pointer]:
+                        - img [ref=e745]
+                    - generic [ref=e749]: "<truncated 29 lines> --trace-process-track-uuid=3190708989122997041 --mojo-platform-channel-handle=2016 /prefetch:11 ProcessId : 31948 CommandLine : \"C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe\" --type=utility --utility-sub-type=storage.mojom.StorageService --lang=en-US --service-sandbox-type=service --no-pre-read-main-dll --metrics-shmem-handle=2244,i,6593393956864779898,17052734053061196384,524288 --field-trial-handle=1872,i,10950097793343252389,6427714688165624234,262144 --variations-seed-version --pseudonymization-salt-handle=1876,i,14380686085147329725,9585698392990589466,4 --trace-process-track-uuid=3190708990060038890 --mojo-platform-channel-handle=2272 /prefetch:13 ProcessId : 8352 CommandLine : \"C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe\" --type=renderer --extension-process --origin-trial-disabled-features=CanvasTextNg|WebAssemblyCustomDescriptors --no-pre-read-main-dll --video-capture-use-gpu-memory-buffer --lang=en-US --device-scale-factor=1.25 --num-raster-threads=4 --enable-main-frame-before-activation --renderer-client-id=7 --time-ticks-at-unix-epoch=-1780595702964553 --launch-time-ticks=10751243270 --metrics-shmem-handle=3932,i,13625404315987464502,231045187288505784,2097152 --field-trial-handle=1872,i,10950097793343252389,6427714688165624234,262144 --variations-seed-version --pseudonymization-salt-handle=1876,i,14380686085147329725,9585698392990589466,4 --trace-process-track-uuid=3190708992871164437 --mojo-platform-channel-handle=3936 /prefetch:9 ProcessId : 29472 CommandLine : \"C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe\" --type=renderer --origin-trial-disabled-features=CanvasTextNg|WebAssemblyCustomDescriptors --no-pre-read-main-dll --video-capture-use-gpu-memory-buffer --lang=en-US --device-scale-factor=1.25 --num-raster-threads=4 --enable-main-frame-before-activation --renderer-client-id=18 --time-ticks-at-unix-epoch=-1780595702964553 --launch-time-ticks=10753826657 --metrics-shmem-handle=7032,i,2869758715117282314,13756201180177520685,2097152 --field-trial-handle=1872,i,10950097793343252389,6427714688165624234,262144 --variations-seed-version --pseudonymization-salt-handle=1876,i,14380686085147329725,9585698392990589466,4 --trace-process-track-uuid=3190709003178624776 --mojo-platform-channel-handle=6996 /prefetch:1 ProcessId : 18084 CommandLine : \"C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe\" --type=utility --utility-sub-type=data_decoder.mojom.DataDecoderService --lang=en-US --service-sandbox-type=service --video-capture-use-gpu-memory-buffer --no-pre-read-main-dll --metrics-shmem-handle=8660,i,12610843988239913988,9110159849290893543,524288 --field-trial-handle=1872,i,10950097793343252389,6427714688165624234,262144 --variations-seed-version --pseudonymization-salt-handle=1876,i,14380686085147329725,9585698392990589466,4 --trace-process-track-uuid=3190709005052708474 --mojo-platform-channel-handle=8448 /prefetch:14 ProcessId : 29224 CommandLine : \"C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe\" --type=renderer --origin-trial-disabled-features=CanvasTextNg|WebAssemblyCustomDescriptors --no-pre-read-main-dll --video-capture-use-gpu-memory-buffer --lang=en-US --device-scale-factor=1.25 --num-raster-threads=4 --enable-main-frame-before-activation --renderer-client-id=23 --time-ticks-at-unix-epoch=-1780595702964553 --launch-time-ticks=10760240334 --metrics-shmem-handle=8568,i,9701544368984328277,89898039950760103,2097152 --field-trial-handle=1872,i,10950097793343252389,6427714688165624234,262144 --variations-seed-version --pseudonymization-salt-handle=1876,i,14380686085147329725,9585698392990589466,4 --trace-process-track-uuid=3190709007863834021 --mojo-platform-channel-handle=8564 /prefetch:1 ProcessId : 20424 CommandLine : \"C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe\" --type=renderer --origin-trial-disabled-features=CanvasTextNg|WebAssemblyCustomDescriptors --no-pre-read-main-dll --video-capture-use-gpu-memory-buffer --lang=en-US --device-scale-factor=1.25 --num-raster-threads=4 --enable-main-frame-before-activation --renderer-client-id=24 --time-ticks-at-unix-epoch=-1780595702964553 --launch-time-ticks=10763022035 --metrics-shmem-handle=6188,i,2203768110794066730,4842503262469562939,2097152 --field-trial-handle=1872,i,10950097793343252389,6427714688165624234,262144 --variations-seed-version --pseudonymization-salt-handle=1876,i,14380686085147329725,9585698392990589466,4 --trace-process-track-uuid=3190709008800875870 --mojo-platform-channel-handle=8636 /prefetch:1 ProcessId : 28220 CommandLine : \"C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe\" --type=renderer --extension-process --origin-trial-disabled-features=CanvasTextNg|WebAssemblyCustomDescriptors --no-pre-read-main-dll --video-capture-use-gpu-memory-buffer --lang=en-US --device-scale-factor=1.25 --num-raster-threads=4 --enable-main-frame-before-activation --renderer-client-id=25 --time-ticks-at-unix-epoch=-1780595702964553 --launch-time-ticks=10809280855 --metrics-shmem-handle=7648,i,1478333619491590896,11218057774134390026,2097152 --field-trial-handle=1872,i,10950097793343252389,6427714688165624234,262144 --variations-seed-version --pseudonymization-salt-handle=1876,i,14380686085147329725,9585698392990589466,4 --trace-process-track-uuid=3190709009737917719 --mojo-platform-channel-handle=4448 /prefetch:9 ProcessId : 8040 CommandLine : \"C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe\" --type=renderer --extension-process --origin-trial-disabled-features=CanvasTextNg|WebAssemblyCustomDescriptors --no-pre-read-main-dll --video-capture-use-gpu-memory-buffer --lang=en-US --device-scale-factor=1.25 --num-raster-threads=4 --enable-main-frame-before-activation --renderer-client-id=26 --time-ticks-at-unix-epoch=-1780595702964553 --launch-time-ticks=10809342083 --metrics-shmem-handle=7652,i,16260598912237089501,5963620697441880259,2097152 --field-trial-handle=1872,i,10950097793343252389,6427714688165624234,262144 --variations-seed-version --pseudonymization-salt-handle=1876,i,14380686085147329725,9585698392990589466,4 --trace-process-track-uuid=3190709010674959568 --mojo-platform-channel-handle=4412 /prefetch:9 ProcessId : 10576 CommandLine : \"C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe\" --type=renderer --extension-process --origin-trial-disabled-features=CanvasTextNg|WebAssemblyCustomDescriptors --no-pre-read-main-dll --video-capture-use-gpu-memory-buffer --lang=en-US --device-scale-factor=1.25 --num-raster-threads=4 --enable-main-frame-before-activation --renderer-client-id=28 --time-ticks-at-unix-epoch=-1780595702964553 --launch-time-ticks=10828850973 --metrics-shmem-handle=6304,i,10470389639370825652,10212465252131155594,2097152 --field-trial-handle=1872,i,10950097793343252389,6427714688165624234,262144 --variations-seed-version --pseudonymization-salt-handle=1876,i,14380686085147329725,9585698392990589466,4 --trace-process-track-uuid=3190709012549043266 --mojo-platform-channel-handle=8444 /prefetch:9"
+                - generic [ref=e752]:
+                  - generic [ref=e753] [cursor=pointer]:
+                    - generic [ref=e756]:
+                      - generic [ref=e757]: Ran
+                      - generic [ref=e759]: Get-CimInstance Win32_Process -Filter "ProcessId = 4684" | Select-Object ProcessId, CommandLine | Format-List
+                    - img [ref=e761]
+                  - generic [ref=e765]:
+                    - generic [ref=e766]:
+                      - generic [ref=e767]:
+                        - text: …\hris-admin
+                        - generic [ref=e768]: ">"
+                        - text: Get-CimInstance Win32_Process -Filter "ProcessId = 4684" | Select-Object ProcessId, CommandLine | Format-List
+                      - button [ref=e769] [cursor=pointer]:
+                        - img [ref=e770]
+                    - generic [ref=e774]: "ProcessId : 4684 CommandLine : \"C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe\""
+                - generic [ref=e777]:
+                  - generic [ref=e778] [cursor=pointer]:
+                    - generic [ref=e781]:
+                      - generic [ref=e782]: Ran
+                      - generic [ref=e784]: node C:\Users\ANDREW\.gemini\config\plugins\playwright-cli\playwright-cli.js attach --cdp=chrome
+                    - img [ref=e786]
+                  - generic [ref=e792]:
+                    - generic [ref=e793]:
+                      - generic [ref=e794]:
+                        - text: …\hris-admin
+                        - generic [ref=e795]: ">"
+                        - text: node C:\Users\ANDREW\.gemini\config\plugins\playwright-cli\playwright-cli.js attach --cdp=chrome
+                      - generic:
+                        - button [ref=e796] [cursor=pointer]:
+                          - img [ref=e797]
+                        - generic:
+                          - img
+                    - generic [ref=e801]: "C:\\Users\\ANDREW\\.gemini\\config\\plugins\\playwright-cli\\node_modules\\playwright-core\\lib\\tools\\cli-client\\session.js:167 const rejectWithPid = (reject, message) => reject(Object.assign(new Error(`Daemon pid=${child.pid}: ${message}`), { daemonPid: child.pid })); ^ Error: Daemon pid=29768: Could not connect to chrome: DevToolsActivePort file not found at C:\\Users\\ANDREW\\AppData\\Local\\Google\\Chrome\\User Data\\DevToolsActivePort. Make sure chrome is running with remote debugging enabled. Navigate to chrome://inspect/#remote-debugging and check \"Allow remote debugging for this browser instance\". Call log: - <ws preparing> reading C:\\Users\\ANDREW\\AppData\\Local\\Google\\Chrome\\User Data\\DevToolsActivePort at rejectWithPid (C:\\Users\\ANDREW\\.gemini\\config\\plugins\\playwright-cli\\node_modules\\playwright-core\\lib\\tools\\cli-client\\session.js:167:69) at Socket.<anonymous> (C:\\Users\\ANDREW\\.gemini\\config\\plugins\\playwright-cli\\node_modules\\playwright-core\\lib\\tools\\cli-client\\session.js:177:11) at Socket.emit (node:events:519:28) at addChunk (node:internal/streams/readable:561:12) at readableAddChunkPushByteMode (node:internal/streams/readable:512:3) at Readable.push (node:internal/streams/readable:392:5) at Pipe.onStreamRead (node:internal/stream_base_commons:189:23) { daemonPid: 29768 } Node.js v22.19.0"
+                - button "Explored 1 search" [ref=e803] [cursor=pointer]:
+                  - generic [ref=e804]: Explored
+                  - generic [ref=e805]: 1 search
+                  - img [ref=e806]
+                - generic [ref=e810]:
+                  - generic [ref=e811] [cursor=pointer]:
+                    - generic [ref=e814]:
+                      - generic [ref=e815]: Ran
+                      - generic [ref=e817]: python -c "import json; print(json.load(open(r'C:\Users\ANDREW\.gemini\config\plugins\agent-skills\plugin.json')))"
+                    - img [ref=e819]
+                  - generic [ref=e822]:
+                    - generic [ref=e823]:
+                      - generic [ref=e824]:
+                        - generic [ref=e825]:
+                          - text: …\hris-admin
+                          - generic [ref=e826]: ">"
+                          - text: python -c "import json; print(json.load(open(r'C:\Users\ANDREW\.gemini\config\plugins\agent-skills\plugin.json')))"
+                        - button [ref=e827] [cursor=pointer]:
+                          - img [ref=e828]
+                      - generic [ref=e832]: "{'name': 'agent-skills', 'version': '1.0.0', 'description': 'Production-grade engineering skills for AI coding agents by Addy Osmani', 'author': {'name': 'Addy Osmani'}, 'license': 'MIT', 'keywords': ['agent-skills', 'engineering', 'best-practices', 'lifecycle']}"
+                    - button "Thought for 1s" [ref=e834] [cursor=pointer]:
+                      - generic [ref=e835]: Thought for 1s
+                      - img [ref=e836]
+                - generic [ref=e840]:
+                  - generic [ref=e841] [cursor=pointer]:
+                    - generic [ref=e844]:
+                      - generic [ref=e845]: Ran
+                      - generic [ref=e847]: "gci env:"
+                    - img [ref=e849]
+                  - generic [ref=e853]:
+                    - generic [ref=e854]:
+                      - generic [ref=e855]:
+                        - text: …\hris-admin
+                        - generic [ref=e856]: ">"
+                        - text: "gci env:"
+                      - button [ref=e857] [cursor=pointer]:
+                        - img [ref=e858]
+                    - generic [ref=e862]: "Name Value ---- ----- ACSetupSvcPort 23210 ACSvcPort 17532 AGY_BROWSER_ACTIVE_PORT_FILE C:\\Users\\ANDREW\\AppData\\Roaming\\Antigravity\\DevToolsActivePort AGY_BROWSER_WS_URL ws://127.0.0.1:57346/devtools/browser/817ea906-9bc2-4084-b2a0-bb318ca277eb ALLUSERSPROFILE C:\\ProgramData ANTIGRAVITY_AGENT 1 ANTIGRAVITY_CSRF_TOKEN 8fd850d5-90e3-4cb9-a8b4-e810007918f9 ANTIGRAVITY_LS_ADDRESS localhost:57348 ANTIGRAVITY_PROJECT_ID 0c837ec4-b8e5-4b9f-ba17-29e0339f0187 ANTIGRAVITY_SOURCE_METADATA {\"tool\":{\"conversationId\":\"84d6a9f9-a1f8-4283-af41-a7e446368e80\", \"stepIndex\":99, \"to... ANTIGRAVITY_TRAJECTORY_ID bfab6c27-e4ae-450f-8740-67908465584e APPDATA C:\\Users\\ANDREW\\AppData\\Roaming CHROME_DEVTOOLS_MCP_JS C:\\Users\\ANDREW\\AppData\\Local\\Programs\\antigravity\\resources\\app.asar.unpacked\\node_m... CommonProgramFiles C:\\Program Files\\Common Files CommonProgramFiles(x86) C:\\Program Files (x86)\\Common Files CommonProgramW6432 C:\\Program Files\\Common Files COMPUTERNAME LAPTOP-18MCKAJT ComSpec C:\\Windows\\system32\\cmd.exe DriverData C:\\Windows\\System32\\Drivers\\DriverData EFC_11872_1262719628 1 EFC_11872_1592913036 1 EFC_11872_2283032206 1 EFC_11872_2775293581 1 EFC_11872_3789132940 1 EnableLog INFO FPS_BROWSER_APP_PROFILE_STRING Internet Explorer FPS_BROWSER_USER_PROFILE_ST... Default HOMEDRIVE C: HOMEPATH \\Users\\ANDREW JD2_HOME C:\\Users\\ANDREW\\AppData\\Local\\JDownloader 2 LOCALAPPDATA C:\\Users\\ANDREW\\AppData\\Local LOGONSERVER \\\\LAPTOP-18MCKAJT NUMBER_OF_PROCESSORS 16 OneDrive C:\\Users\\ANDREW\\OneDrive OS Windows_NT PATH C:/Users/ANDREW/.gemini/antigravity/bin;C:\\Users\\ANDREW\\AppData\\Roaming\\Antigravity\\b... PATHEXT .COM;.EXE;.BAT;.CMD;.VBS;.VBE;.JS;.JSE;.WSF;.WSH;.MSC;.CPL PHP C:\\xampp\\php\\php.exe PROCESSOR_ARCHITECTURE AMD64 PROCESSOR_IDENTIFIER AMD64 Family 25 Model 68 Stepping 1, AuthenticAMD PROCESSOR_LEVEL 25 PROCESSOR_REVISION 4401 ProgramData C:\\ProgramData ProgramFiles C:\\Program Files ProgramFiles(x86) C:\\Program Files (x86) ProgramW6432 C:\\Program Files PSModulePath C:\\Users\\ANDREW\\Documents\\WindowsPowerShell\\Modules;C:\\Program Files\\WindowsPowerShel... PUBLIC C:\\Users\\Public RlsSvcPort 22112 SESSIONNAME Console SystemDrive C: SystemRoot C:\\Windows TEMP C:\\Users\\ANDREW\\AppData\\Local\\Temp TMP C:\\Users\\ANDREW\\AppData\\Local\\Temp USERDOMAIN LAPTOP-18MCKAJT USERDOMAIN_ROAMINGPROFILE LAPTOP-18MCKAJT USERNAME ANDREW USERPROFILE C:\\Users\\ANDREW VBOX_HWVIRTEX_IGNORE_SVM_IN... 1 windir C:\\Windows"
+                - generic [ref=e865]:
+                  - generic [ref=e866] [cursor=pointer]:
+                    - generic [ref=e869]:
+                      - generic [ref=e870]: Ran
+                      - generic [ref=e872]: node C:\Users\ANDREW\.gemini\config\plugins\playwright-cli\playwright-cli.js attach --help
+                    - img [ref=e874]
+                  - generic [ref=e878]:
+                    - generic [ref=e879]:
+                      - generic [ref=e880]:
+                        - text: …\hris-admin
+                        - generic [ref=e881]: ">"
+                        - text: node C:\Users\ANDREW\.gemini\config\plugins\playwright-cli\playwright-cli.js attach --help
+                      - button [ref=e882] [cursor=pointer]:
+                        - img [ref=e883]
+                    - generic [ref=e887]: "playwright-cli attach [name] Attach to a running Playwright browser Arguments: [name] bound browser name to attach to Options: --cdp connect to an existing browser via cdp endpoint url. --endpoint playwright browser server endpoint to attach to. --extension connect to browser extension, optionally specify browser name (e.g. --extension=chrome) --config path to the configuration file, defaults to .playwright/cli.config.json --session session name (defaults to bound browser name or \"default\")"
+                - generic [ref=e890]:
+                  - generic [ref=e891] [cursor=pointer]:
+                    - generic [ref=e892]:
+                      - generic [ref=e894]:
+                        - generic [ref=e895]: Run
+                        - generic [ref=e897]: node C:\Users\ANDREW\.gemini\config\plugins\playwright-cli\playwright-cli.js attach --cdp=http://127.0.0.1:57346
+                      - img [ref=e899]
+                    - img [ref=e902]
+                  - generic [ref=e909]:
+                    - generic [ref=e910]:
+                      - text: …\hris-admin
+                      - generic [ref=e911]: ">"
+                      - text: node C:\Users\ANDREW\.gemini\config\plugins\playwright-cli\playwright-cli.js attach --cdp=http://127.0.0.1:57346
+                    - button [ref=e912] [cursor=pointer]:
+                      - img [ref=e913]
+            - generic [ref=e915]: Working..
+          - generic [ref=e923]:
+            - generic [ref=e927]:
+              - combobox "Message input" [active] [ref=e928]
+              - paragraph: Ask anything, @ to mention, / for actions
+            - generic [ref=e929]:
+              - generic [ref=e930]:
+                - button "Add context" [ref=e931] [cursor=pointer]:
+                  - img [ref=e932]
+                - generic [ref=e934]:
+                  - generic "Agent Script" [ref=e935]:
+                    - img [ref=e936]
+                    - generic [ref=e938]: JiraConnector
+                  - 'button "Select model, current: Gemini 3.5 Flash (High)" [ref=e942] [cursor=pointer]':
+                    - 'button "Select model, current: Gemini 3.5 Flash (High)" [ref=e943]':
+                      - generic [ref=e944]: Gemini 3.5 Flash (High)
+                      - img [ref=e945]
+              - generic [ref=e948]:
+                - button "Record voice memo" [ref=e950] [cursor=pointer]:
+                  - img [ref=e951]
+                - button "Cancel (Ctrl+D)" [ref=e953] [cursor=pointer]
+  - generic [ref=e955]: Working...
+  - listbox "Typeahead menu"
+  - listbox "Typeahead menu"

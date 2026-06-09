@@ -4,9 +4,10 @@ import { useState, useTransition } from "react"
 import { 
   Package, Plus, Settings, RefreshCw, AlertTriangle, ArrowUpRight, 
   ArrowDownLeft, History, FileText, ClipboardList, CheckCircle2, AlertCircle,
-  TrendingDown, Check, X, Clipboard, User
+  TrendingDown, Check, X, Clipboard, User, Upload, Image, FileSpreadsheet
 } from "lucide-react"
-import { createOrUpdateInventoryItem, restockItem, createInventoryAudit, bulkImportInventoryItems } from "@/app/actions/inventory"
+import { createOrUpdateInventoryItem, restockItem, createInventoryAudit, bulkRegisterInventory } from "@/app/actions/inventory"
+import { createClient } from "@/lib/supabase/client"
 
 interface InventoryItem {
   id: string
@@ -80,6 +81,8 @@ export default function InventoryWorkspace({
   const [qty, setQty] = useState("0")
   const [unit, setUnit] = useState("pcs")
   const [threshold, setThreshold] = useState("5")
+  const [imageUrl, setImageUrl] = useState("")
+  const [uploadingImage, setUploadingImage] = useState(false)
   const [editingItem, setEditingItem] = useState<InventoryItem | null>(null)
 
   // Quick restock modal/state
@@ -93,123 +96,94 @@ export default function InventoryWorkspace({
   const [auditItemsState, setAuditItemsState] = useState<Array<{ itemId: string; name: string; sku: string; unit: string; systemQty: number; physicalQty: number }>>([])
   const [expandedAuditId, setExpandedAuditId] = useState<string | null>(null)
 
-  // Bulk Import States
-  const [isImporting, setIsImporting] = useState(false)
-  const [importFile, setImportFile] = useState<File | null>(null)
-  const [importPreview, setImportPreview] = useState<Array<{ name: string; sku: string; quantity: number; unit: string; low_stock_threshold: number; error?: string }>>([])
+  // Bulk Register drawer states
+  const [isBulkDrawerOpen, setIsBulkDrawerOpen] = useState(false)
+  const [bulkCsvData, setBulkCsvData] = useState("")
+  const [bulkLoading, setBulkLoading] = useState(false)
+  const [bulkResults, setBulkResults] = useState<{
+    successCount: number
+    failureCount: number
+    results: any[]
+  } | null>(null)
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
-    setImportFile(file)
+    
+    setUploadingImage(true)
     setErrorMsg(null)
     setSuccessMsg(null)
-
-    const reader = new FileReader()
-    reader.onload = (event) => {
-      try {
-        const text = event.target?.result as string
-        let parsed: Array<{ name: string; sku: string; quantity: number; unit?: string; low_stock_threshold?: number }> = []
-
-        if (file.name.endsWith('.json')) {
-          const raw = JSON.parse(text)
-          if (!Array.isArray(raw)) {
-            throw new Error("JSON import must be an array of items.")
-          }
-          parsed = raw
-        } else {
-          // CSV parser
-          const lines = text.split('\n').map(l => l.trim()).filter(Boolean)
-          if (lines.length <= 1) {
-            throw new Error("CSV file is empty or only contains headers.")
-          }
-
-          for (let i = 1; i < lines.length; i++) {
-            // Regex to parse comma-separated values, respecting quotes
-            const matches = lines[i].match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g)
-            if (!matches) continue
-            
-            const values = matches.map(v => v.replace(/^"|"$/g, '').trim())
-            
-            const item: any = {
-              name: values[0] || "",
-              sku: values[1] || "",
-              quantity: Number(values[2]),
-              unit: values[3] || "pcs",
-              low_stock_threshold: values[4] ? Number(values[4]) : 5
-            }
-            parsed.push(item)
-          }
-        }
-
-        if (parsed.length > 200) {
-          throw new Error("Bulk import exceeds maximum limit of 200 rows.")
-        }
-
-        // Validate and build preview
-        const previewList = parsed.map(item => {
-          const name = item.name?.trim() || ""
-          const sku = item.sku?.trim().toUpperCase() || ""
-          const quantity = Number(item.quantity)
-          const unit = item.unit?.trim() || "pcs"
-          const low_stock_threshold = Number(item.low_stock_threshold ?? 5)
-
-          let error = undefined
-          if (!name) {
-            error = "Missing Name"
-          } else if (!sku) {
-            error = "Missing SKU"
-          } else if (isNaN(quantity) || quantity < 0) {
-            error = "Invalid Qty"
-          } else if (isNaN(low_stock_threshold) || low_stock_threshold < 0) {
-            error = "Invalid Limit"
-          }
-
-          return {
-            name,
-            sku,
-            quantity: isNaN(quantity) ? 0 : quantity,
-            unit,
-            low_stock_threshold: isNaN(low_stock_threshold) ? 5 : low_stock_threshold,
-            error
-          }
-        })
-
-        setImportPreview(previewList)
-      } catch (err: any) {
-        setErrorMsg("File parse error: " + err.message)
-        setImportPreview([])
-      }
+    
+    try {
+      const supabase = createClient()
+      const fileExt = file.name.split('.').pop()
+      const fileName = `items/${Date.now()}.${fileExt}`
+      
+      const { data, error } = await supabase.storage
+        .from('inventory')
+        .upload(fileName, file, { cacheControl: '3650000', upsert: true })
+        
+      if (error) throw error
+      
+      const { data: { publicUrl } } = supabase.storage
+        .from('inventory')
+        .getPublicUrl(fileName)
+        
+      setImageUrl(publicUrl)
+    } catch (err: any) {
+      setErrorMsg("Failed to upload image: " + err.message)
+    } finally {
+      setUploadingImage(false)
     }
-
-    reader.readAsText(file)
   }
 
-  const handleImportSubmit = async () => {
-    if (importPreview.length === 0 || importPreview.some(x => x.error)) return
+  const handleBulkImport = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setBulkLoading(true)
+    setBulkResults(null)
     setErrorMsg(null)
     setSuccessMsg(null)
 
-    startTransition(async () => {
-      const payload = importPreview.map(x => ({
-        name: x.name,
-        sku: x.sku,
-        quantity: x.quantity,
-        unit: x.unit,
-        low_stock_threshold: x.low_stock_threshold
-      }))
-
-      const res = await bulkImportInventoryItems(payload)
-      if (res.error) {
-        setErrorMsg(res.error)
-      } else {
-        setSuccessMsg(`Successfully imported ${res.count} items.`)
-        setIsImporting(false)
-        setImportFile(null)
-        setImportPreview([])
-        window.location.reload()
+    try {
+      const lines = bulkCsvData.split('\n')
+      const parsedData = []
+      for (const line of lines) {
+        const rowText = line.trim()
+        if (!rowText) continue
+        const [name, sku, quantity, unit, lowStockLimit] = rowText.split(',').map(s => s.trim())
+        parsedData.push({
+          name,
+          sku,
+          quantity: quantity ? Number(quantity) : 0,
+          unit: unit || "pcs",
+          low_stock_threshold: lowStockLimit ? Number(lowStockLimit) : 5
+        })
       }
-    })
+
+      if (parsedData.length === 0) {
+        throw new Error("No data parsed from text area. Please check your CSV format.")
+      }
+
+      const res = await bulkRegisterInventory(parsedData)
+      if (res.error) {
+        throw new Error(res.error)
+      } else {
+        setBulkResults({
+          successCount: res.successCount || 0,
+          failureCount: res.failureCount || 0,
+          results: res.results || []
+        })
+        setBulkCsvData("")
+        // Give a short delay to see success results before reloading
+        setTimeout(() => {
+          window.location.reload()
+        }, 1500)
+      }
+    } catch (err: any) {
+      setErrorMsg(err.message || "Failed to process bulk import.")
+    } finally {
+      setBulkLoading(false)
+    }
   }
 
   const handleCreateOrUpdate = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -221,6 +195,7 @@ export default function InventoryWorkspace({
     if (editingItem) {
       formData.append("id", editingItem.id)
     }
+    formData.append("image_url", imageUrl)
 
     startTransition(async () => {
       const res = await createOrUpdateInventoryItem(formData)
@@ -235,6 +210,7 @@ export default function InventoryWorkspace({
         setQty("0")
         setUnit("pcs")
         setThreshold("5")
+        setImageUrl("")
         setEditingItem(null)
         
         // Refresh page
@@ -273,6 +249,7 @@ export default function InventoryWorkspace({
     setQty(String(item.quantity))
     setUnit(item.unit)
     setThreshold(String(item.low_stock_threshold))
+    setImageUrl(item.image_url || "")
   }
 
   const cancelEdit = () => {
@@ -282,6 +259,7 @@ export default function InventoryWorkspace({
     setQty("0")
     setUnit("pcs")
     setThreshold("5")
+    setImageUrl("")
   }
 
   const startNewAudit = () => {
@@ -628,6 +606,42 @@ export default function InventoryWorkspace({
                 </div>
               </div>
 
+              <div>
+                <label className="block text-xs font-bold text-zinc-700 mb-1.5 font-bold uppercase tracking-wider">Item Photo</label>
+                <div className="flex items-center gap-3">
+                  {imageUrl ? (
+                    <div className="relative w-16 h-16 border border-zinc-200 rounded-lg overflow-hidden shrink-0">
+                      <img src={imageUrl} alt="Preview" className="w-full h-full object-cover" />
+                      <button 
+                        type="button" 
+                        onClick={() => setImageUrl("")}
+                        className="absolute top-0.5 right-0.5 bg-rose-600 text-white rounded-full p-0.5 hover:bg-rose-700 transition-colors cursor-pointer"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="w-16 h-16 bg-zinc-105 border border-dashed border-zinc-300 rounded-lg flex items-center justify-center text-zinc-400 shrink-0">
+                      <Image className="w-6 h-6" />
+                    </div>
+                  )}
+                  
+                  <label className="flex-1 flex flex-col items-center justify-center border border-zinc-200 border-dashed rounded-lg p-3 hover:bg-zinc-50 transition-colors cursor-pointer">
+                    <div className="flex items-center gap-1.5 text-xs text-zinc-650 font-bold">
+                      <Upload className="w-3.5 h-3.5 text-emerald-600" />
+                      {uploadingImage ? "Uploading..." : "Upload Photo"}
+                    </div>
+                    <input 
+                      type="file" 
+                      accept="image/*" 
+                      onChange={handleImageUpload} 
+                      disabled={uploadingImage} 
+                      className="hidden" 
+                    />
+                  </label>
+                </div>
+              </div>
+
               <div className="flex gap-2 pt-2">
                 {editingItem && (
                   <button
@@ -640,8 +654,8 @@ export default function InventoryWorkspace({
                 )}
                 <button
                   type="submit"
-                  disabled={isPending}
-                  className="flex-1 bg-zinc-950 hover:bg-zinc-800 disabled:opacity-50 text-white font-bold py-2.5 rounded-lg text-sm transition-all flex items-center justify-center gap-1.5"
+                  disabled={isPending || uploadingImage}
+                  className="flex-1 bg-zinc-950 hover:bg-zinc-800 disabled:opacity-50 text-white font-bold py-2.5 rounded-lg text-sm transition-all flex items-center justify-center gap-1.5 cursor-pointer"
                 >
                   {isPending ? "Saving..." : (editingItem ? "Update Item" : "Add Item")}
                 </button>
@@ -707,15 +721,11 @@ export default function InventoryWorkspace({
                   <h3 className="text-sm font-bold text-zinc-900">Registered Stock Items</h3>
                   <p className="text-xs text-zinc-500 mt-0.5">Browse quantities and low-stock alerts.</p>
                 </div>
-                <button
-                  onClick={() => {
-                    setIsImporting(true)
-                    setImportFile(null)
-                    setImportPreview([])
-                  }}
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-all shadow-sm"
+                <button 
+                  onClick={() => { setIsBulkDrawerOpen(true); setBulkResults(null); }}
+                  className="inline-flex items-center gap-1.5 bg-zinc-950 hover:bg-zinc-800 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer"
                 >
-                  <Plus className="w-3.5 h-3.5" /> Bulk Import CSV
+                  <FileSpreadsheet className="w-3.5 h-3.5" /> Bulk CSV Import
                 </button>
               </div>
 
@@ -755,9 +765,18 @@ export default function InventoryWorkspace({
                             )}
                           </td>
                           <td className="p-4 font-mono font-bold text-xs text-zinc-600">{item.sku}</td>
-                          <td className="p-4">
-                            <span className="font-bold text-zinc-800 block">{item.name}</span>
-                            <span className="text-[10px] text-zinc-400">Registered {formatDate(item.created_at)}</span>
+                          <td className="p-4 flex items-center gap-3">
+                            {item.image_url ? (
+                              <img src={item.image_url} alt={item.name} className="w-10 h-10 object-cover rounded-lg border border-zinc-200 shrink-0" />
+                            ) : (
+                              <div className="w-10 h-10 bg-zinc-100 border border-zinc-200 rounded-lg flex items-center justify-center text-zinc-400 shrink-0">
+                                <Package className="w-5 h-5" />
+                              </div>
+                            )}
+                            <div>
+                              <span className="font-bold text-zinc-800 block">{item.name}</span>
+                              <span className="text-[10px] text-zinc-400 font-medium">Registered {formatDate(item.created_at)}</span>
+                            </div>
                           </td>
                           <td className="p-4">
                             <div className="flex items-center gap-1.5">
@@ -777,14 +796,14 @@ export default function InventoryWorkspace({
                           </td>
                           <td className="p-4 text-right space-x-2">
                             <button
-                              onClick={() => { setRestockTarget(item); setRestockQty(""); setRestockNotes(""); }}
-                              className="inline-flex items-center gap-1 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-700 px-2.5 py-1 rounded text-xs font-bold transition-all"
+                               onClick={() => { setRestockTarget(item); setRestockQty(""); setRestockNotes(""); }}
+                              className="inline-flex items-center gap-1 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-700 px-2.5 py-1 rounded text-xs font-bold transition-all cursor-pointer"
                             >
                               Restock
                             </button>
                             <button
                               onClick={() => startEdit(item)}
-                              className="inline-flex items-center gap-1 bg-zinc-50 hover:bg-zinc-100 border border-zinc-200 text-zinc-600 px-2.5 py-1 rounded text-xs font-bold transition-all"
+                              className="inline-flex items-center gap-1 bg-zinc-50 hover:bg-zinc-100 border border-zinc-200 text-zinc-600 px-2.5 py-1 rounded text-xs font-bold transition-all cursor-pointer"
                             >
                               Edit
                             </button>
@@ -984,133 +1003,108 @@ export default function InventoryWorkspace({
         </div>
       )}
 
-      {/* Bulk Import Modal */}
-      {isImporting && (
-        <div className="fixed inset-0 bg-black/55 flex items-center justify-center p-4 z-50 animate-fade-in">
-          <div className="bg-white rounded-2xl border border-zinc-200 shadow-xl max-w-2xl w-full max-h-[85vh] flex flex-col overflow-hidden">
-            <div className="p-5 border-b border-zinc-150 bg-zinc-50/50 flex justify-between items-center">
+      {/* Slide-over Bulk Import Drawer */}
+      {isBulkDrawerOpen && (
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-50 transition-opacity flex justify-end animate-in fade-in">
+          <div className="w-full max-w-xl bg-white h-full shadow-2xl flex flex-col animate-in slide-in-from-right duration-300">
+            {/* Header */}
+            <div className="p-6 border-b border-zinc-150 flex items-center justify-between">
               <div>
-                <h3 className="text-base font-bold text-zinc-900 flex items-center gap-2">
-                  <ClipboardList className="w-5 h-5 text-emerald-600" />
-                  Bulk Import Stock Registry
-                </h3>
-                <p className="text-xs text-zinc-500 mt-0.5">Upload a CSV or JSON file to register or update stock items in bulk.</p>
+                <h3 className="text-xl font-bold text-zinc-900">Bulk Import Stock Items</h3>
+                <p className="text-sm text-zinc-500 mt-0.5">Register multiple parts at once using CSV paste format.</p>
               </div>
               <button 
-                onClick={() => setIsImporting(false)}
-                className="p-1 rounded-lg border border-zinc-200 hover:bg-zinc-50 text-zinc-400 hover:text-zinc-700"
+                onClick={() => setIsBulkDrawerOpen(false)} 
+                className="p-2 hover:bg-zinc-100 text-zinc-500 hover:text-zinc-800 rounded-xl transition-colors cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <div className="p-6 overflow-y-auto space-y-6 flex-1 text-zinc-700">
-              {/* Template instructions */}
-              <div className="bg-zinc-50 border border-zinc-200 rounded-xl p-4 text-xs text-zinc-600 space-y-2">
-                <span className="font-bold text-zinc-700 block">Expected CSV Format (Max 200 rows):</span>
-                <p className="font-mono bg-white p-2 rounded border border-zinc-250 block overflow-x-auto text-[11px] text-zinc-800">
-                  Name, SKU, Quantity, Unit, Low Stock Limit<br />
-                  Cat6 UTP Cable Roll, CAB-CAT6-01, 15, rolls, 3<br />
-                  RJ45 Connectors Pack, CON-RJ45-100, 50, pcs, 10
-                </p>
-                <div className="flex gap-4 pt-1 text-zinc-500">
-                  <span>• SKU is used as the unique identifier.</span>
-                  <span>• Existing SKUs will update quantity and specifications.</span>
-                </div>
+            {/* Scrollable Drawer Body */}
+            <div className="flex-1 overflow-y-auto p-6 space-y-6">
+              <div className="p-4 bg-zinc-50 border border-zinc-200 rounded-xl text-xs space-y-2 text-zinc-650">
+                <p className="font-bold text-zinc-800">CSV Input Specifications:</p>
+                <p>Provide comma-separated values (one stock item per line) in this order:</p>
+                <p className="font-mono bg-zinc-100 p-1.5 rounded border border-zinc-200">Item Name, SKU, Initial Quantity, Unit, Low Stock Limit</p>
+                <p className="font-bold text-zinc-800 mt-2">Example Paste:</p>
+                <pre className="font-mono bg-zinc-100 p-2 rounded border border-zinc-200 text-[10px] whitespace-pre-wrap leading-relaxed">
+Cat6 UTP Cable Roll, CAB-CAT6-01, 15, rolls, 3
+Fiber Patch Cord 3m, FIP-PAT-03, 100, pcs, 10
+RJ45 Connectors Box, CON-RJ45-100, 20, boxes, 5</pre>
+                <p className="text-[10px] text-zinc-500 italic mt-2">Note: SKU must be unique across all inventory records. Low Stock Limit is optional (defaults to 5 if empty). Unit is optional (defaults to 'pcs' if empty).</p>
               </div>
 
-              {/* File input */}
-              <div className="space-y-2">
-                <label className="block text-xs font-bold text-zinc-700 uppercase tracking-wider">Select Import File</label>
-                <input 
-                  type="file" 
-                  accept=".csv,.json"
-                  onChange={handleFileSelect}
-                  className="w-full text-sm text-zinc-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border file:border-zinc-300 file:text-xs file:font-bold file:bg-white file:text-zinc-700 hover:file:bg-zinc-50 cursor-pointer"
-                />
-              </div>
-
-              {/* Preview and Errors */}
-              {importPreview.length > 0 && (
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center text-xs">
-                    <span className="font-bold text-zinc-700 uppercase tracking-wider">Preview Delta ({importPreview.length} Items Staged)</span>
-                    <span className="text-zinc-500 font-semibold">
-                      {importPreview.filter(x => x.error).length > 0 
-                        ? `${importPreview.filter(x => x.error).length} error(s) found` 
-                        : "Ready to import"}
-                    </span>
+              {/* Bulk Results Summary */}
+              {bulkResults && (
+                <div className="space-y-4 animate-in fade-in">
+                  <div className="p-4 bg-zinc-50 border border-zinc-200 rounded-xl flex items-center justify-between">
+                    <div>
+                      <p className="text-xs font-bold text-zinc-800">Import Job Complete</p>
+                      <p className="text-2xs text-zinc-500 mt-0.5">Processed {bulkResults.results.length} rows</p>
+                    </div>
+                    <div className="flex gap-2">
+                      <span className="text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-100 px-2.5 py-1 rounded-full">
+                        {bulkResults.successCount} Success
+                      </span>
+                      {bulkResults.failureCount > 0 && (
+                        <span className="text-xs font-bold text-rose-700 bg-rose-50 border border-rose-100 px-2.5 py-1 rounded-full">
+                          {bulkResults.failureCount} Failed
+                        </span>
+                      )}
+                    </div>
                   </div>
 
-                  <div className="border border-zinc-200 rounded-xl overflow-hidden max-h-60 overflow-y-auto">
+                  <div className="border border-zinc-200 rounded-xl overflow-hidden max-h-48 overflow-y-auto">
                     <table className="w-full text-left border-collapse text-xs">
                       <thead>
-                        <tr className="bg-zinc-50 border-b border-zinc-150 text-[10px] uppercase font-bold text-zinc-400">
+                        <tr className="bg-zinc-50 border-b border-zinc-150 text-zinc-400 font-bold uppercase tracking-wider">
+                          <th className="p-3">Row</th>
                           <th className="p-3">SKU</th>
-                          <th className="p-3">Name</th>
-                          <th className="p-3 w-20">Qty</th>
-                          <th className="p-3 w-16">Unit</th>
-                          <th className="p-3 w-16">Limit</th>
                           <th className="p-3 text-right">Status</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-zinc-100">
-                        {importPreview.map((item, idx) => {
-                          const existingItem = items.find(x => x.sku === item.sku)
-                          return (
-                            <tr key={idx} className={`hover:bg-zinc-50/50 ${item.error ? "bg-rose-50/20" : ""}`}>
-                              <td className="p-3 font-mono font-bold text-zinc-600">{item.sku || "N/A"}</td>
-                              <td className="p-3 font-bold text-zinc-800 line-clamp-1">{item.name || "N/A"}</td>
-                              <td className="p-3 font-bold text-zinc-700">{item.quantity}</td>
-                              <td className="p-3 text-zinc-500">{item.unit}</td>
-                              <td className="p-3 text-zinc-500">{item.low_stock_threshold}</td>
-                              <td className="p-3 text-right">
-                                {item.error ? (
-                                  <span className="text-[10px] text-rose-600 font-bold uppercase">{item.error}</span>
-                                ) : existingItem ? (
-                                  <span className="text-[10px] text-amber-600 font-bold uppercase flex items-center justify-end gap-0.5">
-                                    <RefreshCw className="w-3 h-3 animate-spin" /> Sync (~)
-                                  </span>
-                                ) : (
-                                  <span className="text-[10px] text-emerald-600 font-bold uppercase flex items-center justify-end gap-0.5">
-                                    <Check className="w-3 h-3" /> New (+)
-                                  </span>
-                                )}
-                              </td>
-                            </tr>
-                          )
-                        })}
+                        {bulkResults.results.map((res: any, idx: number) => (
+                          <tr key={idx} className="hover:bg-zinc-50/50">
+                            <td className="p-3 font-mono text-zinc-400">{res.rowNum}</td>
+                            <td className="p-3 font-bold text-zinc-800 truncate max-w-[150px]">{res.sku}</td>
+                            <td className="p-3 text-right">
+                              {res.success ? (
+                                <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">Success</span>
+                              ) : (
+                                <span className="text-[10px] font-bold text-rose-700 bg-rose-50 px-2 py-0.5 rounded-full border border-rose-100" title={res.error}>Failed</span>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
                       </tbody>
                     </table>
                   </div>
                 </div>
               )}
-            </div>
 
-            <div className="p-5 border-t border-zinc-150 bg-zinc-50/50 flex justify-between items-center">
-              <span className="text-xs text-zinc-500">
-                {importPreview.length > 0 && (
-                  <>
-                    Staging: {importPreview.filter(x => !x.error && items.some(e => e.sku === x.sku)).length} syncs,{' '}
-                    {importPreview.filter(x => !x.error && !items.some(e => e.sku === x.sku)).length} additions.
-                  </>
-                )}
-              </span>
-              <div className="flex gap-2">
+              <form onSubmit={handleBulkImport} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-zinc-500 mb-1.5">Paste CSV Data</label>
+                  <textarea
+                    required
+                    rows={8}
+                    value={bulkCsvData}
+                    onChange={(e) => setBulkCsvData(e.target.value)}
+                    placeholder="Item Name, SKU, Quantity, Unit, Low Stock Limit&#10;e.g. Cat6 UTP Cable Roll, CAB-CAT6-01, 15, rolls, 3"
+                    className="w-full p-3 border border-zinc-300 rounded-xl text-xs font-mono focus:ring-2 focus:ring-emerald-500 focus:outline-none bg-white text-zinc-800 leading-relaxed animate-in fade-in"
+                  />
+                </div>
+
                 <button
-                  onClick={() => setIsImporting(false)}
-                  className="px-4 py-2 rounded-xl border border-zinc-200 text-sm font-bold hover:bg-zinc-100 text-zinc-700 transition-all"
+                  type="submit"
+                  disabled={bulkLoading || !bulkCsvData.trim()}
+                  className="w-full bg-zinc-950 hover:bg-zinc-800 disabled:opacity-50 text-white font-bold py-3 rounded-xl text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer"
                 >
-                  Cancel
+                  {bulkLoading ? <RefreshCw className="w-4 h-4 animate-spin" /> : "Run Bulk Registration"}
                 </button>
-                <button
-                  onClick={handleImportSubmit}
-                  disabled={importPreview.length === 0 || importPreview.some(x => x.error) || isPending}
-                  className="bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-bold px-6 py-2 rounded-xl text-sm transition-all flex items-center gap-1.5 shadow-sm"
-                >
-                  {isPending ? "Importing..." : "Confirm Import"}
-                </button>
-              </div>
+              </form>
             </div>
           </div>
         </div>

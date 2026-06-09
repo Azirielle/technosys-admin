@@ -3,7 +3,7 @@ import { supabaseAdmin } from '@/lib/supabase/admin'
 import { redirect } from 'next/navigation'
 import DashboardCharts from './DashboardCharts'
 import { Users, Calendar, DollarSign } from 'lucide-react'
-import { getActivityLogs } from '@/app/actions/activity'
+import Link from 'next/link'
 
 export const revalidate = 0;
 
@@ -30,11 +30,12 @@ export default async function DashboardPage() {
   let payCount = 0;
   let payslips: any[] = [];
   let recentTechs: any[] = [];
+  let allTechs: any[] = [];
   let recentActivities: any[] = [];
   let dbErrorMsg = "";
 
   try {
-    const { count: eCount, error: eErr } = await supabaseAdmin.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'technician');
+    const { count: eCount, error: eErr } = await supabaseAdmin.from('profiles').select('*', { count: 'exact', head: true }).in('role', ['technician', 'helper']);
     if (eErr) throw eErr;
     empCount = eCount || 0;
 
@@ -54,8 +55,13 @@ export default async function DashboardPage() {
     if (rtErr) throw rtErr;
     recentTechs = rData || [];
 
-    const logs = await getActivityLogs();
-    recentActivities = logs.slice(0, 10);
+    const { data: allTechsData, error: allTechsErr } = await supabaseAdmin.from('profiles').select('id, full_name, role').in('role', ['technician', 'helper']).order('full_name', { ascending: true });
+    if (allTechsErr) throw allTechsErr;
+    allTechs = allTechsData || [];
+
+    const { data: actData, error: actErr } = await supabaseAdmin.from('activity_logs').select('*, actor:profiles(full_name)').order('created_at', { ascending: false }).limit(6);
+    if (actErr) throw actErr;
+    recentActivities = actData || [];
   } catch (err: any) {
     console.error("Dashboard database fetch error:", err.message || err);
     dbErrorMsg = err.message || "Database connection or tables incomplete. Please check your migrations.";
@@ -73,7 +79,7 @@ export default async function DashboardPage() {
       )}
       
       <div className="mt-8 grid gap-4 grid-cols-1 md:grid-cols-3">
-        <div className="p-6 bg-white rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between group hover:shadow-md transition-shadow">
+        <Link href="/dashboard/employees" className="p-6 bg-white rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between group hover:shadow-md hover:scale-[1.01] hover:border-slate-300 transition-all duration-200 cursor-pointer">
           <div>
             <h3 className="font-semibold text-slate-500 text-sm uppercase tracking-wider">Employees</h3>
             <p className="text-3xl font-bold text-slate-900 mt-2">{empCount}</p>
@@ -81,9 +87,9 @@ export default async function DashboardPage() {
           <div className="w-12 h-12 rounded-xl bg-cyan-50 flex items-center justify-center text-cyan-600 group-hover:scale-110 transition-transform">
             <Users className="w-6 h-6" />
           </div>
-        </div>
+        </Link>
         
-        <div className="p-6 bg-white rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between group hover:shadow-md transition-shadow">
+        <Link href="/dashboard/schedules" className="p-6 bg-white rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between group hover:shadow-md hover:scale-[1.01] hover:border-slate-300 transition-all duration-200 cursor-pointer">
           <div>
             <h3 className="font-semibold text-slate-500 text-sm uppercase tracking-wider">Active Schedules</h3>
             <p className="text-3xl font-bold text-slate-900 mt-2">{schedCount}</p>
@@ -91,9 +97,9 @@ export default async function DashboardPage() {
           <div className="w-12 h-12 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600 group-hover:scale-110 transition-transform">
             <Calendar className="w-6 h-6" />
           </div>
-        </div>
+        </Link>
         
-        <div className="p-6 bg-white rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between group hover:shadow-md transition-shadow">
+        <Link href="/dashboard/payroll" className="p-6 bg-white rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between group hover:shadow-md hover:scale-[1.01] hover:border-slate-300 transition-all duration-200 cursor-pointer">
           <div>
             <h3 className="font-semibold text-slate-500 text-sm uppercase tracking-wider">Total Payslips</h3>
             <p className="text-3xl font-bold text-slate-900 mt-2">{payCount}</p>
@@ -101,10 +107,10 @@ export default async function DashboardPage() {
           <div className="w-12 h-12 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600 group-hover:scale-110 transition-transform">
             <DollarSign className="w-6 h-6" />
           </div>
-        </div>
+        </Link>
       </div>
 
-      <DashboardCharts payslips={payslips} recentTechnicians={recentTechs} recentActivities={recentActivities} />
+      <DashboardCharts payslips={payslips} recentTechnicians={recentTechs} allTechnicians={allTechs} recentActivities={recentActivities} />
     </div>
   )
 }

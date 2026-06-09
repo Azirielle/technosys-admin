@@ -36,6 +36,8 @@ export async function getActiveOfficeLocations() {
 }
 
 // 3. Add a new office location
+import { logActivity } from "./activity"
+
 export async function addOfficeLocation(formData: FormData) {
   try {
     // Verify role on the server
@@ -88,6 +90,9 @@ export async function addOfficeLocation(formData: FormData) {
 
     if (error) throw error
 
+    // Log administrative activity
+    await logActivity('add_location', 'settings', `Added branch location "${name}" with geofence radius ${radius_meters}m`)
+
     revalidatePath('/dashboard/settings')
     return { success: true }
   } catch (err: any) {
@@ -116,12 +121,19 @@ export async function toggleLocationActive(id: string, isActive: boolean) {
       return { error: "Permission Denied: Only Super Administrators can modify geofence locations." }
     }
 
+    // Get location name for descriptive logs
+    const { data: loc } = await supabaseAdmin.from('office_locations').select('name').eq('id', id).single()
+    const locName = loc?.name || id
+
     const { error } = await supabaseAdmin
       .from('office_locations')
       .update({ is_active: isActive, updated_at: new Date().toISOString() })
       .eq('id', id)
 
     if (error) throw error
+
+    // Log administrative activity
+    await logActivity('toggle_location', 'settings', `${isActive ? 'Activated' : 'Deactivated'} branch location "${locName}"`)
 
     revalidatePath('/dashboard/settings')
     return { success: true }
