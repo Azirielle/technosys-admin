@@ -26,19 +26,15 @@ export default function SchedulesClient({
   const [techId, setTechId] = useState("")
   const [seniorPartnerId, setSeniorPartnerId] = useState("")
   const [startTime, setStartTime] = useState("")
-<<<<<<< HEAD
   const [clientName, setClientName] = useState("")
   const [location, setLocation] = useState("")
   const [attendanceMode, setAttendanceMode] = useState("hq")
-  const [seniorPartnerId, setSeniorPartnerId] = useState("")
   const [isVip, setIsVip] = useState(false)
   
   // Bulk creation form states
   const [selectedStaffIds, setSelectedStaffIds] = useState<string[]>([])
   const [bulkSeniorPartnerMap, setBulkSeniorPartnerMap] = useState<Record<string, string>>({})
   
-=======
->>>>>>> glorycode24/kan-40-simplify-schedules
   const [errorMsg, setErrorMsg] = useState("")
   const [successMsg, setSuccessMsg] = useState("")
 
@@ -48,7 +44,6 @@ export default function SchedulesClient({
     setTechId(initialTechnicians[0]?.id || initialHelpers[0]?.id || "")
     setSeniorPartnerId("")
     setStartTime("")
-<<<<<<< HEAD
     setClientName("")
     setLocation("")
     setAttendanceMode("hq")
@@ -56,8 +51,6 @@ export default function SchedulesClient({
     setIsVip(false)
     setSelectedStaffIds([])
     setBulkSeniorPartnerMap({})
-=======
->>>>>>> glorycode24/kan-40-simplify-schedules
     setErrorMsg("")
     setSuccessMsg("")
     setShowModal(true)
@@ -147,16 +140,11 @@ export default function SchedulesClient({
     if (!startTime || !technicianId) return null
     return approvedLeaves.find(leave => 
       leave.technician_id === technicianId &&
-<<<<<<< HEAD
       new Date(startTime).getTime() >= new Date(leave.start_date).getTime() &&
       new Date(startTime).getTime() <= new Date(leave.end_date).getTime()
-=======
-      isRangeOverlapping(startTime, null, leave.start_date, leave.end_date)
->>>>>>> glorycode24/kan-40-simplify-schedules
     )
   }
 
-<<<<<<< HEAD
   const currentConflict = scheduleType === 'single' ? getConflictingLeave(techId) : null
   const selectedStaffHasHelper = initialTechnicians.find(t => t.id === techId)?.role === 'helper'
 
@@ -165,10 +153,6 @@ export default function SchedulesClient({
       prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
     )
   }
-=======
-  const currentConflict = getConflictingLeave(techId)
-  const partnerConflict = getConflictingLeave(seniorPartnerId)
->>>>>>> glorycode24/kan-39-helper-senior-pairing
 
   return (
     <div className="p-8 pb-20 max-w-7xl mx-auto">
@@ -654,6 +638,229 @@ export default function SchedulesClient({
               )}
 
             </div>
+          </div>
+        </div>
+      )}
+
+      {showBulkModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl w-full max-w-2xl shadow-2xl overflow-hidden">
+            <div className="flex items-center justify-between p-6 border-b border-zinc-100">
+              <div>
+                <h2 className="text-xl font-bold text-zinc-900">Bulk Schedule Assignment</h2>
+                <p className="text-xs text-zinc-500 mt-1">Assign multiple technicians and helpers to a single job dispatch.</p>
+              </div>
+              <button onClick={() => setShowBulkModal(false)} className="text-zinc-400 hover:text-zinc-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <form onSubmit={handleCreateBulk} className="p-6 space-y-5 bg-zinc-50">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-zinc-700 mb-1">Client Name / Job Title</label>
+                    <input 
+                      required 
+                      type="text" 
+                      value={bulkClientName}
+                      onChange={(e) => setBulkClientName(e.target.value)}
+                      className="w-full px-4 py-2.5 border border-zinc-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none bg-white" 
+                      placeholder="Acme Corp Maintenance" 
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-zinc-700 mb-1">Location</label>
+                    <input 
+                      required 
+                      type="text" 
+                      value={bulkLocation}
+                      onChange={(e) => setBulkLocation(e.target.value)}
+                      className="w-full px-4 py-2.5 border border-zinc-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none bg-white" 
+                      placeholder="123 Ayala Ave, Makati" 
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-zinc-700 mb-1">Start Time</label>
+                    <input 
+                      required 
+                      type="datetime-local" 
+                      value={bulkStartTime}
+                      onChange={(e) => setBulkStartTime(e.target.value)}
+                      className="w-full px-4 py-2.5 border border-zinc-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none bg-white" 
+                    />
+                  </div>
+
+                  <div className="flex items-center gap-3 p-4 bg-cyan-50 border border-cyan-100 rounded-xl">
+                    <input 
+                      type="checkbox" 
+                      id="bulkIsVip" 
+                      checked={bulkIsVip}
+                      onChange={(e) => setBulkIsVip(e.target.checked)}
+                      className="w-5 h-5 rounded border-cyan-300 text-cyan-600 focus:ring-cyan-500" 
+                    />
+                    <label htmlFor="bulkIsVip" className="text-sm font-semibold text-cyan-900 cursor-pointer">
+                      Flag as VIP Hook (High Priority)
+                    </label>
+                  </div>
+                </div>
+
+                <div className="flex flex-col h-full border border-zinc-200 rounded-xl bg-white p-4 overflow-hidden">
+                  <div className="mb-3">
+                    <label className="block text-sm font-semibold text-zinc-800 mb-2">Select Personnel ({selectedPersonnelIds.length} selected)</label>
+                    <input 
+                      type="text"
+                      placeholder="Search personnel..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="w-full px-3 py-1.5 border border-zinc-300 rounded-lg text-sm focus:ring-1 focus:ring-emerald-500 outline-none"
+                    />
+                  </div>
+
+                  <div className="flex-1 overflow-y-auto max-h-64 space-y-4 pr-1">
+                    {/* Technicians Group */}
+                    <div>
+                      <div className="flex items-center justify-between border-b border-zinc-100 pb-1 mb-2">
+                        <span className="text-xs font-bold text-indigo-700 uppercase tracking-wider">Technicians</span>
+                        <button 
+                          type="button" 
+                          onClick={handleToggleAllTechs}
+                          className="text-[10px] font-bold text-indigo-600 hover:text-indigo-800 uppercase tracking-wider"
+                        >
+                          {allVisibleTechsSelected ? "Deselect All" : "Select All"}
+                        </button>
+                      </div>
+
+                      {filteredTechnicians.length === 0 ? (
+                        <p className="text-xs text-zinc-400 italic">No technicians match search.</p>
+                      ) : (
+                        <div className="space-y-1.5">
+                          {filteredTechnicians.map(t => {
+                            const conflict = getConflictingLeaveForBulk(t.id)
+                            const isSelected = selectedPersonnelIds.includes(t.id)
+                            return (
+                              <label 
+                                key={t.id}
+                                className={`flex items-center justify-between p-2 rounded-lg border text-sm cursor-pointer transition-all ${
+                                  conflict 
+                                    ? isSelected
+                                      ? "border-amber-300 bg-amber-50/50 hover:bg-amber-50 font-semibold text-amber-900 shadow-sm"
+                                      : "border-zinc-200 bg-zinc-50 opacity-60 hover:bg-zinc-100"
+                                    : isSelected
+                                      ? "border-indigo-200 bg-indigo-50/30 hover:bg-indigo-50/40"
+                                      : "border-zinc-100 hover:bg-zinc-50"
+                                }`}
+                              >
+                                <div className="flex items-center gap-2.5">
+                                  <input 
+                                    type="checkbox"
+                                    checked={isSelected}
+                                    onChange={() => togglePersonnel(t.id)}
+                                    className="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500"
+                                  />
+                                  <span className="font-medium text-zinc-700">{t.full_name}</span>
+                                </div>
+                                {conflict && (
+                                  <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-100 text-amber-800 border border-amber-200 animate-pulse">
+                                    ⚠️ Leave Conflict
+                                  </span>
+                                )}
+                              </label>
+                            )
+                          })}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Helpers Group */}
+                    <div>
+                      <div className="flex items-center justify-between border-b border-zinc-100 pb-1 mb-2">
+                        <span className="text-xs font-bold text-teal-700 uppercase tracking-wider">Helpers</span>
+                        <button 
+                          type="button" 
+                          onClick={handleToggleAllHelpers}
+                          className="text-[10px] font-bold text-teal-600 hover:text-teal-800 uppercase tracking-wider"
+                        >
+                          {allVisibleHelpersSelected ? "Deselect All" : "Select All"}
+                        </button>
+                      </div>
+
+                      {filteredHelpers.length === 0 ? (
+                        <p className="text-xs text-zinc-400 italic">No helpers match search.</p>
+                      ) : (
+                        <div className="space-y-1.5">
+                          {filteredHelpers.map(h => {
+                            const conflict = getConflictingLeaveForBulk(h.id)
+                            const isSelected = selectedPersonnelIds.includes(h.id)
+                            return (
+                              <label 
+                                key={h.id}
+                                className={`flex items-center justify-between p-2 rounded-lg border text-sm cursor-pointer transition-all ${
+                                  conflict 
+                                    ? isSelected
+                                      ? "border-amber-300 bg-amber-50/50 hover:bg-amber-50 font-semibold text-amber-900 shadow-sm"
+                                      : "border-zinc-200 bg-zinc-50 opacity-60 hover:bg-zinc-100"
+                                    : isSelected
+                                      ? "border-teal-200 bg-teal-50/30 hover:bg-teal-50/40"
+                                      : "border-zinc-100 hover:bg-zinc-50"
+                                }`}
+                              >
+                                <div className="flex items-center gap-2.5">
+                                  <input 
+                                    type="checkbox"
+                                    checked={isSelected}
+                                    onChange={() => togglePersonnel(h.id)}
+                                    className="w-4 h-4 rounded text-teal-600 focus:ring-teal-500"
+                                  />
+                                  <span className="font-medium text-zinc-700">{h.full_name}</span>
+                                </div>
+                                {conflict && (
+                                  <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-100 text-amber-800 border border-amber-200 animate-pulse">
+                                    ⚠️ Leave Conflict
+                                  </span>
+                                )}
+                              </label>
+                            )
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {bulkConflicts.length > 0 && (
+                <div className="p-3.5 bg-amber-50 border border-amber-200 text-amber-800 rounded-xl text-xs font-bold leading-relaxed space-y-1">
+                  <p>⚠️ <strong>Conflict Warnings:</strong> The following selected personnel have approved leaves during this time:</p>
+                  <ul className="list-disc pl-4 space-y-0.5 font-medium text-amber-700">
+                    {bulkConflicts.map(({ person, conflict }) => (
+                      <li key={person.id}>
+                        {person.full_name} ({person.role}) is on approved {conflict.leave_type} leave from {new Date(conflict.start_date).toLocaleDateString()} to {new Date(conflict.end_date).toLocaleDateString()}.
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {bulkErrorMsg && (
+                <div className="p-3.5 bg-rose-50 border border-rose-200 text-rose-800 rounded-xl text-xs font-bold leading-relaxed">
+                  ❌ <strong>Submission Failed:</strong> {bulkErrorMsg}
+                </div>
+              )}
+
+              <div className="flex justify-end gap-3 pt-4 border-t border-zinc-100">
+                <button type="button" onClick={() => setShowBulkModal(false)} className="px-5 py-2.5 font-medium text-zinc-600 hover:text-zinc-900">Cancel</button>
+                <button 
+                  type="submit" 
+                  disabled={isPending || selectedPersonnelIds.length === 0 || bulkConflicts.length > 0} 
+                  className="bg-zinc-900 hover:bg-zinc-800 disabled:opacity-50 text-white px-6 py-2.5 rounded-lg font-medium shadow-md flex items-center gap-2 cursor-pointer"
+                >
+                  {isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : `Save ${selectedPersonnelIds.length} Schedule(s)`}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
