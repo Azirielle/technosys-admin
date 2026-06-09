@@ -28,7 +28,8 @@ export async function createSchedule(formData: FormData) {
     const seniorPartnerId = (rawSeniorPartnerId && rawSeniorPartnerId !== "" && rawSeniorPartnerId !== "none") ? rawSeniorPartnerId : null
     const clientName = formData.get("clientName") as string
     const location = formData.get("location") as string
-        const endTime = formData.get("endTime") as string // Can be empty / null
+    const startTime = formData.get("startTime") as string
+    const endTime = formData.get("endTime") as string // Can be empty / null
     const attendanceMode = (formData.get("attendanceMode") as string) || 'hq'
     const isVip = formData.get("isVip") === "on"
     const trackingMode = (formData.get("trackingMode") as string) || "pacita_hq"
@@ -69,7 +70,6 @@ export async function createSchedule(formData: FormData) {
     if (seniorPartnerId && hasConflict(seniorPartnerId)) {
       throw new Error(`The selected senior partner is on approved leave during this schedule's timeframe.`)
     }
-    }
 
     // 3. Insert schedule
     const insertData: any = {
@@ -80,7 +80,6 @@ export async function createSchedule(formData: FormData) {
       start_time: new Date(startTime).toISOString(),
       end_time: endTime ? new Date(endTime).toISOString() : null,
       attendance_mode: attendanceMode,
-      senior_partner_id: seniorPartnerId || null,
       is_vip_hook: isVip
     }
 
@@ -268,7 +267,7 @@ export async function createBulkSchedules(data: {
     const conflictingIds = personnelIds.filter(id => 
       leaves?.some(leave => 
         leave.technician_id === id &&
-        isRangeOverlapping(startTime, null, leave.start_date, leave.end_date)
+        isTimeConflictingWithLeave(startTime, leave.start_date, leave.end_date)
       )
     )
 

@@ -1,14 +1,10 @@
 "use server"
 import { supabaseAdmin } from "@/lib/supabase/admin"
 import { revalidatePath } from "next/cache"
-<<<<<<< HEAD
 import { createClient } from "@/lib/supabase/server"
 import { z } from "zod"
 import { logActivity } from "./activity"
 import { sendPushNotification } from "@/lib/push"
-=======
-import { z } from "zod"
->>>>>>> glorycode24/kan-36-bulk-import-employees
 
 export interface TechnicianInfo {
   id: string
@@ -477,9 +473,11 @@ export async function addManualDtrLog(employeeId: string, clockIn: string, clock
     // Look up target profile and send push notification
     const { data: targetProfile } = await supabaseAdmin
       .from('profiles')
-      .select('push_token')
+      .select('push_token, full_name')
       .eq('id', employeeId)
       .single();
+    const empName = targetProfile?.full_name || 'Staff'
+
     if (targetProfile?.push_token) {
       await sendPushNotification(
         targetProfile.push_token,
@@ -505,7 +503,6 @@ export async function addManualDtrLog(employeeId: string, clockIn: string, clock
   }
 }
 
-<<<<<<< HEAD
 export async function overrideDtrLog(
   employeeId: string,
   logId: string,

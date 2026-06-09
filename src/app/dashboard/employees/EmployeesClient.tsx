@@ -19,11 +19,8 @@ import {
   Plus, 
   ChevronRight, 
   UserCheck,
-<<<<<<< HEAD
-  History
-=======
+  History,
   Users
->>>>>>> glorycode24/kan-37-employee-cards-filter
 } from "lucide-react"
 import { 
   deleteTechnician, 
@@ -33,13 +30,9 @@ import {
   getEmployeeTimeLogs, 
   addManualDtrLog,
   ChecklistData,
-<<<<<<< HEAD
   bulkRegisterEmployees,
   getDtrOverrideHistories,
   overrideDtrLog
-=======
-  bulkRegisterEmployees
->>>>>>> glorycode24/kan-36-bulk-import-employees
 } from "@/app/actions/employees"
 import { createClient } from "@/lib/supabase/client"
 import { logActivity } from "@/app/actions/activity"
@@ -58,18 +51,7 @@ export default function EmployeesClient({ initialTechnicians, officeLocations, a
   const [deleteId, setDeleteId] = useState<string | null>(null)
   const [deleting, setDeleting] = useState(false)
 
-  // Filtering states
-  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'on_leave' | 'off_duty'>('all')
 
-  const totalForceCount = initialTechnicians.length
-  const activeCount = initialTechnicians.filter(t => t.currentStatus === 'active').length
-  const onLeaveCount = initialTechnicians.filter(t => t.currentStatus === 'on_leave').length
-  const offDutyCount = initialTechnicians.filter(t => t.currentStatus === 'off_duty').length
-
-  const filteredTechnicians = initialTechnicians.filter(tech => {
-    if (statusFilter === 'all') return true
-    return tech.currentStatus === statusFilter
-  })
 
   // Current logged in admin role
   const [currentUserRole, setCurrentUserRole] = useState<string>("")
@@ -176,122 +158,7 @@ export default function EmployeesClient({ initialTechnicians, officeLocations, a
       setBulkLoading(false)
     }
   }
-<<<<<<< HEAD
-=======
 
-  const handleSalaryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setRegisterBaseSalary(e.target.value)
-  }
-
-  // CSV Import States
-  const [isImportDrawerOpen, setIsImportDrawerOpen] = useState(false)
-  const [csvText, setCsvText] = useState("")
-  const [parsedEmployees, setParsedEmployees] = useState<any[]>([])
-  const [parseError, setParseError] = useState<string | null>(null)
-  const [importing, setImporting] = useState(false)
-  const [importResult, setImportResult] = useState<{ success?: boolean; message?: string } | null>(null)
-
-  const handleParseCsv = (text: string) => {
-    setParseError(null)
-    setImportResult(null)
-    try {
-      const lines = text.split(/\r?\n/).filter(line => line.trim().length > 0)
-      if (lines.length === 0) {
-        setParsedEmployees([])
-        return
-      }
-
-      // Check headers
-      const headers = lines[0].split(',').map(h => h.trim().toLowerCase())
-      
-      const fullNameIdx = headers.indexOf('fullname')
-      const emailIdx = headers.indexOf('email')
-      const roleIdx = headers.indexOf('role')
-      const salaryIdx = headers.indexOf('basesalary')
-      const passwordIdx = headers.indexOf('password')
-
-      if (fullNameIdx === -1 || emailIdx === -1 || roleIdx === -1 || salaryIdx === -1 || passwordIdx === -1) {
-        throw new Error("CSV must contain headers: fullName, email, role, baseSalary, password")
-      }
-
-      const results = []
-      for (let i = 1; i < lines.length; i++) {
-        const line = lines[i]
-        const values = parseCsvLine(line)
-        if (values.length < 5) continue
-
-        const fullName = values[fullNameIdx]?.trim()
-        const email = values[emailIdx]?.trim()
-        const role = values[roleIdx]?.trim().toLowerCase()
-        const baseSalary = Number(values[salaryIdx]?.trim())
-        const password = values[passwordIdx]?.trim()
-
-        if (!fullName || !email || !role || isNaN(baseSalary) || !password) {
-          throw new Error(`Row ${i + 1} has invalid or missing values.`)
-        }
-        if (role !== 'technician' && role !== 'helper') {
-          throw new Error(`Row ${i + 1} role must be 'technician' or 'helper'.`)
-        }
-        if (baseSalary < 0) {
-          throw new Error(`Row ${i + 1} baseSalary must be non-negative.`)
-        }
-        if (password.length < 6) {
-          throw new Error(`Row ${i + 1} password must be at least 6 characters.`)
-        }
-
-        results.push({ fullName, email, role, baseSalary, password })
-      }
-
-      setParsedEmployees(results)
-    } catch (err: any) {
-      setParseError(err.message)
-      setParsedEmployees([])
-    }
-  }
-
-  function parseCsvLine(line: string) {
-    const result = []
-    let current = ''
-    let inQuotes = false
-    for (let i = 0; i < line.length; i++) {
-      const char = line[i]
-      if (char === '"') {
-        inQuotes = !inQuotes
-      } else if (char === ',' && !inQuotes) {
-        result.push(current)
-        current = ''
-      } else {
-        current += char
-      }
-    }
-    result.push(current)
-    return result
-  }
-
-  const handleBulkImport = async () => {
-    if (parsedEmployees.length === 0) return
-    setImporting(true)
-    setParseError(null)
-    setImportResult(null)
-
-    try {
-      const res = await bulkRegisterEmployees(parsedEmployees)
-      if (res.error) {
-        setImportResult({ success: false, message: res.error })
-      } else {
-        setImportResult({ success: true, message: `Successfully registered ${res.count} employees!` })
-        setCsvText("")
-        setParsedEmployees([])
-        router.refresh()
-      }
-    } catch (err: any) {
-      setImportResult({ success: false, message: err.message || "Bulk import failed." })
-    } finally {
-      setImporting(false)
-    }
-  }
-
->>>>>>> glorycode24/kan-36-bulk-import-employees
   // Load current user role and potential managers
   useEffect(() => {
     async function initData() {
@@ -674,9 +541,9 @@ export default function EmployeesClient({ initialTechnicians, officeLocations, a
                             {tech.fullName.charAt(0).toUpperCase()}
                           </div>
                           <span className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-white ${
-                            tech.currentStatus === 'active'
+                            activeTechnicianIds.includes(tech.id)
                               ? 'bg-emerald-500'
-                              : tech.currentStatus === 'on_leave'
+                              : tech.lifecycleStatus === 'on_leave'
                               ? 'bg-amber-550'
                               : 'bg-zinc-400'
                           }`} />
@@ -768,10 +635,8 @@ export default function EmployeesClient({ initialTechnicians, officeLocations, a
             </h2>
             <button
               onClick={() => {
-                setIsImportDrawerOpen(true)
-                setParseError(null)
-                setImportResult(null)
-                setParsedEmployees([])
+                setIsBulkDrawerOpen(true)
+                setBulkResults(null)
               }}
               className="text-xs px-3 py-1.5 bg-zinc-150 hover:bg-zinc-200 border border-zinc-250 text-zinc-700 font-bold rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer"
             >
@@ -1359,7 +1224,6 @@ export default function EmployeesClient({ initialTechnicians, officeLocations, a
         </div>
       )}
 
-<<<<<<< HEAD
       {/* Slide-over Bulk Import Drawer */}
       {isBulkDrawerOpen && (
         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-50 transition-opacity flex justify-end">

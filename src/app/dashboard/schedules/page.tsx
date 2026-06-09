@@ -21,9 +21,13 @@ export default async function SchedulesPage() {
     .select('*')
     .eq('status', 'approved')
 
+  const technicians = (staff || []).filter(s => s.role === 'technician')
+  const helpers = (staff || []).filter(s => s.role === 'helper')
+
   return (
     <SchedulesClient 
-      initialTechnicians={staff || []} 
+      initialTechnicians={technicians} 
+      initialHelpers={helpers}
       initialSchedules={schedules || []} 
       approvedLeaves={approvedLeaves || []}
     />
