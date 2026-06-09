@@ -239,6 +239,12 @@ export default function SchedulesClient({
                         <MapPin className="w-4 h-4 text-zinc-400" /> 
                         <span className="font-semibold text-zinc-700">{sched.location}</span>
                       </div>
+                      <div className="flex items-center gap-2 bg-zinc-100/80 px-3 py-1.5 rounded-md">
+                        <span className="text-zinc-500 text-xs font-bold">DTR:</span>
+                        <span className="font-semibold text-zinc-700 capitalize">
+                          {sched.attendance_tracking_mode ? sched.attendance_tracking_mode.replace(/_/g, ' ') : 'Pacita HQ'}
+                        </span>
+                      </div>
                     </div>
                     
                     <div className="pt-4 border-t border-zinc-150 flex flex-wrap items-center justify-between text-xs gap-3">
