@@ -28,10 +28,8 @@ export async function createSchedule(formData: FormData) {
     const seniorPartnerId = (rawSeniorPartnerId && rawSeniorPartnerId !== "" && rawSeniorPartnerId !== "none") ? rawSeniorPartnerId : null
     const clientName = formData.get("clientName") as string
     const location = formData.get("location") as string
-    const startTime = formData.get("startTime") as string
-    const endTime = formData.get("endTime") as string // Can be empty / null
+        const endTime = formData.get("endTime") as string // Can be empty / null
     const attendanceMode = (formData.get("attendanceMode") as string) || 'hq'
-    const seniorPartnerId = formData.get("seniorPartnerId") as string // Can be empty / null
     const isVip = formData.get("isVip") === "on"
     const trackingMode = (formData.get("trackingMode") as string) || "pacita_hq"
 

@@ -26,6 +26,7 @@ export default function SchedulesClient({
   const [techId, setTechId] = useState("")
   const [seniorPartnerId, setSeniorPartnerId] = useState("")
   const [startTime, setStartTime] = useState("")
+<<<<<<< HEAD
   const [clientName, setClientName] = useState("")
   const [location, setLocation] = useState("")
   const [attendanceMode, setAttendanceMode] = useState("hq")
@@ -36,6 +37,8 @@ export default function SchedulesClient({
   const [selectedStaffIds, setSelectedStaffIds] = useState<string[]>([])
   const [bulkSeniorPartnerMap, setBulkSeniorPartnerMap] = useState<Record<string, string>>({})
   
+=======
+>>>>>>> glorycode24/kan-40-simplify-schedules
   const [errorMsg, setErrorMsg] = useState("")
   const [successMsg, setSuccessMsg] = useState("")
 
@@ -45,6 +48,7 @@ export default function SchedulesClient({
     setTechId(initialTechnicians[0]?.id || initialHelpers[0]?.id || "")
     setSeniorPartnerId("")
     setStartTime("")
+<<<<<<< HEAD
     setClientName("")
     setLocation("")
     setAttendanceMode("hq")
@@ -52,6 +56,8 @@ export default function SchedulesClient({
     setIsVip(false)
     setSelectedStaffIds([])
     setBulkSeniorPartnerMap({})
+=======
+>>>>>>> glorycode24/kan-40-simplify-schedules
     setErrorMsg("")
     setSuccessMsg("")
     setShowModal(true)
@@ -141,8 +147,12 @@ export default function SchedulesClient({
     if (!startTime || !technicianId) return null
     return approvedLeaves.find(leave => 
       leave.technician_id === technicianId &&
+<<<<<<< HEAD
       new Date(startTime).getTime() >= new Date(leave.start_date).getTime() &&
       new Date(startTime).getTime() <= new Date(leave.end_date).getTime()
+=======
+      isRangeOverlapping(startTime, null, leave.start_date, leave.end_date)
+>>>>>>> glorycode24/kan-40-simplify-schedules
     )
   }
 
@@ -236,12 +246,21 @@ export default function SchedulesClient({
                       </button>
                     </div>
                     
+<<<<<<< HEAD
                     <div className="flex flex-col sm:flex-row gap-3 sm:gap-6 text-xs text-zinc-500 my-4">
                       <div className="flex items-center gap-2 bg-zinc-50 px-3 py-1.5 rounded-xl border border-zinc-100">
                         <Clock className="w-4 h-4 text-zinc-400" /> 
                         <span className="font-semibold text-zinc-700">
                           {new Date(sched.start_time).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                           {sched.end_time ? ` - ${new Date(sched.end_time).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}` : " (Continuous / Clock-out required)"}
+=======
+                    <div className="flex flex-col sm:flex-row gap-3 sm:gap-6 text-sm text-zinc-600 mb-4">
+                      <div className="flex items-center gap-2 bg-zinc-100/80 px-3 py-1.5 rounded-md">
+                        <Clock className="w-4 h-4 text-zinc-500" /> 
+                        <span className="font-medium">
+                          {new Date(sched.start_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                          {sched.end_time ? ` - ${new Date(sched.end_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}` : ' (Open-Ended)'}
+>>>>>>> glorycode24/kan-40-simplify-schedules
                         </span>
                       </div>
                       <div className="flex items-center gap-2 bg-zinc-50 px-3 py-1.5 rounded-xl border border-zinc-100">
@@ -578,29 +597,6 @@ export default function SchedulesClient({
                     {initialTechnicians.map((t) => {
                       const isChecked = selectedStaffIds.includes(t.id)
                       const isHelper = t.role === 'helper'
-=======
-            
-            <form onSubmit={handleCreate} className="p-6 space-y-4 bg-zinc-50">
-              <div>
-                <label className="block text-sm font-medium text-zinc-700 mb-1">Assign Personnel</label>
-                <select 
-                  name="technicianId" 
-                  required 
-                  value={techId}
-                  onChange={(e) => {
-                    const newVal = e.target.value;
-                    setTechId(newVal);
-                    // Reset senior partner if selected person is not a helper
-                    const isHelper = initialHelpers.some(h => h.id === newVal);
-                    if (!isHelper) {
-                      setSeniorPartnerId("");
-                    }
-                  }}
-                  className="w-full px-4 py-2.5 border border-zinc-300 rounded-lg bg-white focus:ring-2 focus:ring-emerald-500 outline-none"
-                >
-                  <optgroup label="Technicians">
-                    {initialTechnicians.map(t => {
->>>>>>> glorycode24/kan-39-helper-senior-pairing
                       const hasConflict = approvedLeaves.some(leave => 
                         leave.technician_id === t.id &&
                         new Date(startTime).getTime() >= new Date(leave.start_date).getTime() &&

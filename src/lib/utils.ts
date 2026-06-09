@@ -7,16 +7,16 @@ export function cn(...inputs: ClassValue[]) {
 
 export function isRangeOverlapping(
   scheduleStartStr: string,
-  scheduleEndStr: string,
+  scheduleEndStr: string | null | undefined,
   leaveStartStr: string,
   leaveEndStr: string
 ): boolean {
-  if (!scheduleStartStr || !scheduleEndStr || !leaveStartStr || !leaveEndStr) {
+  if (!scheduleStartStr || !leaveStartStr || !leaveEndStr) {
     return false
   }
   
   const startA = new Date(scheduleStartStr).getTime()
-  const endA = new Date(scheduleEndStr).getTime()
+  const endA = scheduleEndStr ? new Date(scheduleEndStr).getTime() : startA
   
   // Since leaves are all-day and stored as YYYY-MM-DD:
   // Convert leave start and end dates to absolute time boundaries in Manila timezone (+08:00)
