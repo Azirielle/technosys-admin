@@ -19,7 +19,11 @@ import {
   Plus, 
   ChevronRight, 
   UserCheck,
+<<<<<<< HEAD
   History
+=======
+  Users
+>>>>>>> glorycode24/kan-37-employee-cards-filter
 } from "lucide-react"
 import { 
   deleteTechnician, 
@@ -53,6 +57,19 @@ export default function EmployeesClient({ initialTechnicians, officeLocations, a
   const [error, setError] = useState("")
   const [deleteId, setDeleteId] = useState<string | null>(null)
   const [deleting, setDeleting] = useState(false)
+
+  // Filtering states
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'on_leave' | 'off_duty'>('all')
+
+  const totalForceCount = initialTechnicians.length
+  const activeCount = initialTechnicians.filter(t => t.currentStatus === 'active').length
+  const onLeaveCount = initialTechnicians.filter(t => t.currentStatus === 'on_leave').length
+  const offDutyCount = initialTechnicians.filter(t => t.currentStatus === 'off_duty').length
+
+  const filteredTechnicians = initialTechnicians.filter(tech => {
+    if (statusFilter === 'all') return true
+    return tech.currentStatus === statusFilter
+  })
 
   // Current logged in admin role
   const [currentUserRole, setCurrentUserRole] = useState<string>("")
@@ -605,6 +622,8 @@ export default function EmployeesClient({ initialTechnicians, officeLocations, a
         </div>
       </div>
 
+
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
         {/* Left: Registered Technicians List */}
         <div className="lg:col-span-2 space-y-6">
@@ -649,9 +668,18 @@ export default function EmployeesClient({ initialTechnicians, officeLocations, a
                       className="p-6 flex items-center justify-between hover:bg-zinc-50/50 transition-all group cursor-pointer"
                     >
                       <div className="flex items-center gap-4">
-                        {/* Initial circle avatar */}
-                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-indigo-500 to-cyan-500 flex items-center justify-center text-white font-extrabold shadow-sm ring-2 ring-white">
-                          {tech.fullName.charAt(0).toUpperCase()}
+                        {/* Initial circle avatar with status indicator */}
+                        <div className="relative">
+                          <div className="w-12 h-12 rounded-full bg-gradient-to-br from-indigo-500 to-cyan-500 flex items-center justify-center text-white font-extrabold shadow-sm ring-2 ring-white">
+                            {tech.fullName.charAt(0).toUpperCase()}
+                          </div>
+                          <span className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-white ${
+                            tech.currentStatus === 'active'
+                              ? 'bg-emerald-500'
+                              : tech.currentStatus === 'on_leave'
+                              ? 'bg-amber-550'
+                              : 'bg-zinc-400'
+                          }`} />
                         </div>
                         <div>
                           <div className="flex items-center flex-wrap gap-1">
