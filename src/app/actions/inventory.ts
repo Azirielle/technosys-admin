@@ -3,6 +3,7 @@ import { supabaseAdmin } from "@/lib/supabase/admin"
 import { createClient } from "@/lib/supabase/server"
 import { revalidatePath } from "next/cache"
 import { z } from "zod"
+import { logActivity } from "./activity"
 
 // 1. Fetch all inventory items
 export async function getInventoryItems() {
@@ -46,6 +47,7 @@ export async function createOrUpdateInventoryItem(formData: FormData) {
     const unit = formData.get("unit")?.toString().trim() || "pcs"
     const low_stock_threshold = Number(formData.get("low_stock_threshold"))
     const image_url = formData.get("image_url")?.toString() || null
+    const imageFile = formData.get("image") as File | null
 
     if (!name || !sku) {
       return { error: "Name and SKU are required." }

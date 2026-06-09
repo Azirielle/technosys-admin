@@ -70,9 +70,39 @@ export async function getTechnicians(): Promise<TechnicianInfo[]> {
     const { data: { users }, error: authError } = await supabaseAdmin.auth.admin.listUsers()
     if (authError) throw authError
 
+    // Fetch active time logs (clocked-in)
+    const { data: activeLogs, error: logsError } = await supabaseAdmin
+      .from('time_logs')
+      .select('technician_id')
+      .is('app_time_out', null)
+
+    if (logsError) throw logsError
+
+    // Fetch approved leaves overlapping with today
+    const todayStr = new Date().toISOString().substring(0, 10) // YYYY-MM-DD
+    const { data: activeLeaves, error: leavesError } = await supabaseAdmin
+      .from('leaves')
+      .select('technician_id')
+      .eq('status', 'approved')
+      .lte('start_date', todayStr)
+      .gte('end_date', todayStr)
+
+    if (leavesError) throw leavesError
+
+    const activeTechIds = new Set((activeLogs || []).map(l => l.technician_id))
+    const onLeaveTechIds = new Set((activeLeaves || []).map(l => l.technician_id))
+
     // Map profiles to match with their emails
     const mapped: TechnicianInfo[] = (filteredProfiles).map(p => {
       const authUser = users.find(u => u.id === p.id)
+      
+      let currentStatus: 'active' | 'on_leave' | 'off_duty' = 'off_duty'
+      if (activeTechIds.has(p.id)) {
+        currentStatus = 'active'
+      } else if (onLeaveTechIds.has(p.id)) {
+        currentStatus = 'on_leave'
+      }
+
       return {
         id: p.id,
         fullName: p.full_name,
@@ -443,9 +473,11 @@ export async function addManualDtrLog(employeeId: string, clockIn: string, clock
     // Look up target profile and send push notification
     const { data: targetProfile } = await supabaseAdmin
       .from('profiles')
-      .select('push_token')
+      .select('push_token, full_name')
       .eq('id', employeeId)
       .single();
+    const empName = targetProfile?.full_name || 'Staff'
+
     if (targetProfile?.push_token) {
       await sendPushNotification(
         targetProfile.push_token,

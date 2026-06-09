@@ -52,7 +52,7 @@ export async function getLeaves(statusFilter?: string): Promise<LeaveRequest[]> 
         const { count, error: schedError } = await supabaseAdmin
           .from('schedules')
           .select('*', { count: 'exact', head: true })
-          .eq('technician_id', leave.technician_id)
+          .or(`technician_id.eq.${leave.technician_id},senior_partner_id.eq.${leave.technician_id}`)
           .gte('start_time', startISO)
           .lte('start_time', endISO)
 
@@ -140,10 +140,18 @@ export async function updateLeaveStatus(leaveId: string, status: 'approved' | 'r
           .lte('start_time', endISO)
           .gte('start_time', nowISO) // crucial amendment: protect historical data
 
-        if (reassignError) {
-          console.error(`Failed to automatically unassign technician from conflicting schedules:`, reassignError)
+        const { error: reassignPartnerError } = await supabaseAdmin
+          .from('schedules')
+          .update({ senior_partner_id: null })
+          .eq('senior_partner_id', leave.technician_id)
+          .gte('start_time', startISO)
+          .lte('start_time', endISO)
+          .gte('start_time', nowISO)
+
+        if (reassignError || reassignPartnerError) {
+          console.error(`Failed to automatically unassign technician from conflicting schedules:`, reassignError, reassignPartnerError)
         } else {
-          console.log(`Successfully unassigned technician ${leave.technician_id} from conflicting schedules during approved leave period ${leave.start_date} to ${leave.end_date}`)
+          console.log(`Successfully unassigned technician ${leave.technician_id} from conflicting schedules/partner roles during approved leave period ${leave.start_date} to ${leave.end_date}`)
         }
       }
     }

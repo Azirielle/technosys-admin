@@ -1,104 +1,23 @@
 "use server"
 
-import { supabaseAdmin } from "@/lib/supabase/admin"
 import { createClient } from "@/lib/supabase/server"
 import { revalidatePath } from "next/cache"
 
 export interface ActivityLog {
   id: string
-  category: 'employees' | 'schedules' | 'leaves' | 'tickets' | 'payroll' | 'inventory' | 'compliance' | 'other'
+  category: string
   action: string
   description: string
-  performed_by: string | null
   performed_by_name: string | null
-  metadata?: any
   created_at: string
 }
 
-// Log a system/admin activity (wrapped in a try-catch to be non-blocking)
-export async function logActivity(params: {
-  category: ActivityLog['category']
-  action: string
-  description: string
-  metadata?: any
-}) {
-  try {
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-
-    let performed_by = null
-    let performed_by_name = "System"
-
-    if (user) {
-      performed_by = user.id
-      performed_by_name = user.email || "User"
-
-      // Try to fetch performer name from profiles
-      const { data: profile } = await supabaseAdmin
-        .from('profiles')
-        .select('full_name')
-        .eq('id', user.id)
-        .single()
-
-      if (profile?.full_name) {
-        performed_by_name = profile.full_name
-      }
-    }
-
-    const { error } = await supabaseAdmin.from('activity_logs').insert({
-      category: params.category,
-      action: params.action,
-      description: params.description,
-      performed_by,
-      performed_by_name,
-      metadata: params.metadata || null
-    })
-
-    if (error) {
-      console.error("Supabase insert error for activity_logs:", error)
-    }
-
-    revalidatePath("/dashboard")
-    revalidatePath("/dashboard/activity")
-  } catch (err) {
-    // Graceful degradation: never block core system functions if logging fails
-    console.error("Failed to log activity:", err)
-  }
-}
-
-// Fetch activity logs with filters (limited to last 100 entries for performance)
-export async function getActivityLogs(filters?: {
-  category?: string
-  search?: string
-}): Promise<ActivityLog[]> {
-  try {
-    let query = supabaseAdmin
-      .from('activity_logs')
-      .select('*')
-      .order('created_at', { ascending: false })
-      .limit(100)
-
-    if (filters?.category && filters.category !== 'all') {
-      query = query.eq('category', filters.category)
-    }
-
-    if (filters?.search) {
-      query = query.or(`description.ilike.%${filters.search}%,performed_by_name.ilike.%${filters.search}%`)
-    }
-
-    const { data, error } = await query
-    if (error) throw error
-
-    return (data || []) as ActivityLog[]
-  } catch (err) {
-    console.error("Failed to fetch activity logs:", err)
-    return []
-'use server'
-
-import { createClient } from '@/lib/supabase/server'
-import { revalidatePath } from 'next/cache'
-
-export async function logActivity(actionType: string, targetCategory: string, description: string) {
+// Log a system/admin activity, accepting either object arguments or positional arguments
+export async function logActivity(
+  firstArg: string | { category: string; action: string; description: string; metadata?: any },
+  secondArg?: string,
+  thirdArg?: string
+) {
   try {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
@@ -108,10 +27,27 @@ export async function logActivity(actionType: string, targetCategory: string, de
       return { error: 'Not authenticated' }
     }
 
+    let action_type = ''
+    let target_category = ''
+    let description = ''
+
+    if (typeof firstArg === 'object' && firstArg !== null) {
+      action_type = firstArg.action
+      target_category = firstArg.category
+      description = firstArg.description
+    } else if (typeof firstArg === 'string' && secondArg && thirdArg) {
+      action_type = firstArg
+      target_category = secondArg
+      description = thirdArg
+    } else {
+      console.warn("Invalid arguments provided to logActivity:", firstArg, secondArg, thirdArg)
+      return { error: 'Invalid arguments' }
+    }
+
     const { error } = await supabase.from('activity_logs').insert({
       actor_id: user.id,
-      action_type: actionType,
-      target_category: targetCategory,
+      action_type: action_type,
+      target_category: target_category,
       description: description
     })
 
@@ -129,6 +65,7 @@ export async function logActivity(actionType: string, targetCategory: string, de
   }
 }
 
+// Fetch activity logs, mapping Phase 9 schema back to the frontend ActivityLog interface
 export async function getActivityLogs(category?: string) {
   try {
     const supabase = await createClient()
@@ -149,7 +86,16 @@ export async function getActivityLogs(category?: string) {
       return { error: error.message, logs: [] }
     }
 
-    return { logs: data || [] }
+    const logs: ActivityLog[] = (data || []).map((row: any) => ({
+      id: row.id,
+      category: row.target_category || 'other',
+      action: row.action_type || '',
+      description: row.description || '',
+      performed_by_name: row.actor?.full_name || 'System',
+      created_at: row.created_at
+    }))
+
+    return { logs }
   } catch (e: any) {
     console.error("getActivityLogs exception:", e)
     return { error: e.message || 'Unknown error fetching activity logs', logs: [] }

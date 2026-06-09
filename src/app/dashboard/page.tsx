@@ -1,9 +1,9 @@
 import { createClient } from '@/lib/supabase/server'
 import { supabaseAdmin } from '@/lib/supabase/admin'
 import { redirect } from 'next/navigation'
+import Link from 'next/link'
 import DashboardCharts from './DashboardCharts'
 import { Users, Calendar, DollarSign } from 'lucide-react'
-import Link from 'next/link'
 
 export const revalidate = 0;
 
@@ -79,7 +79,7 @@ export default async function DashboardPage() {
       )}
       
       <div className="mt-8 grid gap-4 grid-cols-1 md:grid-cols-3">
-        <Link href="/dashboard/employees" className="p-6 bg-white rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between group hover:shadow-md hover:scale-[1.01] hover:border-slate-300 transition-all duration-200 cursor-pointer">
+        <Link href="/dashboard/employees" className="p-6 bg-white rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between group hover:shadow-md hover:scale-[1.02] transition-all duration-200">
           <div>
             <h3 className="font-semibold text-slate-500 text-sm uppercase tracking-wider">Employees</h3>
             <p className="text-3xl font-bold text-slate-900 mt-2">{empCount}</p>
@@ -89,7 +89,7 @@ export default async function DashboardPage() {
           </div>
         </Link>
         
-        <Link href="/dashboard/schedules" className="p-6 bg-white rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between group hover:shadow-md hover:scale-[1.01] hover:border-slate-300 transition-all duration-200 cursor-pointer">
+        <Link href="/dashboard/schedules" className="p-6 bg-white rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between group hover:shadow-md hover:scale-[1.02] transition-all duration-200">
           <div>
             <h3 className="font-semibold text-slate-500 text-sm uppercase tracking-wider">Active Schedules</h3>
             <p className="text-3xl font-bold text-slate-900 mt-2">{schedCount}</p>
@@ -99,7 +99,7 @@ export default async function DashboardPage() {
           </div>
         </Link>
         
-        <Link href="/dashboard/payroll" className="p-6 bg-white rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between group hover:shadow-md hover:scale-[1.01] hover:border-slate-300 transition-all duration-200 cursor-pointer">
+        <Link href="/dashboard/payroll" className="p-6 bg-white rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between group hover:shadow-md hover:scale-[1.02] transition-all duration-200">
           <div>
             <h3 className="font-semibold text-slate-500 text-sm uppercase tracking-wider">Total Payslips</h3>
             <p className="text-3xl font-bold text-slate-900 mt-2">{payCount}</p>
