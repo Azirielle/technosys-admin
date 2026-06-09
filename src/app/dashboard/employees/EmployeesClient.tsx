@@ -155,7 +155,6 @@ export default function EmployeesClient({ initialTechnicians, officeLocations, a
       setBulkLoading(false)
     }
   }
-
   // Load current user role and potential managers
   useEffect(() => {
     async function initData() {
@@ -710,7 +709,7 @@ export default function EmployeesClient({ initialTechnicians, officeLocations, a
                   min="0" 
                   value={baseSalaryInput}
                   onChange={e => setBaseSalaryInput(e.target.value)}
-                  className="w-full pl-8 pr-4 py-2.5 border border-zinc-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all text-zinc-800 text-sm font-mono" 
+                  className="w-full pl-8 pr-4 py-2.5 border border-zinc-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all text-zinc-800 text-sm font-mono"
                   placeholder="25000" 
                 />
               </div>
