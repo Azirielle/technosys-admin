@@ -6,10 +6,12 @@ import { useRouter } from "next/navigation"
 
 export default function SchedulesClient({ 
   initialTechnicians, 
+  initialHelpers,
   initialSchedules,
   approvedLeaves
 }: { 
   initialTechnicians: any[], 
+  initialHelpers: any[],
   initialSchedules: any[],
   approvedLeaves: any[]
 }) {
@@ -22,11 +24,11 @@ export default function SchedulesClient({
   
   // Single creation form states
   const [techId, setTechId] = useState("")
+  const [seniorPartnerId, setSeniorPartnerId] = useState("")
   const [startTime, setStartTime] = useState("")
   const [clientName, setClientName] = useState("")
   const [location, setLocation] = useState("")
   const [attendanceMode, setAttendanceMode] = useState("hq")
-  const [seniorPartnerId, setSeniorPartnerId] = useState("")
   const [isVip, setIsVip] = useState(false)
   
   // Bulk creation form states
@@ -39,7 +41,8 @@ export default function SchedulesClient({
   const techniciansOnly = initialTechnicians.filter(t => t.role === 'technician')
 
   const handleOpenModal = () => {
-    setTechId(initialTechnicians[0]?.id || "")
+    setTechId(initialTechnicians[0]?.id || initialHelpers[0]?.id || "")
+    setSeniorPartnerId("")
     setStartTime("")
     setClientName("")
     setLocation("")
@@ -326,6 +329,7 @@ export default function SchedulesClient({
                 <X className="w-5 h-5" />
               </button>
             </div>
+
 
             {/* Form Tabs */}
             <div className="flex border-b border-zinc-150 px-6">

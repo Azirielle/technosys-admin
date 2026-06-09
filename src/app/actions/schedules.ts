@@ -24,12 +24,13 @@ function isRangeOverlappingWithLeave(startStr: string, endStr: string, leaveStar
 export async function createSchedule(formData: FormData) {
   try {
     const technicianId = formData.get("technicianId") as string
+    const rawSeniorPartnerId = formData.get("seniorPartnerId") as string
+    const seniorPartnerId = (rawSeniorPartnerId && rawSeniorPartnerId !== "" && rawSeniorPartnerId !== "none") ? rawSeniorPartnerId : null
     const clientName = formData.get("clientName") as string
     const location = formData.get("location") as string
     const startTime = formData.get("startTime") as string
     const endTime = formData.get("endTime") as string // Can be empty / null
     const attendanceMode = (formData.get("attendanceMode") as string) || 'hq'
-    const seniorPartnerId = formData.get("seniorPartnerId") as string // Can be empty / null
     const isVip = formData.get("isVip") === "on"
     const trackingMode = (formData.get("trackingMode") as string) || "pacita_hq"
 
@@ -41,36 +42,44 @@ export async function createSchedule(formData: FormData) {
       .single()
     const techName = techProfile?.full_name || 'Staff'
 
-    // 2. Fetch approved leaves for conflict checking
+    const targetIds = [technicianId, seniorPartnerId].filter(Boolean) as string[]
+
     const { data: leaves, error: leavesErr } = await supabaseAdmin
       .from('leaves')
       .select('*')
-      .eq('technician_id', technicianId)
+      .in('technician_id', targetIds)
       .eq('status', 'approved')
 
     if (leavesErr) throw leavesErr
 
-    const hasConflict = leaves?.some(leave => {
-      if (endTime) {
-        return isRangeOverlappingWithLeave(startTime, endTime, leave.start_date, leave.end_date)
-      } else {
-        return isTimeConflictingWithLeave(startTime, leave.start_date, leave.end_date)
-      }
-    })
+    const hasConflict = (targetId: string) => {
+      return leaves?.some(leave => {
+        if (leave.technician_id !== targetId) return false
+        if (endTime) {
+          return isRangeOverlappingWithLeave(startTime, endTime, leave.start_date, leave.end_date)
+        } else {
+          return isTimeConflictingWithLeave(startTime, leave.start_date, leave.end_date)
+        }
+      })
+    }
 
-    if (hasConflict) {
+    if (hasConflict(technicianId)) {
       throw new Error(`The selected employee "${techName}" is on approved leave during this schedule's timeframe.`)
+    }
+
+    if (seniorPartnerId && hasConflict(seniorPartnerId)) {
+      throw new Error(`The selected senior partner is on approved leave during this schedule's timeframe.`)
     }
 
     // 3. Insert schedule
     const insertData: any = {
       technician_id: technicianId,
+      senior_partner_id: seniorPartnerId,
       client_name: clientName,
       location,
       start_time: new Date(startTime).toISOString(),
       end_time: endTime ? new Date(endTime).toISOString() : null,
       attendance_mode: attendanceMode,
-      senior_partner_id: seniorPartnerId || null,
       is_vip_hook: isVip
     }
 
@@ -227,3 +236,72 @@ export async function toggleVipHook(scheduleId: string, currentStatus: boolean) 
     return { error: err.message || "Failed to update schedule status." }
   }
 }
+
+export async function createBulkSchedules(data: {
+  personnelIds: string[]
+  clientName: string
+  location: string
+  startTime: string
+  isVip: boolean
+}) {
+  try {
+    const { personnelIds, clientName, location, startTime, isVip } = data
+
+    if (!personnelIds || personnelIds.length === 0) {
+      throw new Error("Please select at least one personnel.")
+    }
+    if (!clientName) throw new Error("Client Name / Job Title is required.")
+    if (!location) throw new Error("Location is required.")
+    if (!startTime) throw new Error("Start Time is required.")
+
+    // 1. Fetch approved leaves for the selected personnelIds to perform conflict checks
+    const { error: leavesErr, data: leaves } = await supabaseAdmin
+      .from('leaves')
+      .select('*')
+      .in('technician_id', personnelIds)
+      .eq('status', 'approved')
+
+    if (leavesErr) throw leavesErr
+
+    // 2. Validate conflicts
+    const conflictingIds = personnelIds.filter(id => 
+      leaves?.some(leave => 
+        leave.technician_id === id &&
+        isTimeConflictingWithLeave(startTime, leave.start_date, leave.end_date)
+      )
+    )
+
+    if (conflictingIds.length > 0) {
+      // Fetch names of conflicting IDs to throw a helpful error
+      const { data: profiles } = await supabaseAdmin
+        .from('profiles')
+        .select('id, full_name')
+        .in('id', conflictingIds)
+
+      const names = profiles?.map(p => p.full_name) || conflictingIds
+      throw new Error(`The following personnel are on approved leave during this timeframe: ${names.join(', ')}`)
+    }
+
+    // 3. Prepare inserts
+    const inserts = personnelIds.map(id => ({
+      technician_id: id,
+      senior_partner_id: null,
+      client_name: clientName,
+      location,
+      start_time: new Date(startTime).toISOString(),
+      end_time: null,
+      is_vip_hook: isVip
+    }))
+
+    // 4. Insert into DB (All-or-Nothing)
+    const { error } = await supabaseAdmin.from('schedules').insert(inserts)
+    if (error) throw error
+
+    revalidatePath("/dashboard/schedules")
+    return { success: true }
+  } catch (err: any) {
+    console.error("Failed to create bulk schedules:", err.message || err)
+    return { error: err.message || "Failed to create bulk schedules." }
+  }
+}
+

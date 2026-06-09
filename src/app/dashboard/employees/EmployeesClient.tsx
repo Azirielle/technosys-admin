@@ -19,7 +19,8 @@ import {
   Plus, 
   ChevronRight, 
   UserCheck,
-  History
+  History,
+  Users
 } from "lucide-react"
 import { 
   deleteTechnician, 
@@ -49,6 +50,8 @@ export default function EmployeesClient({ initialTechnicians, officeLocations, a
   const [error, setError] = useState("")
   const [deleteId, setDeleteId] = useState<string | null>(null)
   const [deleting, setDeleting] = useState(false)
+
+
 
   // Current logged in admin role
   const [currentUserRole, setCurrentUserRole] = useState<string>("")
@@ -486,6 +489,8 @@ export default function EmployeesClient({ initialTechnicians, officeLocations, a
         </div>
       </div>
 
+
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
         {/* Left: Registered Technicians List */}
         <div className="lg:col-span-2 space-y-6">
@@ -530,9 +535,18 @@ export default function EmployeesClient({ initialTechnicians, officeLocations, a
                       className="p-6 flex items-center justify-between hover:bg-zinc-50/50 transition-all group cursor-pointer"
                     >
                       <div className="flex items-center gap-4">
-                        {/* Initial circle avatar */}
-                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-indigo-500 to-cyan-500 flex items-center justify-center text-white font-extrabold shadow-sm ring-2 ring-white">
-                          {tech.fullName.charAt(0).toUpperCase()}
+                        {/* Initial circle avatar with status indicator */}
+                        <div className="relative">
+                          <div className="w-12 h-12 rounded-full bg-gradient-to-br from-indigo-500 to-cyan-500 flex items-center justify-center text-white font-extrabold shadow-sm ring-2 ring-white">
+                            {tech.fullName.charAt(0).toUpperCase()}
+                          </div>
+                          <span className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-white ${
+                            activeTechnicianIds.includes(tech.id)
+                              ? 'bg-emerald-500'
+                              : tech.lifecycleStatus === 'on_leave'
+                              ? 'bg-amber-550'
+                              : 'bg-zinc-400'
+                          }`} />
                         </div>
                         <div>
                           <div className="flex items-center flex-wrap gap-1">
@@ -615,9 +629,20 @@ export default function EmployeesClient({ initialTechnicians, officeLocations, a
 
         {/* Right: Registration Panel */}
         <div className="bg-white rounded-2xl border border-zinc-200 p-6 shadow-sm">
-          <h2 className="text-lg font-bold text-zinc-900 flex items-center gap-2 mb-6">
-            <UserPlus className="w-5 h-5 text-emerald-500" /> Register Employee
-          </h2>
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-lg font-bold text-zinc-900 flex items-center gap-2">
+              <UserPlus className="w-5 h-5 text-emerald-500" /> Register Employee
+            </h2>
+            <button
+              onClick={() => {
+                setIsBulkDrawerOpen(true)
+                setBulkResults(null)
+              }}
+              className="text-xs px-3 py-1.5 bg-zinc-150 hover:bg-zinc-200 border border-zinc-250 text-zinc-700 font-bold rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer"
+            >
+              <FileText className="w-3.5 h-3.5" /> Bulk Import
+            </button>
+          </div>
 
           {success && (
             <div className="mb-6 p-4 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-xl flex items-start gap-3 transition-all duration-300 animate-in fade-in">
@@ -710,7 +735,7 @@ export default function EmployeesClient({ initialTechnicians, officeLocations, a
                   min="0" 
                   value={baseSalaryInput}
                   onChange={e => setBaseSalaryInput(e.target.value)}
-                  className="w-full pl-8 pr-4 py-2.5 border border-zinc-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all text-zinc-800 text-sm font-mono" 
+                  className="w-full pl-8 pr-4 py-2.5 border border-zinc-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all text-zinc-800 text-sm font-mono"
                   placeholder="25000" 
                 />
               </div>
