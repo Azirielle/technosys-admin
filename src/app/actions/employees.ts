@@ -1,10 +1,14 @@
 "use server"
 import { supabaseAdmin } from "@/lib/supabase/admin"
 import { revalidatePath } from "next/cache"
+<<<<<<< HEAD
 import { createClient } from "@/lib/supabase/server"
 import { z } from "zod"
 import { logActivity } from "./activity"
 import { sendPushNotification } from "@/lib/push"
+=======
+import { z } from "zod"
+>>>>>>> glorycode24/kan-36-bulk-import-employees
 
 export interface TechnicianInfo {
   id: string
@@ -471,6 +475,7 @@ export async function addManualDtrLog(employeeId: string, clockIn: string, clock
   }
 }
 
+<<<<<<< HEAD
 export async function overrideDtrLog(
   employeeId: string,
   logId: string,
