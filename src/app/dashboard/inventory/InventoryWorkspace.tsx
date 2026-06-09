@@ -517,7 +517,7 @@ export default function InventoryWorkspace({
               <p className="text-xs text-zinc-500 mt-0.5">Define part specifications and stock limits.</p>
             </div>
 
-            <form onSubmit={handleCreateOrUpdate} className="p-5 space-y-4">
+            <form onSubmit={handleCreateOrUpdate} encType="multipart/form-data" className="p-5 space-y-4">
               <div>
                 <label className="block text-xs font-bold text-zinc-700 mb-1.5">Item Name</label>
                 <input
@@ -529,6 +529,25 @@ export default function InventoryWorkspace({
                   required
                   className="w-full px-3 py-2 border border-zinc-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none"
                 />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-zinc-700 mb-1.5">Item Photo (Optional)</label>
+                <div className="flex items-center gap-3">
+                  {editingItem?.image_url && (
+                    <img 
+                      src={editingItem.image_url} 
+                      alt="Current preview" 
+                      className="w-10 h-10 rounded-lg object-cover border border-zinc-200 shrink-0" 
+                    />
+                  )}
+                  <input
+                    type="file"
+                    name="image"
+                    accept="image/*"
+                    className="w-full text-xs text-zinc-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-bold file:bg-zinc-100 file:text-zinc-700 hover:file:bg-zinc-200 cursor-pointer"
+                  />
+                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
@@ -697,7 +716,7 @@ export default function InventoryWorkspace({
             )}
 
             <div className="bg-white rounded-xl border border-zinc-200 shadow-sm overflow-hidden">
-              <div className="p-5 border-b border-zinc-150 bg-zinc-50/50 flex justify-between items-center">
+              <div className="p-5 border-b border-zinc-150 bg-zinc-50/50 flex justify-between items-center flex-wrap gap-2">
                 <div>
                   <h3 className="text-sm font-bold text-zinc-900">Registered Stock Items</h3>
                   <p className="text-xs text-zinc-500 mt-0.5">Browse quantities and low-stock alerts.</p>
@@ -714,6 +733,7 @@ export default function InventoryWorkspace({
                 <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="bg-zinc-50/50 border-b border-zinc-150 text-[10px] uppercase font-bold text-zinc-400">
+                      <th className="p-4 w-12">Photo</th>
                       <th className="p-4">SKU</th>
                       <th className="p-4">Item Details</th>
                       <th className="p-4">Stock Level</th>
@@ -731,6 +751,19 @@ export default function InventoryWorkspace({
                             isLowStock ? "bg-amber-50/20" : ""
                           }`}
                         >
+                          <td className="p-4">
+                            {item.image_url ? (
+                              <img 
+                                src={item.image_url} 
+                                alt={item.name} 
+                                className="w-10 h-10 rounded-lg object-cover border border-zinc-200" 
+                              />
+                            ) : (
+                              <div className="w-10 h-10 rounded-lg bg-zinc-100 border border-zinc-200 flex items-center justify-center text-zinc-400">
+                                <Package className="w-5 h-5" />
+                              </div>
+                            )}
+                          </td>
                           <td className="p-4 font-mono font-bold text-xs text-zinc-600">{item.sku}</td>
                           <td className="p-4 flex items-center gap-3">
                             {item.image_url ? (

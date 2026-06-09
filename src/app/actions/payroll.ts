@@ -1,6 +1,7 @@
 "use server"
 import { supabaseAdmin } from "@/lib/supabase/admin"
 import { revalidatePath } from "next/cache"
+import { logActivity } from "./activity"
 
 export async function publishPayslip(data: any) {
   try {
@@ -19,6 +20,15 @@ export async function publishPayslip(data: any) {
     })
 
     if (error) throw error
+
+    const { data: techProfile } = await supabaseAdmin.from('profiles').select('full_name').eq('id', data.technician_id).single()
+    const techName = techProfile?.full_name || data.technician_id
+    await logActivity({
+      category: 'payroll',
+      action: 'published',
+      description: `Published payslip for ${techName} with Net Pay of ₱${Number(data.net_pay).toLocaleString('en-PH', { minimumFractionDigits: 2 })}`
+    })
+
     revalidatePath("/dashboard/payroll")
     return { success: true }
   } catch (err: any) {

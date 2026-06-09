@@ -31,6 +31,7 @@ export async function createSchedule(formData: FormData) {
     const attendanceMode = (formData.get("attendanceMode") as string) || 'hq'
     const seniorPartnerId = formData.get("seniorPartnerId") as string // Can be empty / null
     const isVip = formData.get("isVip") === "on"
+    const trackingMode = (formData.get("trackingMode") as string) || "pacita_hq"
 
     // 1. Fetch technician profile to get name for activity logs
     const { data: techProfile } = await supabaseAdmin

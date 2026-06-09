@@ -56,8 +56,51 @@ export async function createOrUpdateInventoryItem(formData: FormData) {
     }
 
     let dbError
+    let finalImageUrl = null
 
     if (id) {
+      // Fetch existing item to check for old image
+      const { data: existingItem } = await supabaseAdmin
+        .from('inventory_items')
+        .select('image_url')
+        .eq('id', id)
+        .single()
+      
+      finalImageUrl = existingItem?.image_url || null
+
+      if (imageFile && imageFile.size > 0) {
+        // Delete old image if it exists to clean up storage
+        if (existingItem?.image_url) {
+          try {
+            const oldPath = existingItem.image_url.split('/').pop()
+            if (oldPath) {
+              await supabaseAdmin.storage
+                .from('inventory-photos')
+                .remove([oldPath])
+            }
+          } catch (e) {
+            console.error("Failed to delete old image:", e)
+          }
+        }
+
+        // Upload new image
+        const fileExt = imageFile.name.split('.').pop()
+        const fileName = `${crypto.randomUUID()}.${fileExt}`
+        const { error: uploadErr } = await supabaseAdmin.storage
+          .from('inventory-photos')
+          .upload(fileName, imageFile, {
+            contentType: imageFile.type,
+            upsert: true
+          })
+        if (uploadErr) throw uploadErr
+
+        const { data: { publicUrl } } = supabaseAdmin.storage
+          .from('inventory-photos')
+          .getPublicUrl(fileName)
+        
+        finalImageUrl = publicUrl
+      }
+
       // Update
       const { error } = await supabaseAdmin
         .from('inventory_items')
@@ -73,6 +116,25 @@ export async function createOrUpdateInventoryItem(formData: FormData) {
         .eq('id', id)
       dbError = error
     } else {
+      if (imageFile && imageFile.size > 0) {
+        // Upload image
+        const fileExt = imageFile.name.split('.').pop()
+        const fileName = `${crypto.randomUUID()}.${fileExt}`
+        const { error: uploadErr } = await supabaseAdmin.storage
+          .from('inventory-photos')
+          .upload(fileName, imageFile, {
+            contentType: imageFile.type,
+            upsert: true
+          })
+        if (uploadErr) throw uploadErr
+
+        const { data: { publicUrl } } = supabaseAdmin.storage
+          .from('inventory-photos')
+          .getPublicUrl(fileName)
+        
+        finalImageUrl = publicUrl
+      }
+
       // Insert
       const { error } = await supabaseAdmin
         .from('inventory_items')
@@ -89,6 +151,12 @@ export async function createOrUpdateInventoryItem(formData: FormData) {
 
     if (dbError) throw dbError
 
+    await logActivity({
+      category: 'inventory',
+      action: id ? 'updated' : 'created',
+      description: `${id ? 'Updated' : 'Created'} inventory item "${name}" (SKU: ${sku}, Quantity: ${quantity})`
+    })
+
     revalidatePath('/dashboard/inventory')
     return { success: true }
   } catch (err: any) {
@@ -104,10 +172,10 @@ export async function restockItem(itemId: string, quantity: number, notes?: stri
       return { error: "Restock quantity must be greater than zero." }
     }
 
-    // Fetch current quantity
+    // Fetch current quantity and name
     const { data: item, error: fetchErr } = await supabaseAdmin
       .from('inventory_items')
-      .select('quantity')
+      .select('name, quantity')
       .eq('id', itemId)
       .single()
 
@@ -136,6 +204,12 @@ export async function restockItem(itemId: string, quantity: number, notes?: stri
       })
 
     if (txErr) throw txErr
+
+    await logActivity({
+      category: 'inventory',
+      action: 'restocked',
+      description: `Restocked ${quantity} units of "${item.name}" (Notes: ${notes?.trim() || 'Restocked via admin panel'})`
+    })
 
     revalidatePath('/dashboard/inventory')
     return { success: true }
@@ -261,6 +335,20 @@ export async function createInventoryAudit(
         if (txErr) throw txErr
       }
     }
+
+    // Fetch auditor full name
+    const { data: auditor } = await supabaseAdmin
+      .from('profiles')
+      .select('full_name')
+      .eq('id', auditorId)
+      .single()
+    const auditorName = auditor?.full_name || 'Admin'
+
+    await logActivity({
+      category: 'inventory',
+      action: 'audited',
+      description: `Completed physical stocktake reconciliation audit by ${auditorName} (${auditItems.length} items audited)`
+    })
 
     revalidatePath('/dashboard/inventory')
     return { success: true, auditId: audit.id }
