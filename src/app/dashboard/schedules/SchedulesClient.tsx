@@ -6,10 +6,12 @@ import { useRouter } from "next/navigation"
 
 export default function SchedulesClient({ 
   initialTechnicians, 
+  initialHelpers,
   initialSchedules,
   approvedLeaves
 }: { 
   initialTechnicians: any[], 
+  initialHelpers: any[],
   initialSchedules: any[],
   approvedLeaves: any[]
 }) {
@@ -39,7 +41,7 @@ export default function SchedulesClient({
   const techniciansOnly = initialTechnicians.filter(t => t.role === 'technician')
 
   const handleOpenModal = () => {
-    setTechId(initialTechnicians[0]?.id || "")
+    setTechId(initialTechnicians[0]?.id || initialHelpers[0]?.id || "")
     setStartTime("")
     setClientName("")
     setLocation("")
@@ -247,6 +249,7 @@ export default function SchedulesClient({
                       </div>
                     </div>
                     
+<<<<<<< HEAD
                     <div className="pt-4 border-t border-zinc-150 flex flex-wrap items-center justify-between text-xs gap-3">
                       <div className="flex items-center gap-2">
                         <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-zinc-700 to-zinc-900 flex items-center justify-center text-white font-bold text-xs">
@@ -269,6 +272,32 @@ export default function SchedulesClient({
                           <span className="font-bold">{sched.senior_partner.full_name}</span>
                         </div>
                       )}
+=======
+                    <div className="pt-4 border-t border-zinc-100 flex items-center justify-between text-sm">
+                      <div className="flex items-center gap-2">
+                        <div className={`w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs ${
+                          sched.technician?.role === 'helper'
+                            ? 'bg-teal-100 text-teal-700'
+                            : 'bg-indigo-100 text-indigo-700'
+                        }`}>
+                          {sched.technician?.full_name?.charAt(0) || '?'}
+                        </div>
+                        <span className="text-zinc-500">Assigned to: </span>
+                        <span className="font-semibold text-zinc-700">{sched.technician?.full_name || 'Unknown'}</span>
+                        {sched.technician?.role && (
+                          <span className={`px-2 py-0.5 text-[10px] font-extrabold tracking-wider uppercase rounded-full border ${
+                            sched.technician.role === 'helper' 
+                              ? 'bg-teal-50 text-teal-700 border-teal-200' 
+                              : 'bg-indigo-50 text-indigo-700 border-indigo-200'
+                          }`}>
+                            {sched.technician.role}
+                          </span>
+                        )}
+                      </div>
+>>>>>>> glorycode24/kan-38-helper-scheduling-visibility
+                    </div>
+                  </div>
+                ))
                     </div>
                   </div>
                 ))
