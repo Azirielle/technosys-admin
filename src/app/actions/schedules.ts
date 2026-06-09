@@ -24,6 +24,8 @@ function isRangeOverlappingWithLeave(startStr: string, endStr: string, leaveStar
 export async function createSchedule(formData: FormData) {
   try {
     const technicianId = formData.get("technicianId") as string
+    const rawSeniorPartnerId = formData.get("seniorPartnerId") as string
+    const seniorPartnerId = (rawSeniorPartnerId && rawSeniorPartnerId !== "" && rawSeniorPartnerId !== "none") ? rawSeniorPartnerId : null
     const clientName = formData.get("clientName") as string
     const location = formData.get("location") as string
     const startTime = formData.get("startTime") as string
@@ -41,30 +43,40 @@ export async function createSchedule(formData: FormData) {
       .single()
     const techName = techProfile?.full_name || 'Staff'
 
-    // 2. Fetch approved leaves for conflict checking
+    const targetIds = [technicianId, seniorPartnerId].filter(Boolean) as string[]
+
     const { data: leaves, error: leavesErr } = await supabaseAdmin
       .from('leaves')
       .select('*')
-      .eq('technician_id', technicianId)
+      .in('technician_id', targetIds)
       .eq('status', 'approved')
 
     if (leavesErr) throw leavesErr
 
-    const hasConflict = leaves?.some(leave => {
-      if (endTime) {
-        return isRangeOverlappingWithLeave(startTime, endTime, leave.start_date, leave.end_date)
-      } else {
-        return isTimeConflictingWithLeave(startTime, leave.start_date, leave.end_date)
-      }
-    })
+    const hasConflict = (targetId: string) => {
+      return leaves?.some(leave => {
+        if (leave.technician_id !== targetId) return false
+        if (endTime) {
+          return isRangeOverlappingWithLeave(startTime, endTime, leave.start_date, leave.end_date)
+        } else {
+          return isTimeConflictingWithLeave(startTime, leave.start_date, leave.end_date)
+        }
+      })
+    }
 
-    if (hasConflict) {
+    if (hasConflict(technicianId)) {
       throw new Error(`The selected employee "${techName}" is on approved leave during this schedule's timeframe.`)
+    }
+
+    if (seniorPartnerId && hasConflict(seniorPartnerId)) {
+      throw new Error(`The selected senior partner is on approved leave during this schedule's timeframe.`)
+    }
     }
 
     // 3. Insert schedule
     const insertData: any = {
       technician_id: technicianId,
+      senior_partner_id: seniorPartnerId,
       client_name: clientName,
       location,
       start_time: new Date(startTime).toISOString(),
