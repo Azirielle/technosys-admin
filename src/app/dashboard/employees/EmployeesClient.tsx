@@ -41,9 +41,15 @@ interface EmployeesClientProps {
   initialTechnicians: TechnicianInfo[]
   officeLocations: any[]
   activeTechnicianIds?: string[]
+  activeLeaveTechnicianIds?: string[]
 }
 
-export default function EmployeesClient({ initialTechnicians, officeLocations, activeTechnicianIds = [] }: EmployeesClientProps) {
+export default function EmployeesClient({ 
+  initialTechnicians, 
+  officeLocations, 
+  activeTechnicianIds = [],
+  activeLeaveTechnicianIds = []
+}: EmployeesClientProps) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
@@ -118,7 +124,7 @@ export default function EmployeesClient({ initialTechnicians, officeLocations, a
 
   const filteredEmployees = initialTechnicians.filter(tech => {
     const isActive = activeTechnicianIds.includes(tech.id)
-    const isOnLeave = tech.lifecycleStatus === 'on_leave'
+    const isOnLeave = tech.lifecycleStatus === 'on_leave' || activeLeaveTechnicianIds.includes(tech.id)
     
     if (statusFilter === 'active') return isActive
     if (statusFilter === 'on_leave') return isOnLeave
@@ -443,7 +449,7 @@ export default function EmployeesClient({ initialTechnicians, officeLocations, a
 
   // Real-time status counts
   const activeNowCount = initialTechnicians.filter(t => activeTechnicianIds.includes(t.id)).length
-  const onLeaveCount = initialTechnicians.filter(t => t.lifecycleStatus === 'on_leave').length
+  const onLeaveCount = initialTechnicians.filter(t => t.lifecycleStatus === 'on_leave' || activeLeaveTechnicianIds.includes(t.id)).length
   const offDutyCount = Math.max(0, initialTechnicians.length - activeNowCount - onLeaveCount)
 
   return (
@@ -579,8 +585,8 @@ export default function EmployeesClient({ initialTechnicians, officeLocations, a
                           <span className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-white ${
                             activeTechnicianIds.includes(tech.id)
                               ? 'bg-emerald-500'
-                              : tech.lifecycleStatus === 'on_leave'
-                              ? 'bg-amber-550'
+                              : (tech.lifecycleStatus === 'on_leave' || activeLeaveTechnicianIds.includes(tech.id))
+                              ? 'bg-amber-500'
                               : 'bg-zinc-400'
                           }`} />
                         </div>
