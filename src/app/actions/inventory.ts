@@ -4,6 +4,49 @@ import { createClient } from "@/lib/supabase/server"
 import { revalidatePath } from "next/cache"
 import { z } from "zod"
 import { logActivity } from "./activity"
+import { sendPushNotification } from "@/lib/push"
+
+async function notifyLowStockAdmins(name: string, sku: string, quantity: number, threshold: number, unit: string) {
+  try {
+    const { data: admins } = await supabaseAdmin
+      .from('profiles')
+      .select('push_token')
+      .in('role', ['admin', 'super_admin'])
+      .not('push_token', 'is', null);
+
+    if (admins && admins.length > 0) {
+      const tokens = admins.map(a => a.push_token).filter(Boolean);
+      if (tokens.length > 0) {
+        const messages = tokens.map(token => ({
+          to: token,
+          sound: 'default',
+          title: '⚠️ Low Stock Alert',
+          body: `Inventory item "${name}" (SKU: ${sku}) has fallen below its safety threshold. Current stock: ${quantity} ${unit} (Limit: ${threshold} ${unit}).`,
+          data: { itemId: sku }
+        }));
+
+        const res = await fetch('https://exp.host/--/api/v2/push/send', {
+          method: 'POST',
+          headers: {
+            'Accept': 'application/json',
+            'Accept-encoding': 'gzip, deflate',
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(messages)
+        });
+
+        if (!res.ok) {
+          const errText = await res.text();
+          console.error("Expo low-stock batch push failed:", errText);
+        } else {
+          console.log("Expo low-stock push batch sent successfully for item", sku);
+        }
+      }
+    }
+  } catch (err: any) {
+    console.error("Failed to notify admins of low stock:", err.message || err);
+  }
+}
 
 // 1. Fetch all inventory items
 export async function getInventoryItems() {
@@ -59,15 +102,17 @@ export async function createOrUpdateInventoryItem(formData: FormData) {
 
     let dbError
     let finalImageUrl = null
+    let existingItem: any = null
 
     if (id) {
-      // Fetch existing item to check for old image
-      const { data: existingItem } = await supabaseAdmin
+      // Fetch existing item to check for old image and quantity
+      const { data } = await supabaseAdmin
         .from('inventory_items')
-        .select('image_url')
+        .select('image_url, quantity, name, sku, low_stock_threshold, unit')
         .eq('id', id)
         .single()
       
+      existingItem = data
       finalImageUrl = existingItem?.image_url || null
 
       if (imageFile && imageFile.size > 0) {
@@ -152,6 +197,14 @@ export async function createOrUpdateInventoryItem(formData: FormData) {
     }
 
     if (dbError) throw dbError
+
+    if (id && existingItem) {
+      const wasAbove = existingItem.quantity > existingItem.low_stock_threshold;
+      const isBelowNow = quantity <= low_stock_threshold;
+      if (wasAbove && isBelowNow) {
+        await notifyLowStockAdmins(name, sku, quantity, low_stock_threshold, unit);
+      }
+    }
 
     await logActivity({
       category: 'inventory',
@@ -313,6 +366,21 @@ export async function createInventoryAudit(
 
       // B. If a variance was logged, post adjusting stock transaction
       if (variance !== 0) {
+        // Fetch item details for transition checking
+        const { data: item } = await supabaseAdmin
+          .from('inventory_items')
+          .select('name, sku, low_stock_threshold, unit')
+          .eq('id', entry.itemId)
+          .single();
+
+        if (item) {
+          const wasAbove = entry.systemQty > item.low_stock_threshold;
+          const isBelowNow = entry.physicalQty <= item.low_stock_threshold;
+          if (wasAbove && isBelowNow) {
+            await notifyLowStockAdmins(item.name, item.sku, entry.physicalQty, item.low_stock_threshold, item.unit);
+          }
+        }
+
         // Adjust the inventory stock level directly
         const { error: adjustErr } = await supabaseAdmin
           .from('inventory_items')
