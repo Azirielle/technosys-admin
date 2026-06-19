@@ -5,7 +5,41 @@ export function proxy(request: NextRequest) {
   const origin = request.headers.get('origin');
   const host = request.headers.get('host');
   
+  const pathname = request.nextUrl.pathname;
+
+  // 1. Intercept root path and redirect to /dashboard with 0-byte body
+  if (pathname === '/') {
+    const dashUrl = new URL('/dashboard', request.url);
+    return new NextResponse(null, {
+      status: 302,
+      headers: {
+        'Location': dashUrl.toString(),
+        'X-Frame-Options': 'DENY',
+        'X-Content-Type-Options': 'nosniff',
+        'Referrer-Policy': 'strict-origin-when-cross-origin',
+        'Content-Security-Policy': "frame-ancestors 'none';"
+      }
+    });
+  }
+
+  // 2. Intercept unauthenticated /dashboard access and redirect to /login with 0-byte body
+  const hasAuthCookie = request.cookies.getAll().some(c => c.name.startsWith('sb-') && c.name.includes('-auth-token'));
+  if (pathname.startsWith('/dashboard') && !hasAuthCookie) {
+    const loginUrl = new URL('/login', request.url);
+    return new NextResponse(null, {
+      status: 302,
+      headers: {
+        'Location': loginUrl.toString(),
+        'X-Frame-Options': 'DENY',
+        'X-Content-Type-Options': 'nosniff',
+        'Referrer-Policy': 'strict-origin-when-cross-origin',
+        'Content-Security-Policy': "frame-ancestors 'none';"
+      }
+    });
+  }
+
   const response = NextResponse.next();
+
 
   // Set security and anti-clickjacking headers on ALL responses
   response.headers.set('X-Frame-Options', 'DENY');

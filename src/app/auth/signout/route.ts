@@ -7,7 +7,11 @@ export async function POST(request: Request) {
   await supabase.auth.signOut()
 
   revalidatePath('/', 'layout')
-  return NextResponse.redirect(new URL('/login', request.url), {
+  const loginUrl = new URL('/login', request.url)
+  return new NextResponse(null, {
     status: 302,
+    headers: {
+      'Location': loginUrl.toString(),
+    }
   })
 }
