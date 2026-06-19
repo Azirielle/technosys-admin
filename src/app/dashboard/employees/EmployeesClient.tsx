@@ -94,6 +94,10 @@ export default function EmployeesClient({ initialTechnicians, officeLocations, a
   const [roleInput, setRoleInput] = useState("technician")
   const [baseSalaryInput, setBaseSalaryInput] = useState("20000")
 
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 5
+
   // Bulk Import States
   const [isBulkDrawerOpen, setIsBulkDrawerOpen] = useState(false)
   const [bulkCsvData, setBulkCsvData] = useState("")
@@ -113,6 +117,16 @@ export default function EmployeesClient({ initialTechnicians, officeLocations, a
     if (statusFilter === 'off_duty') return !isActive && !isOnLeave
     return true
   })
+
+  // Reset pagination to page 1 whenever filters change
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [statusFilter])
+
+  const totalItems = filteredEmployees.length
+  const totalPages = Math.ceil(totalItems / itemsPerPage)
+  const startIndex = (currentPage - 1) * itemsPerPage
+  const paginatedEmployees = filteredEmployees.slice(startIndex, startIndex + itemsPerPage)
 
   const handleBulkImport = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -508,8 +522,9 @@ export default function EmployeesClient({ initialTechnicians, officeLocations, a
                 <p className="text-sm text-zinc-400 mt-1">Try changing status filters or create an account.</p>
               </div>
             ) : (
-              <div className="divide-y divide-zinc-100">
-                {filteredEmployees.map((tech) => {
+              <>
+                <div className="divide-y divide-zinc-100">
+                {paginatedEmployees.map((tech) => {
                   const sssVal = tech.hasSssId ? 1 : 0
                   const philVal = tech.hasPhilhealthId ? 1 : 0
                   const pagVal = tech.hasPagibigId ? 1 : 0
@@ -623,6 +638,65 @@ export default function EmployeesClient({ initialTechnicians, officeLocations, a
                   )
                 })}
               </div>
+
+              {/* Pagination Bar */}
+              {totalPages > 1 && (
+                <div className="px-6 py-4 bg-zinc-50/50 border-t border-zinc-100 flex flex-col sm:flex-row items-center justify-between gap-4">
+                  <p className="text-xs text-zinc-500 font-medium">
+                    Showing <span className="font-semibold text-zinc-900">{startIndex + 1}</span> to{" "}
+                    <span className="font-semibold text-zinc-900">
+                      {Math.min(startIndex + itemsPerPage, totalItems)}
+                    </span>{" "}
+                    of <span className="font-semibold text-zinc-900">{totalItems}</span> employees
+                  </p>
+                  
+                  <div className="flex items-center gap-1.5">
+                    {/* Previous Button */}
+                    <button
+                      type="button"
+                      onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                      disabled={currentPage === 1}
+                      className="p-2 rounded-xl border border-zinc-200 bg-white text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900 disabled:opacity-40 disabled:hover:bg-white disabled:hover:text-zinc-600 transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-95 cursor-pointer flex items-center justify-center"
+                      title="Previous Page"
+                    >
+                      <ChevronRight className="w-4 h-4 rotate-180" />
+                    </button>
+
+                    {/* Page Numbers */}
+                    <div className="flex items-center gap-1">
+                      {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
+                        const isCurrent = page === currentPage;
+                        return (
+                          <button
+                            key={page}
+                            type="button"
+                            onClick={() => setCurrentPage(page)}
+                            className={`min-w-9 h-9 px-2 rounded-xl text-xs font-bold transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-95 cursor-pointer flex items-center justify-center border ${
+                              isCurrent
+                                ? "bg-indigo-650 border-indigo-650 text-white shadow-xs"
+                                : "bg-white border-zinc-200 text-zinc-650 hover:bg-zinc-50 hover:text-zinc-900"
+                            }`}
+                          >
+                            {page}
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    {/* Next Button */}
+                    <button
+                      type="button"
+                      onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                      disabled={currentPage === totalPages}
+                      className="p-2 rounded-xl border border-zinc-200 bg-white text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900 disabled:opacity-40 disabled:hover:bg-white disabled:hover:text-zinc-605 transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-95 cursor-pointer flex items-center justify-center"
+                      title="Next Page"
+                    >
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              )}
+              </>
             )}
           </div>
         </div>
