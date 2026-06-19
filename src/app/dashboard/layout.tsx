@@ -10,6 +10,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const pathname = usePathname()
   const [profile, setProfile] = useState<{ full_name: string; role: string } | null>(null)
   const [pendingLeavesCount, setPendingLeavesCount] = useState<number>(0)
+  const [lowStockCount, setLowStockCount] = useState<number>(0)
 
   useEffect(() => {
     async function loadProfile() {
@@ -49,10 +50,22 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       }
     }
 
-    fetchPendingLeavesCount()
+    const fetchLowStockCount = async () => {
+      const { data, error } = await supabase
+        .from('inventory_items')
+        .select('id, quantity, low_stock_threshold')
 
-    // Realtime channel subscription to update the badge count automatically
-    const channel = supabase
+      if (!error && data) {
+        const count = data.filter((item: any) => item.quantity <= item.low_stock_threshold).length
+        setLowStockCount(count)
+      }
+    }
+
+    fetchPendingLeavesCount()
+    fetchLowStockCount()
+
+    // Realtime channel subscriptions to update the badge counts automatically
+    const leavesChannel = supabase
       .channel('leaves-pending-changes')
       .on(
         'postgres_changes',
@@ -63,8 +76,20 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       )
       .subscribe()
 
+    const inventoryChannel = supabase
+      .channel('inventory-stock-changes')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'inventory_items' },
+        () => {
+          fetchLowStockCount()
+        }
+      )
+      .subscribe()
+
     return () => {
-      supabase.removeChannel(channel)
+      supabase.removeChannel(leavesChannel)
+      supabase.removeChannel(inventoryChannel)
     }
   }, [])
 
@@ -102,6 +127,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             const active = isActive(item)
             const Icon = item.icon
             const isLeavesTab = item.href === '/dashboard/leaves'
+            const isInventoryTab = item.href === '/dashboard/inventory'
             return (
               <Link
                 key={item.href}
@@ -119,6 +145,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 {isLeavesTab && pendingLeavesCount > 0 && (
                   <span className="bg-rose-500 text-white text-[10px] font-extrabold px-1.5 py-0.5 rounded-full shadow-sm min-w-[18px] text-center animate-pulse">
                     {pendingLeavesCount}
+                  </span>
+                )}
+                {isInventoryTab && lowStockCount > 0 && (
+                  <span className="bg-amber-500 text-white text-[10px] font-extrabold px-1.5 py-0.5 rounded-full shadow-sm min-w-[18px] text-center animate-pulse">
+                    {lowStockCount}
                   </span>
                 )}
               </Link>
