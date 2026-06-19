@@ -1,0 +1,107 @@
+- generic [active] [ref=e1]:
+  - iframe [ref=e2]:
+    
+  - region
+  - generic [ref=e4]:
+    - navigation [ref=e5]:
+      - button "Lumaktaw papunta sa pangunahing content" [ref=e7] [cursor=pointer]:
+        - generic [ref=e9]: Lumaktaw papunta sa pangunahing content
+      - button "Mga shortcut sa keyboard" [ref=e11] [cursor=pointer]:
+        - generic [ref=e13]: Mga shortcut sa keyboard
+      - button "Feedback sa pagiging accessible" [ref=e15] [cursor=pointer]:
+        - generic [ref=e17]: Feedback sa pagiging accessible
+    - banner [ref=e19]:
+      - generic [ref=e20]:
+        - link "Drive" [ref=e24] [cursor=pointer]:
+          - /url: https://drive.google.com/?tab=oo
+          - img [ref=e25]
+          - generic [ref=e26]: Drive
+        - generic [ref=e28]:
+          - button "Mga app ng Google" [ref=e32] [cursor=pointer]:
+            - img [ref=e33]
+          - link "Mag-sign in" [ref=e36] [cursor=pointer]:
+            - /url: https://accounts.google.com/ServiceLogin?hl=fil&passive=true&continue=https://drive.google.com/drive/folders/10eiVV9nBsPnMD3vKhSsvFyyTJWnoVJJF&service=writely&ec=GAZAMQ
+    - generic [ref=e37]:
+      - generic [ref=e46]:
+        - generic [ref=e48]:
+          - generic:
+            - navigation:
+              - heading "Path ng Folder" [ref=e49]
+              - list "Path ng Folder"
+        - toolbar [ref=e50]:
+          - radiogroup "Listahan o Grid na layout (Alt+V pagkatapos ay L)" [ref=e55]:
+            - generic [ref=e56]:
+              - radio "Listahan" [checked] [ref=e57] [cursor=pointer]:
+                - generic [ref=e58]:
+                  - img [ref=e59]
+                  - img [ref=e63]
+              - radio "Grid" [ref=e66] [cursor=pointer]:
+                - generic [ref=e67]:
+                  - img [ref=e68]
+                  - img [ref=e72]
+      - main [ref=e76]:
+        - region [ref=e82]:
+          - generic [ref=e83]:
+            - grid "Listahan ng Item" [ref=e86]:
+              - rowgroup [ref=e87]:
+                - generic [ref=e88] [cursor=pointer]: Name
+                - img [ref=e90] [cursor=pointer]
+                - generic [ref=e92] [cursor=pointer]: Date modified
+                - text: File size
+                - generic [ref=e98]:
+                  - button "Pagsunod-sunurin" [ref=e100] [cursor=pointer]:
+                    - img [ref=e104]
+                    - generic [ref=e106]: Pagsunod-sunurin
+                  - tooltip [ref=e107]: Tingnan ang mga opsyon sa pagbubukud-bukod
+              - rowgroup [ref=e108]:
+                - 'row "TECHNOCYCLE CORPORATION_TECHNOSYS_CHP1-3 Google Docs Shared Modified May 31 Size: 63 KB Storage used: 63 KB" [ref=e109]':
+                  - gridcell "TECHNOCYCLE CORPORATION_TECHNOSYS_CHP1-3 Google Docs Shared" [ref=e110]:
+                    - generic [ref=e112]:
+                      - img [ref=e118]
+                      - generic "TECHNOCYCLE CORPORATION_TECHNOSYS_CHP1-3 Google Docs Shared" [ref=e121]:
+                        - strong [ref=e124]: TECHNOCYCLE CORPORATION_TECHNOSYS_CHP1-3
+                        - img "Nakabahagi" [ref=e126]:
+                          - img [ref=e127]
+                          - generic [ref=e130]: Nakabahagi
+                  - gridcell "Modified May 31" [ref=e131]:
+                    - generic "Modified May 31" [ref=e135]:
+                      - generic [ref=e136]: May 31
+                  - 'gridcell "Size: 63 KB Storage used: 63 KB" [ref=e137]':
+                    - 'generic "Size: 63 KB Storage used: 63 KB" [ref=e141]':
+                      - generic [ref=e142]: 63 KB
+                  - gridcell [ref=e143]
+                - 'row "TECHNOCYCLE CORPORATION_TECHNOSYS_CHP1-3.pdf PDF Shared Modified May 31 Size: 398 KB Storage used: 398 KB" [ref=e147]':
+                  - gridcell "TECHNOCYCLE CORPORATION_TECHNOSYS_CHP1-3.pdf PDF Shared" [ref=e148]:
+                    - generic [ref=e150]:
+                      - img [ref=e156]
+                      - generic "TECHNOCYCLE CORPORATION_TECHNOSYS_CHP1-3.pdf PDF Shared" [ref=e159]:
+                        - strong [ref=e162]: TECHNOCYCLE CORPORATION_TECHNOSYS_CHP1-3.pdf
+                        - img "Nakabahagi" [ref=e164]:
+                          - img [ref=e165]
+                          - generic [ref=e168]: Nakabahagi
+                  - gridcell "Modified May 31" [ref=e169]:
+                    - generic "Modified May 31" [ref=e173]:
+                      - generic [ref=e174]: May 31
+                  - 'gridcell "Size: 398 KB Storage used: 398 KB" [ref=e175]':
+                    - 'generic "Size: 398 KB Storage used: 398 KB" [ref=e179]':
+                      - generic [ref=e180]: 398 KB
+                  - gridcell [ref=e181]
+                - 'row "TECHNOCYCLE CORPORATION_TECHNOSYS_QUESTIONNAIRE.pdf PDF Shared Modified May 31 Size: 122 KB Storage used: 122 KB" [ref=e185]':
+                  - gridcell "TECHNOCYCLE CORPORATION_TECHNOSYS_QUESTIONNAIRE.pdf PDF Shared" [ref=e186]:
+                    - generic [ref=e188]:
+                      - img [ref=e194]
+                      - generic "TECHNOCYCLE CORPORATION_TECHNOSYS_QUESTIONNAIRE.pdf PDF Shared" [ref=e197]:
+                        - strong [ref=e200]: TECHNOCYCLE CORPORATION_TECHNOSYS_QUESTIONNAIRE.pdf
+                        - img "Nakabahagi" [ref=e202]:
+                          - img [ref=e203]
+                          - generic [ref=e206]: Nakabahagi
+                  - gridcell "Modified May 31" [ref=e207]:
+                    - generic "Modified May 31" [ref=e211]:
+                      - generic [ref=e212]: May 31
+                  - 'gridcell "Size: 122 KB Storage used: 122 KB" [ref=e213]':
+                    - 'generic "Size: 122 KB Storage used: 122 KB" [ref=e217]':
+                      - generic [ref=e218]: 122 KB
+                  - gridcell [ref=e219]
+            - progressbar [ref=e225]:
+              - img [ref=e227]
+  - region
