@@ -2,7 +2,16 @@
 
 ## 📋 Kanban Board
 
+### 🔴 TO DO
+
 ### 🟢 DONE
+- [x] **Implement Automated Inventory Stock Alert Notifications** (KAN-51)
+  - [x] Add inventory alerts check in stock transitions.
+  - [x] Configure push notification alerts when stock falls below minimum thresholds.
+- [x] **Build Announcements Broadcasting Feature** (KAN-52)
+  - [x] Admin Web Dashboard: Create a panel to compose, target by branch/global, and publish announcements.
+  - [x] Mobile Client Carousel: Display active announcements carousel/marquee on the Home Overview screen.
+  - [x] Real-time Sync: Integrate Supabase Realtime subscription for instant mobile sync.
 - [x] Initial repository setup (Admin Next.js, Mobile Expo).
 - [x] Supabase backend initialized.
 - [x] Auth and Login flow.
