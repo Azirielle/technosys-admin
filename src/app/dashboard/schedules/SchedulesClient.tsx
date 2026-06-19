@@ -136,11 +136,18 @@ export default function SchedulesClient({
 
   const getConflictingLeave = (technicianId: string) => {
     if (!startTime || !technicianId) return null
-    return approvedLeaves.find(leave => 
-      leave.technician_id === technicianId &&
-      new Date(startTime).getTime() >= new Date(leave.start_date).getTime() &&
-      new Date(startTime).getTime() <= new Date(leave.end_date).getTime()
-    )
+    const schedMs = new Date(startTime).getTime()
+    return approvedLeaves.find(leave => {
+      if (leave.technician_id !== technicianId) return false
+      // Normalize date-only strings: start = 00:00:00 UTC, end = 23:59:59 UTC
+      const leaveStartMs = leave.start_date.includes('T')
+        ? new Date(leave.start_date).getTime()
+        : new Date(`${leave.start_date}T00:00:00.000Z`).getTime()
+      const leaveEndMs = leave.end_date.includes('T')
+        ? new Date(leave.end_date).getTime()
+        : new Date(`${leave.end_date}T23:59:59.999Z`).getTime()
+      return schedMs >= leaveStartMs && schedMs <= leaveEndMs
+    })
   }
 
   const currentConflict = scheduleType === 'single' ? getConflictingLeave(techId) : null
