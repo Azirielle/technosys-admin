@@ -18,7 +18,8 @@ export function proxy(request: NextRequest) {
         'X-Content-Type-Options': 'nosniff',
         'Referrer-Policy': 'strict-origin-when-cross-origin',
         'Content-Security-Policy': "frame-ancestors 'none';",
-        'Server': 'Webserver'
+        'Server': 'Webserver',
+        'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload'
       }
     });
   }
@@ -35,7 +36,8 @@ export function proxy(request: NextRequest) {
         'X-Content-Type-Options': 'nosniff',
         'Referrer-Policy': 'strict-origin-when-cross-origin',
         'Content-Security-Policy': "frame-ancestors 'none';",
-        'Server': 'Webserver'
+        'Server': 'Webserver',
+        'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload'
       }
     });
   }
@@ -48,6 +50,7 @@ export function proxy(request: NextRequest) {
   response.headers.set('X-Content-Type-Options', 'nosniff');
   response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
   response.headers.set('Server', 'Webserver');
+  response.headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
   
   const cspHeader = `
     default-src 'self';
