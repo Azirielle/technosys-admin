@@ -11,6 +11,8 @@ import SssDataTable from "./SssDataTable"
 import AdminAccounts from "./AdminAccounts"
 import AnnouncementsEditor from "./AnnouncementsEditor"
 import HolidaysEditor from "./HolidaysEditor"
+import { getDocuments } from "@/app/actions/documents"
+import DocumentsEditor from "./DocumentsEditor"
 
 export const revalidate = 0;
 
@@ -59,6 +61,9 @@ export default async function SettingsPage() {
   if (userRole === 'super_admin') {
     adminsList = await getAdmins()
   }
+
+  // Fetch documents list
+  const documentsList = await getDocuments()
 
   return (
     <div className="p-8 pb-20 max-w-5xl mx-auto space-y-12">
@@ -113,6 +118,18 @@ export default async function SettingsPage() {
         </h2>
         <HolidaysEditor 
           initialHolidays={holidaysList} 
+          userRole={userRole} 
+        />
+      </section>
+
+      {/* Company Documents & Templates Manager */}
+      <section className="bg-white rounded-2xl border border-zinc-200 p-6 shadow-sm">
+        <h2 className="text-xl font-bold text-zinc-800 mb-6 flex items-center gap-2">
+          📂 Company Documents & Forms Management
+        </h2>
+        <DocumentsEditor 
+          initialDocuments={documentsList} 
+          officeLocations={locations || []} 
           userRole={userRole} 
         />
       </section>
