@@ -4,6 +4,12 @@ import { Calendar as CalendarIcon, Clock, MapPin, Star, UserPlus, X, Loader2, Us
 import { createSchedule, bulkCreateSchedules, toggleVipHook } from "@/app/actions/schedules"
 import { useRouter } from "next/navigation"
 
+const getLeaveRangeMs = (startDate: string, endDate: string) => {
+  const start = startDate.includes('T') ? new Date(startDate).getTime() : new Date(`${startDate}T00:00:00.000Z`).getTime()
+  const end = endDate.includes('T') ? new Date(endDate).getTime() : new Date(`${endDate}T23:59:59.999Z`).getTime()
+  return { start, end }
+}
+
 export default function SchedulesClient({ 
   initialStaff, 
   initialSchedules,
@@ -139,13 +145,7 @@ export default function SchedulesClient({
     const schedMs = new Date(startTime).getTime()
     return approvedLeaves.find(leave => {
       if (leave.technician_id !== technicianId) return false
-      // Normalize date-only strings: start = 00:00:00 UTC, end = 23:59:59 UTC
-      const leaveStartMs = leave.start_date.includes('T')
-        ? new Date(leave.start_date).getTime()
-        : new Date(`${leave.start_date}T00:00:00.000Z`).getTime()
-      const leaveEndMs = leave.end_date.includes('T')
-        ? new Date(leave.end_date).getTime()
-        : new Date(`${leave.end_date}T23:59:59.999Z`).getTime()
+      const { start: leaveStartMs, end: leaveEndMs } = getLeaveRangeMs(leave.start_date, leave.end_date)
       return schedMs >= leaveStartMs && schedMs <= leaveEndMs
     })
   }
@@ -487,11 +487,12 @@ export default function SchedulesClient({
                       className="w-full px-3.5 py-2 border border-zinc-200 rounded-xl bg-white text-zinc-800 text-sm focus:ring-2 focus:ring-emerald-500 outline-none"
                     >
                       {initialStaff.map(t => {
-                        const hasConflict = approvedLeaves.some(leave => 
-                          leave.technician_id === t.id &&
-                          new Date(startTime).getTime() >= new Date(leave.start_date).getTime() &&
-                          new Date(startTime).getTime() <= new Date(leave.end_date).getTime()
-                        )
+                        const hasConflict = approvedLeaves.some(leave => {
+                          if (leave.technician_id !== t.id) return false
+                          const { start, end } = getLeaveRangeMs(leave.start_date, leave.end_date)
+                          const schedMs = new Date(startTime).getTime()
+                          return schedMs >= start && schedMs <= end
+                        })
                         return (
                           <option key={t.id} value={t.id}>
                             {t.full_name} ({t.role}){hasConflict ? " ⚠️ (On Leave)" : ""}
@@ -550,11 +551,12 @@ export default function SchedulesClient({
                     {initialStaff.map((t) => {
                       const isChecked = selectedStaffIds.includes(t.id)
                       const isHelper = t.role === 'helper'
-                      const hasConflict = approvedLeaves.some(leave => 
-                        leave.technician_id === t.id &&
-                        new Date(startTime).getTime() >= new Date(leave.start_date).getTime() &&
-                        new Date(startTime).getTime() <= new Date(leave.end_date).getTime()
-                      )
+                      const hasConflict = approvedLeaves.some(leave => {
+                        if (leave.technician_id !== t.id) return false
+                        const { start, end } = getLeaveRangeMs(leave.start_date, leave.end_date)
+                        const schedMs = new Date(startTime).getTime()
+                        return schedMs >= start && schedMs <= end
+                      })
 
                       return (
                         <div key={t.id} className="space-y-2 border-b border-zinc-150 pb-2 last:border-0 last:pb-0">
