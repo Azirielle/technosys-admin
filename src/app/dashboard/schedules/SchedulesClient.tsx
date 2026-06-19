@@ -5,13 +5,11 @@ import { createSchedule, bulkCreateSchedules, toggleVipHook } from "@/app/action
 import { useRouter } from "next/navigation"
 
 export default function SchedulesClient({ 
-  initialTechnicians, 
-  initialHelpers,
+  initialStaff, 
   initialSchedules,
   approvedLeaves
 }: { 
-  initialTechnicians: any[], 
-  initialHelpers: any[],
+  initialStaff: any[], 
   initialSchedules: any[],
   approvedLeaves: any[]
 }) {
@@ -38,10 +36,10 @@ export default function SchedulesClient({
   const [errorMsg, setErrorMsg] = useState("")
   const [successMsg, setSuccessMsg] = useState("")
 
-  const techniciansOnly = initialTechnicians.filter(t => t.role === 'technician')
+  const techniciansOnly = initialStaff.filter(t => t.role === 'technician')
 
   const handleOpenModal = () => {
-    setTechId(initialTechnicians[0]?.id || initialHelpers[0]?.id || "")
+    setTechId(initialStaff[0]?.id || "")
     setSeniorPartnerId("")
     setStartTime("")
     setClientName("")
@@ -61,7 +59,7 @@ export default function SchedulesClient({
     setErrorMsg("")
     setSuccessMsg("")
 
-    const selectedStaff = initialTechnicians.find(t => t.id === techId)
+    const selectedStaff = initialStaff.find(t => t.id === techId)
     const isHelper = selectedStaff?.role === 'helper'
 
     const formData = new FormData()
@@ -146,7 +144,7 @@ export default function SchedulesClient({
   }
 
   const currentConflict = scheduleType === 'single' ? getConflictingLeave(techId) : null
-  const selectedStaffHasHelper = initialTechnicians.find(t => t.id === techId)?.role === 'helper'
+  const selectedStaffHasHelper = initialStaff.find(t => t.id === techId)?.role === 'helper'
 
   const toggleStaffSelection = (id: string) => {
     setSelectedStaffIds(prev => 
@@ -188,7 +186,9 @@ export default function SchedulesClient({
                   <div 
                     key={sched.id} 
                     className={`p-5 rounded-xl border-l-4 relative overflow-hidden transition-all hover:shadow-md ${
-                      sched.is_vip_hook 
+                      !sched.technician
+                        ? "border-l-amber-400 bg-amber-50/20 border-y border-r border-y-amber-100 border-r-amber-100"
+                        : sched.is_vip_hook 
                         ? "border-l-cyan-500 bg-cyan-50/30 border-y border-r border-y-cyan-100 border-r-cyan-100" 
                         : "border-l-zinc-300 bg-white border-y border-r border-y-zinc-200 border-r-zinc-200"
                     }`}
@@ -199,6 +199,18 @@ export default function SchedulesClient({
                       </div>
                     )}
                     
+                    {!sched.technician && (
+                      <div className="mb-3 flex items-start gap-2.5 rounded-lg border border-amber-200 bg-amber-50 p-3">
+                        <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
+                        <div>
+                          <p className="text-xs font-bold text-amber-800">Staff Unassigned — Needs Reassignment</p>
+                          <p className="mt-0.5 text-xs text-amber-700">
+                            The assigned employee was granted approved leave covering this dispatch period. Please reassign this job to another available staff member.
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
                     <div className="flex justify-between items-start">
                       <div>
                         <h3 className={`font-bold text-lg ${sched.is_vip_hook ? "text-cyan-900 pr-32" : "text-zinc-800"}`}>
@@ -286,10 +298,10 @@ export default function SchedulesClient({
             <h2 className="text-lg font-bold text-zinc-900 mb-4">Field workforce</h2>
             
             <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-1">
-              {initialTechnicians.length === 0 ? (
+              {initialStaff.length === 0 ? (
                 <p className="text-sm text-zinc-500">No staff found. Register profiles in Employees page first.</p>
               ) : (
-                initialTechnicians.map((tech) => (
+                initialStaff.map((tech) => (
                   <div key={tech.id} className="flex items-center justify-between p-3 bg-zinc-50 rounded-xl border border-zinc-200">
                     <div className="flex items-center gap-3 min-w-0">
                       <div className="w-8 h-8 rounded-full bg-gradient-to-br from-zinc-200 to-zinc-300 flex items-center justify-center text-zinc-600 font-bold text-xs shadow-inner">
@@ -467,7 +479,7 @@ export default function SchedulesClient({
                       }}
                       className="w-full px-3.5 py-2 border border-zinc-200 rounded-xl bg-white text-zinc-800 text-sm focus:ring-2 focus:ring-emerald-500 outline-none"
                     >
-                      {initialTechnicians.map(t => {
+                      {initialStaff.map(t => {
                         const hasConflict = approvedLeaves.some(leave => 
                           leave.technician_id === t.id &&
                           new Date(startTime).getTime() >= new Date(leave.start_date).getTime() &&
@@ -520,8 +532,15 @@ export default function SchedulesClient({
                 <form onSubmit={handleCreateBulk} className="space-y-4 bg-white p-5 rounded-2xl border border-zinc-200 shadow-2xs">
                   <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-400 mb-2">Team Selection & Individual Pairings</h3>
                   
+                  {!startTime && (
+                    <div className="flex items-center gap-2 rounded-xl border border-blue-100 bg-blue-50/60 p-3 text-xs text-blue-700">
+                      <AlertCircle className="h-4 w-4 shrink-0 text-blue-500" />
+                      <span>Select a <strong>Start Date &amp; Time</strong> above to see staff leave availability before selecting team members.</span>
+                    </div>
+                  )}
+
                   <div className="space-y-2 max-h-52 overflow-y-auto border border-zinc-200 rounded-xl p-3 bg-zinc-50/30 pr-1">
-                    {initialTechnicians.map((t) => {
+                    {initialStaff.map((t) => {
                       const isChecked = selectedStaffIds.includes(t.id)
                       const isHelper = t.role === 'helper'
                       const hasConflict = approvedLeaves.some(leave => 
@@ -532,13 +551,13 @@ export default function SchedulesClient({
 
                       return (
                         <div key={t.id} className="space-y-2 border-b border-zinc-150 pb-2 last:border-0 last:pb-0">
-                          <label className={`flex items-center gap-3 p-2 rounded-lg transition-colors select-none cursor-pointer ${
-                            hasConflict ? 'opacity-60 bg-amber-50/20' : 'hover:bg-zinc-50'
+                          <label className={`flex items-center gap-3 p-2 rounded-lg transition-colors select-none ${
+                            !startTime ? 'opacity-40 cursor-not-allowed' : hasConflict ? 'opacity-60 bg-amber-50/20 cursor-not-allowed' : 'hover:bg-zinc-50 cursor-pointer'
                           }`}>
                             <input 
                               type="checkbox" 
                               checked={isChecked}
-                              disabled={hasConflict}
+                              disabled={!startTime || hasConflict}
                               onChange={() => toggleStaffSelection(t.id)}
                               className="w-4.5 h-4.5 rounded text-emerald-600 border-zinc-300 focus:ring-emerald-500 cursor-pointer"
                             />
