@@ -19,11 +19,23 @@ export default async function EmployeesPage() {
 
   const activeIds = (activeLogs || []).map(log => log.technician_id)
 
+  // Fetch approved leaves covering today (in Manila/GMT+8 timezone)
+  const todayManila = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Manila' }).format(new Date())
+  const { data: activeLeaves } = await supabaseAdmin
+    .from('leaves')
+    .select('technician_id')
+    .eq('status', 'approved')
+    .lte('start_date', todayManila)
+    .gte('end_date', todayManila)
+
+  const activeLeaveIds = (activeLeaves || []).map(leave => leave.technician_id)
+
   return (
     <EmployeesClient 
       initialTechnicians={technicians} 
       officeLocations={officeLocations} 
       activeTechnicianIds={activeIds} 
+      activeLeaveTechnicianIds={activeLeaveIds}
     />
   )
 }
