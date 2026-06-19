@@ -94,9 +94,21 @@ export default function EmployeesClient({ initialTechnicians, officeLocations, a
   const [roleInput, setRoleInput] = useState("technician")
   const [baseSalaryInput, setBaseSalaryInput] = useState("20000")
 
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 5
+
   // Bulk Import States
   const [isBulkDrawerOpen, setIsBulkDrawerOpen] = useState(false)
-  const [bulkCsvData, setBulkCsvData] = useState("")
+  const [bulkRows, setBulkRows] = useState<Array<{
+    fullName: string
+    email: string
+    role: 'technician' | 'helper'
+    baseSalary: number
+    branchName: string
+  }>>([
+    { fullName: "", email: "", role: "technician", baseSalary: 20000, branchName: "" }
+  ])
   const [bulkLoading, setBulkLoading] = useState(false)
   const [bulkResults, setBulkResults] = useState<{
     successCount: number
@@ -114,6 +126,28 @@ export default function EmployeesClient({ initialTechnicians, officeLocations, a
     return true
   })
 
+  // Reset pagination to page 1 whenever filters change
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [statusFilter])
+
+  const totalItems = filteredEmployees.length
+  const totalPages = Math.ceil(totalItems / itemsPerPage)
+  const startIndex = (currentPage - 1) * itemsPerPage
+  const paginatedEmployees = filteredEmployees.slice(startIndex, startIndex + itemsPerPage)
+
+  const updateBulkRow = (index: number, field: string, value: any) => {
+    setBulkRows(prev => prev.map((row, i) => i === index ? { ...row, [field]: value } : row))
+  }
+
+  const addBulkRow = () => {
+    setBulkRows(prev => [...prev, { fullName: "", email: "", role: "technician", baseSalary: 20000, branchName: "" }])
+  }
+
+  const removeBulkRow = (index: number) => {
+    setBulkRows(prev => prev.filter((_, i) => i !== index))
+  }
+
   const handleBulkImport = async (e: React.FormEvent) => {
     e.preventDefault()
     setBulkLoading(true)
@@ -121,26 +155,27 @@ export default function EmployeesClient({ initialTechnicians, officeLocations, a
     setError("")
 
     try {
-      const lines = bulkCsvData.split('\n')
-      const parsedData = []
-      for (const line of lines) {
-        const rowText = line.trim()
-        if (!rowText) continue
-        const [fullName, email, role, baseSalary, branchName] = rowText.split(',').map(s => s.trim())
-        parsedData.push({
-          fullName,
-          email,
-          role: role?.toLowerCase(),
-          baseSalary: Number(baseSalary),
-          branchName: branchName || null
-        })
+      // Validate entries
+      for (let i = 0; i < bulkRows.length; i++) {
+        const row = bulkRows[i]
+        if (!row.fullName.trim()) {
+          throw new Error(`Row ${i + 1}: Full Name is required`)
+        }
+        if (!row.email.trim() || !row.email.includes("@")) {
+          throw new Error(`Row ${i + 1}: Valid Email is required`)
+        }
+        if (row.baseSalary < 0) {
+          throw new Error(`Row ${i + 1}: Base Salary must be at least 0`)
+        }
       }
 
-      if (parsedData.length === 0) {
-        throw new Error("No data parsed from text area. Please check your CSV format.")
-      }
+      // Map empty branchName to null so backend handles it correctly
+      const payload = bulkRows.map(row => ({
+        ...row,
+        branchName: row.branchName || null
+      }))
 
-      const res = await bulkRegisterEmployees(parsedData)
+      const res = await bulkRegisterEmployees(payload)
       if (res.error) {
         throw new Error(res.error)
       } else {
@@ -149,7 +184,7 @@ export default function EmployeesClient({ initialTechnicians, officeLocations, a
           failureCount: res.failureCount || 0,
           results: res.results || []
         })
-        setBulkCsvData("")
+        setBulkRows([{ fullName: "", email: "", role: "technician", baseSalary: 20000, branchName: "" }])
         router.refresh()
       }
     } catch (err: any) {
@@ -508,8 +543,9 @@ export default function EmployeesClient({ initialTechnicians, officeLocations, a
                 <p className="text-sm text-zinc-400 mt-1">Try changing status filters or create an account.</p>
               </div>
             ) : (
-              <div className="divide-y divide-zinc-100">
-                {filteredEmployees.map((tech) => {
+              <>
+                <div className="divide-y divide-zinc-100">
+                {paginatedEmployees.map((tech) => {
                   const sssVal = tech.hasSssId ? 1 : 0
                   const philVal = tech.hasPhilhealthId ? 1 : 0
                   const pagVal = tech.hasPagibigId ? 1 : 0
@@ -623,6 +659,65 @@ export default function EmployeesClient({ initialTechnicians, officeLocations, a
                   )
                 })}
               </div>
+
+              {/* Pagination Bar */}
+              {totalPages > 1 && (
+                <div className="px-6 py-4 bg-zinc-50/50 border-t border-zinc-100 flex flex-col sm:flex-row items-center justify-between gap-4">
+                  <p className="text-xs text-zinc-500 font-medium">
+                    Showing <span className="font-semibold text-zinc-900">{startIndex + 1}</span> to{" "}
+                    <span className="font-semibold text-zinc-900">
+                      {Math.min(startIndex + itemsPerPage, totalItems)}
+                    </span>{" "}
+                    of <span className="font-semibold text-zinc-900">{totalItems}</span> employees
+                  </p>
+                  
+                  <div className="flex items-center gap-1.5">
+                    {/* Previous Button */}
+                    <button
+                      type="button"
+                      onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                      disabled={currentPage === 1}
+                      className="p-2 rounded-xl border border-zinc-200 bg-white text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900 disabled:opacity-40 disabled:hover:bg-white disabled:hover:text-zinc-600 transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-95 cursor-pointer flex items-center justify-center"
+                      title="Previous Page"
+                    >
+                      <ChevronRight className="w-4 h-4 rotate-180" />
+                    </button>
+
+                    {/* Page Numbers */}
+                    <div className="flex items-center gap-1">
+                      {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
+                        const isCurrent = page === currentPage;
+                        return (
+                          <button
+                            key={page}
+                            type="button"
+                            onClick={() => setCurrentPage(page)}
+                            className={`min-w-9 h-9 px-2 rounded-xl text-xs font-bold transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-95 cursor-pointer flex items-center justify-center border ${
+                              isCurrent
+                                ? "bg-indigo-600 border-indigo-600 text-white shadow-xs"
+                                : "bg-white border-zinc-200 text-zinc-650 hover:bg-zinc-50 hover:text-zinc-900"
+                            }`}
+                          >
+                            {page}
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    {/* Next Button */}
+                    <button
+                      type="button"
+                      onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                      disabled={currentPage === totalPages}
+                      className="p-2 rounded-xl border border-zinc-200 bg-white text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900 disabled:opacity-40 disabled:hover:bg-white disabled:hover:text-zinc-605 transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-95 cursor-pointer flex items-center justify-center"
+                      title="Next Page"
+                    >
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              )}
+              </>
             )}
           </div>
         </div>
@@ -1232,7 +1327,7 @@ export default function EmployeesClient({ initialTechnicians, officeLocations, a
             <div className="p-6 border-b border-zinc-150 flex items-center justify-between">
               <div>
                 <h3 className="text-xl font-bold text-zinc-900">Bulk Import Employees</h3>
-                <p className="text-sm text-zinc-500 mt-0.5">Register multiple accounts at once using CSV paste format.</p>
+                <p className="text-sm text-zinc-500 mt-0.5">Register multiple accounts at once using interactive employee fields.</p>
               </div>
               <button 
                 onClick={() => setIsBulkDrawerOpen(false)} 
@@ -1244,16 +1339,9 @@ export default function EmployeesClient({ initialTechnicians, officeLocations, a
 
             {/* Scrollable Drawer Body */}
             <div className="flex-1 overflow-y-auto p-6 space-y-6">
-              <div className="p-4 bg-zinc-50 border border-zinc-200 rounded-xl text-xs space-y-2 text-zinc-600">
-                <p className="font-bold text-zinc-800">CSV Input Specifications:</p>
-                <p>Provide comma-separated values (one employee per line) in this order:</p>
-                <p className="font-mono bg-zinc-100 p-1.5 rounded border border-zinc-200">Full Name, Email, Role, Base Salary, Branch Name</p>
-                <p className="font-bold text-zinc-800 mt-2">Example Paste:</p>
-                <pre className="font-mono bg-zinc-100 p-2 rounded border border-zinc-200 text-[10px] whitespace-pre-wrap leading-relaxed">
-Juan Cruz, juan@gmail.com, technician, 20000, Main Office
-Maria Santos, maria@gmail.com, helper, 15000, Quezon City Branch
-Alex Reyes, alex@gmail.com, technician, 22500, </pre>
-                <p className="text-[10px] text-zinc-500 italic mt-2">Note: Base passwords will be set automatically to `Password123!`. Employee role must be exactly `technician` or `helper`. Branch Name is optional (leave blank for no branch/global).</p>
+              <div className="p-4 bg-zinc-50 border border-zinc-200 rounded-xl text-xs space-y-1 text-zinc-600 font-medium">
+                <p className="font-bold text-zinc-800">Dynamic Multi-Employee Registration</p>
+                <p>Add new employee cards using the form below. Configure roles and branch details dynamically. Default passwords will be set to <code className="bg-zinc-150 px-1 py-0.5 rounded font-mono text-zinc-800">Password123!</code>.</p>
               </div>
 
               {error && (
@@ -1316,21 +1404,104 @@ Alex Reyes, alex@gmail.com, technician, 22500, </pre>
               )}
 
               <form onSubmit={handleBulkImport} className="space-y-4">
-                <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-zinc-500 mb-1.5">Paste CSV Data</label>
-                  <textarea
-                    required
-                    rows={8}
-                    value={bulkCsvData}
-                    onChange={(e) => setBulkCsvData(e.target.value)}
-                    placeholder="Juan Cruz, juan@gmail.com, technician, 20000, Main Office&#10;Maria Santos, maria@gmail.com, helper, 15000, Quezon City Branch"
-                    className="w-full p-4 border border-zinc-200 rounded-xl bg-white text-zinc-800 text-xs font-mono focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all resize-none"
-                  />
+                <div className="space-y-4">
+                  {bulkRows.map((row, idx) => (
+                    <div key={idx} className="p-4 bg-zinc-50/40 border border-zinc-200 rounded-2xl relative space-y-3">
+                      {/* Card Header */}
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-extrabold uppercase tracking-wider text-indigo-500">Employee #{idx + 1}</span>
+                        {bulkRows.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => removeBulkRow(idx)}
+                            className="p-1 text-zinc-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all font-bold"
+                            title="Remove employee row"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Inputs */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-3xs font-bold uppercase tracking-wider text-zinc-450 mb-1">Full Name</label>
+                          <input
+                            type="text"
+                            required
+                            placeholder="Juan Dela Cruz"
+                            value={row.fullName}
+                            onChange={(e) => updateBulkRow(idx, 'fullName', e.target.value)}
+                            className="w-full px-3 py-2 border border-zinc-200 rounded-xl bg-white text-zinc-800 text-xs focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-3xs font-bold uppercase tracking-wider text-zinc-450 mb-1">Email Address</label>
+                          <input
+                            type="email"
+                            required
+                            placeholder="juan.delacruz@gmail.com"
+                            value={row.email}
+                            onChange={(e) => updateBulkRow(idx, 'email', e.target.value)}
+                            className="w-full px-3 py-2 border border-zinc-200 rounded-xl bg-white text-zinc-800 text-xs focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-3 gap-2">
+                        <div>
+                          <label className="block text-3xs font-bold uppercase tracking-wider text-zinc-450 mb-1">Role</label>
+                          <select
+                            value={row.role}
+                            onChange={(e) => updateBulkRow(idx, 'role', e.target.value)}
+                            className="w-full px-2 py-2 border border-zinc-200 rounded-xl bg-white text-zinc-800 text-xs focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all"
+                          >
+                            <option value="technician">Technician</option>
+                            <option value="helper">Helper</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-3xs font-bold uppercase tracking-wider text-zinc-450 mb-1">Base Salary</label>
+                          <input
+                            type="number"
+                            required
+                            min={0}
+                            placeholder="20000"
+                            value={row.baseSalary || ''}
+                            onChange={(e) => updateBulkRow(idx, 'baseSalary', Number(e.target.value))}
+                            className="w-full px-2 py-2 border border-zinc-200 rounded-xl bg-white text-zinc-800 text-xs focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all font-mono"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-3xs font-bold uppercase tracking-wider text-zinc-450 mb-1">Branch</label>
+                          <select
+                            value={row.branchName}
+                            onChange={(e) => updateBulkRow(idx, 'branchName', e.target.value)}
+                            className="w-full px-2 py-2 border border-zinc-200 rounded-xl bg-white text-zinc-800 text-xs focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all"
+                          >
+                            <option value="">Global / None</option>
+                            {officeLocations.map((loc) => (
+                              <option key={loc.id} value={loc.name}>{loc.name}</option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+
+                  {/* Add Row Button */}
+                  <button
+                    type="button"
+                    onClick={addBulkRow}
+                    className="w-full py-2.5 bg-zinc-50 hover:bg-zinc-100 border border-zinc-200 text-zinc-700 font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer active:scale-98"
+                  >
+                    <Plus className="w-4 h-4 text-zinc-500" /> Add Employee Row
+                  </button>
                 </div>
 
                 <button
                   type="submit"
-                  disabled={bulkLoading || !bulkCsvData.trim()}
+                  disabled={bulkLoading || bulkRows.length === 0}
                   className="w-full bg-zinc-950 hover:bg-zinc-800 disabled:opacity-50 text-white font-bold py-3 rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer shadow-sm active:scale-98"
                 >
                   {bulkLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Run Bulk Registration"}

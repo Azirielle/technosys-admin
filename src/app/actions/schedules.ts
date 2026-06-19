@@ -4,11 +4,24 @@ import { revalidatePath } from "next/cache"
 import { logActivity } from "./activity"
 import { sendPushNotification } from "@/lib/push"
 
+// Normalize a date string that may be date-only (YYYY-MM-DD) to a full ISO timestamp
+// Start dates become 00:00:00 UTC, end dates become 23:59:59 UTC
+function normLeaveStart(dateStr: string): number {
+  // If already contains time info, use as-is
+  if (dateStr.includes('T')) return new Date(dateStr).getTime()
+  return new Date(`${dateStr}T00:00:00.000Z`).getTime()
+}
+
+function normLeaveEnd(dateStr: string): number {
+  if (dateStr.includes('T')) return new Date(dateStr).getTime()
+  return new Date(`${dateStr}T23:59:59.999Z`).getTime()
+}
+
 // Helper to check if a single time conflicts with a leave range
 function isTimeConflictingWithLeave(timeStr: string, leaveStart: string, leaveEnd: string) {
   const t = new Date(timeStr).getTime()
-  const start = new Date(leaveStart).getTime()
-  const end = new Date(leaveEnd).getTime()
+  const start = normLeaveStart(leaveStart)
+  const end = normLeaveEnd(leaveEnd)
   return t >= start && t <= end
 }
 
@@ -16,8 +29,8 @@ function isTimeConflictingWithLeave(timeStr: string, leaveStart: string, leaveEn
 function isRangeOverlappingWithLeave(startStr: string, endStr: string, leaveStart: string, leaveEnd: string) {
   const s = new Date(startStr).getTime()
   const e = new Date(endStr).getTime()
-  const lStart = new Date(leaveStart).getTime()
-  const lEnd = new Date(leaveEnd).getTime()
+  const lStart = normLeaveStart(leaveStart)
+  const lEnd = normLeaveEnd(leaveEnd)
   return s < lEnd && e > lStart
 }
 
