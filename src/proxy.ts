@@ -7,8 +7,28 @@ export function proxy(request: NextRequest) {
   
   const response = NextResponse.next();
 
-  if (origin) {
-    // Check if the request is same-origin or localhost
+  // Set security and anti-clickjacking headers on ALL responses
+  response.headers.set('X-Frame-Options', 'DENY');
+  response.headers.set('X-Content-Type-Options', 'nosniff');
+  response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+  
+  const cspHeader = `
+    default-src 'self';
+    script-src 'self' 'unsafe-eval' 'unsafe-inline';
+    style-src 'self' 'unsafe-inline';
+    img-src 'self' blob: data: https://*.supabase.co https://*.tile.openstreetmap.org https://unpkg.com;
+    font-src 'self' data:;
+    object-src 'none';
+    base-uri 'self';
+    form-action 'self';
+    frame-ancestors 'none';
+    connect-src 'self' https://*.supabase.co wss://*.supabase.co https://nominatim.openstreetmap.org;
+    upgrade-insecure-requests;
+  `;
+  response.headers.set('Content-Security-Policy', cspHeader.replace(/\s{2,}/g, ' ').trim());
+
+  // Handle CORS for API routes
+  if (request.nextUrl.pathname.startsWith('/api/') && origin) {
     const isLocalhost = origin.includes('localhost') || origin.includes('127.0.0.1');
     const isSameOrigin = host ? origin.includes(host) : false;
 
@@ -18,7 +38,6 @@ export function proxy(request: NextRequest) {
       response.headers.set('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
       response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
     } else {
-      // Block or restrict cross-origin access from untrusted domains
       response.headers.set('Access-Control-Allow-Origin', 'null');
     }
   }
@@ -27,5 +46,5 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: '/api/:path*',
+  matcher: '/:path*',
 };
