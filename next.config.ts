@@ -20,6 +20,14 @@ const nextConfig: NextConfig = {
             key: "Content-Security-Policy",
             value: cspHeader,
           },
+          {
+            key: "X-Frame-Options",
+            value: "DENY",
+          },
+          {
+            key: "X-Content-Type-Options",
+            value: "nosniff",
+          },
         ],
       },
       {
