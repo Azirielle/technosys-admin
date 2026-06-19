@@ -41,3 +41,10 @@ yarn-error.log*
 next-env.d.ts
 
 .vercel
+
+# scratch, test, and log files
+test-*.js
+check-*.js
+verify-*.js
+*.png
+*.log

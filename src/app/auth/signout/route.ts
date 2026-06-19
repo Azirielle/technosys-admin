@@ -7,7 +7,17 @@ export async function POST(request: Request) {
   await supabase.auth.signOut()
 
   revalidatePath('/', 'layout')
-  return NextResponse.redirect(new URL('/login', request.url), {
+  const loginUrl = new URL('/login', request.url)
+  return new NextResponse(null, {
     status: 302,
+    headers: {
+      'Location': loginUrl.toString(),
+      'X-Frame-Options': 'DENY',
+      'X-Content-Type-Options': 'nosniff',
+      'Referrer-Policy': 'strict-origin-when-cross-origin',
+      'Content-Security-Policy': "frame-ancestors 'none';",
+      'Server': 'Webserver',
+      'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload'
+    }
   })
 }
