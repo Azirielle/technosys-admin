@@ -14,14 +14,15 @@ export async function createClient() {
         },
         setAll(cookiesToSet) {
           try {
-            cookiesToSet.forEach(({ name, value, options }) =>
+            cookiesToSet.forEach(({ name, value, options }) => {
+              const { domain, ...cleanOptions } = options
               cookieStore.set(name, value, {
-                ...options,
+                ...cleanOptions,
                 httpOnly: true,
                 secure: process.env.NODE_ENV === 'production',
                 sameSite: 'lax',
               })
-            )
+            })
           } catch {
             // Ignore if called from Server Component
           }
