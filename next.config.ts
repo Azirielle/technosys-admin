@@ -4,10 +4,14 @@ const cspHeader = `
   default-src 'self';
   script-src 'self' 'unsafe-eval' 'unsafe-inline';
   style-src 'self' 'unsafe-inline';
-  img-src 'self' data: blob: https:;
-  font-src 'self' data: https:;
-  connect-src 'self' https: wss: ws:;
+  img-src 'self' blob: data: https://*.supabase.co https://*.tile.openstreetmap.org https://unpkg.com;
+  font-src 'self' data:;
+  object-src 'none';
+  base-uri 'self';
+  form-action 'self';
   frame-ancestors 'none';
+  connect-src 'self' https://*.supabase.co wss://*.supabase.co https://nominatim.openstreetmap.org;
+  upgrade-insecure-requests;
 `.replace(/\s{2,}/g, ' ').trim();
 
 const nextConfig: NextConfig = {
@@ -22,12 +26,16 @@ const nextConfig: NextConfig = {
             value: cspHeader,
           },
           {
+            key: "X-Content-Type-Options",
+            value: "nosniff",
+          },
+          {
             key: "X-Frame-Options",
             value: "DENY",
           },
           {
-            key: "X-Content-Type-Options",
-            value: "nosniff",
+            key: "Referrer-Policy",
+            value: "strict-origin-when-cross-origin",
           },
           {
             key: "Strict-Transport-Security",
