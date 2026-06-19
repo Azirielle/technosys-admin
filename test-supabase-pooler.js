@@ -2,24 +2,24 @@ const { Client } = require('pg');
 
 const tests = [
   {
-    name: 'User format ap-southeast-1 port 6543',
-    connectionString: 'postgres://postgres.ggknkdyuglzcnkwhvdak:almandrewrisan123@aws-0-ap-southeast-1.pooler.supabase.com:6543/postgres'
+    name: 'User format ap-northeast-1 port 6543',
+    connectionString: 'postgres://postgres.ggknkdyuglzcnkwhvdak:almandrewrisan123@aws-1-ap-northeast-1.pooler.supabase.com:6543/postgres'
   },
   {
-    name: 'User format ap-southeast-1 port 5432',
-    connectionString: 'postgres://postgres.ggknkdyuglzcnkwhvdak:almandrewrisan123@aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres'
+    name: 'User format ap-northeast-1 port 5432',
+    connectionString: 'postgres://postgres.ggknkdyuglzcnkwhvdak:almandrewrisan123@aws-1-ap-northeast-1.pooler.supabase.com:5432/postgres'
   },
   {
-    name: 'DB format ap-southeast-1 port 6543',
-    connectionString: 'postgres://postgres:almandrewrisan123@aws-0-ap-southeast-1.pooler.supabase.com:6543/postgres.ggknkdyuglzcnkwhvdak'
+    name: 'DB format ap-northeast-1 port 6543',
+    connectionString: 'postgres://postgres:almandrewrisan123@aws-1-ap-northeast-1.pooler.supabase.com:6543/postgres.ggknkdyuglzcnkwhvdak'
   },
   {
-    name: 'DB format ap-southeast-1 port 5432',
-    connectionString: 'postgres://postgres:almandrewrisan123@aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres.ggknkdyuglzcnkwhvdak'
+    name: 'DB format ap-northeast-1 port 5432',
+    connectionString: 'postgres://postgres:almandrewrisan123@aws-1-ap-northeast-1.pooler.supabase.com:5432/postgres.ggknkdyuglzcnkwhvdak'
   },
   {
-    name: 'User format ap-southeast-1 port 6543 custom db',
-    connectionString: 'postgres://postgres.ggknkdyuglzcnkwhvdak:almandrewrisan123@aws-0-ap-southeast-1.pooler.supabase.com:6543/postgres.ggknkdyuglzcnkwhvdak'
+    name: 'User format ap-northeast-1 port 6543 custom db',
+    connectionString: 'postgres://postgres.ggknkdyuglzcnkwhvdak:almandrewrisan123@aws-1-ap-northeast-1.pooler.supabase.com:6543/postgres.ggknkdyuglzcnkwhvdak'
   }
 ];
 
