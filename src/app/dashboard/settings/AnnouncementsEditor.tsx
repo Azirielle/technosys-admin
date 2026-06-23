@@ -1,6 +1,7 @@
 "use client"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import { useAlertConfirm } from "@/components/ui/AlertConfirmProvider"
 import { createAnnouncement, deleteAnnouncement } from "@/app/actions/announcements"
 import { Megaphone, Trash2, Loader2, Info } from "lucide-react"
 
@@ -16,6 +17,7 @@ export default function AnnouncementsEditor({
   userRole 
 }: AnnouncementsEditorProps) {
   const router = useRouter()
+  const { alert, confirm } = useAlertConfirm()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
   const [success, setSuccess] = useState(false)
@@ -51,17 +53,22 @@ export default function AnnouncementsEditor({
 
   const handleDelete = async (id: string) => {
     if (isLocked) return
-    if (!confirm("Are you sure you want to delete this announcement?")) return
+    const confirmed = await confirm(
+      "Are you sure you want to delete this announcement?",
+      "Delete Announcement",
+      "destructive"
+    )
+    if (!confirmed) return
 
     try {
       const res = await deleteAnnouncement(id)
       if (res.error) {
-        alert(res.error)
+        await alert(res.error, "Delete Failed", "destructive")
       } else {
         router.refresh()
       }
     } catch (err: any) {
-      alert("Delete failed: " + err.message)
+      await alert("Delete failed: " + err.message, "Error", "destructive")
     }
   }
 

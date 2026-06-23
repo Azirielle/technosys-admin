@@ -1,6 +1,5 @@
 "use client"
-
-import { useState, useTransition } from "react"
+import { useState, useTransition, useEffect } from "react"
 import { 
   Package, Plus, Settings, RefreshCw, AlertTriangle, ArrowUpRight, 
   ArrowDownLeft, History, FileText, ClipboardList, CheckCircle2, AlertCircle,
@@ -16,6 +15,7 @@ import {
   logLedgerTransaction
 } from "@/app/actions/inventory"
 import { createClient } from "@/lib/supabase/client"
+import Pagination from "@/components/ui/Pagination"
 
 interface LedgerSummary {
   qty: number
@@ -103,11 +103,71 @@ export default function InventoryWorkspace({
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
   const [successMsg, setSuccessMsg] = useState<string | null>(null)
 
+  // Pagination states
+  const [ledgerPage, setLedgerPage] = useState(1)
+  const ledgerPerPage = 10
+  const [procurementPage, setProcurementPage] = useState(1)
+  const procurementPerPage = 10
+  const [auditsPage, setAuditsPage] = useState(1)
+  const auditsPerPage = 5
+
+  // Reset pagination on tab changes
+  useEffect(() => {
+    setLedgerPage(1)
+    setProcurementPage(1)
+    setAuditsPage(1)
+  }, [activeTab])
+
+
+  const totalLedgerItems = ledger.length
+  const totalLedgerPages = Math.ceil(totalLedgerItems / ledgerPerPage)
+  const paginatedLedger = ledger.slice(
+    (ledgerPage - 1) * ledgerPerPage,
+    ledgerPage * ledgerPerPage
+  )
+
+  const totalProcurementItems = procurement.length
+  const totalProcurementPages = Math.ceil(totalProcurementItems / procurementPerPage)
+  const paginatedProcurement = procurement.slice(
+    (procurementPage - 1) * procurementPerPage,
+    procurementPage * procurementPerPage
+  )
+
+  const totalAuditsItems = audits.length
+  const totalAuditsPages = Math.ceil(totalAuditsItems / auditsPerPage)
+  const paginatedAudits = audits.slice(
+    (auditsPage - 1) * auditsPerPage,
+    auditsPage * auditsPerPage
+  )
+
   // Modals / forms state
   const [isNewItemOpen, setIsNewItemOpen] = useState(false)
   const [isAdjustmentOpen, setIsAdjustmentOpen] = useState(false)
   const [isPoOpen, setIsPoOpen] = useState(false)
   const [isBulkDrawerOpen, setIsBulkDrawerOpen] = useState(false)
+
+  // Listen for Escape key to close bulk import inventory modal
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setIsBulkDrawerOpen(false)
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [])
+
+  // Lock body scroll when bulk import modal is open
+  useEffect(() => {
+    if (isBulkDrawerOpen) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = ''
+    }
+    return () => {
+      document.body.style.overflow = ''
+    }
+  }, [isBulkDrawerOpen])
   
   // Register/Edit item states
   const [name, setName] = useState("")
@@ -700,7 +760,7 @@ export default function InventoryWorkspace({
                       </td>
                     </tr>
                   ) : (
-                    ledger.map(item => {
+                    paginatedLedger.map(item => {
                       const isLowStock = item.quantity <= item.low_stock_threshold
                       return (
                         <tr key={item.id} className="hover:bg-slate-50/40 transition-colors">
@@ -768,6 +828,14 @@ export default function InventoryWorkspace({
                 </tbody>
               </table>
             </div>
+            <Pagination
+              currentPage={ledgerPage}
+              totalPages={totalLedgerPages}
+              totalItems={totalLedgerItems}
+              itemsPerPage={ledgerPerPage}
+              onPageChange={setLedgerPage}
+              itemNamePlural="ledger items"
+            />
           </div>
         </div>
 
@@ -809,7 +877,7 @@ export default function InventoryWorkspace({
                       </td>
                     </tr>
                   ) : (
-                    procurement.map(po => {
+                    paginatedProcurement.map(po => {
                       const isDelivered = po.status === 'delivered'
                       return (
                         <tr key={po.id} className="hover:bg-slate-50/40 transition-colors">
@@ -850,6 +918,14 @@ export default function InventoryWorkspace({
                 </tbody>
               </table>
             </div>
+            <Pagination
+              currentPage={procurementPage}
+              totalPages={totalProcurementPages}
+              totalItems={totalProcurementItems}
+              itemsPerPage={procurementPerPage}
+              onPageChange={setProcurementPage}
+              itemNamePlural="purchase orders"
+            />
           </div>
         </div>
 
@@ -881,7 +957,7 @@ export default function InventoryWorkspace({
                   No inventory audits logged yet.
                 </div>
               ) : (
-                audits.map(audit => {
+                paginatedAudits.map(audit => {
                   const totalDiscrepancies = audit.audit_items.filter(i => i.variance !== 0).length
                   const isExpanded = expandedAuditId === audit.id
 
@@ -954,6 +1030,14 @@ export default function InventoryWorkspace({
                 })
               )}
             </div>
+            <Pagination
+              currentPage={auditsPage}
+              totalPages={totalAuditsPages}
+              totalItems={totalAuditsItems}
+              itemsPerPage={auditsPerPage}
+              onPageChange={setAuditsPage}
+              itemNamePlural="audits"
+            />
           </div>
         </div>
       )}
@@ -1300,8 +1384,13 @@ export default function InventoryWorkspace({
 
       {/* Slide-over Bulk Import Drawer */}
       {isBulkDrawerOpen && (
-        <div className="fixed inset-0 bg-zinc-950/60 z-50 transition-opacity flex justify-end animate-smooth-fade">
-          <div className="w-full max-w-xl bg-white h-full shadow-2xl flex flex-col animate-smooth-slide-in">
+        <div 
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setIsBulkDrawerOpen(false)
+          }}
+          className="fixed inset-0 bg-zinc-950/60 z-50 transition-opacity flex items-center justify-center p-4 sm:p-6 animate-smooth-fade"
+        >
+          <div className="w-full max-w-2xl bg-white max-h-[90vh] shadow-2xl flex flex-col rounded-2xl overflow-hidden animate-smooth-pop">
             {/* Header */}
             <div className="p-6 border-b border-zinc-150 flex items-center justify-between">
               <div>

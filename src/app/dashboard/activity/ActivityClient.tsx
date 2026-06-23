@@ -1,9 +1,10 @@
 'use client'
-
-import { useState } from 'react'
+ 
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { ArrowLeft, Users, Calendar, ClipboardList, DollarSign, MessageSquare, Package, Settings, HelpCircle, Activity, Search } from 'lucide-react'
-
+import Pagination from '@/components/ui/Pagination'
+ 
 const CATEGORIES = [
   { id: 'all', label: 'All Activities', icon: Activity, color: 'text-slate-500' },
   { id: 'employee', label: 'Employees', icon: Users, color: 'text-cyan-500' },
@@ -14,11 +15,17 @@ const CATEGORIES = [
   { id: 'inventory', label: 'Inventory', icon: Package, color: 'text-blue-500' },
   { id: 'settings', label: 'Settings', icon: Settings, color: 'text-slate-500' },
 ]
-
+ 
 export default function ActivityClient({ initialLogs }: { initialLogs: any[] }) {
   const [selectedCategory, setSelectedCategory] = useState('all')
   const [searchQuery, setSearchQuery] = useState('')
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 10
 
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [selectedCategory, searchQuery])
+ 
   const getCategoryIcon = (category: string) => {
     switch (category) {
       case 'employee': return { icon: Users, bg: 'bg-cyan-50 border-cyan-100 text-cyan-600' }
@@ -31,7 +38,7 @@ export default function ActivityClient({ initialLogs }: { initialLogs: any[] }) 
       default: return { icon: HelpCircle, bg: 'bg-zinc-50 border-zinc-100 text-zinc-600' }
     }
   }
-
+ 
   // Filter logs based on category and search query
   const filteredLogs = initialLogs.filter((log) => {
     const matchesCategory = selectedCategory === 'all' || log.target_category === selectedCategory
@@ -39,6 +46,11 @@ export default function ActivityClient({ initialLogs }: { initialLogs: any[] }) 
                           (log.actor?.full_name || '').toLowerCase().includes(searchQuery.toLowerCase())
     return matchesCategory && matchesSearch
   })
+
+  const totalItems = filteredLogs.length
+  const totalPages = Math.ceil(totalItems / itemsPerPage)
+  const startIndex = (currentPage - 1) * itemsPerPage
+  const paginatedLogs = filteredLogs.slice(startIndex, startIndex + itemsPerPage)
 
   return (
     <div className="min-h-screen bg-slate-50 p-8">
@@ -102,7 +114,7 @@ export default function ActivityClient({ initialLogs }: { initialLogs: any[] }) 
             </div>
 
             <div className="divide-y divide-slate-100 max-h-[70vh] overflow-y-auto">
-              {filteredLogs.map((log: any, i: number) => {
+              {paginatedLogs.map((log: any, i: number) => {
                 const { icon: Icon, bg } = getCategoryIcon(log.target_category)
                 return (
                   <div key={log.id || i} className="p-6 flex items-start gap-4 hover:bg-slate-50/50 transition-colors">
@@ -138,7 +150,7 @@ export default function ActivityClient({ initialLogs }: { initialLogs: any[] }) 
                   </div>
                 )
               })}
-
+ 
               {filteredLogs.length === 0 && (
                 <div className="p-12 text-center">
                   <Activity className="w-12 h-12 text-slate-300 mx-auto mb-3" />
@@ -147,6 +159,14 @@ export default function ActivityClient({ initialLogs }: { initialLogs: any[] }) 
                 </div>
               )}
             </div>
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={totalItems}
+              itemsPerPage={itemsPerPage}
+              onPageChange={setCurrentPage}
+              itemNamePlural="logs"
+            />
           </div>
         </div>
 

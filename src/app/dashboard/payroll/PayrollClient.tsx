@@ -2,6 +2,7 @@
 import { useState, useTransition } from "react"
 import { DollarSign, CheckCircle2, AlertCircle, Loader2 } from "lucide-react"
 import { publishPayslip } from "@/app/actions/payroll"
+import Pagination from "@/components/ui/Pagination"
 
 export default function PayrollClient({ 
   technicians, 
@@ -16,6 +17,8 @@ export default function PayrollClient({
 }) {
   const [isPending, startTransition] = useTransition()
   const [allowanceOverrides, setAllowanceOverrides] = useState<Record<string, string>>({})
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 10
 
   const formatPhp = (amount: number) => {
     return new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(amount || 0);
@@ -34,6 +37,13 @@ export default function PayrollClient({
       })
     })
   }
+
+  const totalItems = technicians.length
+  const totalPages = Math.ceil(totalItems / itemsPerPage)
+  const paginatedTechnicians = technicians.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  )
 
   return (
     <div className="p-8 pb-20">
@@ -65,7 +75,7 @@ export default function PayrollClient({
                 <tr>
                   <td colSpan={9} className="px-6 py-8 text-center text-zinc-500">No technicians found.</td>
                 </tr>
-              ) : technicians.map(emp => {
+              ) : paginatedTechnicians.map(emp => {
                 const payrollRecord = payrolls.find(p => p.technician_id === emp.id)
                 const payroll = payrollRecord ? payrollRecord.calculation : {
                   grossPay: 0, sssDeduction: 0, philhealthDeduction: 0, pagibigDeduction: 0, netPay: 0
@@ -153,6 +163,14 @@ export default function PayrollClient({
             </tbody>
           </table>
         </div>
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={totalItems}
+          itemsPerPage={itemsPerPage}
+          onPageChange={setCurrentPage}
+          itemNamePlural="employees"
+        />
       </div>
       
       <div className="mt-8 bg-zinc-50 border border-zinc-200 rounded-xl p-6 text-sm text-zinc-600 shadow-inner">
