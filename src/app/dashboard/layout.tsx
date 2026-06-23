@@ -3,35 +3,40 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, Users, Calendar, DollarSign, Settings, LogOut, MessageSquare, Package, ClipboardList } from 'lucide-react'
+import { LayoutDashboard, Users, Calendar, DollarSign, Settings, LogOut, MessageSquare, Package, ClipboardList, ShieldAlert } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+import { MODULE_ROLES, type UserRole } from '@/lib/permissions-client'
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const [profile, setProfile] = useState<{ full_name: string; role: string } | null>(null)
   const [pendingLeavesCount, setPendingLeavesCount] = useState<number>(0)
   const [lowStockCount, setLowStockCount] = useState<number>(0)
+  const [loading, setLoading] = useState<boolean>(true)
 
   useEffect(() => {
     async function loadProfile() {
       try {
-        const { createClient } = await import('@/lib/supabase/client')
         const supabase = createClient()
         
-        const { data: { user } } = await supabase.auth.getUser()
+        const { data: { user }, error: userError } = await supabase.auth.getUser()
+        console.log("Layout auth getUser:", { user, userError })
         if (user) {
-          const { data } = await supabase
+          const { data, error: profileError } = await supabase
             .from('profiles')
             .select('full_name, role')
             .eq('id', user.id)
             .single()
           
+          console.log("Layout profile fetch:", { data, profileError })
           if (data) {
             setProfile(data)
           }
         }
       } catch (e) {
         console.error("Error loading user profile:", e)
+      } finally {
+        setLoading(false)
       }
     }
     loadProfile()
@@ -103,6 +108,30 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     { href: '/dashboard/inventory', label: 'Inventory', icon: Package },
   ]
 
+  const getActiveModule = (path: string) => {
+    if (path === '/dashboard') return 'overview'
+    if (path.startsWith('/dashboard/employees')) return 'employees'
+    if (path.startsWith('/dashboard/schedules')) return 'schedules'
+    if (path.startsWith('/dashboard/leaves')) return 'leaves'
+    if (path.startsWith('/dashboard/payroll')) return 'payroll'
+    if (path.startsWith('/dashboard/tickets')) return 'tickets'
+    if (path.startsWith('/dashboard/inventory')) return 'inventory'
+    if (path.startsWith('/dashboard/settings')) return 'settings'
+    return null
+  }
+
+  const activeModule = getActiveModule(pathname)
+  
+  // Guard logic: if not loading and user is logged in, check permission
+  const isAuthorized = loading || !profile || !activeModule || 
+    (MODULE_ROLES[activeModule]?.includes(profile.role as UserRole))
+
+  const allowedNavItems = navItems.filter((item) => {
+    const moduleName = getActiveModule(item.href) || 'overview'
+    if (loading || !profile) return true
+    return MODULE_ROLES[moduleName]?.includes(profile.role as UserRole)
+  })
+
   const isActive = (item: typeof navItems[0]) => {
     if (item.exact) {
       return pathname === item.href
@@ -111,6 +140,33 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }
 
   const settingsActive = pathname === '/dashboard/settings' || pathname.startsWith('/dashboard/settings/')
+
+  const formatRole = (role: string) => {
+    return role.replace('_', ' ').replace(/\b\w/g, c => c.toUpperCase())
+  }
+
+  const getRoleBadgeStyle = (role: string) => {
+    switch (role) {
+      case 'super_admin':
+        return 'bg-indigo-50 border-indigo-100 text-indigo-700'
+      case 'ceo':
+      case 'coo':
+      case 'svp':
+      case 'admin':
+        return 'bg-purple-50 border-purple-100 text-purple-700'
+      case 'hr':
+        return 'bg-teal-50 border-teal-100 text-teal-700'
+      case 'accountant':
+        return 'bg-rose-50 border-rose-100 text-rose-700'
+      case 'coordinator':
+        return 'bg-amber-50 border-amber-100 text-amber-700'
+      case 'branch_manager':
+      case 'supervisor':
+        return 'bg-blue-50 border-blue-100 text-blue-700'
+      default:
+        return 'bg-zinc-50 border-zinc-100 text-zinc-700'
+    }
+  }
 
   return (
     <div className="flex h-screen bg-zinc-50 overflow-hidden">
@@ -123,52 +179,65 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
           <p className="px-3 text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2 mt-4">Menu</p>
           
-          {navItems.map((item) => {
-            const active = isActive(item)
-            const Icon = item.icon
-            const isLeavesTab = item.href === '/dashboard/leaves'
-            const isInventoryTab = item.href === '/dashboard/inventory'
-            return (
+          {loading ? (
+            // Sidebar item loading skeleton to avoid layout shifts
+            <div className="space-y-3 px-3">
+              {[...Array(6)].map((_, i) => (
+                <div key={i} className="h-8 bg-slate-100 rounded-md animate-pulse w-full"></div>
+              ))}
+            </div>
+          ) : (
+            allowedNavItems.map((item) => {
+              const active = isActive(item)
+              const Icon = item.icon
+              const isLeavesTab = item.href === '/dashboard/leaves'
+              const isInventoryTab = item.href === '/dashboard/inventory'
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`flex items-center justify-between px-3 py-2 rounded-md transition-all duration-200 group ${
+                    active
+                      ? 'bg-emerald-50 text-emerald-700 font-medium'
+                      : 'text-slate-500 hover:text-emerald-700 hover:bg-slate-50'
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <Icon className={`w-5 h-5 transition-colors ${active ? 'text-emerald-600' : 'text-slate-400 group-hover:text-emerald-600'}`} />
+                    <span>{item.label}</span>
+                  </div>
+                  {isLeavesTab && pendingLeavesCount > 0 && (
+                    <span className="bg-rose-500 text-white text-[10px] font-extrabold px-1.5 py-0.5 rounded-full shadow-sm min-w-[18px] text-center animate-pulse">
+                      {pendingLeavesCount}
+                    </span>
+                  )}
+                  {isInventoryTab && lowStockCount > 0 && (
+                    <span className="bg-amber-500 text-white text-[10px] font-extrabold px-1.5 py-0.5 rounded-full shadow-sm min-w-[18px] text-center animate-pulse">
+                      {lowStockCount}
+                    </span>
+                  )}
+                </Link>
+              )
+            })
+          )}
+          
+          {(!loading && (!profile || MODULE_ROLES['settings']?.includes(profile.role as UserRole))) && (
+            <>
+              <p className="px-3 text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2 mt-8">System</p>
+              
               <Link
-                key={item.href}
-                href={item.href}
-                className={`flex items-center justify-between px-3 py-2 rounded-md transition-all duration-200 group ${
-                  active
+                href="/dashboard/settings"
+                className={`flex items-center gap-3 px-3 py-2 rounded-md transition-all duration-200 group ${
+                  settingsActive
                     ? 'bg-emerald-50 text-emerald-700 font-medium'
                     : 'text-slate-500 hover:text-emerald-700 hover:bg-slate-50'
                 }`}
               >
-                <div className="flex items-center gap-3">
-                  <Icon className={`w-5 h-5 transition-colors ${active ? 'text-emerald-600' : 'text-slate-400 group-hover:text-emerald-600'}`} />
-                  <span>{item.label}</span>
-                </div>
-                {isLeavesTab && pendingLeavesCount > 0 && (
-                  <span className="bg-rose-500 text-white text-[10px] font-extrabold px-1.5 py-0.5 rounded-full shadow-sm min-w-[18px] text-center animate-pulse">
-                    {pendingLeavesCount}
-                  </span>
-                )}
-                {isInventoryTab && lowStockCount > 0 && (
-                  <span className="bg-amber-500 text-white text-[10px] font-extrabold px-1.5 py-0.5 rounded-full shadow-sm min-w-[18px] text-center animate-pulse">
-                    {lowStockCount}
-                  </span>
-                )}
+                <Settings className={`w-5 h-5 transition-colors ${settingsActive ? 'text-emerald-600' : 'text-slate-400 group-hover:text-emerald-600'}`} />
+                Settings
               </Link>
-            )
-          })}
-          
-          <p className="px-3 text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2 mt-8">System</p>
-          
-          <Link
-            href="/dashboard/settings"
-            className={`flex items-center gap-3 px-3 py-2 rounded-md transition-all duration-200 group ${
-              settingsActive
-                ? 'bg-emerald-50 text-emerald-700 font-medium'
-                : 'text-slate-500 hover:text-emerald-700 hover:bg-slate-50'
-            }`}
-          >
-            <Settings className={`w-5 h-5 transition-colors ${settingsActive ? 'text-emerald-600' : 'text-slate-400 group-hover:text-emerald-600'}`} />
-            Settings
-          </Link>
+            </>
+          )}
         </nav>
 
         <div className="p-4 border-t border-slate-100 space-y-4">
@@ -183,11 +252,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 <p className="text-xs font-bold text-slate-900 truncate">{profile.full_name}</p>
                 <div className="mt-0.5">
                   <span className={`text-[8px] px-1.5 py-0.5 rounded-full border font-extrabold uppercase tracking-wider ${
-                    profile.role === "super_admin" 
-                      ? "bg-indigo-50 border-indigo-100 text-indigo-700" 
-                      : "bg-zinc-100 border-zinc-200 text-zinc-600"
+                    getRoleBadgeStyle(profile.role)
                   }`}>
-                    {profile.role === "super_admin" ? "Super Admin" : "Admin"}
+                    {formatRole(profile.role)}
                   </span>
                 </div>
               </div>
@@ -211,11 +278,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                  <p className="text-sm font-bold text-zinc-900">{profile ? profile.full_name : "Loading..."}</p>
                  {profile && (
                    <span className={`text-[8px] px-1.5 py-0.5 rounded-full border font-extrabold uppercase tracking-wider ${
-                     profile.role === "super_admin" 
-                       ? "bg-indigo-50 border-indigo-100 text-indigo-700" 
-                       : "bg-zinc-100 border-zinc-200 text-zinc-600"
+                     getRoleBadgeStyle(profile.role)
                    }`}>
-                     {profile.role === "super_admin" ? "Super Admin" : "Admin"}
+                     {formatRole(profile.role)}
                    </span>
                  )}
                </div>
@@ -231,9 +296,45 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         
         {/* Scrollable Page Content */}
         <div className="flex-1 overflow-auto">
-          {children}
+          {loading ? (
+            <div className="min-h-full flex items-center justify-center bg-slate-50">
+              <div className="w-10 h-10 border-4 border-slate-200 border-t-emerald-600 rounded-full animate-spin"></div>
+            </div>
+          ) : !isAuthorized ? (
+            // Premium Access Denied glassmorphic card view
+            <div className="min-h-full flex items-center justify-center p-8 bg-slate-50">
+              <div className="max-w-md w-full bg-white rounded-3xl border border-slate-200 shadow-xl p-8 text-center backdrop-blur-md bg-white/90 relative overflow-hidden">
+                <div className="absolute top-0 left-0 right-0 h-1.5 bg-rose-500"></div>
+                <div className="w-16 h-16 mx-auto rounded-2xl bg-rose-50 flex items-center justify-center text-rose-500 mb-6 border border-rose-100 animate-pulse">
+                  <ShieldAlert className="w-8 h-8" />
+                </div>
+                <h2 className="text-2xl font-black text-slate-900 tracking-tight">Access Restricted</h2>
+                <p className="mt-3 text-slate-500 text-sm leading-relaxed font-medium">
+                  Your role as <span className="font-bold text-slate-700 capitalize">{(profile?.role || '').replace('_', ' ')}</span> does not have permissions to access the <span className="font-bold text-slate-700 capitalize">{activeModule}</span> module.
+                </p>
+                <div className="mt-6 pt-6 border-t border-slate-100 flex flex-col gap-3">
+                  <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Required Authorization</p>
+                  <div className="flex flex-wrap justify-center gap-1.5 mt-1">
+                    {activeModule && MODULE_ROLES[activeModule]?.map((r) => (
+                      <span key={r} className="text-[10px] px-2.5 py-1 rounded-full bg-slate-100 border border-slate-200 text-slate-600 font-bold uppercase tracking-wider">
+                        {r.replace('_', ' ')}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+                <div className="mt-8">
+                  <Link href="/dashboard" className="inline-flex items-center justify-center w-full px-5 py-3 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-sm transition-all duration-200 shadow-md hover:shadow-lg hover:scale-[1.02]">
+                    Return to Command Center
+                  </Link>
+                </div>
+              </div>
+            </div>
+          ) : (
+            children
+          )}
         </div>
       </main>
     </div>
   )
 }
+

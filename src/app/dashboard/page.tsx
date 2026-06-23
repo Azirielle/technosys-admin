@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import DashboardCharts from './DashboardCharts'
 import { Users, Calendar, DollarSign } from 'lucide-react'
+import { getBranchFilter } from '@/lib/branch-filter'
 
 export const revalidate = 0;
 
@@ -35,31 +36,85 @@ export default async function DashboardPage() {
   let dbErrorMsg = "";
 
   try {
-    const { count: eCount, error: eErr } = await supabaseAdmin.from('profiles').select('*', { count: 'exact', head: true }).in('role', ['technician', 'helper']);
+    const filterBranchId = await getBranchFilter()
+
+    // 1. Employee query & count
+    let empQuery = supabaseAdmin.from('profiles').select('*', { count: 'exact', head: false }).in('role', ['technician', 'helper']);
+    if (filterBranchId) {
+      empQuery = empQuery.eq('branch_id', filterBranchId);
+    }
+    const { data: empData, count: eCount, error: eErr } = await empQuery;
     if (eErr) throw eErr;
     empCount = eCount || 0;
+    const branchStaffIds = (empData || []).map(s => s.id);
 
-    const { count: sCount, error: sErr } = await supabaseAdmin.from('schedules').select('*', { count: 'exact', head: true });
+    // 2. Schedules query & count
+    let schedQuery = supabaseAdmin.from('schedules').select('*', { count: 'exact', head: false });
+    if (filterBranchId) {
+      if (branchStaffIds.length > 0) {
+        schedQuery = schedQuery.in('technician_id', branchStaffIds);
+      } else {
+        schedQuery = schedQuery.eq('technician_id', '00000000-0000-0000-0000-000000000000');
+      }
+    }
+    const { count: sCount, error: sErr } = await schedQuery;
     if (sErr) throw sErr;
     schedCount = sCount || 0;
 
-    const { count: pCount, error: pErr } = await supabaseAdmin.from('payslips').select('*', { count: 'exact', head: true });
+    // 3. Payslips query & count
+    let payQuery = supabaseAdmin.from('payslips').select('*', { count: 'exact', head: false });
+    if (filterBranchId) {
+      if (branchStaffIds.length > 0) {
+        payQuery = payQuery.in('technician_id', branchStaffIds);
+      } else {
+        payQuery = payQuery.eq('technician_id', '00000000-0000-0000-0000-000000000000');
+      }
+    }
+    const { count: pCount, error: pErr } = await payQuery;
     if (pErr) throw pErr;
     payCount = pCount || 0;
 
-    const { data: pData, error: psErr } = await supabaseAdmin.from('payslips').select('*, technician:profiles(full_name)').order('created_at', { ascending: false }).limit(10);
+    // 4. Payslips list
+    let payslipsListQuery = supabaseAdmin.from('payslips').select('*, technician:profiles(full_name, branch_id)');
+    if (filterBranchId) {
+      if (branchStaffIds.length > 0) {
+        payslipsListQuery = payslipsListQuery.in('technician_id', branchStaffIds);
+      } else {
+        payslipsListQuery = payslipsListQuery.eq('technician_id', '00000000-0000-0000-0000-000000000000');
+      }
+    }
+    const { data: pData, error: psErr } = await payslipsListQuery.order('created_at', { ascending: false }).limit(10);
     if (psErr) throw psErr;
     payslips = pData || [];
 
-    const { data: rData, error: rtErr } = await supabaseAdmin.from('profiles').select('*').eq('role', 'technician').order('created_at', { ascending: false }).limit(5);
+    // 5. Recent techs
+    let recentTechsQuery = supabaseAdmin.from('profiles').select('*').eq('role', 'technician');
+    if (filterBranchId) {
+      recentTechsQuery = recentTechsQuery.eq('branch_id', filterBranchId);
+    }
+    const { data: rData, error: rtErr } = await recentTechsQuery.order('created_at', { ascending: false }).limit(5);
     if (rtErr) throw rtErr;
     recentTechs = rData || [];
 
-    const { data: allTechsData, error: allTechsErr } = await supabaseAdmin.from('profiles').select('id, full_name, role').in('role', ['technician', 'helper']).order('full_name', { ascending: true });
+    // 6. All techs
+    let allTechsQuery = supabaseAdmin.from('profiles').select('id, full_name, role').in('role', ['technician', 'helper']);
+    if (filterBranchId) {
+      allTechsQuery = allTechsQuery.eq('branch_id', filterBranchId);
+    }
+    const { data: allTechsData, error: allTechsErr } = await allTechsQuery.order('full_name', { ascending: true });
     if (allTechsErr) throw allTechsErr;
     allTechs = allTechsData || [];
 
-    const { data: actData, error: actErr } = await supabaseAdmin.from('activity_logs').select('*, actor:profiles(full_name)').order('created_at', { ascending: false }).limit(6);
+    // 7. Recent activities
+    let recentActQuery = supabaseAdmin.from('activity_logs').select('*, actor:profiles(full_name, branch_id)');
+    if (filterBranchId) {
+      if (branchStaffIds.length > 0) {
+        recentActQuery = recentActQuery.in('actor_id', branchStaffIds);
+      } else {
+        recentActQuery = recentActQuery.eq('actor_id', '00000000-0000-0000-0000-000000000000');
+      }
+    }
+    const { data: actData, error: actErr } = await recentActQuery.order('created_at', { ascending: false }).limit(6);
     if (actErr) throw actErr;
     recentActivities = actData || [];
   } catch (err: any) {

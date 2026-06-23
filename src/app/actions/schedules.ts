@@ -2,6 +2,7 @@
 import { supabaseAdmin } from "@/lib/supabase/admin"
 import { revalidatePath } from "next/cache"
 import { logActivity } from "./activity"
+import { verifyRoleAccess } from "@/lib/permissions"
 import { sendPushNotification } from "@/lib/push"
 
 // Normalize a date string that may be date-only (YYYY-MM-DD) to a full ISO timestamp
@@ -36,6 +37,11 @@ function isRangeOverlappingWithLeave(startStr: string, endStr: string, leaveStar
 
 export async function createSchedule(formData: FormData) {
   try {
+    const { authorized } = await verifyRoleAccess('schedules', true)
+    if (!authorized) {
+      return { error: "Unauthorized. Scheduling write permissions required." }
+    }
+
     const technicianId = formData.get("technicianId") as string
     const rawSeniorPartnerId = formData.get("seniorPartnerId") as string
     const seniorPartnerId = (rawSeniorPartnerId && rawSeniorPartnerId !== "" && rawSeniorPartnerId !== "none") ? rawSeniorPartnerId : null
@@ -46,6 +52,7 @@ export async function createSchedule(formData: FormData) {
     const attendanceMode = (formData.get("attendanceMode") as string) || 'hq'
     const isVip = formData.get("isVip") === "on"
     const trackingMode = (formData.get("trackingMode") as string) || "pacita_hq"
+    const allowanceRate = parseFloat(formData.get("allowanceRate") as string || "0")
 
     // 1. Fetch technician profile to get name for activity logs
     const { data: techProfile } = await supabaseAdmin
@@ -93,7 +100,8 @@ export async function createSchedule(formData: FormData) {
       start_time: new Date(startTime).toISOString(),
       end_time: endTime ? new Date(endTime).toISOString() : null,
       attendance_mode: attendanceMode,
-      is_vip_hook: isVip
+      is_vip_hook: isVip,
+      allowance_rate: allowanceRate
     }
 
     const { error } = await supabaseAdmin.from('schedules').insert(insertData)
@@ -134,9 +142,15 @@ export async function bulkCreateSchedules(data: {
   attendanceMode: string
   seniorPartnerMap?: Record<string, string> // maps helperId -> seniorPartnerId
   isVip?: boolean
+  allowanceRate?: number
 }) {
   try {
-    const { staffIds, clientName, location, startTime, endTime, attendanceMode, seniorPartnerMap = {}, isVip = false } = data
+    const { authorized } = await verifyRoleAccess('schedules', true)
+    if (!authorized) {
+      return { error: "Unauthorized. Scheduling write permissions required." }
+    }
+
+    const { staffIds, clientName, location, startTime, endTime, attendanceMode, seniorPartnerMap = {}, isVip = false, allowanceRate = 0 } = data
 
     if (!staffIds || staffIds.length === 0) {
       return { error: "Please select at least one staff member to schedule." }
@@ -192,7 +206,8 @@ export async function bulkCreateSchedules(data: {
           end_time: endTime ? new Date(endTime).toISOString() : null,
           attendance_mode: attendanceMode,
           senior_partner_id: seniorPartnerId,
-          is_vip_hook: isVip
+          is_vip_hook: isVip,
+          allowance_rate: allowanceRate
         })
 
         // Look up target profile and send push notification
@@ -230,6 +245,11 @@ export async function bulkCreateSchedules(data: {
 
 export async function toggleVipHook(scheduleId: string, currentStatus: boolean) {
   try {
+    const { authorized } = await verifyRoleAccess('schedules', true)
+    if (!authorized) {
+      return { error: "Unauthorized. Scheduling write permissions required." }
+    }
+
     const { data: sched } = await supabaseAdmin.from('schedules').select('client_name').eq('id', scheduleId).single()
     const clientName = sched?.client_name || 'Client'
 
@@ -258,6 +278,11 @@ export async function createBulkSchedules(data: {
   isVip: boolean
 }) {
   try {
+    const { authorized } = await verifyRoleAccess('schedules', true)
+    if (!authorized) {
+      return { error: "Unauthorized. Scheduling write permissions required." }
+    }
+
     const { personnelIds, clientName, location, startTime, isVip } = data
 
     if (!personnelIds || personnelIds.length === 0) {

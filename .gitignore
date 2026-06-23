@@ -48,3 +48,5 @@ check-*.js
 verify-*.js
 *.png
 *.log
+
+.vercel
