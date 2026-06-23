@@ -3,6 +3,7 @@ import { supabaseAdmin } from "@/lib/supabase/admin"
 import { revalidatePath } from "next/cache"
 import { createClient } from '@/lib/supabase/server'
 import { logActivity } from "./activity"
+import { getBranchFilter } from "@/lib/branch-filter"
 
 export interface LeaveRequest {
   id: string
@@ -24,16 +25,33 @@ export interface LeaveRequest {
 // 1. Fetch all leaves requests
 export async function getLeaves(statusFilter?: string): Promise<LeaveRequest[]> {
   try {
+    const filterBranchId = await getBranchFilter()
+
     let query = supabaseAdmin
       .from('leaves')
       .select(`
         *,
-        technician:profiles!technician_id(full_name)
+        technician:profiles!technician_id(full_name, branch_id)
       `)
       .order('created_at', { ascending: false })
 
     if (statusFilter && statusFilter !== 'all') {
       query = query.eq('status', statusFilter)
+    }
+
+    if (filterBranchId) {
+      // Fetch technician profiles in this branch
+      const { data: branchStaff } = await supabaseAdmin
+        .from('profiles')
+        .select('id')
+        .eq('branch_id', filterBranchId)
+      
+      const staffIds = (branchStaff || []).map(s => s.id)
+      if (staffIds.length > 0) {
+        query = query.in('technician_id', staffIds)
+      } else {
+        query = query.eq('technician_id', '00000000-0000-0000-0000-000000000000')
+      }
     }
 
     const { data, error } = await query

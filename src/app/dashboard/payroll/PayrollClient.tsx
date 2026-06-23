@@ -6,19 +6,22 @@ import { publishPayslip } from "@/app/actions/payroll"
 export default function PayrollClient({ 
   technicians, 
   publishedPayslips,
-  payrolls 
+  payrolls,
+  isWriteAllowed = false
 }: { 
   technicians: any[], 
   publishedPayslips: any[],
-  payrolls: any[]
+  payrolls: any[],
+  isWriteAllowed?: boolean
 }) {
   const [isPending, startTransition] = useTransition()
+  const [allowanceOverrides, setAllowanceOverrides] = useState<Record<string, string>>({})
 
   const formatPhp = (amount: number) => {
     return new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(amount || 0);
   }
 
-  const handlePublish = (emp: any, payroll: any) => {
+  const handlePublish = (emp: any, payroll: any, allowances: number, netPay: number) => {
     startTransition(async () => {
       await publishPayslip({
         technician_id: emp.id,
@@ -26,7 +29,8 @@ export default function PayrollClient({
         sss_deduction: payroll.sssDeduction,
         philhealth_deduction: payroll.philhealthDeduction,
         pagibig_deduction: payroll.pagibigDeduction,
-        net_pay: payroll.netPay
+        allowances: allowances,
+        net_pay: netPay
       })
     })
   }
@@ -51,6 +55,7 @@ export default function PayrollClient({
                 <th className="px-6 py-4 text-rose-500">SSS</th>
                 <th className="px-6 py-4 text-rose-500">PhilHealth</th>
                 <th className="px-6 py-4 text-rose-500">Pag-IBIG</th>
+                <th className="px-6 py-4 text-amber-600">Allowances</th>
                 <th className="px-6 py-4 text-emerald-600">Net Pay</th>
                 <th className="px-6 py-4">Status / Action</th>
               </tr>
@@ -58,20 +63,31 @@ export default function PayrollClient({
             <tbody className="divide-y divide-zinc-100">
               {technicians.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="px-6 py-8 text-center text-zinc-500">No technicians found.</td>
+                  <td colSpan={9} className="px-6 py-8 text-center text-zinc-500">No technicians found.</td>
                 </tr>
               ) : technicians.map(emp => {
                 const payrollRecord = payrolls.find(p => p.technician_id === emp.id)
                 const payroll = payrollRecord ? payrollRecord.calculation : {
                   grossPay: 0, sssDeduction: 0, philhealthDeduction: 0, pagibigDeduction: 0, netPay: 0
                 }
+                const defaultAllowance = payrollRecord ? payrollRecord.defaultAllowances : 0
+                const allowanceStr = allowanceOverrides[emp.id] !== undefined ? allowanceOverrides[emp.id] : String(defaultAllowance)
+                const allowances = parseFloat(allowanceStr || "0")
+                const netPay = Math.max(0, payroll.grossPay - payroll.sssDeduction - payroll.philhealthDeduction - payroll.pagibigDeduction + allowances)
                 const totalHours = payrollRecord ? payrollRecord.totalHours : 0
                 const isPublished = publishedPayslips.some(p => p.technician_id === emp.id)
                 
                 return (
                   <tr key={emp.id} className="hover:bg-zinc-50/50 transition-colors">
                     <td className="px-6 py-4">
-                      <p className="font-bold text-zinc-900">{emp.full_name}</p>
+                      <div className="flex items-center gap-2">
+                        <p className="font-bold text-zinc-900">{emp.full_name}</p>
+                        {payrollRecord?.hasOpenLogs && (
+                          <span className="inline-flex items-center gap-0.5 text-[9px] font-extrabold text-amber-700 bg-amber-50 border border-amber-200 px-1 py-0.5 rounded-md uppercase tracking-wider animate-pulse">
+                            ⚠️ Open Log
+                          </span>
+                        )}
+                      </div>
                       <p className="text-xs text-zinc-500 font-medium">{emp.role}</p>
                       {payrollRecord && (payrollRecord.paidLeaveDays > 0 || payrollRecord.unpaidLeaveDays > 0) && (
                         <div className="mt-1">
@@ -91,26 +107,44 @@ export default function PayrollClient({
                           {payrollRecord.paidLeaveDays > 0 ? ` + ${payrollRecord.paidLeaveHours}h paid` : ''})
                         </p>
                       )}
+                      {payrollRecord?.hasOpenLogs && (
+                        <p className="text-[10px] text-amber-600 font-medium mt-0.5">
+                          Excludes active open shift
+                        </p>
+                      )}
                     </td>
                     <td className="px-6 py-4 font-bold text-zinc-700 font-tabular">{formatPhp(payroll.grossPay)}</td>
                     <td className="px-6 py-4 text-rose-500 font-medium font-tabular">-{formatPhp(payroll.sssDeduction)}</td>
                     <td className="px-6 py-4 text-rose-500 font-medium font-tabular">-{formatPhp(payroll.philhealthDeduction)}</td>
                     <td className="px-6 py-4 text-rose-500 font-medium font-tabular">-{formatPhp(payroll.pagibigDeduction)}</td>
-                    <td className="px-6 py-4 font-extrabold text-emerald-600 text-base font-tabular">{formatPhp(payroll.netPay)}</td>
+                    <td className="px-6 py-4">
+                      <input 
+                        type="number" 
+                        disabled={!isWriteAllowed}
+                        value={allowanceStr} 
+                        onChange={(e) => setAllowanceOverrides(prev => ({ ...prev, [emp.id]: e.target.value }))}
+                        className="w-24 px-2.5 py-1 text-xs border border-zinc-200 rounded focus:outline-none focus:ring-1 focus:ring-zinc-950 font-tabular font-semibold text-amber-700 bg-amber-50/30 disabled:opacity-75 disabled:cursor-not-allowed"
+                      />
+                    </td>
+                    <td className="px-6 py-4 font-extrabold text-emerald-600 text-base font-tabular">{formatPhp(netPay)}</td>
                     <td className="px-6 py-4">
                       {isPublished ? (
                         <span className="flex items-center gap-1.5 text-xs font-bold text-emerald-600 bg-emerald-50 px-3 py-1.5 rounded-full w-max border border-emerald-200 shadow-sm">
                           <CheckCircle2 className="w-3.5 h-3.5" /> Published
                         </span>
-                      ) : (
+                      ) : isWriteAllowed ? (
                         <button 
-                          onClick={() => handlePublish(emp, payroll)}
+                          onClick={() => handlePublish(emp, payroll, allowances, netPay)}
                           disabled={isPending}
-                          className="flex items-center gap-1.5 text-xs font-bold text-white bg-zinc-900 hover:bg-zinc-800 px-3 py-1.5 rounded-full transition-colors disabled:opacity-50"
+                          className="flex items-center gap-1.5 text-xs font-bold text-white bg-zinc-900 hover:bg-zinc-800 px-3 py-1.5 rounded-full transition-colors disabled:opacity-50 cursor-pointer"
                         >
                           {isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <DollarSign className="w-3.5 h-3.5" />}
                           Publish Payslip
                         </button>
+                      ) : (
+                        <span className="flex items-center gap-1.5 text-xs font-semibold text-zinc-500 bg-zinc-50 px-3 py-1.5 rounded-full w-max border border-zinc-200">
+                          <AlertCircle className="w-3.5 h-3.5 text-zinc-400" /> Ready (Draft)
+                        </span>
                       )}
                     </td>
                   </tr>

@@ -3,8 +3,10 @@ import { supabaseAdmin } from "@/lib/supabase/admin"
 import { revalidatePath } from "next/cache"
 import { createClient } from "@/lib/supabase/server"
 import { z } from "zod"
+import { verifyRoleAccess } from "@/lib/permissions"
 import { logActivity } from "./activity"
 import { sendPushNotification } from "@/lib/push"
+import { getBranchFilter } from "@/lib/branch-filter"
 
 export interface TechnicianInfo {
   id: string
@@ -29,33 +31,15 @@ export interface TechnicianInfo {
 // 1. Fetch all technicians (combining Auth and Profile tables)
 export async function getTechnicians(): Promise<TechnicianInfo[]> {
   try {
-    // Determine the logged-in user's role and branch
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    
-    let userBranchId: string | null = null
-    let isSupervisor = false
-
-    if (user) {
-      const { data: logProfile } = await supabaseAdmin
-        .from('profiles')
-        .select('role, branch_id')
-        .eq('id', user.id)
-        .single()
-      
-      if (logProfile) {
-        isSupervisor = ['supervisor', 'branch_manager'].includes(logProfile.role)
-        userBranchId = logProfile.branch_id
-      }
-    }
+    const filterBranchId = await getBranchFilter()
 
     // Fetch profiles - technicians and helpers
     let query = supabaseAdmin
       .from('profiles')
       .select('*')
       
-    if (isSupervisor && userBranchId) {
-      query = query.eq('branch_id', userBranchId)
+    if (filterBranchId) {
+      query = query.eq('branch_id', filterBranchId)
     }
 
     const { data: profiles, error: profileError } = await query.order('created_at', { ascending: false })
@@ -134,6 +118,11 @@ export async function getTechnicians(): Promise<TechnicianInfo[]> {
 // 2. Delete a technician
 export async function deleteTechnician(id: string) {
   try {
+    const { authorized } = await verifyRoleAccess('employees', true)
+    if (!authorized) {
+      return { error: "Unauthorized. Employee management write permissions required." }
+    }
+
     const { data: profile } = await supabaseAdmin.from('profiles').select('full_name').eq('id', id).single()
     const name = profile?.full_name || id
 
@@ -192,6 +181,11 @@ export async function getAdmins() {
 // 4. Create a new standard Admin account
 export async function createAdmin(formData: FormData) {
   try {
+    const { authorized } = await verifyRoleAccess('settings', true)
+    if (!authorized) {
+      return { error: "Unauthorized. System Settings permissions required to manage admins." }
+    }
+
     const email = formData.get("email") as string
     const password = formData.get("password") as string
     const fullName = formData.get("fullName") as string
@@ -268,6 +262,11 @@ export async function createAdmin(formData: FormData) {
 // 5. Delete an Admin account
 export async function deleteAdmin(id: string) {
   try {
+    const { authorized } = await verifyRoleAccess('settings', true)
+    if (!authorized) {
+      return { error: "Unauthorized. System Settings permissions required to manage admins." }
+    }
+
     const supabase = await createClient()
     const { data: { user: currentUser } } = await supabase.auth.getUser()
 

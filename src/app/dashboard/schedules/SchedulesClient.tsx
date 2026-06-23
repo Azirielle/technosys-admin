@@ -43,11 +43,13 @@ const months = [
 export default function SchedulesClient({ 
   initialStaff, 
   initialSchedules,
-  approvedLeaves
+  approvedLeaves,
+  isWriteAllowed = false
 }: { 
   initialStaff: any[], 
   initialSchedules: any[],
-  approvedLeaves: any[]
+  approvedLeaves: any[],
+  isWriteAllowed?: boolean
 }) {
   const router = useRouter()
   const [showModal, setShowModal] = useState(false)
@@ -61,6 +63,7 @@ export default function SchedulesClient({
   const [clientName, setClientName] = useState("")
   const [location, setLocation] = useState("")
   const [attendanceMode, setAttendanceMode] = useState("hq")
+  const [allowanceRate, setAllowanceRate] = useState<number>(0)
   const [isVip, setIsVip] = useState(false)
   
   const [selectedStaffIds, setSelectedStaffIds] = useState<string[]>([])
@@ -193,6 +196,7 @@ export default function SchedulesClient({
     setClientName("")
     setLocation("")
     setAttendanceMode("hq")
+    setAllowanceRate(0)
     setIsVip(false)
     setSelectedStaffIds([])
     setBulkSeniorPartnerMap({})
@@ -213,6 +217,7 @@ export default function SchedulesClient({
     setClientName("")
     setLocation("")
     setAttendanceMode("hq")
+    setAllowanceRate(0)
     setIsVip(false)
     setSelectedStaffIds([])
     setBulkSeniorPartnerMap({})
@@ -235,6 +240,7 @@ export default function SchedulesClient({
     formData.append("location", location)
     formData.append("startTime", startTime)
     formData.append("attendanceMode", attendanceMode)
+    formData.append("allowanceRate", allowanceRate.toString())
     if (isHelper && seniorPartnerId) {
       formData.append("seniorPartnerId", seniorPartnerId)
     }
@@ -274,7 +280,8 @@ export default function SchedulesClient({
         startTime,
         attendanceMode,
         seniorPartnerMap: bulkSeniorPartnerMap,
-        isVip
+        isVip,
+        allowanceRate
       })
 
       if (res.error) {
@@ -340,12 +347,14 @@ export default function SchedulesClient({
           <h1 className="text-3xl font-bold tracking-tight text-zinc-900">Schedules & Dispatch</h1>
           <p className="text-zinc-500 mt-1">Manage technician itineraries, pair helper-tech teams, and set custom DTR modes.</p>
         </div>
-        <button 
-          onClick={handleOpenModal}
-          className="bg-zinc-950 hover:bg-zinc-800 text-white px-5 py-2.5 rounded-xl font-bold shadow-md transition-all flex items-center gap-2 cursor-pointer active:scale-98"
-        >
-          <UserPlus className="w-4 h-4" /> Dispatch Assignment
-        </button>
+        {isWriteAllowed && (
+          <button 
+            onClick={handleOpenModal}
+            className="bg-zinc-950 hover:bg-zinc-800 text-white px-5 py-2.5 rounded-xl font-bold shadow-md transition-all flex items-center gap-2 cursor-pointer active:scale-98"
+          >
+            <UserPlus className="w-4 h-4" /> Dispatch Assignment
+          </button>
+        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -419,12 +428,14 @@ export default function SchedulesClient({
                   </button>
                 </div>
 
-                <button
-                  onClick={handleOpenModal}
-                  className="p-1.5 bg-emerald-500 hover:bg-emerald-600 active:scale-95 text-white rounded-lg transition-all shadow-2xs cursor-pointer flex items-center justify-center"
-                >
-                  <Plus className="w-4 h-4 stroke-[3]" />
-                </button>
+                {isWriteAllowed && (
+                  <button
+                    onClick={handleOpenModal}
+                    className="p-1.5 bg-emerald-500 hover:bg-emerald-600 active:scale-95 text-white rounded-lg transition-all shadow-2xs cursor-pointer flex items-center justify-center"
+                  >
+                    <Plus className="w-4 h-4 stroke-[3]" />
+                  </button>
+                )}
               </div>
             </div>
 
@@ -456,12 +467,14 @@ export default function SchedulesClient({
                           }`}>
                             {dayDate.getDate()}
                           </span>
-                          <button
-                            onClick={() => handleOpenModalWithDate(dayDate)}
-                            className="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 hover:bg-zinc-100 text-zinc-400 hover:text-zinc-800 rounded-md cursor-pointer"
-                          >
-                            <Plus className="w-3.5 h-3.5" />
-                          </button>
+                          {isWriteAllowed && (
+                            <button
+                              onClick={() => handleOpenModalWithDate(dayDate)}
+                              className="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 hover:bg-zinc-100 text-zinc-400 hover:text-zinc-800 rounded-md cursor-pointer"
+                            >
+                              <Plus className="w-3.5 h-3.5" />
+                            </button>
+                          )}
                         </div>
 
                         <div className="flex-1 space-y-1 overflow-y-auto max-h-[70px] pr-0.5 custom-scrollbar">
@@ -527,14 +540,16 @@ export default function SchedulesClient({
                           </span>
                         </div>
 
-                        <div className="p-2 border-b border-dashed border-zinc-200 flex justify-center">
-                          <button
-                            onClick={() => handleOpenModalWithDate(dayDate)}
-                            className="text-[10px] font-bold text-zinc-500 hover:text-zinc-900 bg-white hover:bg-zinc-100 px-2 py-1 rounded border border-zinc-200 shadow-2xs flex items-center gap-1 transition-all cursor-pointer"
-                          >
-                            <Plus className="w-3 h-3" /> Add Dispatch
-                          </button>
-                        </div>
+                        {isWriteAllowed && (
+                          <div className="p-2 border-b border-dashed border-zinc-200 flex justify-center">
+                            <button
+                              onClick={() => handleOpenModalWithDate(dayDate)}
+                              className="text-[10px] font-bold text-zinc-500 hover:text-zinc-900 bg-white hover:bg-zinc-100 px-2 py-1 rounded border border-zinc-200 shadow-2xs flex items-center gap-1 transition-all cursor-pointer"
+                            >
+                              <Plus className="w-3 h-3" /> Add Dispatch
+                            </button>
+                          </div>
+                        )}
 
                         <div className="p-2 flex-1 space-y-2 overflow-y-auto max-h-[350px] custom-scrollbar">
                           {dayScheds.length === 0 ? (
@@ -821,6 +836,13 @@ export default function SchedulesClient({
                     {selectedSchedule.attendance_mode === 'hq' ? 'Pacita HQ standard' : selectedSchedule.attendance_mode === 'direct_dispatch' ? 'Direct Dispatch' : 'Out of Town'}
                   </span>
                 </div>
+                
+                <div>
+                  <span className="text-[10px] uppercase font-bold text-zinc-400 block mb-1">Allowance Rate</span>
+                  <span className="font-semibold text-zinc-700">
+                    ₱{selectedSchedule.allowance_rate || 0} / day
+                  </span>
+                </div>
               </div>
 
               {!selectedSchedule.technician && (
@@ -836,22 +858,24 @@ export default function SchedulesClient({
               )}
             </div>
             
-            <div className="p-6 bg-zinc-50 border-t border-zinc-100 flex items-center justify-between gap-3">
-              <button 
-                onClick={() => {
-                  handleToggleVip(selectedSchedule.id, selectedSchedule.is_vip_hook)
-                  setSelectedSchedule(null)
-                }}
-                disabled={isPending}
-                className={`w-full py-2.5 rounded-xl font-bold text-xs shadow-2xs transition-all border cursor-pointer text-center ${
-                  selectedSchedule.is_vip_hook 
-                    ? 'bg-rose-50 hover:bg-rose-100 text-rose-700 border-rose-200' 
-                    : 'bg-cyan-50 hover:bg-cyan-100 text-cyan-800 border-cyan-200'
-                }`}
-              >
-                {isPending ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : selectedSchedule.is_vip_hook ? '❌ Remove VIP Status' : '⭐ Make VIP Schedule'}
-              </button>
-            </div>
+            {isWriteAllowed && (
+              <div className="p-6 bg-zinc-50 border-t border-zinc-100 flex items-center justify-between gap-3">
+                <button 
+                  onClick={() => {
+                    handleToggleVip(selectedSchedule.id, selectedSchedule.is_vip_hook)
+                    setSelectedSchedule(null)
+                  }}
+                  disabled={isPending}
+                  className={`w-full py-2.5 rounded-xl font-bold text-xs shadow-2xs transition-all border cursor-pointer text-center ${
+                    selectedSchedule.is_vip_hook 
+                      ? 'bg-rose-50 hover:bg-rose-100 text-rose-700 border-rose-200' 
+                      : 'bg-cyan-50 hover:bg-cyan-100 text-cyan-800 border-cyan-200'
+                  }`}
+                >
+                  {isPending ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : selectedSchedule.is_vip_hook ? '❌ Remove VIP Status' : '⭐ Make VIP Schedule'}
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -936,13 +960,36 @@ export default function SchedulesClient({
                   </div>
                   <div>
                     <label className="block text-2xs font-bold uppercase tracking-wider text-zinc-500 mb-1.5">Attendance Tracking Mode</label>
-                    <select value={attendanceMode} onChange={(e) => setAttendanceMode(e.target.value)} className="w-full px-3.5 py-2 border border-zinc-200 rounded-xl bg-white text-zinc-800 text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all">
+                    <select 
+                      value={attendanceMode} 
+                      onChange={(e) => {
+                        const val = e.target.value
+                        setAttendanceMode(val)
+                        if (val === 'hq') setAllowanceRate(0)
+                        else if (val === 'direct_dispatch') setAllowanceRate(200)
+                        else if (val === 'out_of_town') setAllowanceRate(500)
+                      }} 
+                      className="w-full px-3.5 py-2 border border-zinc-200 rounded-xl bg-white text-zinc-800 text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+                    >
                       <option value="hq">HQ Biometric Standard (Pacita)</option>
                       <option value="direct_dispatch">On-Site Direct Dispatch (No Bio)</option>
                       <option value="out_of_town">Out-of-Town Mode (Continuous)</option>
                     </select>
                   </div>
                 </div>
+                {attendanceMode !== 'hq' && (
+                  <div className="animate-in fade-in slide-in-from-top duration-200">
+                    <label className="block text-2xs font-bold uppercase tracking-wider text-zinc-500 mb-1.5">Allowance Rate (₱ / day)</label>
+                    <input 
+                      type="number" 
+                      min="0" 
+                      value={allowanceRate} 
+                      onChange={(e) => setAllowanceRate(parseFloat(e.target.value) || 0)} 
+                      className="w-full px-3.5 py-2 border border-zinc-200 rounded-xl bg-white text-zinc-800 text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all" 
+                      placeholder="e.g. 200"
+                    />
+                  </div>
+                )}
                 <div className="flex items-center gap-3 p-3.5 bg-cyan-50/40 border border-cyan-150 rounded-xl">
                   <input type="checkbox" id="isVip" checked={isVip} onChange={(e) => setIsVip(e.target.checked)} className="w-5 h-5 rounded border-cyan-300 text-cyan-600 focus:ring-cyan-500 cursor-pointer" />
                   <label htmlFor="isVip" className="text-xs font-bold text-cyan-900 cursor-pointer select-none">Flag as VIP Hook (High Priority Dispatch)</label>

@@ -42,13 +42,15 @@ interface EmployeesClientProps {
   officeLocations: any[]
   activeTechnicianIds?: string[]
   activeLeaveTechnicianIds?: string[]
+  isWriteAllowed?: boolean
 }
 
 export default function EmployeesClient({ 
   initialTechnicians, 
   officeLocations, 
   activeTechnicianIds = [],
-  activeLeaveTechnicianIds = []
+  activeLeaveTechnicianIds = [],
+  isWriteAllowed = false
 }: EmployeesClientProps) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
@@ -443,7 +445,7 @@ export default function EmployeesClient({
   }
 
   // 201 Checklist editing permission
-  const canEdit201 = ['super_admin', 'admin', 'ceo', 'coo', 'hr'].includes(currentUserRole)
+  const canEdit201 = isWriteAllowed
   // DTR manual overriding permission
   const canOverrideDtr = ['super_admin', 'admin', 'ceo', 'coo', 'svp', 'branch_manager', 'supervisor', 'coordinator'].includes(currentUserRole)
 
@@ -729,127 +731,129 @@ export default function EmployeesClient({
         </div>
 
         {/* Right: Registration Panel */}
-        <div className="bg-white rounded-2xl border border-zinc-200 p-6 shadow-sm">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-lg font-bold text-zinc-900 flex items-center gap-2">
-              <UserPlus className="w-5 h-5 text-emerald-500" /> Register Employee
-            </h2>
-            <button
-              onClick={() => {
-                setIsBulkDrawerOpen(true)
-                setBulkResults(null)
-              }}
-              className="text-xs px-3 py-1.5 bg-zinc-150 hover:bg-zinc-200 border border-zinc-250 text-zinc-700 font-bold rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer"
-            >
-              <FileText className="w-3.5 h-3.5" /> Bulk Import
-            </button>
+        {canEdit201 && (
+          <div className="bg-white rounded-2xl border border-zinc-200 p-6 shadow-sm">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-lg font-bold text-zinc-900 flex items-center gap-2">
+                <UserPlus className="w-5 h-5 text-emerald-500" /> Register Employee
+              </h2>
+              <button
+                onClick={() => {
+                  setIsBulkDrawerOpen(true)
+                  setBulkResults(null)
+                }}
+                className="text-xs px-3 py-1.5 bg-zinc-150 hover:bg-zinc-200 border border-zinc-250 text-zinc-700 font-bold rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer"
+              >
+                <FileText className="w-3.5 h-3.5" /> Bulk Import
+              </button>
+            </div>
+
+            {success && (
+              <div className="mb-6 p-4 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-xl flex items-start gap-3 transition-all duration-300 animate-in fade-in">
+                <CheckCircle2 className="w-5 h-5 shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-bold">Account registered successfully!</p>
+                  <p className="text-sm mt-1">Their profile has been configured, and they can sign in to the mobile application immediately.</p>
+                </div>
+              </div>
+            )}
+
+            {error && (
+              <div className="mb-6 p-4 bg-rose-50 border border-rose-250 text-rose-700 rounded-xl text-sm flex items-start gap-2.5">
+                <ShieldAlert className="w-5 h-5 shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-bold">Registration Failed</p>
+                  <p className="text-xs mt-0.5 leading-relaxed">{error}</p>
+                </div>
+              </div>
+            )}
+
+            <form onSubmit={handleCreateTechnician} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-zinc-500 mb-1.5">Full Name</label>
+                <div className="relative">
+                  <UserPlus className="absolute left-3 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-zinc-400" />
+                  <input name="fullName" required type="text" className="w-full pl-10 pr-4 py-2.5 border border-zinc-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all text-zinc-800 text-sm" placeholder="Juan Dela Cruz" />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-zinc-500 mb-1.5">Email Address</label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-zinc-400" />
+                  <input name="email" required type="email" className="w-full pl-10 pr-4 py-2.5 border border-zinc-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all text-zinc-800 text-sm" placeholder="juan@gmail.com" />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-zinc-500 mb-1.5">Role Type</label>
+                <div className="relative">
+                  <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-zinc-400" />
+                  <select 
+                    name="role" 
+                    required 
+                    value={roleInput}
+                    onChange={(e) => {
+                      const val = e.target.value
+                      setRoleInput(val)
+                      if (val === "technician") setBaseSalaryInput("20000")
+                      else if (val === "helper") setBaseSalaryInput("15000")
+                    }}
+                    className="w-full pl-10 pr-4 py-2.5 border border-zinc-200 rounded-xl bg-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all text-zinc-800 text-sm"
+                  >
+                    <option value="technician">Technician</option>
+                    <option value="helper">Helper</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-zinc-500 mb-1.5">Branch Location</label>
+                <div className="relative">
+                  <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-zinc-400" />
+                  <select name="branchId" className="w-full pl-10 pr-4 py-2.5 border border-zinc-200 rounded-xl bg-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all text-zinc-800 text-sm">
+                    <option value="">No Branch / Global</option>
+                    {officeLocations.map((loc) => (
+                      <option key={loc.id} value={loc.id}>{loc.name}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-zinc-500 mb-1.5">Default Password</label>
+                <div className="relative">
+                  <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-zinc-400" />
+                  <input name="password" required type="text" className="w-full pl-10 pr-4 py-2.5 border border-zinc-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all text-zinc-800 text-sm" placeholder="123123123" />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-zinc-500 mb-1.5">Base Salary (₱)</label>
+                <div className="relative">
+                  <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm font-bold text-zinc-400">₱</span>
+                  <input 
+                    name="baseSalary" 
+                    required 
+                    type="number" 
+                    min="0" 
+                    value={baseSalaryInput}
+                    onChange={e => setBaseSalaryInput(e.target.value)}
+                    className="w-full pl-8 pr-4 py-2.5 border border-zinc-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all text-zinc-800 text-sm font-mono"
+                    placeholder="25000" 
+                  />
+                </div>
+              </div>
+
+              <button 
+                disabled={loading}
+                className="w-full mt-6 bg-zinc-950 hover:bg-zinc-800 disabled:opacity-50 text-white font-bold py-3 rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer shadow-sm active:scale-98"
+              >
+                {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Create Employee Account"}
+              </button>
+            </form>
           </div>
-
-          {success && (
-            <div className="mb-6 p-4 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-xl flex items-start gap-3 transition-all duration-300 animate-in fade-in">
-              <CheckCircle2 className="w-5 h-5 shrink-0 mt-0.5" />
-              <div>
-                <p className="font-bold">Account registered successfully!</p>
-                <p className="text-sm mt-1">Their profile has been configured, and they can sign in to the mobile application immediately.</p>
-              </div>
-            </div>
-          )}
-
-          {error && (
-            <div className="mb-6 p-4 bg-rose-50 border border-rose-250 text-rose-700 rounded-xl text-sm flex items-start gap-2.5">
-              <ShieldAlert className="w-5 h-5 shrink-0 mt-0.5" />
-              <div>
-                <p className="font-bold">Registration Failed</p>
-                <p className="text-xs mt-0.5 leading-relaxed">{error}</p>
-              </div>
-            </div>
-          )}
-
-          <form onSubmit={handleCreateTechnician} className="space-y-4">
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-zinc-500 mb-1.5">Full Name</label>
-              <div className="relative">
-                <UserPlus className="absolute left-3 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-zinc-400" />
-                <input name="fullName" required type="text" className="w-full pl-10 pr-4 py-2.5 border border-zinc-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all text-zinc-800 text-sm" placeholder="Juan Dela Cruz" />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-zinc-500 mb-1.5">Email Address</label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-zinc-400" />
-                <input name="email" required type="email" className="w-full pl-10 pr-4 py-2.5 border border-zinc-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all text-zinc-800 text-sm" placeholder="juan@gmail.com" />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-zinc-500 mb-1.5">Role Type</label>
-              <div className="relative">
-                <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-zinc-400" />
-                <select 
-                  name="role" 
-                  required 
-                  value={roleInput}
-                  onChange={(e) => {
-                    const val = e.target.value
-                    setRoleInput(val)
-                    if (val === "technician") setBaseSalaryInput("20000")
-                    else if (val === "helper") setBaseSalaryInput("15000")
-                  }}
-                  className="w-full pl-10 pr-4 py-2.5 border border-zinc-200 rounded-xl bg-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all text-zinc-800 text-sm"
-                >
-                  <option value="technician">Technician</option>
-                  <option value="helper">Helper</option>
-                </select>
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-zinc-500 mb-1.5">Branch Location</label>
-              <div className="relative">
-                <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-zinc-400" />
-                <select name="branchId" className="w-full pl-10 pr-4 py-2.5 border border-zinc-200 rounded-xl bg-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all text-zinc-800 text-sm">
-                  <option value="">No Branch / Global</option>
-                  {officeLocations.map((loc) => (
-                    <option key={loc.id} value={loc.id}>{loc.name}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-zinc-500 mb-1.5">Default Password</label>
-              <div className="relative">
-                <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-zinc-400" />
-                <input name="password" required type="text" className="w-full pl-10 pr-4 py-2.5 border border-zinc-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all text-zinc-800 text-sm" placeholder="123123123" />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-zinc-500 mb-1.5">Base Salary (₱)</label>
-              <div className="relative">
-                <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm font-bold text-zinc-400">₱</span>
-                <input 
-                  name="baseSalary" 
-                  required 
-                  type="number" 
-                  min="0" 
-                  value={baseSalaryInput}
-                  onChange={e => setBaseSalaryInput(e.target.value)}
-                  className="w-full pl-8 pr-4 py-2.5 border border-zinc-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all text-zinc-800 text-sm font-mono"
-                  placeholder="25000" 
-                />
-              </div>
-            </div>
-
-            <button 
-              disabled={loading}
-              className="w-full mt-6 bg-zinc-950 hover:bg-zinc-800 disabled:opacity-50 text-white font-bold py-3 rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer shadow-sm active:scale-98"
-            >
-              {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Create Employee Account"}
-            </button>
-          </form>
-        </div>
+        )}
       </div>
 
       {/* Slide-over Right Console Drawer */}
