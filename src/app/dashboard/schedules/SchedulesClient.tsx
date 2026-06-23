@@ -229,6 +229,18 @@ export default function SchedulesClient({
     })
   }
 
+  const getConflictingLeave = (technicianId: string) => {
+    if (!startTime || !technicianId) return null
+    const schedMs = new Date(startTime).getTime()
+    return approvedLeaves.find(leave => {
+      if (leave.technician_id !== technicianId) return false
+      const { start: leaveStartMs, end: leaveEndMs } = getLeaveRangeMs(leave.start_date, leave.end_date)
+      return schedMs >= leaveStartMs && schedMs <= leaveEndMs
+    })
+  }
+
+  const currentConflict = scheduleType === 'single' ? getConflictingLeave(techId) : null
+
   const getTechStatusToday = (techId: string) => {
     const todayStr = getLocalDateString(new Date())
     
@@ -1101,7 +1113,19 @@ export default function SchedulesClient({
                   <div>
                     <label className="block text-2xs font-bold uppercase tracking-wider text-zinc-500 mb-1.5">Deploy Employee</label>
                     <select required value={techId} onChange={(e) => { setTechId(e.target.value); setSeniorPartnerId("") }} className="w-full px-3.5 py-2 border border-zinc-200 rounded-xl bg-white text-zinc-800 text-sm focus:ring-2 focus:ring-emerald-500 outline-none">
-                      {initialStaff.map(t => <option key={t.id} value={t.id}>{t.full_name} ({t.role})</option>)}
+                      {initialStaff.map(t => {
+                        const hasConflict = approvedLeaves.some(leave => {
+                          if (leave.technician_id !== t.id) return false
+                          const { start, end } = getLeaveRangeMs(leave.start_date, leave.end_date)
+                          const schedMs = new Date(startTime).getTime()
+                          return schedMs >= start && schedMs <= end
+                        })
+                        return (
+                          <option key={t.id} value={t.id}>
+                            {t.full_name} ({t.role}){hasConflict ? " ⚠️ (On Leave)" : ""}
+                          </option>
+                        )
+                      })}
                     </select>
                   </div>
                   {selectedStaffHasHelper && (
@@ -1113,7 +1137,15 @@ export default function SchedulesClient({
                       </select>
                     </div>
                   )}
-                  <button type="submit" disabled={isPending || !clientName.trim() || !location.trim() || !startTime} className="w-full bg-zinc-950 hover:bg-zinc-800 disabled:opacity-50 text-white py-3 rounded-xl font-bold transition-all shadow-sm flex items-center justify-center gap-2 cursor-pointer active:scale-98">
+
+                  {currentConflict && (
+                    <div className="p-3 bg-amber-50 border border-amber-200 text-amber-800 rounded-xl text-2xs font-semibold leading-normal flex items-start gap-2">
+                      <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                      <span>The selected worker is on approved leave during this time. Please adjust schedule or change worker.</span>
+                    </div>
+                  )}
+
+                  <button type="submit" disabled={isPending || !!currentConflict || !clientName.trim() || !location.trim() || !startTime} className="w-full bg-zinc-950 hover:bg-zinc-800 disabled:opacity-50 text-white py-3 rounded-xl font-bold transition-all shadow-sm flex items-center justify-center gap-2 cursor-pointer active:scale-98">
                     {isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : "Save Dispatch Schedule"}
                   </button>
                 </form>
@@ -1122,14 +1154,37 @@ export default function SchedulesClient({
               {scheduleType === 'bulk' && (
                 <form onSubmit={handleCreateBulk} className="space-y-4 bg-white p-5 rounded-2xl border border-zinc-200 shadow-2xs">
                   <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-400 mb-2">Team Selection & Individual Pairings</h3>
+                  
+                  {!startTime && (
+                    <div className="flex items-center gap-2 rounded-xl border border-blue-100 bg-blue-50/60 p-3 text-xs text-blue-700 mb-2">
+                      <AlertCircle className="h-4 w-4 shrink-0 text-blue-500" />
+                      <span>Select a <strong>Start Date &amp; Time</strong> above to see staff leave availability before selecting team members.</span>
+                    </div>
+                  )}
+
                   <div className="space-y-2 max-h-52 overflow-y-auto border border-zinc-200 rounded-xl p-3 bg-zinc-50/30 pr-1">
                     {initialStaff.map((t) => {
                       const isChecked = selectedStaffIds.includes(t.id)
+                      const hasConflict = approvedLeaves.some(leave => {
+                        if (leave.technician_id !== t.id) return false
+                        const { start, end } = getLeaveRangeMs(leave.start_date, leave.end_date)
+                        const schedMs = new Date(startTime).getTime()
+                        return schedMs >= start && schedMs <= end
+                      })
+
                       return (
                         <div key={t.id} className="space-y-2 border-b border-zinc-150 pb-2 last:border-0 last:pb-0">
-                          <label className="flex items-center gap-3 p-2 rounded-lg cursor-pointer hover:bg-zinc-50">
-                            <input type="checkbox" checked={isChecked} onChange={() => toggleStaffSelection(t.id)} className="w-4.5 h-4.5 rounded text-emerald-600 border-zinc-300 focus:ring-emerald-500 cursor-pointer" />
-                            <span className="text-xs font-semibold text-zinc-700">{t.full_name} ({t.role})</span>
+                          <label className={`flex items-center gap-3 p-2 rounded-lg transition-colors select-none ${
+                            !startTime ? 'opacity-40 cursor-not-allowed' : hasConflict ? 'opacity-60 bg-amber-50/20 cursor-not-allowed' : 'hover:bg-zinc-50 cursor-pointer'
+                          }`}>
+                            <input 
+                              type="checkbox" 
+                              checked={isChecked} 
+                              disabled={!startTime || hasConflict}
+                              onChange={() => toggleStaffSelection(t.id)} 
+                              className="w-4.5 h-4.5 rounded text-emerald-600 border-zinc-300 focus:ring-emerald-500 cursor-pointer" 
+                            />
+                            <span className="text-xs font-semibold text-zinc-700">{t.full_name} ({t.role}) {hasConflict ? "⚠️ (On Leave)" : ""}</span>
                           </label>
                           {isChecked && t.role === 'helper' && (
                             <div className="ml-7">
