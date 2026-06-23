@@ -118,6 +118,7 @@ export default function EmployeesClient({
     setOverrideLogsPage(1)
   }, [selectedEmployee?.id, activeTab])
 
+
   const totalTimeLogs = timeLogs.length
   const totalTimeLogsPages = Math.ceil(totalTimeLogs / logsPerPage)
   const paginatedTimeLogs = timeLogs.slice(
@@ -134,6 +135,30 @@ export default function EmployeesClient({
 
   // Bulk Import States
   const [isBulkDrawerOpen, setIsBulkDrawerOpen] = useState(false)
+
+  // Listen for Escape key to close modals
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setSelectedEmployee(null)
+        setIsBulkDrawerOpen(false)
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [])
+
+  // Lock body scroll when a modal is open
+  useEffect(() => {
+    if (selectedEmployee || isBulkDrawerOpen) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = ''
+    }
+    return () => {
+      document.body.style.overflow = ''
+    }
+  }, [selectedEmployee, isBulkDrawerOpen])
   const [bulkRows, setBulkRows] = useState<Array<{
     fullName: string
     email: string
@@ -835,9 +860,14 @@ export default function EmployeesClient({
 
       {/* Slide-over Right Console Drawer */}
       {selectedEmployee && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-50 transition-opacity flex justify-end">
-          {/* Drawer Panel */}
-          <div className="w-full max-w-xl bg-white h-full shadow-2xl flex flex-col animate-in slide-in-from-right duration-300">
+        <div 
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setSelectedEmployee(null)
+          }}
+          className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-50 transition-opacity flex items-center justify-center p-4 sm:p-6 animate-smooth-fade"
+        >
+          {/* Modal Panel */}
+          <div className="w-full max-w-4xl bg-white max-h-[90vh] shadow-2xl flex flex-col rounded-2xl overflow-hidden animate-smooth-pop">
             
             {/* Header */}
             <div className="p-6 border-b border-zinc-150 flex items-center justify-between">
@@ -1328,8 +1358,13 @@ export default function EmployeesClient({
 
       {/* Slide-over Bulk Import Drawer */}
       {isBulkDrawerOpen && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-50 transition-opacity flex justify-end">
-          <div className="w-full max-w-xl bg-white h-full shadow-2xl flex flex-col animate-in slide-in-from-right duration-300">
+        <div 
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setIsBulkDrawerOpen(false)
+          }}
+          className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-50 transition-opacity flex items-center justify-center p-4 sm:p-6 animate-smooth-fade"
+        >
+          <div className="w-full max-w-2xl bg-white max-h-[90vh] shadow-2xl flex flex-col rounded-2xl overflow-hidden animate-smooth-pop">
             {/* Header */}
             <div className="p-6 border-b border-zinc-150 flex items-center justify-between">
               <div>

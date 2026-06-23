@@ -118,6 +118,7 @@ export default function InventoryWorkspace({
     setAuditsPage(1)
   }, [activeTab])
 
+
   const totalLedgerItems = ledger.length
   const totalLedgerPages = Math.ceil(totalLedgerItems / ledgerPerPage)
   const paginatedLedger = ledger.slice(
@@ -144,6 +145,29 @@ export default function InventoryWorkspace({
   const [isAdjustmentOpen, setIsAdjustmentOpen] = useState(false)
   const [isPoOpen, setIsPoOpen] = useState(false)
   const [isBulkDrawerOpen, setIsBulkDrawerOpen] = useState(false)
+
+  // Listen for Escape key to close bulk import inventory modal
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setIsBulkDrawerOpen(false)
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [])
+
+  // Lock body scroll when bulk import modal is open
+  useEffect(() => {
+    if (isBulkDrawerOpen) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = ''
+    }
+    return () => {
+      document.body.style.overflow = ''
+    }
+  }, [isBulkDrawerOpen])
   
   // Register/Edit item states
   const [name, setName] = useState("")
@@ -1360,8 +1384,13 @@ export default function InventoryWorkspace({
 
       {/* Slide-over Bulk Import Drawer */}
       {isBulkDrawerOpen && (
-        <div className="fixed inset-0 bg-zinc-950/60 z-50 transition-opacity flex justify-end animate-smooth-fade">
-          <div className="w-full max-w-xl bg-white h-full shadow-2xl flex flex-col animate-smooth-slide-in">
+        <div 
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setIsBulkDrawerOpen(false)
+          }}
+          className="fixed inset-0 bg-zinc-950/60 z-50 transition-opacity flex items-center justify-center p-4 sm:p-6 animate-smooth-fade"
+        >
+          <div className="w-full max-w-2xl bg-white max-h-[90vh] shadow-2xl flex flex-col rounded-2xl overflow-hidden animate-smooth-pop">
             {/* Header */}
             <div className="p-6 border-b border-zinc-150 flex items-center justify-between">
               <div>

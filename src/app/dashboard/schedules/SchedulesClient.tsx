@@ -1,5 +1,5 @@
 "use client"
-import { useState, useTransition } from "react"
+import { useState, useTransition, useEffect } from "react"
 import { 
   Calendar as CalendarIcon, 
   Clock, 
@@ -85,6 +85,29 @@ export default function SchedulesClient({
   const schedulesPerPage = 10
   const [staffPage, setStaffPage] = useState(1)
   const staffPerPage = 5
+
+  // Listen for Escape key to close dispatch modal
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setShowModal(false)
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [])
+
+  // Lock body scroll when dispatch modal is open
+  useEffect(() => {
+    if (showModal) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = ''
+    }
+    return () => {
+      document.body.style.overflow = ''
+    }
+  }, [showModal])
 
   const handleDragStart = (e: React.DragEvent, id: string, name: string) => {
     e.dataTransfer.setData("application/json", JSON.stringify({ id, name }))
@@ -1045,8 +1068,13 @@ export default function SchedulesClient({
       )}
 
       {showModal && (
-        <div className="fixed inset-0 bg-slate-900/40 z-50 flex items-center justify-end backdrop-blur-xs">
-          <div className="bg-white h-full w-full max-w-xl shadow-2xl flex flex-col animate-in slide-in-from-right duration-300">
+        <div 
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setShowModal(false)
+          }}
+          className="fixed inset-0 bg-slate-900/40 z-50 flex items-center justify-center p-4 sm:p-6 backdrop-blur-xs animate-smooth-fade"
+        >
+          <div className="bg-white max-h-[90vh] w-full max-w-2xl shadow-2xl flex flex-col rounded-2xl overflow-hidden animate-smooth-pop">
             <div className="p-6 border-b border-zinc-150 flex items-center justify-between">
               <div>
                 <h2 className="text-xl font-bold text-zinc-950">Dispatch Assignment</h2>
