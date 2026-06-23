@@ -100,8 +100,7 @@ export async function createSchedule(formData: FormData) {
       start_time: new Date(startTime).toISOString(),
       end_time: endTime ? new Date(endTime).toISOString() : null,
       attendance_mode: attendanceMode,
-      is_vip_hook: isVip,
-      allowance_rate: allowanceRate
+      is_vip_hook: isVip
     }
 
     const { error } = await supabaseAdmin.from('schedules').insert(insertData)
@@ -206,8 +205,7 @@ export async function bulkCreateSchedules(data: {
           end_time: endTime ? new Date(endTime).toISOString() : null,
           attendance_mode: attendanceMode,
           senior_partner_id: seniorPartnerId,
-          is_vip_hook: isVip,
-          allowance_rate: allowanceRate
+          is_vip_hook: isVip
         })
 
         // Look up target profile and send push notification
