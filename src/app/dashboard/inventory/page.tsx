@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
-import { getInventoryItems, getInventoryTransactions, getInventoryAudits } from "@/app/actions/inventory"
+import { getInventoryItems, getInventoryLedger, getProcurementOrders, getInventoryAudits } from "@/app/actions/inventory"
 import InventoryWorkspace from "./InventoryWorkspace"
 
 export const revalidate = 0;
@@ -22,17 +22,19 @@ export default async function InventoryPage() {
     redirect('/login')
   }
 
-  // Fetch stock details, logs, and audits in parallel
-  const [items, transactions, audits] = await Promise.all([
+  // Fetch ledger summaries, POs, items, and audits in parallel
+  const [ledger, procurement, items, audits] = await Promise.all([
+    getInventoryLedger(),
+    getProcurementOrders(),
     getInventoryItems(),
-    getInventoryTransactions(),
     getInventoryAudits()
   ])
 
   return (
     <InventoryWorkspace 
-      initialItems={items as any} 
-      initialTransactions={transactions as any} 
+      initialLedger={ledger as any}
+      initialProcurement={procurement as any}
+      initialItems={items as any}
       initialAudits={audits as any}
       userId={user.id}
     />

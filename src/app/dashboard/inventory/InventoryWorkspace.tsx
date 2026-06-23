@@ -4,10 +4,49 @@ import { useState, useTransition } from "react"
 import { 
   Package, Plus, Settings, RefreshCw, AlertTriangle, ArrowUpRight, 
   ArrowDownLeft, History, FileText, ClipboardList, CheckCircle2, AlertCircle,
-  TrendingDown, Check, X, Clipboard, User, Upload, Image, FileSpreadsheet
+  TrendingDown, Check, X, Clipboard, User, Upload, Image, FileSpreadsheet,
+  Truck, ShoppingCart, Calendar
 } from "lucide-react"
-import { createOrUpdateInventoryItem, restockItem, createInventoryAudit, bulkRegisterInventory } from "@/app/actions/inventory"
+import { 
+  createOrUpdateInventoryItem, 
+  createInventoryAudit, 
+  bulkRegisterInventory,
+  createProcurementOrder,
+  deliverProcurementOrder,
+  logLedgerTransaction
+} from "@/app/actions/inventory"
 import { createClient } from "@/lib/supabase/client"
+
+interface LedgerSummary {
+  qty: number
+  date: string
+  balance: number
+}
+
+interface InventoryItemWithLedger {
+  id: string
+  name: string
+  sku: string
+  quantity: number
+  unit: string
+  low_stock_threshold: number
+  image_url?: string | null
+  created_at: string
+  last_in: LedgerSummary | null
+  last_out: LedgerSummary | null
+}
+
+interface ProcurementOrder {
+  id: string
+  item_id: string
+  po_number: string
+  po_date: string
+  qty: number
+  status: 'pending' | 'delivered'
+  delivered_date: string | null
+  created_at: string
+  item: { name: string; sku: string; unit: string } | null
+}
 
 interface InventoryItem {
   id: string
@@ -18,20 +57,6 @@ interface InventoryItem {
   low_stock_threshold: number
   image_url?: string | null
   created_at: string
-}
-
-interface StockTransaction {
-  id: string
-  item_id: string
-  ticket_id: string | null
-  technician_id: string | null
-  type: string // 'in' | 'out'
-  quantity: number
-  notes: string | null
-  created_at: string
-  item: { name: string; sku: string; unit: string } | null
-  technician: { full_name: string } | null
-  ticket: { title: string } | null
 }
 
 interface InventoryAuditItem {
@@ -54,28 +79,37 @@ interface InventoryAudit {
 }
 
 interface InventoryWorkspaceProps {
+  initialLedger: InventoryItemWithLedger[]
+  initialProcurement: ProcurementOrder[]
   initialItems: InventoryItem[]
-  initialTransactions: StockTransaction[]
   initialAudits: InventoryAudit[]
   userId: string
 }
 
 export default function InventoryWorkspace({ 
-  initialItems, 
-  initialTransactions,
+  initialLedger, 
+  initialProcurement,
+  initialItems,
   initialAudits,
   userId
 }: InventoryWorkspaceProps) {
-  const [activeTab, setActiveTab] = useState<"items" | "ledger" | "audits">("items")
+  const [activeTab, setActiveTab] = useState<"ledger" | "procurement" | "audits">("ledger")
+  const [ledger, setLedger] = useState<InventoryItemWithLedger[]>(initialLedger)
+  const [procurement, setProcurement] = useState<ProcurementOrder[]>(initialProcurement)
   const [items, setItems] = useState<InventoryItem[]>(initialItems)
-  const [transactions, setTransactions] = useState<StockTransaction[]>(initialTransactions)
   const [audits, setAudits] = useState<InventoryAudit[]>(initialAudits)
   
   const [isPending, startTransition] = useTransition()
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
   const [successMsg, setSuccessMsg] = useState<string | null>(null)
 
-  // New item form state
+  // Modals / forms state
+  const [isNewItemOpen, setIsNewItemOpen] = useState(false)
+  const [isAdjustmentOpen, setIsAdjustmentOpen] = useState(false)
+  const [isPoOpen, setIsPoOpen] = useState(false)
+  const [isBulkDrawerOpen, setIsBulkDrawerOpen] = useState(false)
+  
+  // Register/Edit item states
   const [name, setName] = useState("")
   const [sku, setSku] = useState("")
   const [qty, setQty] = useState("0")
@@ -84,11 +118,20 @@ export default function InventoryWorkspace({
   const [imageUrl, setImageUrl] = useState("")
   const [uploadingImage, setUploadingImage] = useState(false)
   const [editingItem, setEditingItem] = useState<InventoryItem | null>(null)
+  const [skuSuffix, setSkuSuffix] = useState("")
+  const [isSkuManuallyEdited, setIsSkuManuallyEdited] = useState(false)
 
-  // Quick restock modal/state
-  const [restockTarget, setRestockTarget] = useState<InventoryItem | null>(null)
-  const [restockQty, setRestockQty] = useState("")
-  const [restockNotes, setRestockNotes] = useState("")
+  // Adjustment form states
+  const [adjItemId, setAdjItemId] = useState("")
+  const [adjQty, setAdjQty] = useState("")
+  const [adjType, setAdjType] = useState<"in" | "out">("in")
+  const [adjNotes, setAdjNotes] = useState("")
+
+  // PO form states
+  const [poItemId, setPoItemId] = useState("")
+  const [poNumber, setPoNumber] = useState("")
+  const [poDate, setPoDate] = useState(new Date().toISOString().split('T')[0])
+  const [poQty, setPoQty] = useState("")
 
   // Stocktake Auditing states
   const [isAuditing, setIsAuditing] = useState(false)
@@ -96,8 +139,7 @@ export default function InventoryWorkspace({
   const [auditItemsState, setAuditItemsState] = useState<Array<{ itemId: string; name: string; sku: string; unit: string; systemQty: number; physicalQty: number }>>([])
   const [expandedAuditId, setExpandedAuditId] = useState<string | null>(null)
 
-  // Bulk Register drawer states
-  const [isBulkDrawerOpen, setIsBulkDrawerOpen] = useState(false)
+  // Bulk Register states
   const [bulkCsvData, setBulkCsvData] = useState("")
   const [bulkLoading, setBulkLoading] = useState(false)
   const [bulkResults, setBulkResults] = useState<{
@@ -105,6 +147,36 @@ export default function InventoryWorkspace({
     failureCount: number
     results: any[]
   } | null>(null)
+
+  const generateRandomSkuSuffix = () => {
+    const part1 = Math.floor(100 + Math.random() * 900)
+    const part2 = Math.floor(100 + Math.random() * 900)
+    return `${part1}-${part2}`
+  }
+
+  const handleNameChange = (val: string) => {
+    setName(val)
+    if (!editingItem && !isSkuManuallyEdited) {
+      const cleanName = val.replace(/[^a-zA-Z0-9\s]/g, "").trim().toUpperCase();
+      const words = cleanName.split(/\s+/).filter(Boolean);
+      let prefix = "";
+      if (words.length >= 2) {
+        prefix = words.slice(0, 3).map(w => w[0]).join("");
+      } else if (words.length === 1) {
+        prefix = words[0].substring(0, 3);
+      }
+      if (!prefix) {
+        prefix = "SKU";
+      }
+      prefix = (prefix.padEnd(3, 'X')).substring(0, 3);
+      
+      const suffix = skuSuffix || generateRandomSkuSuffix();
+      if (!skuSuffix) {
+        setSkuSuffix(suffix);
+      }
+      setSku(`${prefix}-${suffix}`);
+    }
+  }
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -135,6 +207,108 @@ export default function InventoryWorkspace({
     } finally {
       setUploadingImage(false)
     }
+  }
+
+  const handleCreateOrUpdate = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    setErrorMsg(null)
+    setSuccessMsg(null)
+
+    const formData = new FormData(e.currentTarget)
+    if (editingItem) {
+      formData.append("id", editingItem.id)
+    }
+    formData.append("image_url", imageUrl)
+
+    startTransition(async () => {
+      const res = await createOrUpdateInventoryItem(formData)
+      if (res.error) {
+        setErrorMsg(res.error)
+      } else {
+        setSuccessMsg(editingItem ? "Inventory item updated successfully." : "New inventory item registered successfully.")
+        
+        // Reset form
+        setName("")
+        setSku("")
+        setQty("0")
+        setUnit("pcs")
+        setThreshold("5")
+        setImageUrl("")
+        setEditingItem(null)
+        setIsNewItemOpen(false)
+        
+        // Refresh page
+        window.location.reload()
+      }
+    })
+  }
+
+  const handleAdjustmentSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!adjItemId || !adjQty) return
+    setErrorMsg(null)
+    setSuccessMsg(null)
+
+    const quantityNum = Number(adjQty)
+    startTransition(async () => {
+      const res = await logLedgerTransaction(adjItemId, quantityNum, adjType, adjNotes)
+      if (res.error) {
+        setErrorMsg(res.error)
+      } else {
+        setSuccessMsg(`Logged ${adjType.toUpperCase()} adjustment of ${quantityNum} units successfully.`)
+        setAdjItemId("")
+        setAdjQty("")
+        setAdjNotes("")
+        setIsAdjustmentOpen(false)
+        
+        // Refresh page
+        window.location.reload()
+      }
+    })
+  }
+
+  const handlePoSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!poItemId || !poNumber || !poQty) return
+    setErrorMsg(null)
+    setSuccessMsg(null)
+
+    const formData = new FormData()
+    formData.append("item_id", poItemId)
+    formData.append("po_number", poNumber)
+    formData.append("po_date", poDate)
+    formData.append("qty", poQty)
+
+    startTransition(async () => {
+      const res = await createProcurementOrder(formData)
+      if (res.error) {
+        setErrorMsg(res.error)
+      } else {
+        setSuccessMsg(`Procurement Purchase Order PO# ${poNumber} created successfully.`)
+        setPoItemId("")
+        setPoNumber("")
+        setPoQty("")
+        setIsPoOpen(false)
+        
+        // Refresh page
+        window.location.reload()
+      }
+    })
+  }
+
+  const handleDeliverPo = async (poId: string) => {
+    setErrorMsg(null)
+    setSuccessMsg(null)
+
+    startTransition(async () => {
+      const res = await deliverProcurementOrder(poId)
+      if (res.error) {
+        setErrorMsg(res.error)
+      } else {
+        setSuccessMsg("Procurement order marked as DELIVERED. Inventory stock levels updated.")
+        window.location.reload()
+      }
+    })
   }
 
   const handleBulkImport = async (e: React.FormEvent) => {
@@ -174,7 +348,6 @@ export default function InventoryWorkspace({
           results: res.results || []
         })
         setBulkCsvData("")
-        // Give a short delay to see success results before reloading
         setTimeout(() => {
           window.location.reload()
         }, 1500)
@@ -186,70 +359,25 @@ export default function InventoryWorkspace({
     }
   }
 
-  const handleCreateOrUpdate = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    setErrorMsg(null)
-    setSuccessMsg(null)
-
-    const formData = new FormData(e.currentTarget)
-    if (editingItem) {
-      formData.append("id", editingItem.id)
-    }
-    formData.append("image_url", imageUrl)
-
-    startTransition(async () => {
-      const res = await createOrUpdateInventoryItem(formData)
-      if (res.error) {
-        setErrorMsg(res.error)
-      } else {
-        setSuccessMsg(editingItem ? "Inventory item updated successfully." : "New inventory item registered successfully.")
-        
-        // Reset form
-        setName("")
-        setSku("")
-        setQty("0")
-        setUnit("pcs")
-        setThreshold("5")
-        setImageUrl("")
-        setEditingItem(null)
-        
-        // Refresh page
-        window.location.reload()
-      }
+  const startEdit = (item: InventoryItemWithLedger) => {
+    setEditingItem({
+      id: item.id,
+      name: item.name,
+      sku: item.sku,
+      quantity: item.quantity,
+      unit: item.unit,
+      low_stock_threshold: item.low_stock_threshold,
+      image_url: item.image_url,
+      created_at: item.created_at
     })
-  }
-
-  const handleRestockSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!restockTarget || !restockQty) return
-    setErrorMsg(null)
-    setSuccessMsg(null)
-
-    const quantityNum = Number(restockQty)
-    startTransition(async () => {
-      const res = await restockItem(restockTarget.id, quantityNum, restockNotes)
-      if (res.error) {
-        setErrorMsg(res.error)
-      } else {
-        setSuccessMsg(`Restocked ${quantityNum} ${restockTarget.unit} of "${restockTarget.name}".`)
-        setRestockTarget(null)
-        setRestockQty("")
-        setRestockNotes("")
-        
-        // Refresh page
-        window.location.reload()
-      }
-    })
-  }
-
-  const startEdit = (item: InventoryItem) => {
-    setEditingItem(item)
     setName(item.name)
     setSku(item.sku)
     setQty(String(item.quantity))
     setUnit(item.unit)
     setThreshold(String(item.low_stock_threshold))
     setImageUrl(item.image_url || "")
+    setIsNewItemOpen(true)
+    setIsSkuManuallyEdited(true)
   }
 
   const cancelEdit = () => {
@@ -260,6 +388,9 @@ export default function InventoryWorkspace({
     setUnit("pcs")
     setThreshold("5")
     setImageUrl("")
+    const newSuffix = generateRandomSkuSuffix()
+    setSkuSuffix(newSuffix)
+    setIsSkuManuallyEdited(false)
   }
 
   const startNewAudit = () => {
@@ -310,7 +441,17 @@ export default function InventoryWorkspace({
     })
   }
 
-  const formatDate = (isoString: string) => {
+  const formatDate = (isoString: string | null) => {
+    if (!isoString) return "-"
+    const d = new Date(isoString)
+    return d.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric"
+    })
+  }
+
+  const formatDateTime = (isoString: string) => {
     const d = new Date(isoString)
     return d.toLocaleString("en-US", {
       month: "short",
@@ -322,7 +463,7 @@ export default function InventoryWorkspace({
   }
 
   return (
-    <div className="p-8 pb-20 max-w-6xl mx-auto space-y-6">
+    <div className="p-8 pb-20 max-w-7xl mx-auto space-y-6">
       
       {/* Header */}
       <div className="flex justify-between items-start flex-wrap gap-4">
@@ -331,22 +472,12 @@ export default function InventoryWorkspace({
             <Package className="w-8 h-8 text-emerald-600 shrink-0" />
             Inventory Control
           </h1>
-          <p className="text-zinc-500 mt-1">Manage physical spare parts, log restocks, and reconcile quarterly audits.</p>
+          <p className="text-zinc-500 mt-1">Manage physical spare parts, log transactions ledger, and track procurement.</p>
         </div>
 
         {/* Tab Switcher */}
         {!isAuditing && (
           <div className="flex bg-zinc-200/60 p-1 rounded-xl border border-zinc-250">
-            <button
-              onClick={() => setActiveTab("items")}
-              className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-bold transition-all ${
-                activeTab === "items" 
-                  ? "bg-white text-zinc-950 shadow-sm" 
-                  : "text-zinc-500 hover:text-zinc-800"
-              }`}
-            >
-              <ClipboardList className="w-4 h-4" /> Manage Stock
-            </button>
             <button
               onClick={() => setActiveTab("ledger")}
               className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-bold transition-all ${
@@ -355,7 +486,17 @@ export default function InventoryWorkspace({
                   : "text-zinc-500 hover:text-zinc-800"
               }`}
             >
-              <History className="w-4 h-4" /> Transaction Ledger
+              <ClipboardList className="w-4 h-4" /> Inventory Ledger
+            </button>
+            <button
+              onClick={() => setActiveTab("procurement")}
+              className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-bold transition-all ${
+                activeTab === "procurement" 
+                  ? "bg-white text-zinc-950 shadow-sm" 
+                  : "text-zinc-500 hover:text-zinc-800"
+              }`}
+            >
+              <ShoppingCart className="w-4 h-4" /> Procurement Tracker
             </button>
             <button
               onClick={() => setActiveTab("audits")}
@@ -497,409 +638,223 @@ export default function InventoryWorkspace({
               <button
                 type="submit"
                 disabled={isPending}
-                className="bg-zinc-950 hover:bg-zinc-800 disabled:opacity-50 text-white font-bold py-3 px-8 rounded-xl text-sm transition-all flex items-center gap-2"
+                className="bg-zinc-950 hover:bg-zinc-800 disabled:opacity-50 text-white font-bold py-3 px-8 rounded-xl text-sm transition-all flex items-center gap-2 cursor-pointer"
               >
                 {isPending ? "Logging Reconciliation..." : "Submit Reconciliation & Update Stock"}
               </button>
             </div>
           </form>
         </div>
-      ) : activeTab === "items" ? (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          
-          {/* Add / Edit Form Panel */}
-          <div className="bg-white rounded-xl border border-zinc-200 shadow-sm overflow-hidden h-fit">
-            <div className="p-5 border-b border-zinc-150 bg-zinc-50/50">
-              <h3 className="text-sm font-bold text-zinc-900 flex items-center gap-2">
-                <Plus className="w-4 h-4 text-emerald-600" />
-                {editingItem ? "Edit Inventory Item" : "Register New Stock Item"}
-              </h3>
-              <p className="text-xs text-zinc-500 mt-0.5">Define part specifications and stock limits.</p>
+      ) : activeTab === "ledger" ? (
+        
+        /* Tab 1: Inventory Ledger View */
+        <div className="space-y-6">
+          <div className="flex justify-between items-center bg-zinc-50 p-4 border border-zinc-200 rounded-xl flex-wrap gap-4">
+            <div>
+              <h3 className="text-sm font-bold text-zinc-900">Inventory Ledger Summary</h3>
+              <p className="text-xs text-zinc-500">Running balances, last incoming, and last outgoing details for warehouse items.</p>
             </div>
-
-            <form onSubmit={handleCreateOrUpdate} encType="multipart/form-data" className="p-5 space-y-4">
-              <div>
-                <label className="block text-xs font-bold text-zinc-700 mb-1.5">Item Name</label>
-                <input
-                  type="text"
-                  name="name"
-                  value={name}
-                  onChange={e => setName(e.target.value)}
-                  placeholder="e.g. Cat6 UTP Cable Roll"
-                  required
-                  className="w-full px-3 py-2 border border-zinc-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-zinc-700 mb-1.5">Item Photo (Optional)</label>
-                <div className="flex items-center gap-3">
-                  {editingItem?.image_url && (
-                    <img 
-                      src={editingItem.image_url} 
-                      alt="Current preview" 
-                      className="w-10 h-10 rounded-lg object-cover border border-zinc-200 shrink-0" 
-                    />
-                  )}
-                  <input
-                    type="file"
-                    name="image"
-                    accept="image/*"
-                    className="w-full text-xs text-zinc-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-bold file:bg-zinc-100 file:text-zinc-700 hover:file:bg-zinc-200 cursor-pointer"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-bold text-zinc-700 mb-1.5">SKU / Code</label>
-                  <input
-                    type="text"
-                    name="sku"
-                    value={sku}
-                    onChange={e => setSku(e.target.value)}
-                    placeholder="e.g. CAB-CAT6-01"
-                    required
-                    disabled={!!editingItem}
-                    className="w-full px-3 py-2 border border-zinc-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none disabled:bg-zinc-50 disabled:text-zinc-400"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-zinc-700 mb-1.5">Unit</label>
-                  <input
-                    type="text"
-                    name="unit"
-                    value={unit}
-                    onChange={e => setUnit(e.target.value)}
-                    placeholder="e.g. pcs, meters, rolls"
-                    required
-                    className="w-full px-3 py-2 border border-zinc-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-bold text-zinc-700 mb-1.5">Initial Quantity</label>
-                  <input
-                    type="number"
-                    name="quantity"
-                    min={0}
-                    value={qty}
-                    onChange={e => setQty(e.target.value)}
-                    required
-                    disabled={!!editingItem}
-                    className="w-full px-3 py-2 border border-zinc-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none disabled:bg-zinc-50 disabled:text-zinc-400"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-zinc-700 mb-1.5">Low Stock Limit</label>
-                  <input
-                    type="number"
-                    name="low_stock_threshold"
-                    min={0}
-                    value={threshold}
-                    onChange={e => setThreshold(e.target.value)}
-                    required
-                    className="w-full px-3 py-2 border border-zinc-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-zinc-700 mb-1.5 font-bold uppercase tracking-wider">Item Photo</label>
-                <div className="flex items-center gap-3">
-                  {imageUrl ? (
-                    <div className="relative w-16 h-16 border border-zinc-200 rounded-lg overflow-hidden shrink-0">
-                      <img src={imageUrl} alt="Preview" className="w-full h-full object-cover" />
-                      <button 
-                        type="button" 
-                        onClick={() => setImageUrl("")}
-                        className="absolute top-0.5 right-0.5 bg-rose-600 text-white rounded-full p-0.5 hover:bg-rose-700 transition-colors cursor-pointer"
-                      >
-                        <X className="w-3 h-3" />
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="w-16 h-16 bg-zinc-105 border border-dashed border-zinc-300 rounded-lg flex items-center justify-center text-zinc-400 shrink-0">
-                      <Image className="w-6 h-6" />
-                    </div>
-                  )}
-                  
-                  <label className="flex-1 flex flex-col items-center justify-center border border-zinc-200 border-dashed rounded-lg p-3 hover:bg-zinc-50 transition-colors cursor-pointer">
-                    <div className="flex items-center gap-1.5 text-xs text-zinc-650 font-bold">
-                      <Upload className="w-3.5 h-3.5 text-emerald-600" />
-                      {uploadingImage ? "Uploading..." : "Upload Photo"}
-                    </div>
-                    <input 
-                      type="file" 
-                      accept="image/*" 
-                      onChange={handleImageUpload} 
-                      disabled={uploadingImage} 
-                      className="hidden" 
-                    />
-                  </label>
-                </div>
-              </div>
-
-              <div className="flex gap-2 pt-2">
-                {editingItem && (
-                  <button
-                    type="button"
-                    onClick={cancelEdit}
-                    className="flex-1 bg-zinc-100 hover:bg-zinc-200 text-zinc-800 font-bold py-2.5 rounded-lg text-sm transition-all border border-zinc-200"
-                  >
-                    Cancel
-                  </button>
-                )}
-                <button
-                  type="submit"
-                  disabled={isPending || uploadingImage}
-                  className="flex-1 bg-zinc-950 hover:bg-zinc-800 disabled:opacity-50 text-white font-bold py-2.5 rounded-lg text-sm transition-all flex items-center justify-center gap-1.5 cursor-pointer"
-                >
-                  {isPending ? "Saving..." : (editingItem ? "Update Item" : "Add Item")}
-                </button>
-              </div>
-            </form>
+            <div className="flex gap-2">
+              <button 
+                onClick={() => { setIsNewItemOpen(true); cancelEdit(); }}
+                className="inline-flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-xs font-bold transition-all shadow-sm cursor-pointer"
+              >
+                <Plus className="w-3.5 h-3.5" /> Register Item
+              </button>
+              <button 
+                onClick={() => setIsAdjustmentOpen(true)}
+                className="inline-flex items-center gap-1.5 bg-white border border-zinc-200 hover:bg-zinc-50 text-zinc-700 px-4 py-2 rounded-lg text-xs font-bold transition-all shadow-sm cursor-pointer"
+              >
+                <RefreshCw className="w-3.5 h-3.5" /> Log Adjustment
+              </button>
+              <button 
+                onClick={() => { setIsBulkDrawerOpen(true); setBulkResults(null); }}
+                className="inline-flex items-center gap-1.5 bg-zinc-950 hover:bg-zinc-800 text-white px-4 py-2 rounded-lg text-xs font-bold transition-all shadow-sm cursor-pointer"
+              >
+                <FileSpreadsheet className="w-3.5 h-3.5" /> Bulk Import
+              </button>
+            </div>
           </div>
 
-          {/* Stock Registry List */}
-          <div className="lg:col-span-2 space-y-6">
-            
-            {/* Quick Restock Section */}
-            {restockTarget && (
-              <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-5 shadow-sm space-y-4">
-                <div className="flex justify-between items-center">
-                  <h4 className="text-sm font-bold text-emerald-800 flex items-center gap-1.5">
-                    <RefreshCw className="w-4 h-4 text-emerald-600 animate-spin" />
-                    Restocking: {restockTarget.name} ({restockTarget.sku})
-                  </h4>
-                  <button 
-                    onClick={() => setRestockTarget(null)}
-                    className="text-xs text-emerald-600 hover:text-emerald-800 font-semibold"
-                  >
-                    Cancel
-                  </button>
-                </div>
-
-                <form onSubmit={handleRestockSubmit} className="flex gap-3 items-end flex-wrap">
-                  <div className="w-32">
-                    <label className="block text-[10px] font-bold text-emerald-700 uppercase mb-1">Add Qty ({restockTarget.unit})</label>
-                    <input
-                      type="number"
-                      required
-                      min={1}
-                      value={restockQty}
-                      onChange={e => setRestockQty(e.target.value)}
-                      placeholder="e.g. 10"
-                      className="w-full px-3 py-1.5 border border-emerald-250 rounded-lg text-sm bg-white focus:ring-2 focus:ring-emerald-500 focus:outline-none"
-                    />
-                  </div>
-                  <div className="flex-1 min-w-[200px]">
-                    <label className="block text-[10px] font-bold text-emerald-700 uppercase mb-1">Restock Memo / Notes</label>
-                    <input
-                      type="text"
-                      value={restockNotes}
-                      onChange={e => setRestockNotes(e.target.value)}
-                      placeholder="Supplier delivery invoice #..."
-                      className="w-full px-3 py-1.5 border border-emerald-250 rounded-lg text-sm bg-white focus:ring-2 focus:ring-emerald-500 focus:outline-none"
-                    />
-                  </div>
-                  <button
-                    type="submit"
-                    className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-5 py-2 rounded-lg text-sm transition-all"
-                  >
-                    Submit Restock
-                  </button>
-                </form>
-              </div>
-            )}
-
-            <div className="bg-white rounded-xl border border-zinc-200 shadow-sm overflow-hidden">
-              <div className="p-5 border-b border-zinc-150 bg-zinc-50/50 flex justify-between items-center flex-wrap gap-2">
-                <div>
-                  <h3 className="text-sm font-bold text-zinc-900">Registered Stock Items</h3>
-                  <p className="text-xs text-zinc-500 mt-0.5">Browse quantities and low-stock alerts.</p>
-                </div>
-                <button 
-                  onClick={() => { setIsBulkDrawerOpen(true); setBulkResults(null); }}
-                  className="inline-flex items-center gap-1.5 bg-zinc-950 hover:bg-zinc-800 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer"
-                >
-                  <FileSpreadsheet className="w-3.5 h-3.5" /> Bulk CSV Import
-                </button>
-              </div>
-
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="bg-zinc-50/50 border-b border-zinc-150 text-[10px] uppercase font-bold text-zinc-400">
-                      <th className="p-4 w-12">Photo</th>
-                      <th className="p-4">SKU</th>
-                      <th className="p-4">Item Details</th>
-                      <th className="p-4">Stock Level</th>
-                      <th className="p-4">Safety Limit</th>
-                      <th className="p-4 text-right">Actions</th>
+          <div className="bg-white rounded-xl border border-zinc-200 shadow-sm overflow-hidden flex flex-col">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-zinc-50/50 border-b border-zinc-150 text-[11px] font-bold text-zinc-500">
+                    <th className="p-4 font-extrabold text-zinc-700 border-r border-zinc-150">Item Name</th>
+                    <th className="p-4 font-extrabold text-zinc-700 border-r border-zinc-150 text-center">QTY</th>
+                    <th className="p-4 font-bold text-emerald-700 text-center bg-emerald-50/30">IN</th>
+                    <th className="p-4 font-bold text-emerald-700 bg-emerald-50/30">In Date</th>
+                    <th className="p-4 font-bold text-emerald-700 border-r border-zinc-150 bg-emerald-50/30 text-center">Balance</th>
+                    <th className="p-4 font-bold text-rose-700 text-center bg-rose-50/30">OUT</th>
+                    <th className="p-4 font-bold text-rose-700 bg-rose-50/30">Out Date</th>
+                    <th className="p-4 font-bold text-rose-700 bg-rose-50/30 text-center">Balance</th>
+                    <th className="p-4 text-center">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-zinc-100 text-sm">
+                  {ledger.length === 0 ? (
+                    <tr>
+                      <td colSpan={9} className="p-8 text-center text-zinc-400 text-sm">
+                        No inventory items registered. Click "Register Item" to begin.
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody className="divide-y divide-zinc-100 text-sm">
-                    {items.map(item => {
+                  ) : (
+                    ledger.map(item => {
                       const isLowStock = item.quantity <= item.low_stock_threshold
                       return (
-                        <tr 
-                          key={item.id} 
-                          className={`hover:bg-slate-50/50 transition-colors ${
-                            isLowStock ? "bg-amber-50/20" : ""
-                          }`}
-                        >
-                          <td className="p-4">
-                            {item.image_url ? (
-                              <img 
-                                src={item.image_url} 
-                                alt={item.name} 
-                                className="w-10 h-10 rounded-lg object-cover border border-zinc-200" 
-                              />
-                            ) : (
-                              <div className="w-10 h-10 rounded-lg bg-zinc-100 border border-zinc-200 flex items-center justify-center text-zinc-400">
-                                <Package className="w-5 h-5" />
+                        <tr key={item.id} className="hover:bg-slate-50/40 transition-colors">
+                          <td className="p-4 border-r border-zinc-100">
+                            <div className="flex items-center gap-3">
+                              {item.image_url ? (
+                                <img src={item.image_url} alt={item.name} className="w-8 h-8 object-cover rounded-md border border-zinc-200 shrink-0" />
+                              ) : (
+                                <div className="w-8 h-8 bg-zinc-100 border border-zinc-200 rounded-md flex items-center justify-center text-zinc-400 shrink-0">
+                                  <Package className="w-4 h-4" />
+                                </div>
+                              )}
+                              <div>
+                                <span className="font-bold text-zinc-800 block text-xs">{item.name}</span>
+                                <span className="text-[9px] text-zinc-400 font-mono tracking-wider">{item.sku}</span>
                               </div>
-                            )}
-                          </td>
-                          <td className="p-4 font-mono font-bold text-xs text-zinc-600">{item.sku}</td>
-                          <td className="p-4 flex items-center gap-3">
-                            {item.image_url ? (
-                              <img src={item.image_url} alt={item.name} className="w-10 h-10 object-cover rounded-lg border border-zinc-200 shrink-0" />
-                            ) : (
-                              <div className="w-10 h-10 bg-zinc-100 border border-zinc-200 rounded-lg flex items-center justify-center text-zinc-400 shrink-0">
-                                <Package className="w-5 h-5" />
-                              </div>
-                            )}
-                            <div>
-                              <span className="font-bold text-zinc-800 block">{item.name}</span>
-                              <span className="text-[10px] text-zinc-400 font-medium">Registered {formatDate(item.created_at)}</span>
                             </div>
                           </td>
-                          <td className="p-4">
-                            <div className="flex items-center gap-1.5">
-                              <span className={`font-black text-base ${isLowStock ? "text-rose-600 font-extrabold" : "text-zinc-800"}`}>
-                                {item.quantity}
-                              </span>
-                              <span className="text-zinc-400 text-xs">{item.unit}</span>
+                          <td className="p-4 border-r border-zinc-100 text-center font-black text-zinc-900 bg-zinc-50/10">
+                            <div className="flex flex-col items-center">
+                              <span>{item.quantity}</span>
+                              <span className="text-[9px] text-zinc-400 font-medium lowercase">{item.unit}</span>
                               {isLowStock && (
-                                <span className="text-xs px-2 py-0.5 bg-rose-50 text-rose-700 border border-rose-200 rounded-md font-bold uppercase tracking-wider flex items-center gap-1 animate-pulse">
-                                  <AlertTriangle className="w-3.5 h-3.5" /> Low
+                                <span className="text-[8px] px-1.5 py-0.5 mt-1 bg-rose-50 text-rose-700 border border-rose-200 rounded font-bold uppercase tracking-wider">
+                                  Low Stock
                                 </span>
                               )}
                             </div>
                           </td>
-                          <td className="p-4 font-semibold text-zinc-500">
-                            min {item.low_stock_threshold} {item.unit}
+                          
+                          {/* IN details */}
+                          <td className="p-4 text-center font-bold text-emerald-600 bg-emerald-50/10">
+                            {item.last_in ? `+${item.last_in.qty}` : "-"}
                           </td>
-                          <td className="p-4 text-right space-x-2">
-                            <button
-                               onClick={() => { setRestockTarget(item); setRestockQty(""); setRestockNotes(""); }}
-                              className="inline-flex items-center gap-1 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-700 px-2.5 py-1 rounded text-xs font-bold transition-all cursor-pointer"
-                            >
-                              Restock
-                            </button>
+                          <td className="p-4 text-xs text-zinc-600 bg-emerald-50/10">
+                            {item.last_in ? formatDate(item.last_in.date) : "-"}
+                          </td>
+                          <td className="p-4 text-center font-semibold text-emerald-800 border-r border-zinc-100 bg-emerald-50/10">
+                            {item.last_in ? item.last_in.balance : "-"}
+                          </td>
+
+                          {/* OUT details */}
+                          <td className="p-4 text-center font-bold text-rose-600 bg-rose-50/10">
+                            {item.last_out ? `-${item.last_out.qty}` : "-"}
+                          </td>
+                          <td className="p-4 text-xs text-zinc-600 bg-rose-50/10">
+                            {item.last_out ? formatDate(item.last_out.date) : "-"}
+                          </td>
+                          <td className="p-4 text-center font-semibold text-rose-800 bg-rose-50/10">
+                            {item.last_out ? item.last_out.balance : "-"}
+                          </td>
+
+                          <td className="p-4 text-center space-x-2">
                             <button
                               onClick={() => startEdit(item)}
-                              className="inline-flex items-center gap-1 bg-zinc-50 hover:bg-zinc-100 border border-zinc-200 text-zinc-600 px-2.5 py-1 rounded text-xs font-bold transition-all cursor-pointer"
+                              className="text-xs font-bold text-zinc-500 hover:text-zinc-900 transition-colors"
                             >
                               Edit
                             </button>
                           </td>
                         </tr>
                       )
-                    })}
-                  </tbody>
-                </table>
-              </div>
+                    })
+                  )}
+                </tbody>
+              </table>
             </div>
           </div>
-
         </div>
-      ) : activeTab === "ledger" ? (
+
+      ) : activeTab === "procurement" ? (
         
-        /* Transaction Ledger View */
-        <div className="bg-white rounded-xl border border-zinc-200 shadow-sm overflow-hidden flex flex-col">
-          <div className="p-5 border-b border-zinc-150 bg-zinc-50/50">
-            <h3 className="text-sm font-bold text-zinc-900 flex items-center gap-2">
-              <History className="w-4 h-4 text-emerald-600" />
-              Stock Transaction History
-            </h3>
-            <p className="text-xs text-zinc-500 mt-0.5">Audit log of all stock adjustments, restocks, and technician checkouts.</p>
+        /* Tab 2: Procurement Tracker View */
+        <div className="space-y-6">
+          <div className="flex justify-between items-center bg-zinc-50 p-4 border border-zinc-200 rounded-xl flex-wrap gap-4">
+            <div>
+              <h3 className="text-sm font-bold text-zinc-900">Procurement & Orders Tracker</h3>
+              <p className="text-xs text-zinc-500">Create new purchase orders and track deliveries matching customer ledgers.</p>
+            </div>
+            <button 
+              onClick={() => setIsPoOpen(true)}
+              className="inline-flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-xs font-bold transition-all shadow-sm cursor-pointer"
+            >
+              <Plus className="w-3.5 h-3.5" /> Create Purchase Order
+            </button>
           </div>
 
-          <div className="overflow-x-auto">
-            {transactions.length === 0 ? (
-              <div className="p-8 text-center text-zinc-400 text-sm">
-                No stock transactions logged yet.
-              </div>
-            ) : (
+          <div className="bg-white rounded-xl border border-zinc-200 shadow-sm overflow-hidden flex flex-col">
+            <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="bg-zinc-50/50 border-b border-zinc-150 text-[10px] uppercase font-bold text-zinc-400">
-                    <th className="p-4">Type</th>
-                    <th className="p-4">Item details</th>
-                    <th className="p-4">Quantity</th>
-                    <th className="p-4">Assigned / Link</th>
-                    <th className="p-4">Audit Memo / Notes</th>
-                    <th className="p-4 text-right">Timestamp</th>
+                  <tr className="bg-zinc-50/50 border-b border-zinc-150 text-[11px] font-bold text-zinc-500">
+                    <th className="p-4">Item name</th>
+                    <th className="p-4">PO #</th>
+                    <th className="p-4 text-center">PO Date</th>
+                    <th className="p-4 text-center">QTY</th>
+                    <th className="p-4 text-center">Delivered Date</th>
+                    <th className="p-4 text-right">Status / Action</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-zinc-100 text-sm">
-                  {transactions.map(tx => {
-                    const isRestock = tx.type === 'in'
-                    return (
-                      <tr key={tx.id} className="hover:bg-slate-50/50 transition-colors">
-                        <td className="p-4">
-                          <span className={`inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded border font-bold uppercase ${
-                            isRestock 
-                              ? "bg-emerald-50 text-emerald-700 border-emerald-200" 
-                              : "bg-rose-50 text-rose-700 border-rose-200"
-                          }`}>
-                            {isRestock ? <ArrowDownLeft className="w-3 h-3 text-emerald-600" /> : <ArrowUpRight className="w-3 h-3 text-rose-600" />}
-                            {isRestock ? "Restock" : "checkout"}
-                          </span>
-                        </td>
-                        <td className="p-4">
-                          <span className="font-bold text-zinc-800 block">{tx.item?.name || "Deleted Item"}</span>
-                          <span className="text-[10px] text-zinc-400 font-mono">{tx.item?.sku}</span>
-                        </td>
-                        <td className="p-4 font-black text-zinc-800">
-                          {isRestock ? "+" : "-"}{tx.quantity} {tx.item?.unit}
-                        </td>
-                        <td className="p-4">
-                          {tx.technician ? (
-                            <span className="text-zinc-700 block font-semibold text-xs flex items-center gap-1">
-                              👤 {tx.technician.full_name}
-                            </span>
-                          ) : (
-                            <span className="text-zinc-400 block text-xs italic">System / Office</span>
-                          )}
-                          {tx.ticket && (
-                            <span className="text-[10px] text-zinc-400 block line-clamp-1">
-                              🎫 Ticket: {tx.ticket.title}
-                            </span>
-                          )}
-                        </td>
-                        <td className="p-4 text-xs text-zinc-500">
-                          {tx.notes || "N/A"}
-                        </td>
-                        <td className="p-4 text-right text-xs text-zinc-400 font-medium">
-                          {formatDate(tx.created_at)}
-                        </td>
-                      </tr>
-                    )
-                  })}
+                  {procurement.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="p-8 text-center text-zinc-400 text-sm">
+                        No purchase orders placed. Click "Create Purchase Order" to begin.
+                      </td>
+                    </tr>
+                  ) : (
+                    procurement.map(po => {
+                      const isDelivered = po.status === 'delivered'
+                      return (
+                        <tr key={po.id} className="hover:bg-slate-50/40 transition-colors">
+                          <td className="p-4 font-bold text-zinc-800">
+                            {po.item?.name || "Deleted Item"}
+                            <span className="block text-[9px] text-zinc-400 font-mono font-medium">{po.item?.sku || "N/A"}</span>
+                          </td>
+                          <td className="p-4 font-mono font-bold text-zinc-600">{po.po_number}</td>
+                          <td className="p-4 text-center text-zinc-600">{formatDate(po.po_date)}</td>
+                          <td className="p-4 text-center font-black text-zinc-800">{po.qty} <span className="text-[10px] text-zinc-400 lowercase font-medium">{po.item?.unit || 'pcs'}</span></td>
+                          <td className="p-4 text-center text-zinc-600">
+                            {isDelivered ? (
+                              <span className="font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded border border-emerald-100">
+                                {formatDate(po.delivered_date)}
+                              </span>
+                            ) : (
+                              <span className="text-zinc-400 font-medium italic">Pending delivery</span>
+                            )}
+                          </td>
+                          <td className="p-4 text-right">
+                            {isDelivered ? (
+                              <span className="text-xs font-bold text-emerald-600 flex items-center justify-end gap-1">
+                                <Check className="w-3.5 h-3.5" /> Received
+                              </span>
+                            ) : (
+                              <button
+                                onClick={() => handleDeliverPo(po.id)}
+                                className="bg-emerald-50 hover:bg-emerald-100 border border-emerald-250 text-emerald-700 px-3 py-1.5 rounded-lg text-xs font-bold transition-all shadow-2xs cursor-pointer"
+                              >
+                                Mark as Delivered
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                      )
+                    })
+                  )}
                 </tbody>
               </table>
-            )}
+            </div>
           </div>
         </div>
 
       ) : (
-        /* Stocktake Auditing View */
+        /* Tab 3: Stocktake Auditing View */
         <div className="space-y-6">
           <div className="flex justify-between items-center bg-zinc-50 p-4 border border-zinc-200 rounded-xl">
             <div>
@@ -908,7 +863,7 @@ export default function InventoryWorkspace({
             </div>
             <button 
               onClick={startNewAudit}
-              className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-4 py-2 rounded-lg flex items-center gap-1.5 transition-all shadow-sm"
+              className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-4 py-2 rounded-lg flex items-center gap-1.5 transition-all shadow-sm cursor-pointer"
             >
               <Plus className="w-3.5 h-3.5" /> Start New Audit
             </button>
@@ -938,7 +893,7 @@ export default function InventoryWorkspace({
                           <div className="flex items-center gap-4 text-xs text-zinc-500 flex-wrap">
                             <span className="flex items-center gap-1"><User className="w-3.5 h-3.5 text-zinc-400" /> Auditor: {audit.auditor?.full_name || "Admin"}</span>
                             <span>•</span>
-                            <span>Date: {formatDate(audit.created_at)}</span>
+                            <span>Date: {formatDateTime(audit.created_at)}</span>
                           </div>
                           {audit.notes && <p className="text-xs text-zinc-500 italic mt-1.5 bg-zinc-100/50 py-1.5 px-3 rounded-lg border border-zinc-200 w-fit">Memo: {audit.notes}</p>}
                         </div>
@@ -1003,10 +958,350 @@ export default function InventoryWorkspace({
         </div>
       )}
 
+      {/* Dialog Modal: Register / Edit Item */}
+      {isNewItemOpen && (
+        <div className="fixed inset-0 bg-zinc-950/60 z-50 flex items-center justify-center p-4 animate-smooth-fade">
+          <div className="bg-white rounded-xl border border-zinc-250 shadow-2xl overflow-hidden w-full max-w-md animate-smooth-pop">
+            <div className="p-5 border-b border-zinc-150 bg-zinc-50/50 flex justify-between items-center">
+              <h3 className="text-sm font-bold text-zinc-900 flex items-center gap-2">
+                <Plus className="w-4 h-4 text-emerald-600" />
+                {editingItem ? "Edit Inventory Item" : "Register New Stock Item"}
+              </h3>
+              <button onClick={() => setIsNewItemOpen(false)} className="text-zinc-400 hover:text-zinc-600 cursor-pointer">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateOrUpdate} encType="multipart/form-data" className="p-5 space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-zinc-700 mb-1.5">Item Name</label>
+                <input
+                  type="text"
+                  name="name"
+                  value={name}
+                  onChange={e => handleNameChange(e.target.value)}
+                  placeholder="e.g. Cat6 UTP Cable Roll"
+                  required
+                  className="w-full px-3 py-2 border border-zinc-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-zinc-700 mb-1.5">SKU / Code</label>
+                  <input
+                    type="text"
+                    name="sku"
+                    value={sku}
+                    onChange={e => { setSku(e.target.value); setIsSkuManuallyEdited(true); }}
+                    placeholder="e.g. CAB-CAT6-01"
+                    required
+                    disabled={!!editingItem}
+                    className="w-full px-3 py-2 border border-zinc-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none disabled:bg-zinc-50 disabled:text-zinc-400"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-zinc-700 mb-1.5">Unit</label>
+                  <input
+                    type="text"
+                    name="unit"
+                    value={unit}
+                    onChange={e => setUnit(e.target.value)}
+                    placeholder="e.g. pcs, meters, rolls"
+                    required
+                    className="w-full px-3 py-2 border border-zinc-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-zinc-700 mb-1.5">Initial Quantity</label>
+                  <input
+                    type="number"
+                    name="quantity"
+                    min={0}
+                    value={qty}
+                    onChange={e => setQty(e.target.value)}
+                    required
+                    disabled={!!editingItem}
+                    className="w-full px-3 py-2 border border-zinc-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none disabled:bg-zinc-50 disabled:text-zinc-400"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-zinc-700 mb-1.5">Low Stock Limit</label>
+                  <input
+                    type="number"
+                    name="low_stock_threshold"
+                    min={0}
+                    value={threshold}
+                    onChange={e => setThreshold(e.target.value)}
+                    required
+                    className="w-full px-3 py-2 border border-zinc-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-zinc-700 mb-1.5">Item Photo</label>
+                <div className="flex items-center gap-3">
+                  {imageUrl ? (
+                    <div className="relative w-16 h-16 border border-zinc-200 rounded-lg overflow-hidden shrink-0">
+                      <img src={imageUrl} alt="Preview" className="w-full h-full object-cover" />
+                      <button 
+                        type="button" 
+                        onClick={() => setImageUrl("")}
+                        className="absolute top-0.5 right-0.5 bg-rose-600 text-white rounded-full p-0.5 hover:bg-rose-700 transition-colors cursor-pointer"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="w-16 h-16 bg-zinc-100 border border-dashed border-zinc-300 rounded-lg flex items-center justify-center text-zinc-400 shrink-0">
+                      <Image className="w-6 h-6" />
+                    </div>
+                  )}
+                  
+                  <label className="flex-1 flex flex-col items-center justify-center border border-zinc-200 border-dashed rounded-lg p-3 hover:bg-zinc-50 transition-colors cursor-pointer">
+                    <div className="flex items-center gap-1.5 text-xs text-zinc-600 font-bold">
+                      <Upload className="w-3.5 h-3.5 text-emerald-600" />
+                      {uploadingImage ? "Uploading..." : "Upload Photo"}
+                    </div>
+                    <input 
+                      type="file" 
+                      accept="image/*" 
+                      onChange={handleImageUpload} 
+                      disabled={uploadingImage} 
+                      className="hidden" 
+                    />
+                  </label>
+                </div>
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setIsNewItemOpen(false)}
+                  className="flex-1 bg-zinc-100 hover:bg-zinc-200 text-zinc-800 font-bold py-2.5 rounded-lg text-sm transition-all border border-zinc-200"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isPending || uploadingImage}
+                  className="flex-1 bg-zinc-950 hover:bg-zinc-800 disabled:opacity-50 text-white font-bold py-2.5 rounded-lg text-sm transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                  {isPending ? "Saving..." : (editingItem ? "Update Item" : "Register Item")}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Dialog Modal: Log Adjustment */}
+      {isAdjustmentOpen && (
+        <div className="fixed inset-0 bg-zinc-950/60 z-50 flex items-center justify-center p-4 animate-smooth-fade">
+          <div className="bg-white rounded-xl border border-zinc-250 shadow-2xl overflow-hidden w-full max-w-md animate-smooth-pop">
+            <div className="p-5 border-b border-zinc-150 bg-zinc-50/50 flex justify-between items-center">
+              <h3 className="text-sm font-bold text-zinc-900 flex items-center gap-2">
+                <RefreshCw className="w-4 h-4 text-emerald-600" />
+                Log IN/OUT Ledger Adjustment
+              </h3>
+              <button onClick={() => setIsAdjustmentOpen(false)} className="text-zinc-400 hover:text-zinc-600 cursor-pointer">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleAdjustmentSubmit} className="p-5 space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-zinc-700 mb-1.5">Select Item</label>
+                <select
+                  value={adjItemId}
+                  onChange={e => setAdjItemId(e.target.value)}
+                  required
+                  className="w-full px-3 py-2 border border-zinc-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                >
+                  <option value="">-- Choose Stock Item --</option>
+                  {items.map(item => (
+                    <option key={item.id} value={item.id}>
+                      {item.name} ({item.sku}) [Current: {item.quantity}]
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-zinc-700 mb-1.5">Adjustment Type</label>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setAdjType("in")}
+                      className={`flex-1 py-2 text-xs font-bold rounded-lg border transition-all ${
+                        adjType === "in"
+                          ? "bg-emerald-50 border-emerald-500 text-emerald-700"
+                          : "border-zinc-200 text-zinc-500 hover:bg-zinc-50"
+                      }`}
+                    >
+                      IN (Restock)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setAdjType("out")}
+                      className={`flex-1 py-2 text-xs font-bold rounded-lg border transition-all ${
+                        adjType === "out"
+                          ? "bg-rose-50 border-rose-500 text-rose-700"
+                          : "border-zinc-200 text-zinc-500 hover:bg-zinc-50"
+                      }`}
+                    >
+                      OUT (Deduct)
+                    </button>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-zinc-700 mb-1.5">Quantity</label>
+                  <input
+                    type="number"
+                    min={1}
+                    required
+                    value={adjQty}
+                    onChange={e => setAdjQty(e.target.value)}
+                    placeholder="e.g. 10"
+                    className="w-full px-3 py-2 border border-zinc-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-zinc-700 mb-1.5">Adjustment Memo / Notes</label>
+                <input
+                  type="text"
+                  value={adjNotes}
+                  onChange={e => setAdjNotes(e.target.value)}
+                  placeholder="e.g. Spare checkout for repair job #4032"
+                  required
+                  className="w-full px-3 py-2 border border-zinc-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                />
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setIsAdjustmentOpen(false)}
+                  className="flex-1 bg-zinc-100 hover:bg-zinc-200 text-zinc-800 font-bold py-2.5 rounded-lg text-sm transition-all border border-zinc-200"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isPending}
+                  className="flex-1 bg-zinc-950 hover:bg-zinc-800 disabled:opacity-50 text-white font-bold py-2.5 rounded-lg text-sm transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                  {isPending ? "Logging..." : "Submit Adjustment"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Dialog Modal: Create Procurement PO */}
+      {isPoOpen && (
+        <div className="fixed inset-0 bg-zinc-950/60 z-50 flex items-center justify-center p-4 animate-smooth-fade">
+          <div className="bg-white rounded-xl border border-zinc-250 shadow-2xl overflow-hidden w-full max-w-md animate-smooth-pop">
+            <div className="p-5 border-b border-zinc-150 bg-zinc-50/50 flex justify-between items-center">
+              <h3 className="text-sm font-bold text-zinc-900 flex items-center gap-2">
+                <Truck className="w-4 h-4 text-emerald-600" />
+                Create Procurement Purchase Order
+              </h3>
+              <button onClick={() => setIsPoOpen(false)} className="text-zinc-400 hover:text-zinc-600 cursor-pointer">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handlePoSubmit} className="p-5 space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-zinc-700 mb-1.5">Select Procurement Item</label>
+                <select
+                  value={poItemId}
+                  onChange={e => setPoItemId(e.target.value)}
+                  required
+                  className="w-full px-3 py-2 border border-zinc-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                >
+                  <option value="">-- Choose Stock Item --</option>
+                  {items.map(item => (
+                    <option key={item.id} value={item.id}>
+                      {item.name} ({item.sku})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-zinc-700 mb-1.5">Purchase Order Number (PO #)</label>
+                <input
+                  type="text"
+                  required
+                  value={poNumber}
+                  onChange={e => setPoNumber(e.target.value)}
+                  placeholder="e.g. PO-2026-0084"
+                  className="w-full px-3 py-2 border border-zinc-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-zinc-700 mb-1.5">PO Date</label>
+                  <input
+                    type="date"
+                    required
+                    value={poDate}
+                    onChange={e => setPoDate(e.target.value)}
+                    className="w-full px-3 py-2 border border-zinc-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-zinc-700 mb-1.5">PO Quantity</label>
+                  <input
+                    type="number"
+                    min={1}
+                    required
+                    value={poQty}
+                    onChange={e => setPoQty(e.target.value)}
+                    placeholder="e.g. 250"
+                    className="w-full px-3 py-2 border border-zinc-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setIsPoOpen(false)}
+                  className="flex-1 bg-zinc-100 hover:bg-zinc-200 text-zinc-800 font-bold py-2.5 rounded-lg text-sm transition-all border border-zinc-200"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isPending}
+                  className="flex-1 bg-zinc-950 hover:bg-zinc-800 disabled:opacity-50 text-white font-bold py-2.5 rounded-lg text-sm transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                  {isPending ? "Submitting..." : "Generate PO"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* Slide-over Bulk Import Drawer */}
       {isBulkDrawerOpen && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-50 transition-opacity flex justify-end animate-in fade-in">
-          <div className="w-full max-w-xl bg-white h-full shadow-2xl flex flex-col animate-in slide-in-from-right duration-300">
+        <div className="fixed inset-0 bg-zinc-950/60 z-50 transition-opacity flex justify-end animate-smooth-fade">
+          <div className="w-full max-w-xl bg-white h-full shadow-2xl flex flex-col animate-smooth-slide-in">
             {/* Header */}
             <div className="p-6 border-b border-zinc-150 flex items-center justify-between">
               <div>
@@ -1032,7 +1327,6 @@ export default function InventoryWorkspace({
 Cat6 UTP Cable Roll, CAB-CAT6-01, 15, rolls, 3
 Fiber Patch Cord 3m, FIP-PAT-03, 100, pcs, 10
 RJ45 Connectors Box, CON-RJ45-100, 20, boxes, 5</pre>
-                <p className="text-[10px] text-zinc-500 italic mt-2">Note: SKU must be unique across all inventory records. Low Stock Limit is optional (defaults to 5 if empty). Unit is optional (defaults to 'pcs' if empty).</p>
               </div>
 
               {/* Bulk Results Summary */}
@@ -1093,7 +1387,7 @@ RJ45 Connectors Box, CON-RJ45-100, 20, boxes, 5</pre>
                     value={bulkCsvData}
                     onChange={(e) => setBulkCsvData(e.target.value)}
                     placeholder="Item Name, SKU, Quantity, Unit, Low Stock Limit&#10;e.g. Cat6 UTP Cable Roll, CAB-CAT6-01, 15, rolls, 3"
-                    className="w-full p-3 border border-zinc-300 rounded-xl text-xs font-mono focus:ring-2 focus:ring-emerald-500 focus:outline-none bg-white text-zinc-800 leading-relaxed animate-in fade-in"
+                    className="w-full p-3 border border-zinc-300 rounded-xl text-xs font-mono focus:ring-2 focus:ring-emerald-500 focus:outline-none bg-white text-zinc-800 leading-relaxed"
                   />
                 </div>
 
