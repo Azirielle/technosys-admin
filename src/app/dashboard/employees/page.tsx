@@ -1,11 +1,14 @@
+import { createClient } from "@/lib/supabase/server"
 import { getTechnicians } from "@/app/actions/employees"
 import { getOfficeLocations } from "@/app/actions/geofence"
 import { supabaseAdmin } from "@/lib/supabase/admin"
+import { verifyRoleAccess } from "@/lib/permissions"
 import EmployeesClient from "./EmployeesClient"
 
 export const revalidate = 0 // Force dynamic execution for real-time counts and lists
 
 export default async function EmployeesPage() {
+  const supabase = await createClient()
   const technicians = await getTechnicians()
   const officeLocations = await getOfficeLocations()
 
@@ -30,12 +33,17 @@ export default async function EmployeesPage() {
 
   const activeLeaveIds = (activeLeaves || []).map(leave => leave.technician_id)
 
+  // Verify write permission for employees management
+  const { authorized: isWriteAllowed } = await verifyRoleAccess('employees', true)
+
   return (
     <EmployeesClient 
       initialTechnicians={technicians} 
       officeLocations={officeLocations} 
       activeTechnicianIds={activeIds} 
       activeLeaveTechnicianIds={activeLeaveIds}
+      isWriteAllowed={isWriteAllowed}
     />
   )
 }
+

@@ -1,10 +1,14 @@
+import { createClient } from "@/lib/supabase/server"
 import { supabaseAdmin } from "@/lib/supabase/admin"
+import { verifyRoleAccess } from "@/lib/permissions"
 import PayrollClient from "./PayrollClient"
 import { calculatePayrollDeductions } from "@/lib/ph-taxes"
 
 export const revalidate = 0; // Ensure fresh data on load
 
 export default async function PayrollPage() {
+  const supabase = await createClient()
+
   // Fetch real technicians
   const { data: technicians } = await supabaseAdmin
     .from('profiles')
@@ -43,9 +47,11 @@ export default async function PayrollPage() {
     // 1. Fetch total hours and app_time_in to determine holiday overlaps
     const { data: logs } = await supabaseAdmin
       .from('time_logs')
-      .select('total_hours, app_time_in')
+      .select('total_hours, app_time_in, app_time_out')
       .eq('technician_id', emp.id)
       .gte('created_at', firstDayOfMonth);
+
+    const hasOpenLogs = (logs || []).some(log => log.app_time_in && !log.app_time_out);
 
     let workedHours = 0;
     let weightedHours = 0;
@@ -96,9 +102,68 @@ export default async function PayrollPage() {
     const unpaidLeaveHours = unpaidLeaveDays * 8;
     const totalHours = workedHours + paidLeaveHours;
     
-    // 3. Compute gross pay based on standard 160 hours/month rate (using weighted hours + paid leave hours)
+    // 3. Compute default allowances based on schedules
+    const { data: scheds } = await supabaseAdmin
+      .from('schedules')
+      .select('*')
+      .eq('technician_id', emp.id)
+      .lte('start_time', lastDay.toISOString());
+
+    let defaultAllowances = 0;
+    const clockedInDates = new Set<string>();
+    (logs || []).forEach(log => {
+      if (log.app_time_in) {
+        clockedInDates.add(log.app_time_in.split('T')[0]);
+      }
+    });
+
+    const activeScheds = (scheds || []).filter(s => {
+      const sStart = new Date(s.start_time);
+      const sEnd = s.end_time ? new Date(s.end_time) : sStart;
+      return sStart <= lastDay && sEnd >= firstDay;
+    });
+
+    const currDay = new Date(firstDay);
+    while (currDay <= lastDay) {
+      const dateStr = currDay.toISOString().split('T')[0];
+      const daySched = activeScheds.find(s => {
+        const sStart = new Date(s.start_time);
+        sStart.setHours(0,0,0,0);
+        const sEnd = s.end_time ? new Date(s.end_time) : sStart;
+        sEnd.setHours(0,0,0,0);
+        const cTime = currDay.getTime();
+        return cTime >= sStart.getTime() && cTime <= sEnd.getTime();
+      });
+
+      if (daySched) {
+        const mode = daySched.attendance_mode;
+        const rate = daySched.allowance_rate !== undefined ? Number(daySched.allowance_rate || 0) : (mode === 'direct_dispatch' ? 200 : mode === 'out_of_town' ? 500 : 0);
+        if (mode === 'direct_dispatch') {
+          if (clockedInDates.has(dateStr)) {
+            defaultAllowances += rate;
+          }
+        } else if (mode === 'out_of_town') {
+          const isOnLeave = leaves?.some(leave => {
+            const leaveStart = new Date(leave.start_date);
+            leaveStart.setHours(0,0,0,0);
+            const leaveEnd = new Date(leave.end_date);
+            leaveEnd.setHours(0,0,0,0);
+            const cTime = currDay.getTime();
+            return cTime >= leaveStart.getTime() && cTime <= leaveEnd.getTime();
+          });
+          if (!isOnLeave) {
+            defaultAllowances += rate;
+          }
+        }
+      }
+      currDay.setDate(currDay.getDate() + 1);
+    }
+    
+    // 4. Compute gross pay based on standard 160 hours/month rate (using weighted hours + paid leave hours)
     const hourlyRate = Number(emp.base_salary || 0) / 160;
-    const computedGross = Number((hourlyRate * (weightedHours + paidLeaveHours)).toFixed(2));   return {
+    const computedGross = Number((hourlyRate * (weightedHours + paidLeaveHours)).toFixed(2));
+    
+    return {
       technician_id: emp.id,
       workedHours: Number(workedHours.toFixed(2)),
       paidLeaveDays,
@@ -106,13 +171,20 @@ export default async function PayrollPage() {
       paidLeaveHours,
       unpaidLeaveHours,
       totalHours: Number(totalHours.toFixed(2)),
+      hasOpenLogs,
+      defaultAllowances,
       calculation: await calculatePayrollDeductions(emp.id, computedGross, cycleDate)
     };
   }));
+
+  // Verify write permission for payroll publishing
+  const { authorized: isWriteAllowed } = await verifyRoleAccess('payroll', true)
 
   return <PayrollClient 
     technicians={safeTechnicians} 
     publishedPayslips={payslips || []} 
     payrolls={payrolls} 
+    isWriteAllowed={isWriteAllowed}
   />
 }
+

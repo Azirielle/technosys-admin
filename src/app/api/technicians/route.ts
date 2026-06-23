@@ -1,8 +1,14 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase/admin';
+import { verifyRoleAccess } from '@/lib/permissions';
 
 export async function POST(request: Request) {
   try {
+    const { authorized } = await verifyRoleAccess('employees', true);
+    if (!authorized) {
+      return NextResponse.json({ success: false, error: 'Unauthorized. Employee management write permissions required.' }, { status: 403 });
+    }
+
     const { email, password, fullName, baseSalary, role, branchId, lifecycleStatus } = await request.json();
 
     let authUser = null;

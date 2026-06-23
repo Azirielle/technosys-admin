@@ -45,10 +45,20 @@ export async function calculatePayrollDeductions(
 
   // 2. Fetch Statutory Rules
   const { data: sssRule } = await supabaseAdmin.from('sss_brackets')
-    .select('*').lte('min_compensation', totalMonthlyGross).gte('max_compensation', totalMonthlyGross).single();
+    .select('*')
+    .lte('min_compensation', totalMonthlyGross)
+    .gte('max_compensation', totalMonthlyGross)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
     
   const { data: hdmfRule } = await supabaseAdmin.from('pagibig_brackets')
-    .select('*').lte('min_compensation', totalMonthlyGross).gte('max_compensation', totalMonthlyGross).single();
+    .select('*')
+    .lte('min_compensation', totalMonthlyGross)
+    .gte('max_compensation', totalMonthlyGross)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
     
   const { data: phRule } = await supabaseAdmin.from('philhealth_rules')
     .select('*').order('created_at', { ascending: false }).limit(1).single();

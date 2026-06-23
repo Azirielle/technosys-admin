@@ -2,15 +2,18 @@
 import { supabaseAdmin } from "@/lib/supabase/admin"
 import { revalidatePath } from "next/cache"
 import { logActivity } from "./activity"
+import { getBranchFilter } from "@/lib/branch-filter"
 
 // 1. Fetch all tickets
 export async function getTickets(statusFilter?: string) {
   try {
+    const filterBranchId = await getBranchFilter()
+
     let query = supabaseAdmin
       .from('tickets')
       .select(`
         *,
-        employee:profiles!employee_id(full_name, role),
+        employee:profiles!employee_id(full_name, role, branch_id),
         assignee:profiles!assigned_to(full_name, role)
       `)
       .order('created_at', { ascending: false })
@@ -20,6 +23,21 @@ export async function getTickets(statusFilter?: string) {
         query = query.in('status', ['open', 'assigned', 'in_progress'])
       } else {
         query = query.eq('status', statusFilter)
+      }
+    }
+
+    if (filterBranchId) {
+      // Get all employee IDs in this branch
+      const { data: branchStaff } = await supabaseAdmin
+        .from('profiles')
+        .select('id')
+        .eq('branch_id', filterBranchId)
+      
+      const staffIds = (branchStaff || []).map(s => s.id)
+      if (staffIds.length > 0) {
+        query = query.in('employee_id', staffIds)
+      } else {
+        query = query.eq('employee_id', '00000000-0000-0000-0000-000000000000')
       }
     }
 

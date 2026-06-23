@@ -7,9 +7,10 @@ import { ClipboardList, Calendar, CheckCircle2, XCircle, AlertTriangle, Clock, R
 interface LeavesWorkspaceProps {
   initialLeaves: LeaveRequest[]
   currentUserId: string
+  isWriteAllowed?: boolean
 }
 
-export default function LeavesWorkspace({ initialLeaves, currentUserId }: LeavesWorkspaceProps) {
+export default function LeavesWorkspace({ initialLeaves, currentUserId, isWriteAllowed = false }: LeavesWorkspaceProps) {
   const [leaves, setLeaves] = useState<LeaveRequest[]>(initialLeaves)
   const [filter, setFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all')
   const [isPending, startTransition] = useTransition()
@@ -236,7 +237,7 @@ export default function LeavesWorkspace({ initialLeaves, currentUserId }: Leaves
                 )}
 
                 {/* Admin Actions */}
-                {leave.status === 'pending' && (
+                {leave.status === 'pending' && isWriteAllowed && (
                   <div className="flex gap-2 mt-2 pt-3 border-t border-slate-100">
                     <button
                       onClick={() => handleAction(leave.id, 'approved')}
