@@ -22,6 +22,7 @@ import {
 } from "lucide-react"
 import { createSchedule, bulkCreateSchedules, toggleVipHook } from "@/app/actions/schedules"
 import { useRouter } from "next/navigation"
+import Pagination from "@/components/ui/Pagination"
 
 const getLeaveRangeMs = (startDate: string, endDate: string) => {
   const start = startDate.includes('T') ? new Date(startDate).getTime() : new Date(`${startDate}T00:00:00.000Z`).getTime()
@@ -78,6 +79,12 @@ export default function SchedulesClient({
   const [selectedSchedule, setSelectedSchedule] = useState<any | null>(null)
   const [searchQuery, setSearchQuery] = useState("")
   const [draggedOverDate, setDraggedOverDate] = useState<string | null>(null)
+
+  // Pagination states
+  const [schedulesPage, setSchedulesPage] = useState(1)
+  const schedulesPerPage = 10
+  const [staffPage, setStaffPage] = useState(1)
+  const staffPerPage = 5
 
   const handleDragStart = (e: React.DragEvent, id: string, name: string) => {
     e.dataTransfer.setData("application/json", JSON.stringify({ id, name }))
@@ -401,6 +408,20 @@ export default function SchedulesClient({
     return techName.includes(query) || partnerName.includes(query) || clientName.includes(query) || loc.includes(query)
   })
 
+  const totalSchedulesItems = filteredSchedules.length
+  const totalSchedulesPages = Math.ceil(totalSchedulesItems / schedulesPerPage)
+  const paginatedSchedules = filteredSchedules.slice(
+    (schedulesPage - 1) * schedulesPerPage,
+    schedulesPage * schedulesPerPage
+  )
+
+  const totalStaffItems = initialStaff.length
+  const totalStaffPages = Math.ceil(totalStaffItems / staffPerPage)
+  const paginatedStaff = initialStaff.slice(
+    (staffPage - 1) * staffPerPage,
+    staffPage * staffPerPage
+  )
+
   const schedulesByDate: Record<string, any[]> = {}
   filteredSchedules.forEach(sched => {
     if (!sched.start_time) return
@@ -471,14 +492,20 @@ export default function SchedulesClient({
                     type="text"
                     placeholder="Search schedules..."
                     value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onChange={(e) => {
+                      setSearchQuery(e.target.value)
+                      setSchedulesPage(1)
+                    }}
                     className="pl-8 pr-3 py-1.5 border border-zinc-200 rounded-xl bg-white text-zinc-800 text-xs focus:ring-2 focus:ring-emerald-500 outline-none w-40 sm:w-48 transition-all"
                   />
                 </div>
 
                 <div className="flex bg-zinc-200/60 p-0.5 rounded-lg border border-zinc-200">
                   <button
-                    onClick={() => setViewMode('month')}
+                    onClick={() => {
+                      setViewMode('month')
+                      setSchedulesPage(1)
+                    }}
                     className={`px-2.5 py-1 rounded-md text-xs font-bold transition-all flex items-center gap-1 cursor-pointer ${
                       viewMode === 'month' ? 'bg-white text-zinc-950 shadow-2xs' : 'text-zinc-500 hover:text-zinc-850'
                     }`}
@@ -486,7 +513,10 @@ export default function SchedulesClient({
                     <CalendarDays className="w-3.5 h-3.5" /> Month
                   </button>
                   <button
-                    onClick={() => setViewMode('week')}
+                    onClick={() => {
+                      setViewMode('week')
+                      setSchedulesPage(1)
+                    }}
                     className={`px-2.5 py-1 rounded-md text-xs font-bold transition-all flex items-center gap-1 cursor-pointer ${
                       viewMode === 'week' ? 'bg-white text-zinc-950 shadow-2xs' : 'text-zinc-500 hover:text-zinc-850'
                     }`}
@@ -494,7 +524,10 @@ export default function SchedulesClient({
                     <CalendarRange className="w-3.5 h-3.5" /> Week
                   </button>
                   <button
-                    onClick={() => setViewMode('list')}
+                    onClick={() => {
+                      setViewMode('list')
+                      setSchedulesPage(1)
+                    }}
                     className={`px-2.5 py-1 rounded-md text-xs font-bold transition-all flex items-center gap-1 cursor-pointer ${
                       viewMode === 'list' ? 'bg-white text-zinc-950 shadow-2xs' : 'text-zinc-500 hover:text-zinc-850'
                     }`}
@@ -718,105 +751,117 @@ export default function SchedulesClient({
                     No active dispatches found matching the filters.
                   </div>
                 ) : (
-                  filteredSchedules.map(sched => (
-                    <div 
-                      key={sched.id} 
-                      className={`p-5 rounded-xl border relative overflow-hidden transition-all hover:shadow-md bg-white ${
-                        !sched.technician
-                          ? "border-amber-250 bg-amber-50/10"
-                          : sched.is_vip_hook 
-                          ? "border-cyan-200 bg-cyan-50/10" 
-                          : "border-zinc-200"
-                      }`}
-                    >
-                      {sched.is_vip_hook && (
-                        <div className="absolute top-0 right-0 bg-gradient-to-r from-cyan-500 to-blue-500 text-white text-[10px] font-bold px-3 py-1.5 rounded-bl-lg uppercase tracking-wider flex items-center gap-1 shadow-sm">
-                          <Star className="w-3 h-3 fill-white" /> VIP Hook Active
-                        </div>
-                      )}
-                      
-                      {!sched.technician && (
-                        <div className="mb-3 flex items-start gap-2.5 rounded-lg border border-amber-200 bg-amber-50 p-3">
-                          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
-                          <div>
-                            <p className="text-xs font-bold text-amber-800">Staff Unassigned — Needs Reassignment</p>
-                            <p className="mt-0.5 text-xs text-amber-700">
-                              The assigned employee was granted approved leave covering this dispatch period. Please reassign this job to another available staff member.
-                            </p>
-                          </div>
-                        </div>
-                      )}
-
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <h3 className={`font-bold text-base ${sched.is_vip_hook ? "text-cyan-900 pr-32" : "text-zinc-800"}`}>
-                            {sched.client_name}
-                          </h3>
-                          <div className="mt-1 flex flex-wrap gap-2">
-                            <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider border ${
-                              sched.attendance_mode === 'hq' 
-                                ? 'bg-zinc-50 border-zinc-200 text-zinc-600'
-                                : sched.attendance_mode === 'direct_dispatch'
-                                ? 'bg-blue-50 border-blue-100 text-blue-700'
-                                : 'bg-amber-50 border-amber-100 text-amber-700'
-                            }`}>
-                              DTR Mode: {sched.attendance_mode === 'hq' ? 'Pacita HQ' : sched.attendance_mode === 'direct_dispatch' ? 'Direct Dispatch' : 'Out of Town'}
-                            </span>
-                          </div>
-                        </div>
-                        
-                        <button 
-                          onClick={() => handleToggleVip(sched.id, sched.is_vip_hook)}
-                          disabled={isPending}
-                          className={`text-xs font-bold px-3 py-1 rounded-full transition-colors border cursor-pointer ${
-                            sched.is_vip_hook 
-                              ? "bg-red-50 text-red-600 border-red-150 hover:bg-red-100" 
-                              : "bg-cyan-50 text-cyan-700 border-cyan-150 hover:bg-cyan-100"
+                  <div className="space-y-6">
+                    <div className="space-y-4">
+                      {paginatedSchedules.map(sched => (
+                        <div 
+                          key={sched.id} 
+                          className={`p-5 rounded-xl border relative overflow-hidden transition-all hover:shadow-md bg-white ${
+                            !sched.technician
+                              ? "border-amber-250 bg-amber-50/10"
+                              : sched.is_vip_hook 
+                              ? "border-cyan-200 bg-cyan-50/10" 
+                              : "border-zinc-200"
                           }`}
                         >
-                          {sched.is_vip_hook ? "Remove VIP" : "Make VIP"}
-                        </button>
-                      </div>
-                      
-                      <div className="flex flex-col sm:flex-row gap-3 sm:gap-6 text-xs text-zinc-500 my-4">
-                        <div className="flex items-center gap-2 bg-zinc-50 px-3 py-1.5 rounded-xl border border-zinc-100">
-                          <Clock className="w-4 h-4 text-zinc-400" /> 
-                          <span className="font-semibold text-zinc-700">
-                            {new Date(sched.start_time).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                            {sched.end_time ? ` - ${new Date(sched.end_time).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}` : " (Continuous / Clock-out required)"}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2 bg-zinc-50 px-3 py-1.5 rounded-xl border border-zinc-100">
-                          <MapPin className="w-4 h-4 text-zinc-400" /> 
-                          <span className="font-semibold text-zinc-700">{sched.location}</span>
-                        </div>
-                      </div>
-                      
-                      <div className="pt-4 border-t border-zinc-150 flex flex-wrap items-center justify-between text-xs gap-3">
-                        <div className="flex items-center gap-2">
-                          <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-zinc-700 to-zinc-900 flex items-center justify-center text-white font-bold text-xs">
-                            {sched.technician?.full_name?.charAt(0) || '?'}
-                          </div>
-                          <span className="text-zinc-500">Assigned: </span>
-                          <span className="font-bold text-zinc-700">{sched.technician?.full_name || 'Unknown'}</span>
-                          <span className={`text-[9px] px-1.5 py-0.5 rounded border uppercase font-extrabold tracking-wider ${
-                            sched.technician?.role === 'helper' 
-                              ? 'bg-teal-50 border-teal-100 text-teal-700' 
-                              : 'bg-indigo-50 border-indigo-100 text-indigo-700'
-                          }`}>
-                            {sched.technician?.role || 'Technician'}
-                          </span>
-                        </div>
+                          {sched.is_vip_hook && (
+                            <div className="absolute top-0 right-0 bg-gradient-to-r from-cyan-500 to-blue-500 text-white text-[10px] font-bold px-3 py-1.5 rounded-bl-lg uppercase tracking-wider flex items-center gap-1 shadow-sm">
+                              <Star className="w-3 h-3 fill-white" /> VIP Hook Active
+                            </div>
+                          )}
+                          
+                          {!sched.technician && (
+                            <div className="mb-3 flex items-start gap-2.5 rounded-lg border border-amber-200 bg-amber-50 p-3">
+                              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
+                              <div>
+                                <p className="text-xs font-bold text-amber-800">Staff Unassigned — Needs Reassignment</p>
+                                <p className="mt-0.5 text-xs text-amber-700">
+                                  The assigned employee was granted approved leave covering this dispatch period. Please reassign this job to another available staff member.
+                                </p>
+                              </div>
+                            </div>
+                          )}
 
-                        {sched.senior_partner?.full_name && (
-                          <div className="flex items-center gap-1.5 bg-indigo-50/50 border border-indigo-100/60 px-2.5 py-1 rounded-xl text-indigo-950">
-                            <span className="font-bold text-[10px] uppercase">Partnered with:</span>
-                            <span className="font-bold">{sched.senior_partner.full_name}</span>
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <h3 className={`font-bold text-base ${sched.is_vip_hook ? "text-cyan-900 pr-32" : "text-zinc-800"}`}>
+                                {sched.client_name}
+                              </h3>
+                              <div className="mt-1 flex flex-wrap gap-2">
+                                <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider border ${
+                                  sched.attendance_mode === 'hq' 
+                                    ? 'bg-zinc-50 border-zinc-200 text-zinc-600'
+                                    : sched.attendance_mode === 'direct_dispatch'
+                                    ? 'bg-blue-50 border-blue-100 text-blue-700'
+                                    : 'bg-amber-50 border-amber-100 text-amber-700'
+                                }`}>
+                                  DTR Mode: {sched.attendance_mode === 'hq' ? 'Pacita HQ' : sched.attendance_mode === 'direct_dispatch' ? 'Direct Dispatch' : 'Out of Town'}
+                                </span>
+                              </div>
+                            </div>
+                            
+                            <button 
+                              onClick={() => handleToggleVip(sched.id, sched.is_vip_hook)}
+                              disabled={isPending}
+                              className={`text-xs font-bold px-3 py-1 rounded-full transition-colors border cursor-pointer ${
+                                sched.is_vip_hook 
+                                  ? "bg-red-50 text-red-600 border-red-150 hover:bg-red-100" 
+                                  : "bg-cyan-50 text-cyan-700 border-cyan-150 hover:bg-cyan-100"
+                              }`}
+                            >
+                              {sched.is_vip_hook ? "Remove VIP" : "Make VIP"}
+                            </button>
                           </div>
-                        )}
-                      </div>
+                          
+                          <div className="flex flex-col sm:flex-row gap-3 sm:gap-6 text-xs text-zinc-500 my-4">
+                            <div className="flex items-center gap-2 bg-zinc-50 px-3 py-1.5 rounded-xl border border-zinc-100">
+                              <Clock className="w-4 h-4 text-zinc-400" /> 
+                              <span className="font-semibold text-zinc-700">
+                                {new Date(sched.start_time).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                {sched.end_time ? ` - ${new Date(sched.end_time).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}` : " (Continuous / Clock-out required)"}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2 bg-zinc-50 px-3 py-1.5 rounded-xl border border-zinc-100">
+                              <MapPin className="w-4 h-4 text-zinc-400" /> 
+                              <span className="font-semibold text-zinc-700">{sched.location}</span>
+                            </div>
+                          </div>
+                          
+                          <div className="pt-4 border-t border-zinc-150 flex flex-wrap items-center justify-between text-xs gap-3">
+                            <div className="flex items-center gap-2">
+                              <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-zinc-700 to-zinc-900 flex items-center justify-center text-white font-bold text-xs">
+                                {sched.technician?.full_name?.charAt(0) || '?'}
+                              </div>
+                              <span className="text-zinc-500">Assigned: </span>
+                              <span className="font-bold text-zinc-700">{sched.technician?.full_name || 'Unknown'}</span>
+                              <span className={`text-[9px] px-1.5 py-0.5 rounded border uppercase font-extrabold tracking-wider ${
+                                sched.technician?.role === 'helper' 
+                                  ? 'bg-teal-50 border-teal-100 text-teal-700' 
+                                  : 'bg-indigo-50 border-indigo-100 text-indigo-700'
+                              }`}>
+                                {sched.technician?.role || 'Technician'}
+                              </span>
+                            </div>
+
+                            {sched.senior_partner?.full_name && (
+                              <div className="flex items-center gap-1.5 bg-indigo-50/50 border border-indigo-100/60 px-2.5 py-1 rounded-xl text-indigo-950">
+                                <span className="font-bold text-[10px] uppercase">Partnered with:</span>
+                                <span className="font-bold">{sched.senior_partner.full_name}</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                  ))
+                    <Pagination
+                      currentPage={schedulesPage}
+                      totalPages={totalSchedulesPages}
+                      totalItems={totalSchedulesItems}
+                      itemsPerPage={schedulesPerPage}
+                      onPageChange={setSchedulesPage}
+                      itemNamePlural="schedules"
+                    />
+                  </div>
                 )}
               </div>
             )}
@@ -829,11 +874,11 @@ export default function SchedulesClient({
               <Users className="w-5 h-5 text-emerald-500" /> Field workforce
             </h2>
             
-            <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-1 custom-scrollbar">
+            <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-1 custom-scrollbar mb-4">
               {initialStaff.length === 0 ? (
                 <p className="text-sm text-zinc-500">No staff found. Register profiles in Employees page first.</p>
               ) : (
-                initialStaff.map((tech) => {
+                paginatedStaff.map((tech) => {
                   const status = getTechStatusToday(tech.id)
 
                   return (
@@ -877,6 +922,14 @@ export default function SchedulesClient({
                 })
               )}
             </div>
+            <Pagination
+              currentPage={staffPage}
+              totalPages={totalStaffPages}
+              totalItems={totalStaffItems}
+              itemsPerPage={staffPerPage}
+              onPageChange={setStaffPage}
+              itemNamePlural="staff members"
+            />
           </div>
         </div>
       </div>

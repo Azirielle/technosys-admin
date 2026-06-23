@@ -36,6 +36,7 @@ import {
 } from "@/app/actions/employees"
 import { createClient } from "@/lib/supabase/client"
 import { logActivity } from "@/app/actions/activity"
+import Pagination from "@/components/ui/Pagination"
 
 interface EmployeesClientProps {
   initialTechnicians: TechnicianInfo[]
@@ -105,6 +106,31 @@ export default function EmployeesClient({
   // Pagination State
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 5
+
+  // Drawer list pagination states
+  const [timeLogsPage, setTimeLogsPage] = useState(1)
+  const [overrideLogsPage, setOverrideLogsPage] = useState(1)
+  const logsPerPage = 5
+
+  // Reset drawer pagination when selected employee or tab changes
+  useEffect(() => {
+    setTimeLogsPage(1)
+    setOverrideLogsPage(1)
+  }, [selectedEmployee?.id, activeTab])
+
+  const totalTimeLogs = timeLogs.length
+  const totalTimeLogsPages = Math.ceil(totalTimeLogs / logsPerPage)
+  const paginatedTimeLogs = timeLogs.slice(
+    (timeLogsPage - 1) * logsPerPage,
+    timeLogsPage * logsPerPage
+  )
+
+  const totalOverrideLogs = overrideLogs.length
+  const totalOverrideLogsPages = Math.ceil(totalOverrideLogs / logsPerPage)
+  const paginatedOverrideLogs = overrideLogs.slice(
+    (overrideLogsPage - 1) * logsPerPage,
+    overrideLogsPage * logsPerPage
+  )
 
   // Bulk Import States
   const [isBulkDrawerOpen, setIsBulkDrawerOpen] = useState(false)
@@ -668,63 +694,14 @@ export default function EmployeesClient({
                 })}
               </div>
 
-              {/* Pagination Bar */}
-              {totalPages > 1 && (
-                <div className="px-6 py-4 bg-zinc-50/50 border-t border-zinc-100 flex flex-col sm:flex-row items-center justify-between gap-4">
-                  <p className="text-xs text-zinc-500 font-medium">
-                    Showing <span className="font-semibold text-zinc-900">{startIndex + 1}</span> to{" "}
-                    <span className="font-semibold text-zinc-900">
-                      {Math.min(startIndex + itemsPerPage, totalItems)}
-                    </span>{" "}
-                    of <span className="font-semibold text-zinc-900">{totalItems}</span> employees
-                  </p>
-                  
-                  <div className="flex items-center gap-1.5">
-                    {/* Previous Button */}
-                    <button
-                      type="button"
-                      onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                      disabled={currentPage === 1}
-                      className="p-2 rounded-xl border border-zinc-200 bg-white text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900 disabled:opacity-40 disabled:hover:bg-white disabled:hover:text-zinc-600 transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-95 cursor-pointer flex items-center justify-center"
-                      title="Previous Page"
-                    >
-                      <ChevronRight className="w-4 h-4 rotate-180" />
-                    </button>
-
-                    {/* Page Numbers */}
-                    <div className="flex items-center gap-1">
-                      {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
-                        const isCurrent = page === currentPage;
-                        return (
-                          <button
-                            key={page}
-                            type="button"
-                            onClick={() => setCurrentPage(page)}
-                            className={`min-w-9 h-9 px-2 rounded-xl text-xs font-bold transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-95 cursor-pointer flex items-center justify-center border ${
-                              isCurrent
-                                ? "bg-indigo-600 border-indigo-600 text-white shadow-xs"
-                                : "bg-white border-zinc-200 text-zinc-650 hover:bg-zinc-50 hover:text-zinc-900"
-                            }`}
-                          >
-                            {page}
-                          </button>
-                        );
-                      })}
-                    </div>
-
-                    {/* Next Button */}
-                    <button
-                      type="button"
-                      onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                      disabled={currentPage === totalPages}
-                      className="p-2 rounded-xl border border-zinc-200 bg-white text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900 disabled:opacity-40 disabled:hover:bg-white disabled:hover:text-zinc-605 transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-95 cursor-pointer flex items-center justify-center"
-                      title="Next Page"
-                    >
-                      <ChevronRight className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-              )}
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                totalItems={totalItems}
+                itemsPerPage={itemsPerPage}
+                onPageChange={setCurrentPage}
+                itemNamePlural="employees"
+              />
               </>
             )}
           </div>
@@ -1140,125 +1117,137 @@ export default function EmployeesClient({
                       </div>
                     ) : (
                       <div className="space-y-3">
-                        {timeLogs.map((log) => {
-                          const dateStr = new Date(log.created_at).toLocaleDateString(undefined, { dateStyle: 'medium' });
-                          const clockInTime = log.app_time_in ? new Date(log.app_time_in).toLocaleTimeString(undefined, { timeStyle: 'short' }) : 'Unknown';
-                          const clockOutTime = log.app_time_out ? new Date(log.app_time_out).toLocaleTimeString(undefined, { timeStyle: 'short' }) : '--:--';
-                          const durationStr = log.total_hours !== null ? `${log.total_hours} hrs` : 'Active / Working';
-                          const isManualLog = log.is_manual_entry || log.geofence_status === 'manual_override';
+                      <div className="space-y-4">
+                        <div className="space-y-3">
+                          {paginatedTimeLogs.map((log) => {
+                            const dateStr = new Date(log.created_at).toLocaleDateString(undefined, { dateStyle: 'medium' });
+                            const clockInTime = log.app_time_in ? new Date(log.app_time_in).toLocaleTimeString(undefined, { timeStyle: 'short' }) : 'Unknown';
+                            const clockOutTime = log.app_time_out ? new Date(log.app_time_out).toLocaleTimeString(undefined, { timeStyle: 'short' }) : '--:--';
+                            const durationStr = log.total_hours !== null ? `${log.total_hours} hrs` : 'Active / Working';
+                            const isManualLog = log.is_manual_entry || log.geofence_status === 'manual_override';
 
-                          if (editingLogId === log.id) {
-                            return (
-                              <form key={log.id} onSubmit={handleOverrideLog} className="p-4 bg-zinc-50 border border-indigo-200 rounded-xl space-y-3">
-                                <div className="flex items-center justify-between border-b border-zinc-200 pb-2">
-                                  <span className="text-xs font-bold text-zinc-850">✏️ Editing DTR Log</span>
+                            if (editingLogId === log.id) {
+                              return (
+                                <form key={log.id} onSubmit={handleOverrideLog} className="p-4 bg-zinc-50 border border-indigo-200 rounded-xl space-y-3">
+                                  <div className="flex items-center justify-between border-b border-zinc-200 pb-2">
+                                    <span className="text-xs font-bold text-zinc-850">✏️ Editing DTR Log</span>
+                                    <button 
+                                      type="button" 
+                                      onClick={() => setEditingLogId(null)}
+                                      className="text-zinc-400 hover:text-zinc-700 text-2xs font-semibold"
+                                    >
+                                      Cancel
+                                    </button>
+                                  </div>
+                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                    <div>
+                                      <label className="block text-3xs font-bold uppercase tracking-wider text-zinc-500 mb-0.5">New Clock In</label>
+                                      <input 
+                                        required
+                                        type="datetime-local" 
+                                        value={editClockIn} 
+                                        onChange={(e) => setEditClockIn(e.target.value)}
+                                        className="w-full px-2 py-1 border border-zinc-200 rounded bg-white text-zinc-850 text-xs focus:ring-1 focus:ring-indigo-500 outline-none"
+                                      />
+                                    </div>
+                                    <div>
+                                      <label className="block text-3xs font-bold uppercase tracking-wider text-zinc-500 mb-0.5">New Clock Out</label>
+                                      <input 
+                                        required
+                                        type="datetime-local" 
+                                        value={editClockOut} 
+                                        onChange={(e) => setEditClockOut(e.target.value)}
+                                        className="w-full px-2 py-1 border border-zinc-200 rounded bg-white text-zinc-850 text-xs focus:ring-1 focus:ring-indigo-500 outline-none"
+                                      />
+                                    </div>
+                                  </div>
+                                  <div>
+                                    <label className="block text-3xs font-bold uppercase tracking-wider text-zinc-500 mb-0.5">Justification (Reason for change)</label>
+                                    <textarea 
+                                      required
+                                      value={editJustification} 
+                                      onChange={(e) => setEditJustification(e.target.value)}
+                                      placeholder="Provide the reason for overriding this log..."
+                                      className="w-full px-2 py-1 border border-zinc-200 rounded bg-white text-zinc-850 text-xs focus:ring-1 focus:ring-indigo-500 outline-none h-12 resize-none"
+                                    />
+                                  </div>
                                   <button 
-                                    type="button" 
-                                    onClick={() => setEditingLogId(null)}
-                                    className="text-zinc-400 hover:text-zinc-700 text-2xs font-semibold"
+                                    type="submit"
+                                    disabled={loadingAction}
+                                    className="w-full py-1.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-bold rounded text-xs transition-colors"
                                   >
-                                    Cancel
+                                    {loadingAction ? "Saving Changes..." : "Save Override"}
                                   </button>
-                                </div>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                  <div>
-                                    <label className="block text-3xs font-bold uppercase tracking-wider text-zinc-500 mb-0.5">New Clock In</label>
-                                    <input 
-                                      required
-                                      type="datetime-local" 
-                                      value={editClockIn} 
-                                      onChange={(e) => setEditClockIn(e.target.value)}
-                                      className="w-full px-2 py-1 border border-zinc-200 rounded bg-white text-zinc-850 text-xs focus:ring-1 focus:ring-indigo-500 outline-none"
-                                    />
-                                  </div>
-                                  <div>
-                                    <label className="block text-3xs font-bold uppercase tracking-wider text-zinc-500 mb-0.5">New Clock Out</label>
-                                    <input 
-                                      required
-                                      type="datetime-local" 
-                                      value={editClockOut} 
-                                      onChange={(e) => setEditClockOut(e.target.value)}
-                                      className="w-full px-2 py-1 border border-zinc-200 rounded bg-white text-zinc-850 text-xs focus:ring-1 focus:ring-indigo-500 outline-none"
-                                    />
-                                  </div>
-                                </div>
-                                <div>
-                                  <label className="block text-3xs font-bold uppercase tracking-wider text-zinc-500 mb-0.5">Justification (Reason for change)</label>
-                                  <textarea 
-                                    required
-                                    value={editJustification} 
-                                    onChange={(e) => setEditJustification(e.target.value)}
-                                    placeholder="Provide the reason for overriding this log..."
-                                    className="w-full px-2 py-1 border border-zinc-200 rounded bg-white text-zinc-850 text-xs focus:ring-1 focus:ring-indigo-500 outline-none h-12 resize-none"
-                                  />
-                                </div>
-                                <button 
-                                  type="submit"
-                                  disabled={loadingAction}
-                                  className="w-full py-1.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-bold rounded text-xs transition-colors"
-                                >
-                                  {loadingAction ? "Saving Changes..." : "Save Override"}
-                                </button>
-                              </form>
-                            );
-                          }
+                                </form>
+                              );
+                            }
 
-                          return (
-                            <div key={log.id} className={`p-4 rounded-xl border shadow-2xs flex items-center justify-between transition-colors ${log.is_suspicious ? 'bg-rose-50/70 border-rose-250' : 'bg-white border-zinc-200'}`}>
-                              <div className="space-y-1">
-                                <div className="flex items-center gap-2">
-                                  <span className="text-xs font-bold text-zinc-850">📅 {dateStr}</span>
-                                  {isManualLog ? (
-                                    <span className="px-1.5 py-0.5 bg-slate-100 text-slate-700 text-3xs font-extrabold rounded border border-slate-200 uppercase tracking-wider">Manual Entry</span>
-                                  ) : (
-                                    <span className="px-1.5 py-0.5 bg-emerald-50 text-emerald-700 text-3xs font-extrabold rounded border border-emerald-100 uppercase tracking-wider">GPS Verified</span>
+                            return (
+                              <div key={log.id} className={`p-4 rounded-xl border shadow-2xs flex items-center justify-between transition-colors ${log.is_suspicious ? 'bg-rose-50/70 border-rose-250' : 'bg-white border-zinc-200'}`}>
+                                <div className="space-y-1">
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-xs font-bold text-zinc-850">📅 {dateStr}</span>
+                                    {isManualLog ? (
+                                      <span className="px-1.5 py-0.5 bg-slate-100 text-slate-700 text-3xs font-extrabold rounded border border-slate-200 uppercase tracking-wider">Manual Entry</span>
+                                    ) : (
+                                      <span className="px-1.5 py-0.5 bg-emerald-50 text-emerald-700 text-3xs font-extrabold rounded border border-emerald-100 uppercase tracking-wider">GPS Verified</span>
+                                    )}
+                                    {log.is_mocked && (
+                                      <span className="px-1.5 py-0.5 bg-rose-50 text-rose-700 text-3xs font-bold rounded border border-rose-105 uppercase">Mock GPS</span>
+                                    )}
+                                    {log.is_suspicious && (
+                                      <span className="px-1.5 py-0.5 bg-rose-600 text-white text-3xs font-extrabold rounded border border-rose-700 uppercase tracking-wider animate-pulse">Suspicious Clock</span>
+                                    )}
+                                  </div>
+                                  <div className="text-2xs text-zinc-500 flex items-center gap-3">
+                                    <span>In: <strong className="text-zinc-700">{clockInTime}</strong></span>
+                                    <span>•</span>
+                                    <span>Out: <strong className="text-zinc-700">{clockOutTime}</strong></span>
+                                  </div>
+                                </div>
+                                <div className="text-right flex flex-col items-end gap-1">
+                                  <span className={`text-xs font-bold ${log.total_hours === null ? 'text-emerald-600 animate-pulse' : 'text-zinc-800'}`}>
+                                    {durationStr}
+                                  </span>
+                                  {log.gps_accuracy && !isManualLog && (
+                                    <p className="text-3xs text-zinc-400">Acc: {log.gps_accuracy.toFixed(1)}m</p>
                                   )}
-                                  {log.is_mocked && (
-                                    <span className="px-1.5 py-0.5 bg-rose-50 text-rose-700 text-3xs font-bold rounded border border-rose-105 uppercase">Mock GPS</span>
-                                  )}
-                                  {log.is_suspicious && (
-                                    <span className="px-1.5 py-0.5 bg-rose-600 text-white text-3xs font-extrabold rounded border border-rose-700 uppercase tracking-wider animate-pulse">Suspicious Clock</span>
+                                  {canOverrideDtr && (
+                                    <button
+                                      onClick={() => {
+                                        setEditingLogId(log.id)
+                                        const inDate = log.app_time_in ? new Date(log.app_time_in) : new Date();
+                                        const outDate = log.app_time_out ? new Date(log.app_time_out) : new Date();
+                                        
+                                        const toLocalISO = (d: Date) => {
+                                          const tzOffset = d.getTimezoneOffset() * 60000;
+                                          const localISOTime = (new Date(d.getTime() - tzOffset)).toISOString().slice(0, 16);
+                                          return localISOTime;
+                                        }
+                                        
+                                        setEditClockIn(toLocalISO(inDate))
+                                        setEditClockOut(log.app_time_out ? toLocalISO(outDate) : '')
+                                        setEditJustification('')
+                                      }}
+                                      className="text-indigo-650 hover:text-indigo-800 text-3xs font-extrabold uppercase hover:underline"
+                                    >
+                                      Override
+                                    </button>
                                   )}
                                 </div>
-                                <div className="text-2xs text-zinc-500 flex items-center gap-3">
-                                  <span>In: <strong className="text-zinc-700">{clockInTime}</strong></span>
-                                  <span>•</span>
-                                  <span>Out: <strong className="text-zinc-700">{clockOutTime}</strong></span>
-                                </div>
                               </div>
-                              <div className="text-right flex flex-col items-end gap-1">
-                                <span className={`text-xs font-bold ${log.total_hours === null ? 'text-emerald-600 animate-pulse' : 'text-zinc-800'}`}>
-                                  {durationStr}
-                                </span>
-                                {log.gps_accuracy && !isManualLog && (
-                                  <p className="text-3xs text-zinc-400">Acc: {log.gps_accuracy.toFixed(1)}m</p>
-                                )}
-                                {canOverrideDtr && (
-                                  <button
-                                    onClick={() => {
-                                      setEditingLogId(log.id)
-                                      const inDate = log.app_time_in ? new Date(log.app_time_in) : new Date();
-                                      const outDate = log.app_time_out ? new Date(log.app_time_out) : new Date();
-                                      
-                                      const toLocalISO = (d: Date) => {
-                                        const tzOffset = d.getTimezoneOffset() * 60000;
-                                        const localISOTime = (new Date(d.getTime() - tzOffset)).toISOString().slice(0, 16);
-                                        return localISOTime;
-                                      }
-                                      
-                                      setEditClockIn(toLocalISO(inDate))
-                                      setEditClockOut(log.app_time_out ? toLocalISO(outDate) : '')
-                                      setEditJustification('')
-                                    }}
-                                    className="text-indigo-650 hover:text-indigo-800 text-3xs font-extrabold uppercase hover:underline"
-                                  >
-                                    Override
-                                  </button>
-                                )}
-                              </div>
-                            </div>
-                          );
-                        })}
+                            );
+                          })}
+                        </div>
+                        <Pagination
+                          currentPage={timeLogsPage}
+                          totalPages={totalTimeLogsPages}
+                          totalItems={totalTimeLogs}
+                          itemsPerPage={logsPerPage}
+                          onPageChange={setTimeLogsPage}
+                          itemNamePlural="time logs"
+                        />
+                      </div>
                       </div>
                     )}
                   </div>
@@ -1283,7 +1272,7 @@ export default function EmployeesClient({
                       </div>
                     ) : (
                       <div className="space-y-4">
-                        {overrideLogs.map((h) => {
+                        {paginatedOverrideLogs.map((h) => {
                           const creationDate = new Date(h.created_at).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
                           const origIn = h.original_time_in ? new Date(h.original_time_in).toLocaleTimeString(undefined, { timeStyle: 'short' }) : 'None';
                           const origOut = h.original_time_out ? new Date(h.original_time_out).toLocaleTimeString(undefined, { timeStyle: 'short' }) : 'None';
@@ -1301,24 +1290,32 @@ export default function EmployeesClient({
                               <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-1">
                                   <p className="text-3xs font-bold text-zinc-450 uppercase">Original Times</p>
-                                  <p className="text-zinc-600 text-2xs">In: <strong className="text-zinc-800">{origIn}</strong></p>
-                                  <p className="text-zinc-600 text-2xs">Out: <strong className="text-zinc-800">{origOut}</strong></p>
+                                  <p className="text-zinc-650 text-2xs">In: <strong className="text-zinc-800">{origIn}</strong></p>
+                                  <p className="text-zinc-650 text-2xs">Out: <strong className="text-zinc-800">{origOut}</strong></p>
                                   {origDate && <p className="text-3xs text-zinc-400">Date: {origDate}</p>}
                                 </div>
                                 <div className="space-y-1 border-l border-zinc-200 pl-4">
                                   <p className="text-3xs font-bold text-indigo-600 uppercase">New Times</p>
-                                  <p className="text-zinc-600 text-2xs">In: <strong className="text-zinc-800">{newIn}</strong></p>
-                                  <p className="text-zinc-600 text-2xs">Out: <strong className="text-zinc-800">{newOut}</strong></p>
+                                  <p className="text-zinc-650 text-2xs">In: <strong className="text-zinc-800">{newIn}</strong></p>
+                                  <p className="text-zinc-650 text-2xs">Out: <strong className="text-zinc-800">{newOut}</strong></p>
                                   {newDate && <p className="text-3xs text-zinc-400">Date: {newDate}</p>}
                                 </div>
                               </div>
                               <div className="bg-white p-2.5 rounded-lg border border-zinc-150">
                                 <p className="text-3xs font-bold text-zinc-450 uppercase mb-0.5">Override Justification</p>
-                                <p className="text-zinc-700 text-2xs italic leading-relaxed">“{h.justification}”</p>
+                                <p className="text-zinc-705 text-2xs italic leading-relaxed">“{h.justification}”</p>
                               </div>
                             </div>
                           );
                         })}
+                        <Pagination
+                          currentPage={overrideLogsPage}
+                          totalPages={totalOverrideLogsPages}
+                          totalItems={totalOverrideLogs}
+                          itemsPerPage={logsPerPage}
+                          onPageChange={setOverrideLogsPage}
+                          itemNamePlural="overrides"
+                        />
                       </div>
                     )}
                   </div>

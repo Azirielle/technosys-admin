@@ -1,6 +1,5 @@
 "use client"
-
-import { useState, useTransition } from "react"
+import { useState, useTransition, useEffect } from "react"
 import { 
   Package, Plus, Settings, RefreshCw, AlertTriangle, ArrowUpRight, 
   ArrowDownLeft, History, FileText, ClipboardList, CheckCircle2, AlertCircle,
@@ -16,6 +15,7 @@ import {
   logLedgerTransaction
 } from "@/app/actions/inventory"
 import { createClient } from "@/lib/supabase/client"
+import Pagination from "@/components/ui/Pagination"
 
 interface LedgerSummary {
   qty: number
@@ -102,6 +102,42 @@ export default function InventoryWorkspace({
   const [isPending, startTransition] = useTransition()
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
   const [successMsg, setSuccessMsg] = useState<string | null>(null)
+
+  // Pagination states
+  const [ledgerPage, setLedgerPage] = useState(1)
+  const ledgerPerPage = 10
+  const [procurementPage, setProcurementPage] = useState(1)
+  const procurementPerPage = 10
+  const [auditsPage, setAuditsPage] = useState(1)
+  const auditsPerPage = 5
+
+  // Reset pagination on tab changes
+  useEffect(() => {
+    setLedgerPage(1)
+    setProcurementPage(1)
+    setAuditsPage(1)
+  }, [activeTab])
+
+  const totalLedgerItems = ledger.length
+  const totalLedgerPages = Math.ceil(totalLedgerItems / ledgerPerPage)
+  const paginatedLedger = ledger.slice(
+    (ledgerPage - 1) * ledgerPerPage,
+    ledgerPage * ledgerPerPage
+  )
+
+  const totalProcurementItems = procurement.length
+  const totalProcurementPages = Math.ceil(totalProcurementItems / procurementPerPage)
+  const paginatedProcurement = procurement.slice(
+    (procurementPage - 1) * procurementPerPage,
+    procurementPage * procurementPerPage
+  )
+
+  const totalAuditsItems = audits.length
+  const totalAuditsPages = Math.ceil(totalAuditsItems / auditsPerPage)
+  const paginatedAudits = audits.slice(
+    (auditsPage - 1) * auditsPerPage,
+    auditsPage * auditsPerPage
+  )
 
   // Modals / forms state
   const [isNewItemOpen, setIsNewItemOpen] = useState(false)
@@ -700,7 +736,7 @@ export default function InventoryWorkspace({
                       </td>
                     </tr>
                   ) : (
-                    ledger.map(item => {
+                    paginatedLedger.map(item => {
                       const isLowStock = item.quantity <= item.low_stock_threshold
                       return (
                         <tr key={item.id} className="hover:bg-slate-50/40 transition-colors">
@@ -768,6 +804,14 @@ export default function InventoryWorkspace({
                 </tbody>
               </table>
             </div>
+            <Pagination
+              currentPage={ledgerPage}
+              totalPages={totalLedgerPages}
+              totalItems={totalLedgerItems}
+              itemsPerPage={ledgerPerPage}
+              onPageChange={setLedgerPage}
+              itemNamePlural="ledger items"
+            />
           </div>
         </div>
 
@@ -809,7 +853,7 @@ export default function InventoryWorkspace({
                       </td>
                     </tr>
                   ) : (
-                    procurement.map(po => {
+                    paginatedProcurement.map(po => {
                       const isDelivered = po.status === 'delivered'
                       return (
                         <tr key={po.id} className="hover:bg-slate-50/40 transition-colors">
@@ -850,6 +894,14 @@ export default function InventoryWorkspace({
                 </tbody>
               </table>
             </div>
+            <Pagination
+              currentPage={procurementPage}
+              totalPages={totalProcurementPages}
+              totalItems={totalProcurementItems}
+              itemsPerPage={procurementPerPage}
+              onPageChange={setProcurementPage}
+              itemNamePlural="purchase orders"
+            />
           </div>
         </div>
 
@@ -881,7 +933,7 @@ export default function InventoryWorkspace({
                   No inventory audits logged yet.
                 </div>
               ) : (
-                audits.map(audit => {
+                paginatedAudits.map(audit => {
                   const totalDiscrepancies = audit.audit_items.filter(i => i.variance !== 0).length
                   const isExpanded = expandedAuditId === audit.id
 
@@ -954,6 +1006,14 @@ export default function InventoryWorkspace({
                 })
               )}
             </div>
+            <Pagination
+              currentPage={auditsPage}
+              totalPages={totalAuditsPages}
+              totalItems={totalAuditsItems}
+              itemsPerPage={auditsPerPage}
+              onPageChange={setAuditsPage}
+              itemNamePlural="audits"
+            />
           </div>
         </div>
       )}

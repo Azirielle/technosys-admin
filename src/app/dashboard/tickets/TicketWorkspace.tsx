@@ -8,6 +8,7 @@ import {
 import { 
   updateTicketStatus, assignTicket, addTicketComment, getTicketComments 
 } from "@/app/actions/tickets"
+import Pagination from "@/components/ui/Pagination"
 
 interface Profile {
   full_name: string
@@ -67,6 +68,15 @@ export default function TicketWorkspace({
   const [isPending, startTransition] = useTransition()
   const [commentPending, setCommentPending] = useState(false)
   const chatEndRef = useRef<HTMLDivElement>(null)
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 10
+
+  // Reset page to 1 when filters or search query changes
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [searchQuery, statusFilter, categoryFilter])
 
   // Fetch comments when a ticket is selected
   const loadComments = async (ticketId: string) => {
@@ -212,6 +222,13 @@ export default function TicketWorkspace({
 
     return matchesSearch && matchesStatus && matchesCategory
   })
+
+  const totalItems = filteredTickets.length
+  const totalPages = Math.ceil(totalItems / itemsPerPage)
+  const paginatedTickets = filteredTickets.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  )
 
   // Format Helper
   const formatDate = (isoString: string) => {
@@ -399,7 +416,7 @@ export default function TicketWorkspace({
               <p className="text-sm font-medium">No matching tickets</p>
             </div>
           ) : (
-            filteredTickets.map(ticket => (
+            paginatedTickets.map(ticket => (
               <button
                 key={ticket.id}
                 onClick={() => setSelectedTicket(ticket)}
@@ -443,6 +460,14 @@ export default function TicketWorkspace({
             ))
           )}
         </div>
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={totalItems}
+          itemsPerPage={itemsPerPage}
+          onPageChange={setCurrentPage}
+          itemNamePlural="tickets"
+        />
       </div>
 
       {/* RIGHT PANEL: Ticket Workspace & Conversation */}

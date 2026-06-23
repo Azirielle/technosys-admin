@@ -66,24 +66,27 @@ export async function logActivity(
 }
 
 // Fetch activity logs, mapping Phase 9 schema back to the frontend ActivityLog interface
-export async function getActivityLogs(category?: string) {
+export async function getActivityLogs(category?: string, page = 1, pageSize = 10) {
   try {
     const supabase = await createClient()
     
     let query = supabase
       .from('activity_logs')
-      .select('*, actor:profiles(full_name, role)')
+      .select('*, actor:profiles(full_name, role)', { count: 'exact' })
       .order('created_at', { ascending: false })
 
     if (category && category !== 'all') {
       query = query.eq('target_category', category)
     }
 
-    const { data, error } = await query
+    const from = (page - 1) * pageSize
+    const to = from + pageSize - 1
+
+    const { data, error, count } = await query.range(from, to)
 
     if (error) {
       console.error("Error fetching activity logs:", error.message)
-      return { error: error.message, logs: [] }
+      return { error: error.message, logs: [], count: 0 }
     }
 
     const logs: ActivityLog[] = (data || []).map((row: any) => ({
@@ -95,9 +98,9 @@ export async function getActivityLogs(category?: string) {
       created_at: row.created_at
     }))
 
-    return { logs }
+    return { logs, count: count || 0 }
   } catch (e: any) {
     console.error("getActivityLogs exception:", e)
-    return { error: e.message || 'Unknown error fetching activity logs', logs: [] }
+    return { error: e.message || 'Unknown error fetching activity logs', logs: [], count: 0 }
   }
 }
