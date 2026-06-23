@@ -84,6 +84,7 @@ interface InventoryWorkspaceProps {
   initialItems: InventoryItem[]
   initialAudits: InventoryAudit[]
   userId: string
+  initialTab?: "ledger" | "procurement" | "audits"
 }
 
 export default function InventoryWorkspace({ 
@@ -91,9 +92,20 @@ export default function InventoryWorkspace({
   initialProcurement,
   initialItems,
   initialAudits,
-  userId
+  userId,
+  initialTab = "ledger"
 }: InventoryWorkspaceProps) {
-  const [activeTab, setActiveTab] = useState<"ledger" | "procurement" | "audits">("ledger")
+  const [activeTab, setActiveTab] = useState<"ledger" | "procurement" | "audits">(initialTab)
+
+  const handleTabChange = (tab: "ledger" | "procurement" | "audits") => {
+    setActiveTab(tab)
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search)
+      params.set("tab", tab)
+      const newUrl = `${window.location.pathname}?${params.toString()}`
+      window.history.replaceState(null, "", newUrl)
+    }
+  }
   const [ledger, setLedger] = useState<InventoryItemWithLedger[]>(initialLedger)
   const [procurement, setProcurement] = useState<ProcurementOrder[]>(initialProcurement)
   const [items, setItems] = useState<InventoryItem[]>(initialItems)
@@ -539,7 +551,7 @@ export default function InventoryWorkspace({
         {!isAuditing && (
           <div className="flex bg-zinc-200/60 p-1 rounded-xl border border-zinc-250">
             <button
-              onClick={() => setActiveTab("ledger")}
+              onClick={() => handleTabChange("ledger")}
               className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-bold transition-all ${
                 activeTab === "ledger" 
                   ? "bg-white text-zinc-950 shadow-sm" 
@@ -549,7 +561,7 @@ export default function InventoryWorkspace({
               <ClipboardList className="w-4 h-4" /> Inventory Ledger
             </button>
             <button
-              onClick={() => setActiveTab("procurement")}
+              onClick={() => handleTabChange("procurement")}
               className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-bold transition-all ${
                 activeTab === "procurement" 
                   ? "bg-white text-zinc-950 shadow-sm" 
@@ -559,7 +571,7 @@ export default function InventoryWorkspace({
               <ShoppingCart className="w-4 h-4" /> Procurement Tracker
             </button>
             <button
-              onClick={() => setActiveTab("audits")}
+              onClick={() => handleTabChange("audits")}
               className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-bold transition-all ${
                 activeTab === "audits" 
                   ? "bg-white text-zinc-950 shadow-sm" 
