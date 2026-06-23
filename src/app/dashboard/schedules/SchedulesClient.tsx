@@ -107,6 +107,13 @@ export default function SchedulesClient({
   const [searchQuery, setSearchQuery] = useState("")
   const [draggedOverDate, setDraggedOverDate] = useState<string | null>(null)
 
+  const [schedules, setSchedules] = useState<any[]>(initialSchedules)
+  const [deletingScheduleIds, setDeletingScheduleIds] = useState<string[]>([])
+
+  useEffect(() => {
+    setSchedules(initialSchedules)
+  }, [initialSchedules])
+
   // Pagination states
   const [schedulesPage, setSchedulesPage] = useState(1)
   const schedulesPerPage = 10
@@ -268,12 +275,35 @@ export default function SchedulesClient({
     }
 
     startTransition(async () => {
+      const techProfile = initialStaff.find(s => s.id === editTechId)
+      const partnerProfile = initialStaff.find(s => s.id === editSeniorPartnerId)
+
+      const updatedSched = {
+        ...selectedSchedule,
+        technician_id: editTechId,
+        senior_partner_id: editSeniorPartnerId || null,
+        client_name: editClientName,
+        location: editLocation,
+        start_time: editStartTime,
+        end_time: editEndTime || null,
+        attendance_mode: editAttendanceMode,
+        allowance_rate: editAllowanceRate,
+        is_vip_hook: editIsVip,
+        technician: techProfile ? { full_name: techProfile.full_name, role: techProfile.role } : null,
+        senior_partner: partnerProfile ? { full_name: partnerProfile.full_name, role: partnerProfile.role } : null
+      }
+
+      setSchedules(prev => prev.map(s => s.id === selectedSchedule.id ? updatedSched : s))
+      setSelectedSchedule(null)
+      setIsEditing(false)
+
       const res = await updateSchedule(formData)
       if (res?.error) {
+        setSchedules(prev => prev.map(s => s.id === selectedSchedule.id ? selectedSchedule : s))
         setEditErrorMsg(res.error)
+        setSelectedSchedule(selectedSchedule)
+        setIsEditing(true)
       } else {
-        setSelectedSchedule(null)
-        setIsEditing(false)
         router.refresh()
       }
     })
@@ -287,15 +317,25 @@ export default function SchedulesClient({
     )
     if (!confirmed) return
 
-    startTransition(async () => {
-      const res = await deleteSchedule(selectedSchedule.id)
-      if (res?.error) {
-        await alert(res.error, "Delete Failed", "destructive")
-      } else {
-        setSelectedSchedule(null)
-        router.refresh()
-      }
-    })
+    const targetId = selectedSchedule.id
+    setSelectedSchedule(null)
+    setDeletingScheduleIds(prev => [...prev, targetId])
+
+    setTimeout(() => {
+      const cachedSchedules = [...schedules]
+      setSchedules(prev => prev.filter(s => s.id !== targetId))
+      setDeletingScheduleIds(prev => prev.filter(id => id !== targetId))
+
+      startTransition(async () => {
+        const res = await deleteSchedule(targetId)
+        if (res?.error) {
+          setSchedules(cachedSchedules)
+          await alert(res.error, "Delete Failed", "destructive")
+        } else {
+          router.refresh()
+        }
+      })
+    }, 300)
   }
 
   const techniciansOnly = initialStaff.filter(t => t.role === 'technician')
@@ -411,7 +451,7 @@ export default function SchedulesClient({
     
     if (hasLeaveToday) return { label: "On Leave", color: "bg-rose-50 border-rose-100 text-rose-700 font-extrabold" }
     
-    const isScheduledToday = initialSchedules.some(sched => {
+    const isScheduledToday = schedules.some(sched => {
       if (sched.technician_id !== techId && sched.senior_partner_id !== techId) return false
       const schedDateStr = getLocalDateString(new Date(sched.start_time))
       return schedDateStr === todayStr
@@ -549,9 +589,22 @@ export default function SchedulesClient({
   }
 
   const handleToggleVip = (id: string, currentStatus: boolean) => {
+    setSchedules(prev => prev.map(s => s.id === id ? { ...s, is_vip_hook: !currentStatus } : s))
+    if (selectedSchedule?.id === id) {
+      setSelectedSchedule((prev: any) => prev ? { ...prev, is_vip_hook: !currentStatus } : null)
+    }
+
     startTransition(async () => {
-      await toggleVipHook(id, currentStatus)
-      router.refresh()
+      const res = await toggleVipHook(id, currentStatus)
+      if (res?.error) {
+        setSchedules(prev => prev.map(s => s.id === id ? { ...s, is_vip_hook: currentStatus } : s))
+        if (selectedSchedule?.id === id) {
+          setSelectedSchedule((prev: any) => prev ? { ...prev, is_vip_hook: currentStatus } : null)
+        }
+        await alert(res.error, "Update Failed", "destructive")
+      } else {
+        router.refresh()
+      }
     })
   }
 
@@ -563,7 +616,7 @@ export default function SchedulesClient({
     )
   }
 
-  const filteredSchedules = initialSchedules.filter(sched => {
+  const filteredSchedules = schedules.filter(sched => {
     if (!searchQuery) return true
     const query = searchQuery.toLowerCase()
     const techName = sched.technician?.full_name?.toLowerCase() || ""
@@ -767,7 +820,9 @@ export default function SchedulesClient({
                             <button
                               key={sched.id}
                               onClick={() => setSelectedSchedule(sched)}
-                              className={`text-[9px] font-bold px-1.5 py-0.5 rounded-lg border w-full text-left truncate block transition-all hover:shadow-2xs cursor-pointer ${
+                              className={`text-[9px] font-bold px-1.5 py-0.5 rounded-lg border w-full text-left truncate block transition-all duration-300 ease-out hover:shadow-2xs cursor-pointer ${
+                                deletingScheduleIds.includes(sched.id) ? "opacity-0 scale-95" : ""
+                              } ${
                                 !sched.technician
                                   ? 'bg-amber-50 border-amber-250 text-amber-850 hover:bg-amber-100/60'
                                   : sched.is_vip_hook 
@@ -853,10 +908,12 @@ export default function SchedulesClient({
                             <p className="text-[10px] text-zinc-400 italic text-center py-4">No dispatches</p>
                           ) : (
                             dayScheds.map(sched => (
-                              <button
+                               <button
                                 key={sched.id}
                                 onClick={() => setSelectedSchedule(sched)}
-                                className={`w-full p-2.5 rounded-xl border text-left flex flex-col transition-all hover:shadow-md cursor-pointer ${
+                                className={`w-full p-2.5 rounded-xl border text-left flex flex-col transition-all duration-300 ease-out hover:shadow-md cursor-pointer ${
+                                  deletingScheduleIds.includes(sched.id) ? "opacity-0 scale-95" : ""
+                                } ${
                                   !sched.technician
                                     ? 'bg-amber-50 border-amber-200 text-amber-850'
                                     : sched.is_vip_hook 
@@ -921,7 +978,9 @@ export default function SchedulesClient({
                       {paginatedSchedules.map(sched => (
                         <div 
                           key={sched.id} 
-                          className={`p-5 rounded-xl border relative overflow-hidden transition-all hover:shadow-md bg-white ${
+                          className={`p-5 rounded-xl border relative overflow-hidden transition-all duration-300 ease-out hover:shadow-md bg-white ${
+                            deletingScheduleIds.includes(sched.id) ? "opacity-0 scale-95" : ""
+                          } ${
                             !sched.technician
                               ? "border-amber-250 bg-amber-50/10"
                               : sched.is_vip_hook 

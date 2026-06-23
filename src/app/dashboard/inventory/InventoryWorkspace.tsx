@@ -15,6 +15,7 @@ import {
   logLedgerTransaction
 } from "@/app/actions/inventory"
 import { createClient } from "@/lib/supabase/client"
+import { useRouter } from "next/navigation"
 import Pagination from "@/components/ui/Pagination"
 
 interface LedgerSummary {
@@ -106,10 +107,27 @@ export default function InventoryWorkspace({
       window.history.replaceState(null, "", newUrl)
     }
   }
+  const router = useRouter()
   const [ledger, setLedger] = useState<InventoryItemWithLedger[]>(initialLedger)
   const [procurement, setProcurement] = useState<ProcurementOrder[]>(initialProcurement)
   const [items, setItems] = useState<InventoryItem[]>(initialItems)
   const [audits, setAudits] = useState<InventoryAudit[]>(initialAudits)
+
+  useEffect(() => {
+    setLedger(initialLedger)
+  }, [initialLedger])
+
+  useEffect(() => {
+    setProcurement(initialProcurement)
+  }, [initialProcurement])
+
+  useEffect(() => {
+    setItems(initialItems)
+  }, [initialItems])
+
+  useEffect(() => {
+    setAudits(initialAudits)
+  }, [initialAudits])
   
   const [isPending, startTransition] = useTransition()
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
@@ -310,7 +328,7 @@ export default function InventoryWorkspace({
         setIsNewItemOpen(false)
         
         // Refresh page
-        window.location.reload()
+        router.refresh()
       }
     })
   }
@@ -334,7 +352,7 @@ export default function InventoryWorkspace({
         setIsAdjustmentOpen(false)
         
         // Refresh page
-        window.location.reload()
+        router.refresh()
       }
     })
   }
@@ -363,7 +381,7 @@ export default function InventoryWorkspace({
         setIsPoOpen(false)
         
         // Refresh page
-        window.location.reload()
+        router.refresh()
       }
     })
   }
@@ -372,13 +390,18 @@ export default function InventoryWorkspace({
     setErrorMsg(null)
     setSuccessMsg(null)
 
+    // Optimistically update status to 'delivered' locally
+    setProcurement(prev => prev.map(po => po.id === poId ? { ...po, status: 'delivered', delivered_date: new Date().toISOString() } : po))
+
     startTransition(async () => {
       const res = await deliverProcurementOrder(poId)
       if (res.error) {
+        // Revert local status
+        setProcurement(prev => prev.map(po => po.id === poId ? { ...po, status: 'pending', delivered_date: null } : po))
         setErrorMsg(res.error)
       } else {
         setSuccessMsg("Procurement order marked as DELIVERED. Inventory stock levels updated.")
-        window.location.reload()
+        router.refresh()
       }
     })
   }
@@ -421,7 +444,7 @@ export default function InventoryWorkspace({
         })
         setBulkCsvData("")
         setTimeout(() => {
-          window.location.reload()
+          router.refresh()
         }, 1500)
       }
     } catch (err: any) {
@@ -508,7 +531,7 @@ export default function InventoryWorkspace({
         setIsAuditing(false)
         setAuditNotes("")
         setAuditItemsState([])
-        window.location.reload()
+        router.refresh()
       }
     })
   }
