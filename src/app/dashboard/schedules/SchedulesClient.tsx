@@ -17,7 +17,8 @@ import {
   Search,
   Plus,
   CalendarDays,
-  CalendarRange
+  CalendarRange,
+  GripVertical
 } from "lucide-react"
 import { createSchedule, bulkCreateSchedules, toggleVipHook } from "@/app/actions/schedules"
 import { useRouter } from "next/navigation"
@@ -76,6 +77,68 @@ export default function SchedulesClient({
   const [viewMode, setViewMode] = useState<'month' | 'week' | 'list'>('month')
   const [selectedSchedule, setSelectedSchedule] = useState<any | null>(null)
   const [searchQuery, setSearchQuery] = useState("")
+  const [draggedOverDate, setDraggedOverDate] = useState<string | null>(null)
+
+  const handleDragStart = (e: React.DragEvent, id: string, name: string) => {
+    e.dataTransfer.setData("application/json", JSON.stringify({ id, name }))
+    e.dataTransfer.effectAllowed = "move"
+  }
+
+  const handleDragOver = (e: React.DragEvent, dateKey: string) => {
+    if (isWriteAllowed) {
+      e.preventDefault()
+    }
+  }
+
+  const handleDragEnter = (e: React.DragEvent, dateKey: string) => {
+    if (isWriteAllowed) {
+      e.preventDefault()
+      setDraggedOverDate(dateKey)
+    }
+  }
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    if (isWriteAllowed) {
+      e.preventDefault()
+      setDraggedOverDate(null)
+    }
+  }
+
+  const handleDrop = (e: React.DragEvent, date: Date) => {
+    if (!isWriteAllowed) return
+    e.preventDefault()
+    setDraggedOverDate(null)
+    try {
+      const dataStr = e.dataTransfer.getData("application/json")
+      if (!dataStr) return
+      const { id } = JSON.parse(dataStr)
+      if (!id) return
+
+      // Pre-fill fields for the technician and date
+      setTechId(id)
+      
+      const y = date.getFullYear()
+      const m = String(date.getMonth() + 1).padStart(2, '0')
+      const day = String(date.getDate()).padStart(2, '0')
+      const formattedDate = `${y}-${m}-${day}T08:00`
+      setStartTime(formattedDate)
+      
+      // Open modal with pre-filled inputs
+      setSeniorPartnerId("")
+      setClientName("")
+      setLocation("")
+      setAttendanceMode("hq")
+      setAllowanceRate(0)
+      setIsVip(false)
+      setSelectedStaffIds([])
+      setBulkSeniorPartnerMap({})
+      setErrorMsg("")
+      setSuccessMsg("")
+      setShowModal(true)
+    } catch (err) {
+      console.error("Drop failed:", err)
+    }
+  }
 
   const techniciansOnly = initialStaff.filter(t => t.role === 'technician')
 
@@ -457,8 +520,20 @@ export default function SchedulesClient({
                     const isCurrentMonth = dayDate.getMonth() === currentMonthDate.getMonth()
                     const isToday = dateKey === todayStr
 
+                    const isDraggedOver = dateKey === draggedOverDate
                     return (
-                      <div key={idx} className="min-h-[105px] bg-white flex flex-col p-1.5 transition-all hover:bg-zinc-50/30 relative group">
+                      <div 
+                        key={idx} 
+                        onDragOver={(e) => handleDragOver(e, dateKey)}
+                        onDragEnter={(e) => handleDragEnter(e, dateKey)}
+                        onDragLeave={handleDragLeave}
+                        onDrop={(e) => handleDrop(e, dayDate)}
+                        className={`min-h-[105px] flex flex-col p-1.5 transition-all relative group ${
+                          isDraggedOver 
+                            ? 'bg-emerald-50/40 ring-2 ring-inset ring-emerald-500 z-10 scale-[1.01]' 
+                            : 'bg-white hover:bg-zinc-50/30'
+                        }`}
+                      >
                         <div className="flex items-center justify-between mb-1">
                           <span className={`text-xs font-bold ${
                             isToday 
@@ -527,8 +602,20 @@ export default function SchedulesClient({
                     const isToday = dateKey === todayStr
                     const weekdayName = dayDate.toLocaleDateString(undefined, { weekday: 'short' })
 
+                    const isDraggedOver = dateKey === draggedOverDate
                     return (
-                      <div key={idx} className="flex flex-col border border-zinc-200 rounded-xl bg-zinc-50/20 overflow-hidden min-h-[300px]">
+                      <div 
+                        key={idx} 
+                        onDragOver={(e) => handleDragOver(e, dateKey)}
+                        onDragEnter={(e) => handleDragEnter(e, dateKey)}
+                        onDragLeave={handleDragLeave}
+                        onDrop={(e) => handleDrop(e, dayDate)}
+                        className={`flex flex-col border rounded-xl overflow-hidden min-h-[300px] transition-all duration-150 ${
+                          isDraggedOver 
+                            ? 'border-emerald-500 bg-emerald-50/20 ring-2 ring-inset ring-emerald-500 scale-[1.01]' 
+                            : 'border-zinc-200 bg-zinc-50/20'
+                        }`}
+                      >
                         <div className={`p-3 border-b text-center flex flex-col justify-center items-center ${
                           isToday ? 'bg-zinc-950 text-white border-zinc-950' : 'bg-zinc-100/50 border-zinc-200'
                         }`}>
@@ -738,8 +825,20 @@ export default function SchedulesClient({
                   const status = getTechStatusToday(tech.id)
 
                   return (
-                    <div key={tech.id} className="flex items-center justify-between p-3 bg-zinc-50 rounded-xl border border-zinc-200">
-                      <div className="flex items-center gap-3 min-w-0">
+                    <div 
+                      key={tech.id}
+                      draggable={isWriteAllowed}
+                      onDragStart={isWriteAllowed ? (e) => handleDragStart(e, tech.id, tech.full_name) : undefined}
+                      className={`flex items-center justify-between p-3 rounded-xl border transition-all duration-150 ${
+                        isWriteAllowed 
+                          ? 'bg-zinc-50 border-zinc-200 hover:border-zinc-300 hover:bg-white hover:shadow-2xs cursor-grab active:cursor-grabbing select-none' 
+                          : 'bg-zinc-50 border-zinc-200 opacity-90'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 min-w-0">
+                        {isWriteAllowed && (
+                          <GripVertical className="w-3.5 h-3.5 text-zinc-400 shrink-0 cursor-grab active:cursor-grabbing -ml-1 mr-0.5" />
+                        )}
                         <div className="w-8 h-8 rounded-full bg-gradient-to-br from-zinc-250 to-zinc-355 flex items-center justify-center text-zinc-700 font-bold text-xs shadow-inner">
                           {tech.full_name.charAt(0)}
                         </div>
