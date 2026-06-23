@@ -1,6 +1,7 @@
 "use client"
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
+import { useAlertConfirm } from "@/components/ui/AlertConfirmProvider"
 import { 
   UserPlus, 
   Briefcase, 
@@ -54,6 +55,7 @@ export default function EmployeesClient({
   isWriteAllowed = false
 }: EmployeesClientProps) {
   const router = useRouter()
+  const { alert, confirm } = useAlertConfirm()
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
   const [error, setError] = useState("")
@@ -325,7 +327,7 @@ export default function EmployeesClient({
     try {
       const res = await deleteTechnician(id)
       if (res.error) {
-        alert(res.error)
+        await alert(res.error, "Delete Failed", "destructive")
       } else {
         if (selectedEmployee?.id === id) {
           setSelectedEmployee(null)
@@ -333,7 +335,7 @@ export default function EmployeesClient({
         router.refresh()
       }
     } catch (err: any) {
-      alert("Failed to delete technician: " + err.message)
+      await alert("Failed to delete technician: " + err.message, "Error", "destructive")
     } finally {
       setDeleting(false)
       setDeleteId(null)

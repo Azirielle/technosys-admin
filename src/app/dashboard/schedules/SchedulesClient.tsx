@@ -20,9 +20,10 @@ import {
   CalendarRange,
   GripVertical
 } from "lucide-react"
-import { createSchedule, bulkCreateSchedules, toggleVipHook } from "@/app/actions/schedules"
+import { createSchedule, bulkCreateSchedules, toggleVipHook, updateSchedule, deleteSchedule } from "@/app/actions/schedules"
 import { useRouter } from "next/navigation"
 import Pagination from "@/components/ui/Pagination"
+import { useAlertConfirm } from "@/components/ui/AlertConfirmProvider"
 
 const getLeaveRangeMs = (startDate: string, endDate: string) => {
   const start = startDate.includes('T') ? new Date(startDate).getTime() : new Date(`${startDate}T00:00:00.000Z`).getTime()
@@ -35,6 +36,18 @@ const getLocalDateString = (date: Date) => {
   const m = String(date.getMonth() + 1).padStart(2, '0')
   const d = String(date.getDate()).padStart(2, '0')
   return `${y}-${m}-${d}`
+}
+
+const getManilaISOString = () => {
+  const now = new Date()
+  const utc = now.getTime() + (now.getTimezoneOffset() * 60000)
+  const manilaTime = new Date(utc + (3600000 * 8))
+  const y = manilaTime.getFullYear()
+  const m = String(manilaTime.getMonth() + 1).padStart(2, '0')
+  const d = String(manilaTime.getDate()).padStart(2, '0')
+  const h = String(manilaTime.getHours()).padStart(2, '0')
+  const min = String(manilaTime.getMinutes()).padStart(2, '0')
+  return `${y}-${m}-${d}T${h}:${min}`
 }
 
 const months = [
@@ -54,6 +67,7 @@ export default function SchedulesClient({
   isWriteAllowed?: boolean
 }) {
   const router = useRouter()
+  const { alert, confirm } = useAlertConfirm()
   const [showModal, setShowModal] = useState(false)
   const [isPending, startTransition] = useTransition()
   
@@ -73,6 +87,19 @@ export default function SchedulesClient({
   
   const [errorMsg, setErrorMsg] = useState("")
   const [successMsg, setSuccessMsg] = useState("")
+
+  // Edit schedule states
+  const [isEditing, setIsEditing] = useState(false)
+  const [editClientName, setEditClientName] = useState("")
+  const [editLocation, setEditLocation] = useState("")
+  const [editStartTime, setEditStartTime] = useState("")
+  const [editEndTime, setEditEndTime] = useState("")
+  const [editAttendanceMode, setEditAttendanceMode] = useState("hq")
+  const [editAllowanceRate, setEditAllowanceRate] = useState<number>(0)
+  const [editTechId, setEditTechId] = useState("")
+  const [editSeniorPartnerId, setEditSeniorPartnerId] = useState("")
+  const [editIsVip, setEditIsVip] = useState(false)
+  const [editErrorMsg, setEditErrorMsg] = useState("")
 
   const [currentMonthDate, setCurrentMonthDate] = useState(new Date())
   const [viewMode, setViewMode] = useState<'month' | 'week' | 'list'>('month')
@@ -168,6 +195,107 @@ export default function SchedulesClient({
     } catch (err) {
       console.error("Drop failed:", err)
     }
+  }
+
+  useEffect(() => {
+    if (selectedSchedule) {
+      setIsEditing(false)
+      setEditClientName(selectedSchedule.client_name || "")
+      setEditLocation(selectedSchedule.location || "")
+      
+      const formatToInputDate = (dateStr: string | null) => {
+        if (!dateStr) return ""
+        const d = new Date(dateStr)
+        const year = d.getFullYear()
+        const month = String(d.getMonth() + 1).padStart(2, '0')
+        const day = String(d.getDate()).padStart(2, '0')
+        const hours = String(d.getHours()).padStart(2, '0')
+        const minutes = String(d.getMinutes()).padStart(2, '0')
+        return `${year}-${month}-${day}T${hours}:${minutes}`
+      }
+      
+      setEditStartTime(formatToInputDate(selectedSchedule.start_time))
+      setEditEndTime(formatToInputDate(selectedSchedule.end_time))
+      setEditAttendanceMode(selectedSchedule.attendance_mode || "hq")
+      setEditAllowanceRate(selectedSchedule.allowance_rate || 0)
+      setEditTechId(selectedSchedule.technician_id || "")
+      setEditSeniorPartnerId(selectedSchedule.senior_partner_id || "")
+      setEditIsVip(selectedSchedule.is_vip_hook || false)
+      setEditErrorMsg("")
+    }
+  }, [selectedSchedule])
+
+  const handleUpdateSchedule = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setEditErrorMsg("")
+
+    if (!editClientName.trim() || !editLocation.trim() || !editStartTime) {
+      setEditErrorMsg("Please fill in all required fields.")
+      return
+    }
+
+    const targetIds = [editTechId, editSeniorPartnerId].filter(Boolean) as string[]
+    const conflictingLeave = approvedLeaves.find(leave => {
+      if (!targetIds.includes(leave.technician_id)) return false
+      const leaveStart = leave.start_date.includes('T') ? new Date(leave.start_date).getTime() : new Date(`${leave.start_date}T00:00:00.000Z`).getTime()
+      const leaveEnd = leave.end_date.includes('T') ? new Date(leave.end_date).getTime() : new Date(`${leave.end_date}T23:59:59.999Z`).getTime()
+      const schedMs = new Date(editStartTime).getTime()
+      return schedMs >= leaveStart && schedMs <= leaveEnd
+    })
+
+    if (conflictingLeave) {
+      const conflictingStaff = initialStaff.find(s => s.id === conflictingLeave.technician_id)
+      setEditErrorMsg(`The worker "${conflictingStaff?.full_name || 'Staff'}" is on approved leave during this timeframe.`)
+      return
+    }
+
+    const formData = new FormData()
+    formData.append("scheduleId", selectedSchedule.id)
+    formData.append("technicianId", editTechId)
+    formData.append("clientName", editClientName)
+    formData.append("location", editLocation)
+    formData.append("startTime", editStartTime)
+    if (editEndTime) {
+      formData.append("endTime", editEndTime)
+    }
+    formData.append("attendanceMode", editAttendanceMode)
+    formData.append("allowanceRate", editAllowanceRate.toString())
+    if (editSeniorPartnerId && editSeniorPartnerId !== "none" && editSeniorPartnerId !== "") {
+      formData.append("seniorPartnerId", editSeniorPartnerId)
+    }
+    if (editIsVip) {
+      formData.append("isVip", "on")
+    }
+
+    startTransition(async () => {
+      const res = await updateSchedule(formData)
+      if (res?.error) {
+        setEditErrorMsg(res.error)
+      } else {
+        setSelectedSchedule(null)
+        setIsEditing(false)
+        router.refresh()
+      }
+    })
+  }
+
+  const handleDeleteSchedule = async () => {
+    const confirmed = await confirm(
+      "Are you sure you want to permanently delete this dispatch assignment? This action cannot be undone.",
+      "Delete Dispatch",
+      "destructive"
+    )
+    if (!confirmed) return
+
+    startTransition(async () => {
+      const res = await deleteSchedule(selectedSchedule.id)
+      if (res?.error) {
+        await alert(res.error, "Delete Failed", "destructive")
+      } else {
+        setSelectedSchedule(null)
+        router.refresh()
+      }
+    })
   }
 
   const techniciansOnly = initialStaff.filter(t => t.role === 'technician')
@@ -336,6 +464,13 @@ export default function SchedulesClient({
     setErrorMsg("")
     setSuccessMsg("")
 
+    // Client-side past date check
+    const minTime = getManilaISOString()
+    if (startTime < minTime) {
+      setErrorMsg("Cannot dispatch assignments to past dates.")
+      return
+    }
+
     const selectedStaff = initialStaff.find(t => t.id === techId)
     const isHelper = selectedStaff?.role === 'helper'
 
@@ -371,6 +506,13 @@ export default function SchedulesClient({
     e.preventDefault()
     setErrorMsg("")
     setSuccessMsg("")
+
+    // Client-side past date check
+    const minTime = getManilaISOString()
+    if (startTime < minTime) {
+      setErrorMsg("Cannot dispatch assignments to past dates.")
+      return
+    }
 
     if (selectedStaffIds.length === 0) {
       setErrorMsg("Please select at least one staff member to dispatch.")
@@ -951,7 +1093,6 @@ export default function SchedulesClient({
               totalItems={totalStaffItems}
               itemsPerPage={staffPerPage}
               onPageChange={setStaffPage}
-              itemNamePlural="staff members"
             />
           </div>
         </div>
@@ -959,109 +1100,221 @@ export default function SchedulesClient({
 
       {selectedSchedule && (
         <div className="fixed inset-0 bg-slate-900/40 z-50 flex items-center justify-center backdrop-blur-xs p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-zinc-150 overflow-hidden animate-in zoom-in-95 duration-200">
+          <div className="bg-white rounded-2xl max-w-lg w-full shadow-2xl border border-zinc-150 overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="p-6 border-b border-zinc-100 flex items-center justify-between bg-zinc-50/50">
               <div>
                 <span className={`text-[9px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider border ${
-                  selectedSchedule.is_vip_hook 
+                  (isEditing ? editIsVip : selectedSchedule.is_vip_hook) 
                     ? 'bg-cyan-50 border-cyan-200 text-cyan-800 font-extrabold' 
                     : 'bg-zinc-100 border-zinc-200 text-zinc-600'
                 }`}>
-                  {selectedSchedule.is_vip_hook ? '⭐ VIP Dispatch Active' : 'Standard Dispatch'}
+                  {(isEditing ? editIsVip : selectedSchedule.is_vip_hook) ? '⭐ VIP Dispatch Active' : 'Standard Dispatch'}
                 </span>
-                <h3 className="text-lg font-extrabold text-zinc-900 mt-2.5 leading-snug">{selectedSchedule.client_name}</h3>
+                <h3 className="text-lg font-extrabold text-zinc-900 mt-2.5 leading-snug">
+                  {isEditing ? 'Edit Dispatch' : selectedSchedule.client_name}
+                </h3>
               </div>
               <button 
-                onClick={() => setSelectedSchedule(null)}
+                onClick={() => { setSelectedSchedule(null); setIsEditing(false); }}
                 className="p-1.5 hover:bg-zinc-200 text-zinc-400 hover:text-zinc-850 rounded-xl transition-colors cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
             
-            <div className="p-6 space-y-4">
-              <div className="grid grid-cols-2 gap-4 text-xs">
-                <div>
-                  <span className="text-[10px] uppercase font-bold text-zinc-400 block mb-1">Deploy Employee</span>
-                  <div className="flex items-center gap-2">
-                    <div className="w-6 h-6 rounded-full bg-zinc-900 text-white flex items-center justify-center text-[10px] font-bold">
-                      {selectedSchedule.technician?.full_name?.charAt(0) || '?'}
+            {isEditing ? (
+              <form onSubmit={handleUpdateSchedule}>
+                <div className="p-6 space-y-4 max-h-[60vh] overflow-y-auto custom-scrollbar">
+                  {editErrorMsg && (
+                    <div className="p-3.5 bg-rose-50 border border-rose-200 text-rose-800 rounded-xl text-xs font-semibold flex items-start gap-2.5 animate-in fade-in">
+                      <AlertCircle className="w-4.5 h-4.5 mt-0.5 shrink-0" />
+                      <span>{editErrorMsg}</span>
                     </div>
-                    <span className="font-bold text-zinc-700">{selectedSchedule.technician?.full_name || 'Unassigned'}</span>
+                  )}
+
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-2xs font-bold uppercase tracking-wider text-zinc-500 mb-1">Client Name / Job Title</label>
+                      <input required type="text" value={editClientName} onChange={(e) => setEditClientName(e.target.value)} className="w-full px-3 py-1.5 border border-zinc-200 rounded-xl bg-white text-zinc-850 text-xs focus:ring-2 focus:ring-emerald-500 outline-none" />
+                    </div>
+
+                    <div>
+                      <label className="block text-2xs font-bold uppercase tracking-wider text-zinc-500 mb-1">Location / Site Address</label>
+                      <input required type="text" value={editLocation} onChange={(e) => setEditLocation(e.target.value)} className="w-full px-3 py-1.5 border border-zinc-200 rounded-xl bg-white text-zinc-855 text-xs focus:ring-2 focus:ring-emerald-500 outline-none" />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-2xs font-bold uppercase tracking-wider text-zinc-500 mb-1">Start Time</label>
+                        <input required type="datetime-local" value={editStartTime} onChange={(e) => setEditStartTime(e.target.value)} className="w-full px-2 py-1.5 border border-zinc-200 rounded-xl bg-white text-zinc-855 text-xs focus:ring-2 focus:ring-emerald-500 outline-none" />
+                      </div>
+                      <div>
+                        <label className="block text-2xs font-bold uppercase tracking-wider text-zinc-500 mb-1">End Time (Optional)</label>
+                        <input type="datetime-local" value={editEndTime} onChange={(e) => setEditEndTime(e.target.value)} className="w-full px-2 py-1.5 border border-zinc-200 rounded-xl bg-white text-zinc-855 text-xs focus:ring-2 focus:ring-emerald-500 outline-none" />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-2xs font-bold uppercase tracking-wider text-zinc-500 mb-1">Deploy Employee</label>
+                        <select required value={editTechId} onChange={(e) => setEditTechId(e.target.value)} className="w-full px-2 py-1.5 border border-zinc-200 rounded-xl bg-white text-zinc-855 text-xs focus:ring-2 focus:ring-emerald-500 outline-none">
+                          {initialStaff.map(t => (
+                            <option key={t.id} value={t.id}>
+                              {t.full_name} ({t.role})
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-2xs font-bold uppercase tracking-wider text-zinc-500 mb-1">Senior Partner (Optional)</label>
+                        <select value={editSeniorPartnerId} onChange={(e) => setEditSeniorPartnerId(e.target.value)} className="w-full px-2 py-1.5 border border-zinc-200 rounded-xl bg-white text-zinc-855 text-xs focus:ring-2 focus:ring-emerald-500 outline-none">
+                          <option value="">No Senior Partner</option>
+                          {techniciansOnly.map(tech => (
+                            <option key={tech.id} value={tech.id}>{tech.full_name}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-2xs font-bold uppercase tracking-wider text-zinc-500 mb-1">DTR Tracking Mode</label>
+                        <select 
+                          value={editAttendanceMode} 
+                          onChange={(e) => {
+                            const val = e.target.value
+                            setEditAttendanceMode(val)
+                            if (val === 'hq') setEditAllowanceRate(0)
+                            else if (val === 'direct_dispatch') setEditAllowanceRate(200)
+                            else if (val === 'out_of_town') setEditAllowanceRate(500)
+                          }}
+                          className="w-full px-2 py-1.5 border border-zinc-200 rounded-xl bg-white text-zinc-855 text-xs focus:ring-2 focus:ring-emerald-500 outline-none"
+                        >
+                          <option value="hq">HQ Biometric Standard</option>
+                          <option value="direct_dispatch">On-Site Direct Dispatch</option>
+                          <option value="out_of_town">Out-of-Town Mode</option>
+                        </select>
+                      </div>
+                      
+                      {editAttendanceMode !== 'hq' && (
+                        <div>
+                          <label className="block text-2xs font-bold uppercase tracking-wider text-zinc-500 mb-1">Allowance Rate (₱ / day)</label>
+                          <input type="number" min="0" value={editAllowanceRate} onChange={(e) => setEditAllowanceRate(parseFloat(e.target.value) || 0)} className="w-full px-3 py-1.5 border border-zinc-200 rounded-xl bg-white text-zinc-855 text-xs focus:ring-2 focus:ring-emerald-500 outline-none" />
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-3 p-3 bg-cyan-50/40 border border-cyan-155 rounded-xl">
+                      <input type="checkbox" id="editIsVip" checked={editIsVip} onChange={(e) => setEditIsVip(e.target.checked)} className="w-4 h-4 rounded border-cyan-300 text-cyan-600 focus:ring-cyan-500 cursor-pointer" />
+                      <label htmlFor="editIsVip" className="text-xs font-bold text-cyan-900 cursor-pointer select-none">Flag as VIP Hook (High Priority)</label>
+                    </div>
                   </div>
                 </div>
+
+                <div className="p-6 bg-zinc-50 border-t border-zinc-150 flex items-center justify-end gap-3">
+                  <button 
+                    type="button" 
+                    onClick={() => setIsEditing(false)} 
+                    className="px-4 py-2 border border-zinc-200 hover:bg-zinc-100 text-zinc-700 text-xs font-bold rounded-xl transition-colors cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    type="submit" 
+                    disabled={isPending}
+                    className="px-5 py-2 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-white text-xs font-bold rounded-xl transition-colors flex items-center gap-2 cursor-pointer"
+                  >
+                    {isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Save Changes"}
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <>
+                <div className="p-6 space-y-4">
+                  <div className="grid grid-cols-2 gap-4 text-xs">
+                    <div>
+                      <span className="text-[10px] uppercase font-bold text-zinc-400 block mb-1">Deploy Employee</span>
+                      <div className="flex items-center gap-2">
+                        <div className="w-6 h-6 rounded-full bg-zinc-900 text-white flex items-center justify-center text-[10px] font-bold">
+                          {selectedSchedule.technician?.full_name?.charAt(0) || '?'}
+                        </div>
+                        <span className="font-bold text-zinc-700">{selectedSchedule.technician?.full_name || 'Unassigned'}</span>
+                      </div>
+                    </div>
+                    
+                    {selectedSchedule.senior_partner?.full_name && (
+                      <div>
+                        <span className="text-[10px] uppercase font-bold text-zinc-400 block mb-1">Partnered With</span>
+                        <span className="font-bold text-zinc-700">{selectedSchedule.senior_partner.full_name}</span>
+                      </div>
+                    )}
+                    
+                    <div className="col-span-2">
+                      <span className="text-[10px] uppercase font-bold text-zinc-400 block mb-1">Location / Site Address</span>
+                      <div className="flex items-center gap-1.5 text-zinc-700 font-semibold">
+                        <MapPin className="w-4 h-4 text-zinc-400 shrink-0" />
+                        <span>{selectedSchedule.location}</span>
+                      </div>
+                    </div>
+
+                    <div className="col-span-2">
+                      <span className="text-[10px] uppercase font-bold text-zinc-400 block mb-1">Schedule Timing</span>
+                      <div className="flex items-center gap-1.5 text-zinc-700 font-semibold bg-zinc-50 p-2 rounded-lg border border-zinc-100">
+                        <Clock className="w-4 h-4 text-zinc-400 shrink-0" />
+                        <span>
+                          {new Date(selectedSchedule.start_time).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                          {selectedSchedule.end_time ? ` - ${new Date(selectedSchedule.end_time).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}` : " (Continuous / Clock-out required)"}
+                        </span>
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <span className="text-[10px] uppercase font-bold text-zinc-400 block mb-1">DTR Mode</span>
+                      <span className="font-semibold text-zinc-700 capitalize">
+                        {selectedSchedule.attendance_mode === 'hq' ? 'Pacita HQ standard' : selectedSchedule.attendance_mode === 'direct_dispatch' ? 'Direct Dispatch' : 'Out of Town'}
+                      </span>
+                    </div>
+                    
+                    <div>
+                      <span className="text-[10px] uppercase font-bold text-zinc-400 block mb-1">Allowance Rate</span>
+                      <span className="font-semibold text-zinc-700">
+                        ₱{selectedSchedule.allowance_rate || 0} / day
+                      </span>
+                    </div>
+                  </div>
+
+                  {!selectedSchedule.technician && (
+                    <div className="p-3.5 bg-amber-50 border border-amber-200 text-amber-800 rounded-xl text-xs flex gap-2.5">
+                      <AlertCircle className="w-4.5 h-4.5 shrink-0 mt-0.5 text-amber-600" />
+                      <div>
+                        <p className="font-bold">Staff Unassigned</p>
+                        <p className="text-[11px] text-amber-700 mt-0.5">
+                          The assigned employee has approved leave during this time. Please adjust schedule or change employee.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
                 
-                {selectedSchedule.senior_partner?.full_name && (
-                  <div>
-                    <span className="text-[10px] uppercase font-bold text-zinc-400 block mb-1">Partnered With</span>
-                    <span className="font-bold text-zinc-700">{selectedSchedule.senior_partner.full_name}</span>
+                {isWriteAllowed && (
+                  <div className="p-6 bg-zinc-50 border-t border-zinc-100 flex items-center justify-between gap-3">
+                    <button 
+                      onClick={() => setIsEditing(true)}
+                      className="w-full py-2.5 rounded-xl font-bold text-xs bg-zinc-100 hover:bg-zinc-200 text-zinc-800 border border-zinc-200 transition-all cursor-pointer text-center"
+                    >
+                      ✏️ Edit Details
+                    </button>
+                    <button 
+                      onClick={handleDeleteSchedule}
+                      disabled={isPending}
+                      className="w-full py-2.5 rounded-xl font-bold text-xs bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 transition-all cursor-pointer text-center"
+                    >
+                      {isPending ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : '🗑️ Delete Assignment'}
+                    </button>
                   </div>
                 )}
-                
-                <div className="col-span-2">
-                  <span className="text-[10px] uppercase font-bold text-zinc-400 block mb-1">Location / Site Address</span>
-                  <div className="flex items-center gap-1.5 text-zinc-700 font-semibold">
-                    <MapPin className="w-4 h-4 text-zinc-400 shrink-0" />
-                    <span>{selectedSchedule.location}</span>
-                  </div>
-                </div>
-
-                <div className="col-span-2">
-                  <span className="text-[10px] uppercase font-bold text-zinc-400 block mb-1">Schedule Timing</span>
-                  <div className="flex items-center gap-1.5 text-zinc-700 font-semibold bg-zinc-50 p-2 rounded-lg border border-zinc-100">
-                    <Clock className="w-4 h-4 text-zinc-400 shrink-0" />
-                    <span>
-                      {new Date(selectedSchedule.start_time).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                      {selectedSchedule.end_time ? ` - ${new Date(selectedSchedule.end_time).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}` : " (Continuous / Clock-out required)"}
-                    </span>
-                  </div>
-                </div>
-                
-                <div>
-                  <span className="text-[10px] uppercase font-bold text-zinc-400 block mb-1">DTR Mode</span>
-                  <span className="font-semibold text-zinc-700 capitalize">
-                    {selectedSchedule.attendance_mode === 'hq' ? 'Pacita HQ standard' : selectedSchedule.attendance_mode === 'direct_dispatch' ? 'Direct Dispatch' : 'Out of Town'}
-                  </span>
-                </div>
-                
-                <div>
-                  <span className="text-[10px] uppercase font-bold text-zinc-400 block mb-1">Allowance Rate</span>
-                  <span className="font-semibold text-zinc-700">
-                    ₱{selectedSchedule.allowance_rate || 0} / day
-                  </span>
-                </div>
-              </div>
-
-              {!selectedSchedule.technician && (
-                <div className="p-3.5 bg-amber-50 border border-amber-200 text-amber-800 rounded-xl text-xs flex gap-2.5">
-                  <AlertCircle className="w-4.5 h-4.5 shrink-0 mt-0.5 text-amber-600" />
-                  <div>
-                    <p className="font-bold">Staff Unassigned</p>
-                    <p className="text-[11px] text-amber-700 mt-0.5">
-                      The assigned employee has approved leave during this time. Please adjust schedule or change employee.
-                    </p>
-                  </div>
-                </div>
-              )}
-            </div>
-            
-            {isWriteAllowed && (
-              <div className="p-6 bg-zinc-50 border-t border-zinc-100 flex items-center justify-between gap-3">
-                <button 
-                  onClick={() => {
-                    handleToggleVip(selectedSchedule.id, selectedSchedule.is_vip_hook)
-                    setSelectedSchedule(null)
-                  }}
-                  disabled={isPending}
-                  className={`w-full py-2.5 rounded-xl font-bold text-xs shadow-2xs transition-all border cursor-pointer text-center ${
-                    selectedSchedule.is_vip_hook 
-                      ? 'bg-rose-50 hover:bg-rose-100 text-rose-700 border-rose-200' 
-                      : 'bg-cyan-50 hover:bg-cyan-100 text-cyan-800 border-cyan-200'
-                  }`}
-                >
-                  {isPending ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : selectedSchedule.is_vip_hook ? '❌ Remove VIP Status' : '⭐ Make VIP Schedule'}
-                </button>
-              </div>
+              </>
             )}
           </div>
         </div>
@@ -1148,7 +1401,7 @@ export default function SchedulesClient({
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-2xs font-bold uppercase tracking-wider text-zinc-500 mb-1.5">Start Time</label>
-                    <input required type="datetime-local" value={startTime} onChange={(e) => setStartTime(e.target.value)} className="w-full px-3.5 py-2 border border-zinc-200 rounded-xl bg-white text-zinc-800 text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all" />
+                    <input required type="datetime-local" min={getManilaISOString()} value={startTime} onChange={(e) => setStartTime(e.target.value)} className="w-full px-3.5 py-2 border border-zinc-200 rounded-xl bg-white text-zinc-800 text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all" />
                   </div>
                   <div>
                     <label className="block text-2xs font-bold uppercase tracking-wider text-zinc-500 mb-1.5">Attendance Tracking Mode</label>
