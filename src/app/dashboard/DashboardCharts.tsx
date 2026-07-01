@@ -1,7 +1,7 @@
 "use client"
 import { useState } from 'react'
 import { ComposedChart, Area, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts'
-import { CheckCircle2, AlertCircle, FileText, Fingerprint, Loader2, Users, Calendar, ClipboardList, DollarSign, MessageSquare, Package, Settings, HelpCircle, X } from 'lucide-react'
+import { CheckCircle2, AlertCircle, FileText, Fingerprint, Loader2, Users, Calendar, ClipboardList, DollarSign, MessageSquare, Package, Settings, HelpCircle, X, Search, Check } from 'lucide-react'
 import { simulateBiometricScan } from '@/app/actions/employees'
 import Link from 'next/link'
 
@@ -21,6 +21,37 @@ export default function DashboardCharts({
   const [simResult, setSimResult] = useState<{ success?: boolean; error?: string } | null>(null)
   const [isEmulatorOpen, setIsEmulatorOpen] = useState(false)
   const [selectedLocation, setSelectedLocation] = useState('Pacita HQ')
+
+  const [employeeSearchQuery, setEmployeeSearchQuery] = useState('')
+  const [employeeRoleFilter, setEmployeeRoleFilter] = useState<'all' | 'technician' | 'helper'>('all')
+  const [employeeListPage, setEmployeeListPage] = useState(1)
+
+  const handleSearchChange = (query: string) => {
+    setEmployeeSearchQuery(query)
+    setEmployeeListPage(1)
+  }
+
+  const handleRoleFilterChange = (role: 'all' | 'technician' | 'helper') => {
+    setEmployeeRoleFilter(role)
+    setEmployeeListPage(1)
+  }
+
+  // Filter technicians based on search query and role filter
+  const filteredTechnicians = allTechnicians.filter((t: any) => {
+    const fullName = (t.fullName || t.full_name || '').toLowerCase()
+    const matchesSearch = fullName.includes(employeeSearchQuery.toLowerCase())
+    
+    const role = (t.role || '').toLowerCase()
+    const matchesRole = employeeRoleFilter === 'all' || role === employeeRoleFilter
+    
+    return matchesSearch && matchesRole
+  })
+
+  const itemsPerPage = 5
+  const totalPages = Math.ceil(filteredTechnicians.length / itemsPerPage) || 1
+  const currentPage = Math.min(employeeListPage, totalPages)
+  const startIndex = (currentPage - 1) * itemsPerPage
+  const paginatedTechnicians = filteredTechnicians.slice(startIndex, startIndex + itemsPerPage)
 
   // Process payslips for the chart
   const chartData = payslips.map(p => {
@@ -149,7 +180,12 @@ export default function DashboardCharts({
               </div>
             </div>
             <button
-              onClick={() => setIsEmulatorOpen(true)}
+              onClick={() => {
+                setEmployeeSearchQuery('')
+                setEmployeeRoleFilter('all')
+                setEmployeeListPage(1)
+                setIsEmulatorOpen(true)
+              }}
               className="w-full py-2 bg-white border border-slate-200 hover:bg-slate-50 hover:border-slate-300 text-slate-700 text-xs font-semibold rounded-xl transition-all shadow-sm active:scale-95 cursor-pointer text-center"
             >
               Launch Emulator
@@ -307,24 +343,136 @@ export default function DashboardCharts({
             ) : (
               <div className="p-6 space-y-6">
                 <div className="space-y-4">
-                  <div>
-                    <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">
+                  <div className="space-y-3">
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-0">
                       Select Employee
                     </label>
-                    <select
-                      value={selectedTechId}
-                      onChange={(e) => {
-                        setSelectedTechId(e.target.value);
-                      }}
-                      className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all cursor-pointer"
-                    >
-                      <option value="" className="text-slate-400">-- Select Employee --</option>
-                      {allTechnicians.map((t: any) => (
-                        <option key={t.id} value={t.id}>
-                          {t.fullName || t.full_name} ({t.role})
-                        </option>
-                      ))}
-                    </select>
+
+                    {/* Search Input */}
+                    <div className="relative">
+                      <span className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-slate-400">
+                        <Search className="w-4 h-4" />
+                      </span>
+                      <input
+                        type="text"
+                        value={employeeSearchQuery}
+                        onChange={(e) => handleSearchChange(e.target.value)}
+                        placeholder="Search employee name..."
+                        className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
+                      />
+                    </div>
+
+                    {/* Role Filters */}
+                    <div className="flex flex-wrap gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => handleRoleFilterChange('all')}
+                        className={`px-3 py-1.5 text-xs font-semibold rounded-lg border transition-all cursor-pointer ${
+                          employeeRoleFilter === 'all'
+                            ? 'bg-slate-900 border-slate-900 text-white'
+                            : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100/80'
+                        }`}
+                      >
+                        All
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleRoleFilterChange('technician')}
+                        className={`px-3 py-1.5 text-xs font-semibold rounded-lg border transition-all cursor-pointer ${
+                          employeeRoleFilter === 'technician'
+                            ? 'bg-indigo-600 border-indigo-600 text-white'
+                            : 'bg-indigo-50 border-indigo-100 text-indigo-700 hover:bg-indigo-100/70'
+                        }`}
+                      >
+                        Technicians
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleRoleFilterChange('helper')}
+                        className={`px-3 py-1.5 text-xs font-semibold rounded-lg border transition-all cursor-pointer ${
+                          employeeRoleFilter === 'helper'
+                            ? 'bg-amber-600 border-amber-600 text-white'
+                            : 'bg-amber-50 border-amber-100 text-amber-700 hover:bg-amber-100/70'
+                        }`}
+                      >
+                        Helpers
+                      </button>
+                    </div>
+
+                    {/* List Grid */}
+                    <div className="space-y-2 max-h-[290px] overflow-y-auto pr-1">
+                      {paginatedTechnicians.length === 0 ? (
+                        <div className="p-4 text-center text-xs text-slate-400 italic border border-dashed border-slate-200 rounded-xl bg-slate-50">
+                          No employees match your filters.
+                        </div>
+                      ) : (
+                        paginatedTechnicians.map((t: any) => {
+                          const isSelected = selectedTechId === t.id
+                          const roleLower = (t.role || '').toLowerCase()
+                          const isTechnician = roleLower === 'technician'
+                          
+                          return (
+                            <button
+                              key={t.id}
+                              type="button"
+                              onClick={() => setSelectedTechId(t.id)}
+                              className={`w-full flex items-center justify-between p-3 rounded-xl border text-left transition-all duration-200 cursor-pointer ${
+                                isSelected 
+                                  ? 'bg-emerald-50/50 border-emerald-500 shadow-sm' 
+                                  : 'bg-white border-slate-200 hover:border-slate-300 hover:bg-slate-50/50'
+                              }`}
+                            >
+                              <div className="flex items-center gap-2.5 min-w-0">
+                                <span className="font-semibold text-sm text-slate-800 truncate">
+                                  {t.fullName || t.full_name}
+                                </span>
+                                {isTechnician ? (
+                                  <span className="bg-indigo-50 border border-indigo-100 text-indigo-700 text-[10px] px-2 py-0.5 rounded-full font-bold whitespace-nowrap">
+                                    Technician
+                                  </span>
+                                ) : (
+                                  <span className="bg-amber-50 border border-amber-100 text-amber-700 text-[10px] px-2 py-0.5 rounded-full font-bold whitespace-nowrap">
+                                    Helper
+                                  </span>
+                                )}
+                              </div>
+                              {isSelected ? (
+                                <span className="text-emerald-600 shrink-0 bg-emerald-100 p-0.5 rounded-full">
+                                  <Check className="w-3.5 h-3.5" />
+                                </span>
+                              ) : (
+                                <div className="w-4 h-4 rounded-full border border-slate-300 shrink-0" />
+                              )}
+                            </button>
+                          )
+                        })
+                      )}
+                    </div>
+
+                    {/* Pagination Controls */}
+                    {filteredTechnicians.length > 5 && (
+                      <div className="flex items-center justify-between pt-1">
+                        <button
+                          type="button"
+                          onClick={() => setEmployeeListPage(prev => Math.max(prev - 1, 1))}
+                          disabled={currentPage === 1}
+                          className="text-xs font-semibold text-emerald-600 hover:text-emerald-700 disabled:text-slate-300 disabled:pointer-events-none transition-colors cursor-pointer"
+                        >
+                          Previous
+                        </button>
+                        <span className="text-xs text-slate-400 font-medium">
+                          Page {currentPage} of {totalPages}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setEmployeeListPage(prev => Math.min(prev + 1, totalPages))}
+                          disabled={currentPage === totalPages}
+                          className="text-xs font-semibold text-emerald-600 hover:text-emerald-700 disabled:text-slate-300 disabled:pointer-events-none transition-colors cursor-pointer"
+                        >
+                          Next
+                        </button>
+                      </div>
+                    )}
                   </div>
 
                   <div>
