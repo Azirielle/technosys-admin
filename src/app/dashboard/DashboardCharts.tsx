@@ -1,7 +1,7 @@
 "use client"
 import { useState } from 'react'
 import { ComposedChart, Area, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts'
-import { CheckCircle2, AlertCircle, FileText, Fingerprint, Loader2, Users, Calendar, ClipboardList, DollarSign, MessageSquare, Package, Settings, HelpCircle } from 'lucide-react'
+import { CheckCircle2, AlertCircle, FileText, Fingerprint, Loader2, Users, Calendar, ClipboardList, DollarSign, MessageSquare, Package, Settings, HelpCircle, X } from 'lucide-react'
 import { simulateBiometricScan } from '@/app/actions/employees'
 import Link from 'next/link'
 
@@ -19,6 +19,8 @@ export default function DashboardCharts({
   const [selectedTechId, setSelectedTechId] = useState('')
   const [simulating, setSimulating] = useState(false)
   const [simResult, setSimResult] = useState<{ success?: boolean; error?: string } | null>(null)
+  const [isEmulatorOpen, setIsEmulatorOpen] = useState(false)
+  const [selectedLocation, setSelectedLocation] = useState('Pacita HQ')
 
   // Process payslips for the chart
   const chartData = payslips.map(p => {
@@ -37,14 +39,23 @@ export default function DashboardCharts({
     if (!selectedTechId) return
     setSimulating(true)
     setSimResult(null)
+    const startTime = Date.now()
     try {
       const res = await simulateBiometricScan(selectedTechId)
+      const elapsedTime = Date.now() - startTime
+      if (elapsedTime < 1000) {
+        await new Promise(resolve => setTimeout(resolve, 1000 - elapsedTime))
+      }
       if (res.error) {
         setSimResult({ error: res.error })
       } else {
         setSimResult({ success: true })
       }
     } catch (e: any) {
+      const elapsedTime = Date.now() - startTime
+      if (elapsedTime < 1000) {
+        await new Promise(resolve => setTimeout(resolve, 1000 - elapsedTime))
+      }
       setSimResult({ error: e.message || 'Simulated scan failed' })
     } finally {
       setSimulating(false)
@@ -172,179 +183,179 @@ export default function DashboardCharts({
         </div>
       </div>
 
-      {/* Physical Biometric Terminal Simulation Panel (Office Hardware Concept) */}
-      <div className="relative overflow-hidden bg-slate-900 border border-slate-800 rounded-3xl p-8 shadow-xl text-slate-100">
-        <style dangerouslySetInnerHTML={{__html: `
-          @keyframes scan-move {
-            0% { top: 0%; }
-            50% { top: 100%; }
-            100% { top: 0%; }
-          }
-        `}} />
-        {/* Background glow or hardware lines */}
-        <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/5 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute bottom-0 left-0 w-64 h-64 bg-indigo-500/5 rounded-full blur-3xl pointer-events-none" />
-
-        <div className="flex flex-col xl:flex-row gap-8 items-stretch">
-          {/* Left Side: Physical Reader Unit */}
-          <div className="xl:w-80 flex-shrink-0 bg-gradient-to-b from-zinc-800 to-zinc-950 border-4 border-zinc-700 shadow-2xl rounded-2xl p-6 flex flex-col justify-between relative overflow-hidden">
-            {/* Screws on corner of hardware panel */}
-            <div className="absolute top-2 left-2 w-2 h-2 rounded-full bg-zinc-600 border border-zinc-800" />
-            <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-zinc-600 border border-zinc-800" />
-            <div className="absolute bottom-2 left-2 w-2 h-2 rounded-full bg-zinc-600 border border-zinc-800" />
-            <div className="absolute bottom-2 right-2 w-2 h-2 rounded-full bg-zinc-600 border border-zinc-800" />
-
-            {/* Header / Brand */}
-            <div className="text-center mb-4">
-              <span className="text-[10px] tracking-widest text-zinc-500 font-bold uppercase">TECHNOSYS SECURE-TOUCH v2.0</span>
-            </div>
-
-            {/* LEDs & Status Screen */}
-            <div className="space-y-4">
-              {/* LED Lights */}
-              <div className="flex justify-center gap-6 items-center bg-zinc-900 py-2 px-4 rounded-lg border border-zinc-800">
-                <div className="flex items-center gap-1.5">
-                  <div className={`w-3.5 h-3.5 rounded-full transition-all duration-300 ${simulating ? 'bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.8)] animate-pulse' : 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]'}`} />
-                  <span className="text-[10px] text-zinc-400 font-semibold uppercase tracking-wider">STATUS</span>
-                </div>
-                <div className="w-px h-3 bg-zinc-800" />
-                <div className="flex items-center gap-1.5">
-                  <div className={`w-3.5 h-3.5 rounded-full transition-all duration-300 ${simResult?.success ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]' : simResult?.error ? 'bg-rose-500 shadow-[0_0_8px_rgba(239,68,68,0.8)]' : 'bg-zinc-700'}`} />
-                  <span className="text-[10px] text-zinc-400 font-semibold uppercase tracking-wider">RESULT</span>
-                </div>
-              </div>
-
-              {/* LCD Display */}
-              <div className="bg-zinc-950 font-mono text-xs p-3.5 rounded-lg border border-zinc-800 text-emerald-400 shadow-inner flex flex-col justify-between h-20 relative overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-b from-transparent via-emerald-950/5 to-emerald-950/10 pointer-events-none" />
-                <div className="flex justify-between items-center text-[10px] text-emerald-600 border-b border-emerald-950 pb-1 mb-1">
-                  <span>TERMINAL: Pacita HQ</span>
-                  <span>ONLINE</span>
-                </div>
-                <div className="flex-1 flex flex-col justify-center text-center">
-                  {simulating ? (
-                    <div className="flex items-center justify-center gap-2">
-                      <span className="animate-spin">🔄</span>
-                      <span className="animate-pulse">SCANNING FINGERPRINT...</span>
-                    </div>
-                  ) : simResult?.success ? (
-                    <span className="text-emerald-300 font-bold">ACCESS GRANTED / SUCCESS</span>
-                  ) : simResult?.error ? (
-                    <span className="text-rose-400 font-bold">ERROR: SCAN FAIL</span>
-                  ) : (
-                    <span className="text-emerald-400/80 animate-pulse">READY - PLACE FINGER</span>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Fingerprint Scanner Pad */}
-            <div className="my-6 flex justify-center">
-              <div className={`relative p-5 rounded-2xl border-2 transition-all duration-300 cursor-pointer ${
-                simulating 
-                  ? 'bg-amber-950/20 border-amber-500 shadow-[0_0_20px_rgba(245,158,11,0.2)]' 
-                  : simResult?.success 
-                  ? 'bg-emerald-950/20 border-emerald-500 shadow-[0_0_20px_rgba(16,185,129,0.2)]' 
-                  : 'bg-zinc-900 border-zinc-800 hover:border-zinc-700 shadow-inner'
-              }`}>
-                {/* Scan line effect during simulation */}
-                {simulating && (
-                  <div 
-                    className="absolute left-0 right-0 h-0.5 bg-amber-400 shadow-[0_0_8px_#f59e0b]" 
-                    style={{
-                      animation: 'scan-move 2s linear infinite',
-                    }}
-                  />
-                )}
-                <Fingerprint className={`w-16 h-16 transition-colors duration-300 ${
-                  simulating 
-                    ? 'text-amber-400' 
-                    : simResult?.success 
-                    ? 'text-emerald-400' 
-                    : 'text-zinc-500 hover:text-zinc-400'
-                }`} />
-              </div>
-            </div>
-
-            {/* Speaker Grille Detail */}
-            <div className="flex justify-center gap-1">
-              <div className="w-1.5 h-1.5 rounded-full bg-zinc-800" />
-              <div className="w-1.5 h-1.5 rounded-full bg-zinc-800" />
-              <div className="w-1.5 h-1.5 rounded-full bg-zinc-800" />
-              <div className="w-1.5 h-1.5 rounded-full bg-zinc-800" />
-              <div className="w-1.5 h-1.5 rounded-full bg-zinc-800" />
-            </div>
+      {/* Biometric Terminal Emulator Action Card */}
+      <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 hover:shadow-md transition-shadow duration-200">
+        <div className="flex items-start gap-4">
+          <div className="w-12 h-12 rounded-2xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 shrink-0">
+            <Fingerprint className="w-6 h-6" />
           </div>
-
-          {/* Right Side: Control & Description */}
-          <div className="flex-1 flex flex-col justify-between">
-            <div>
-              <h3 className="font-bold text-slate-100 text-xl tracking-tight mb-2 flex items-center gap-2">
-                <span>⚡</span> Biometric Verification Panel
-              </h3>
-              <p className="text-sm text-slate-400 leading-relaxed mb-6">
-                This panel simulates office hardware wall terminals. When technicians trigger clock-in/out via mobile, they are prompted to scan their finger at the branch. Select a staff member below and press scan to simulate a physical finger touch event.
-              </p>
-            </div>
-
-            <div className="space-y-4">
-              <div className="bg-slate-800/40 border border-slate-800 p-5 rounded-2xl">
-                <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2">Select Staff Profile to Swipe</label>
-                <select
-                  value={selectedTechId}
-                  onChange={(e) => {
-                    setSelectedTechId(e.target.value)
-                    setSimResult(null)
-                  }}
-                  className="w-full px-4 py-3 border border-slate-700 rounded-xl bg-slate-900 text-slate-200 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all"
-                >
-                  <option value="" className="text-slate-500">-- Select Staff Member --</option>
-                  {allTechnicians.map((t: any) => (
-                    <option key={t.id} value={t.id} className="bg-slate-900 text-slate-200">{t.full_name} ({t.role})</option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
-                <button
-                  onClick={handleSimulateScan}
-                  disabled={simulating || !selectedTechId}
-                  className="flex-1 py-3 px-6 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 disabled:from-zinc-800 disabled:to-zinc-800 disabled:text-zinc-500 disabled:opacity-50 text-white font-bold rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md shadow-emerald-950/20 active:scale-98"
-                >
-                  {simulating ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" /> Verifying Fingerprint...
-                    </>
-                  ) : (
-                    <>
-                      <Fingerprint className="w-4 h-4" /> Trigger Hardware Swipe
-                    </>
-                  )}
-                </button>
-              </div>
-            </div>
-
-            {/* Sim Result Status bar */}
-            <div className="mt-6 min-h-12">
-              {simResult && (
-                <div className="animate-in fade-in slide-in-from-top duration-300">
-                  {simResult.success ? (
-                    <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 rounded-2xl text-xs font-medium flex items-center gap-3">
-                      <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
-                      <span><strong>Terminal success!</strong> Biometric hardware event dispatched. Mobile app will auto-transition state.</span>
-                    </div>
-                  ) : (
-                    <div className="p-4 bg-rose-500/10 border border-rose-500/20 text-rose-300 rounded-2xl text-xs font-medium flex items-center gap-3">
-                      <AlertCircle className="w-5 h-5 text-rose-400 shrink-0" />
-                      <span><strong>Scan Failed:</strong> {simResult.error}</span>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
+          <div>
+            <h3 className="text-base font-bold text-slate-800">Biometric Terminal Emulator</h3>
+            <p className="text-sm text-slate-500 mt-1 max-w-2xl leading-relaxed">
+              Simulate physical swipe events from office fingerprint reader hardware to test automatic time log creation.
+            </p>
           </div>
         </div>
+        <button
+          onClick={() => setIsEmulatorOpen(true)}
+          className="w-full md:w-auto px-5 py-2.5 bg-white border border-slate-200 hover:bg-slate-50 hover:border-slate-300 text-slate-700 text-sm font-semibold rounded-xl transition-all shadow-sm shrink-0 active:scale-95 cursor-pointer"
+        >
+          Launch Terminal Emulator
+        </button>
       </div>
+
+      {/* Emulator Modal */}
+      {isEmulatorOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          {/* Backdrop */}
+          <div 
+            className="absolute inset-0 backdrop-blur-sm bg-zinc-950/25 transition-opacity duration-300 ease-out animate-in fade-in" 
+            onClick={() => {
+              if (!simulating) {
+                setIsEmulatorOpen(false);
+                setSimResult(null);
+              }
+            }}
+          />
+          
+          {/* Modal Container */}
+          <div className="relative bg-white border border-slate-200 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden transform transition-all animate-in fade-in zoom-in-95 duration-200 ease-out">
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600">
+                  <Fingerprint className="w-4 h-4" />
+                </div>
+                <h3 className="text-base font-bold text-slate-900">Biometric Terminal Emulator</h3>
+              </div>
+              <button
+                onClick={() => {
+                  if (!simulating) {
+                    setIsEmulatorOpen(false);
+                    setSimResult(null);
+                  }
+                }}
+                disabled={simulating}
+                className="text-slate-400 hover:text-slate-600 hover:bg-slate-50 p-1.5 rounded-lg transition-colors cursor-pointer disabled:opacity-50"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Dynamic Content based on State */}
+            {simulating ? (
+              <div className="flex flex-col items-center justify-center py-12 px-6 text-center animate-in fade-in duration-200">
+                <div className="relative mb-6">
+                  <div className="w-16 h-16 rounded-full border-4 border-emerald-100 border-t-emerald-600 animate-spin" />
+                  <Fingerprint className="w-8 h-8 text-emerald-600 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2" />
+                </div>
+                <h4 className="text-base font-semibold text-slate-900">Verifying fingerprint match...</h4>
+                <p className="text-xs text-slate-500 mt-1.5">Checking match with TechnoSys physical records</p>
+              </div>
+            ) : simResult?.success ? (
+              <div className="flex flex-col items-center justify-center py-10 px-6 text-center animate-in fade-in zoom-in-95 duration-300">
+                <div className="w-14 h-14 bg-emerald-50 border border-emerald-100 rounded-full flex items-center justify-center text-emerald-600 mb-4">
+                  <CheckCircle2 className="w-9 h-9" />
+                </div>
+                <h4 className="text-base font-bold text-slate-900">Verification Successful</h4>
+                <p className="text-sm text-slate-500 mt-2 max-w-xs leading-relaxed">
+                  Successfully registered swipe event at <span className="font-semibold text-slate-700">{selectedLocation}</span> for the selected employee.
+                </p>
+                <div className="mt-8 flex gap-3 w-full">
+                  <button
+                    onClick={() => {
+                      setSimResult(null);
+                    }}
+                    className="flex-1 py-2.5 px-4 bg-slate-50 border border-slate-200 hover:bg-slate-100 text-slate-700 text-sm font-semibold rounded-xl transition-all cursor-pointer"
+                  >
+                    Scan Another
+                  </button>
+                  <button
+                    onClick={() => {
+                      setIsEmulatorOpen(false);
+                      setSimResult(null);
+                    }}
+                    className="flex-1 py-2.5 px-4 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold rounded-xl transition-all cursor-pointer"
+                  >
+                    Done
+                  </button>
+                </div>
+              </div>
+            ) : simResult?.error ? (
+              <div className="flex flex-col items-center justify-center py-10 px-6 text-center animate-in fade-in zoom-in-95 duration-300">
+                <div className="w-14 h-14 bg-rose-50 border border-rose-100 rounded-full flex items-center justify-center text-rose-600 mb-4">
+                  <AlertCircle className="w-9 h-9" />
+                </div>
+                <h4 className="text-base font-bold text-slate-900">Verification Failed</h4>
+                <p className="text-sm text-slate-500 mt-2 max-w-xs leading-relaxed">
+                  {simResult.error || "An unexpected error occurred during the verification process."}
+                </p>
+                <div className="mt-8 flex gap-3 w-full">
+                  <button
+                    onClick={() => {
+                      setSimResult(null);
+                    }}
+                    className="flex-1 py-2.5 px-4 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold rounded-xl transition-all cursor-pointer"
+                  >
+                    Try Again
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="p-6 space-y-6">
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">
+                      Select Employee
+                    </label>
+                    <select
+                      value={selectedTechId}
+                      onChange={(e) => {
+                        setSelectedTechId(e.target.value);
+                      }}
+                      className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all cursor-pointer"
+                    >
+                      <option value="" className="text-slate-400">-- Select Employee --</option>
+                      {allTechnicians.map((t: any) => (
+                        <option key={t.id} value={t.id}>
+                          {t.fullName || t.full_name} ({t.role})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">
+                      Office Location
+                    </label>
+                    <select
+                      value={selectedLocation}
+                      onChange={(e) => {
+                        setSelectedLocation(e.target.value);
+                      }}
+                      className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all cursor-pointer"
+                    >
+                      <option value="Pacita HQ">Pacita HQ</option>
+                      <option value="Makati Branch">Makati Branch</option>
+                      <option value="Cebu Branch">Cebu Branch</option>
+                      <option value="Davao Branch">Davao Branch</option>
+                    </select>
+                  </div>
+                </div>
+
+                <button
+                  onClick={handleSimulateScan}
+                  disabled={!selectedTechId}
+                  className="w-full py-3 px-4 bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-100 disabled:text-slate-400 text-white font-semibold rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer shadow-sm active:scale-[0.98]"
+                >
+                  <Fingerprint className="w-5 h-5" />
+                  <span>Scan Fingerprint</span>
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   )
 }
