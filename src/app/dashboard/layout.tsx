@@ -1,18 +1,41 @@
 "use client"
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
-import { LayoutDashboard, Users, Calendar, DollarSign, Settings, LogOut, MessageSquare, Package, ClipboardList, ShieldAlert } from 'lucide-react'
+import { usePathname, useRouter } from 'next/navigation'
+import { LayoutDashboard, Users, Calendar, DollarSign, Settings, LogOut, MessageSquare, Package, ClipboardList, ShieldAlert, Search } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { MODULE_ROLES, type UserRole } from '@/lib/permissions-client'
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
+  const router = useRouter()
   const [profile, setProfile] = useState<{ full_name: string; role: string } | null>(null)
   const [pendingLeavesCount, setPendingLeavesCount] = useState<number>(0)
   const [lowStockCount, setLowStockCount] = useState<number>(0)
   const [loading, setLoading] = useState<boolean>(true)
+  const [searchInput, setSearchInput] = useState('')
+  const [isMac, setIsMac] = useState(false)
+  const searchInputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setIsMac(navigator.platform.toUpperCase().indexOf('MAC') >= 0)
+    }
+  }, [])
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault()
+        searchInputRef.current?.focus()
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [])
 
   useEffect(() => {
     async function loadProfile() {
@@ -168,6 +191,40 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     }
   }
 
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    const query = searchInput.trim().toLowerCase()
+    if (!query) return
+
+    if (query === 'payroll' || query === 'payrolls') {
+      router.push('/dashboard/payroll')
+    } else if (query === 'employee' || query === 'employees' || query === 'staff') {
+      router.push('/dashboard/employees')
+    } else if (query === 'schedule' || query === 'schedules' || query === 'calendar') {
+      router.push('/dashboard/schedules')
+    } else if (query === 'setting' || query === 'settings' || query === 'config') {
+      router.push('/dashboard/settings')
+    } else if (query === 'leave' || query === 'leaves' || query === 'timeoff') {
+      router.push('/dashboard/leaves')
+    } else if (query === 'ticket' || query === 'tickets' || query === 'support') {
+      router.push('/dashboard/tickets')
+    } else if (query === 'inventory' || query === 'inventories' || query === 'stock') {
+      router.push('/dashboard/inventory')
+    } else if (query === 'overview' || query === 'dashboard' || query === 'home') {
+      router.push('/dashboard')
+    } else {
+      if (query.includes('payroll')) router.push('/dashboard/payroll')
+      else if (query.includes('employee')) router.push('/dashboard/employees')
+      else if (query.includes('schedule')) router.push('/dashboard/schedules')
+      else if (query.includes('setting')) router.push('/dashboard/settings')
+      else if (query.includes('leave')) router.push('/dashboard/leaves')
+      else if (query.includes('ticket')) router.push('/dashboard/tickets')
+      else if (query.includes('inventory')) router.push('/dashboard/inventory')
+      else if (query.includes('overview') || query.includes('home') || query.includes('dashboard')) router.push('/dashboard')
+    }
+    setSearchInput('')
+  }
+
   return (
     <div className="flex h-screen bg-zinc-50 overflow-hidden">
       {/* Premium Light Sidebar */}
@@ -271,8 +328,26 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
       {/* Main Content Area */}
       <main className="flex-1 flex flex-col overflow-hidden relative">
-        <header className="h-16 bg-white border-b border-zinc-200 flex items-center justify-end px-8 z-10 shadow-sm">
-          <div className="flex items-center gap-4">
+        <header className="h-16 bg-white border-b border-zinc-200 flex items-center justify-between px-8 z-10 shadow-sm">
+          {/* Global Search Bar */}
+          <form onSubmit={handleSearchSubmit} className="hidden md:flex items-center relative w-64 lg:w-80 transition-all duration-300 focus-within:w-72 lg:focus-within:w-96">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 pointer-events-none" />
+            <input
+              ref={searchInputRef}
+              id="global-search-input"
+              type="text"
+              placeholder="Search command or page..."
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              className="w-full pl-10 pr-16 py-1.5 text-xs bg-zinc-50 border border-zinc-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-zinc-400 focus:border-zinc-400 focus:bg-white transition-all text-zinc-900 placeholder:text-zinc-400 font-medium shadow-inner"
+            />
+            <kbd className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none inline-flex h-5 select-none items-center gap-0.5 rounded border border-zinc-200 bg-zinc-100 px-1.5 font-mono text-[9px] font-bold text-zinc-500 shadow-sm">
+              <span>{isMac ? '⌘' : 'Ctrl+'}</span>K
+            </kbd>
+          </form>
+
+          {/* Profile Section */}
+          <div className="flex items-center gap-4 ml-auto md:ml-0">
              <div className="text-right hidden md:block">
                <div className="flex items-center gap-2">
                  <p className="text-sm font-bold text-zinc-900">{profile ? profile.full_name : "Loading..."}</p>
