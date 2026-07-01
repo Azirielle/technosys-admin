@@ -133,75 +133,78 @@ export default function DashboardCharts({
           </div>
         </div>
 
-        {/* Recent Activity Section */}
-        <div className="p-6 bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col hover:shadow-md transition-shadow">
-          <h3 className="font-bold text-slate-900 mb-6 text-lg tracking-tight flex items-center justify-between">
-            <Link href="/dashboard/activity" className="flex items-center gap-2 hover:text-emerald-600 transition-colors">
-              <Activity className="w-5 h-5 text-emerald-500" /> Recent Activity
-            </Link>
-            <Link href="/dashboard/activity" className="text-xs text-slate-400 hover:text-emerald-600 transition-colors font-medium">
-              View All →
-            </Link>
-          </h3>
-          
-          <div className="flex-1 overflow-y-auto space-y-4 pr-2">
-            {recentActivities.map((log: any, i: number) => {
-              const getCategoryIcon = (category: string) => {
-                switch (category) {
-                  case 'employee': return { icon: Users, bg: 'bg-cyan-50 border-cyan-100 text-cyan-600' }
-                  case 'schedule': return { icon: Calendar, bg: 'bg-indigo-50 border-indigo-100 text-indigo-600' }
-                  case 'leave': return { icon: ClipboardList, bg: 'bg-rose-50 border-rose-100 text-rose-600' }
-                  case 'payroll': return { icon: DollarSign, bg: 'bg-emerald-50 border-emerald-100 text-emerald-600' }
-                  case 'ticket': return { icon: MessageSquare, bg: 'bg-amber-50 border-amber-100 text-amber-600' }
-                  case 'inventory': return { icon: Package, bg: 'bg-blue-50 border-blue-100 text-blue-600' }
-                  case 'settings': return { icon: Settings, bg: 'bg-slate-50 border-slate-100 text-slate-600' }
-                  default: return { icon: HelpCircle, bg: 'bg-zinc-50 border-zinc-100 text-zinc-600' }
+        {/* Right column: Emulator and Recent Activity */}
+        <div className="lg:col-span-1 flex flex-col gap-6">
+          {/* Biometric Terminal Emulator Action Card */}
+          <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-6 flex flex-col gap-4 hover:shadow-md transition-shadow duration-200">
+            <div className="flex items-start gap-4">
+              <div className="w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 shrink-0">
+                <Fingerprint className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-slate-800">Biometric Emulator</h3>
+                <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+                  Simulate physical fingerprint swipes to test automatic time log creation.
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => setIsEmulatorOpen(true)}
+              className="w-full py-2 bg-white border border-slate-200 hover:bg-slate-50 hover:border-slate-300 text-slate-700 text-xs font-semibold rounded-xl transition-all shadow-sm active:scale-95 cursor-pointer text-center"
+            >
+              Launch Emulator
+            </button>
+          </div>
+
+          {/* Recent Activity Section */}
+          <div className="p-6 bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col hover:shadow-md transition-shadow">
+            <h3 className="font-bold text-slate-900 mb-6 text-lg tracking-tight flex items-center justify-between">
+              <Link href="/dashboard/activity" className="flex items-center gap-2 hover:text-emerald-600 transition-colors">
+                <Activity className="w-5 h-5 text-emerald-500" /> Recent Activity
+              </Link>
+              <Link href="/dashboard/activity" className="text-xs text-slate-400 hover:text-emerald-600 transition-colors font-medium">
+                View All →
+              </Link>
+            </h3>
+            
+            <div className="flex-1 overflow-y-auto space-y-4 pr-2">
+              {recentActivities.slice(0, 3).map((log: any, i: number) => {
+                const getCategoryIcon = (category: string) => {
+                  switch (category) {
+                    case 'employee': return { icon: Users, bg: 'bg-cyan-50 border-cyan-100 text-cyan-600' }
+                    case 'schedule': return { icon: Calendar, bg: 'bg-indigo-50 border-indigo-100 text-indigo-600' }
+                    case 'leave': return { icon: ClipboardList, bg: 'bg-rose-50 border-rose-100 text-rose-600' }
+                    case 'payroll': return { icon: DollarSign, bg: 'bg-emerald-50 border-emerald-100 text-emerald-600' }
+                    case 'ticket': return { icon: MessageSquare, bg: 'bg-amber-50 border-amber-100 text-amber-600' }
+                    case 'inventory': return { icon: Package, bg: 'bg-blue-50 border-blue-100 text-blue-600' }
+                    case 'settings': return { icon: Settings, bg: 'bg-slate-50 border-slate-100 text-slate-600' }
+                    default: return { icon: HelpCircle, bg: 'bg-zinc-50 border-zinc-100 text-zinc-600' }
+                  }
                 }
-              }
-              const { icon: Icon, bg } = getCategoryIcon(log.target_category)
-              return (
-                <div key={log.id || i} className="flex items-start gap-3 pb-4 border-b border-slate-100 last:border-0 last:pb-0">
-                  <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 border ${bg}`}>
-                    <Icon className="w-4 h-4" />
+                const { icon: Icon, bg } = getCategoryIcon(log.target_category)
+                return (
+                  <div key={log.id || i} className="flex items-start gap-3 pb-4 border-b border-slate-100 last:border-0 last:pb-0">
+                    <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 border ${bg}`}>
+                      <Icon className="w-4 h-4" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-semibold text-slate-900 leading-snug">{log.description}</p>
+                      <p className="text-[10px] text-slate-400 mt-1 font-medium flex items-center gap-1.5">
+                        <span>{log.actor?.full_name || 'System'}</span>
+                        <span>•</span>
+                        <span>{new Date(log.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+                      </p>
+                    </div>
                   </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-semibold text-slate-900 leading-snug">{log.description}</p>
-                    <p className="text-[10px] text-slate-400 mt-1 font-medium flex items-center gap-1.5">
-                      <span>{log.actor?.full_name || 'System'}</span>
-                      <span>•</span>
-                      <span>{new Date(log.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
-                    </p>
-                  </div>
-                </div>
-              )
-            })}
+                )
+              })}
 
-            {recentActivities.length === 0 && (
-               <p className="text-sm text-slate-500 italic">No recent activity logs available.</p>
-            )}
+              {recentActivities.length === 0 && (
+                 <p className="text-sm text-slate-500 italic">No recent activity logs available.</p>
+              )}
+            </div>
           </div>
         </div>
-      </div>
-
-      {/* Biometric Terminal Emulator Action Card */}
-      <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 hover:shadow-md transition-shadow duration-200">
-        <div className="flex items-start gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 shrink-0">
-            <Fingerprint className="w-6 h-6" />
-          </div>
-          <div>
-            <h3 className="text-base font-bold text-slate-800">Biometric Terminal Emulator</h3>
-            <p className="text-sm text-slate-500 mt-1 max-w-2xl leading-relaxed">
-              Simulate physical swipe events from office fingerprint reader hardware to test automatic time log creation.
-            </p>
-          </div>
-        </div>
-        <button
-          onClick={() => setIsEmulatorOpen(true)}
-          className="w-full md:w-auto px-5 py-2.5 bg-white border border-slate-200 hover:bg-slate-50 hover:border-slate-300 text-slate-700 text-sm font-semibold rounded-xl transition-all shadow-sm shrink-0 active:scale-95 cursor-pointer"
-        >
-          Launch Terminal Emulator
-        </button>
       </div>
 
       {/* Emulator Modal */}
