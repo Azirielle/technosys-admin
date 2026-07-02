@@ -18,22 +18,64 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
 
   useEffect(() => {
+    const supabase = createClient()
+    const channels: ReturnType<typeof supabase.channel>[] = []
+
     async function loadProfile() {
       try {
-        const supabase = createClient()
-        
         const { data: { user }, error: userError } = await supabase.auth.getUser()
         console.log("Layout auth getUser:", { user, userError })
+
         if (user) {
           const { data, error: profileError } = await supabase
             .from('profiles')
             .select('full_name, role')
             .eq('id', user.id)
             .single()
-          
+
           console.log("Layout profile fetch:", { data, profileError })
+
           if (data) {
             setProfile(data)
+            const role = data.role as UserRole
+
+            // --- Role-gated: Pending Leaves badge ---
+            if (MODULE_ROLES['leaves']?.includes(role)) {
+              const fetchPendingLeavesCount = async () => {
+                const { count, error } = await supabase
+                  .from('leaves')
+                  .select('*', { count: 'exact', head: true })
+                  .eq('status', 'pending')
+                if (!error && count !== null) setPendingLeavesCount(count)
+              }
+              fetchPendingLeavesCount()
+
+              const leavesChannel = supabase
+                .channel('leaves-pending-changes')
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'leaves' }, fetchPendingLeavesCount)
+                .subscribe()
+              channels.push(leavesChannel)
+            }
+
+            // --- Role-gated: Low Stock Inventory badge ---
+            if (MODULE_ROLES['inventory']?.includes(role)) {
+              const fetchLowStockCount = async () => {
+                const { data: items, error } = await supabase
+                  .from('inventory_items')
+                  .select('id, quantity, low_stock_threshold')
+                if (!error && items) {
+                  const count = items.filter((item: any) => item.quantity <= item.low_stock_threshold).length
+                  setLowStockCount(count)
+                }
+              }
+              fetchLowStockCount()
+
+              const inventoryChannel = supabase
+                .channel('inventory-stock-changes')
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'inventory_items' }, fetchLowStockCount)
+                .subscribe()
+              channels.push(inventoryChannel)
+            }
           }
         }
       } catch (e) {
@@ -42,64 +84,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         setLoading(false)
       }
     }
+
     loadProfile()
 
-    // Setup pending leaves count loading
-    const supabase = createClient()
-
-    const fetchPendingLeavesCount = async () => {
-      const { count, error } = await supabase
-        .from('leaves')
-        .select('*', { count: 'exact', head: true })
-        .eq('status', 'pending')
-
-      if (!error && count !== null) {
-        setPendingLeavesCount(count)
-      }
-    }
-
-    const fetchLowStockCount = async () => {
-      const { data, error } = await supabase
-        .from('inventory_items')
-        .select('id, quantity, low_stock_threshold')
-
-      if (!error && data) {
-        const count = data.filter((item: any) => item.quantity <= item.low_stock_threshold).length
-        setLowStockCount(count)
-      }
-    }
-
-    fetchPendingLeavesCount()
-    fetchLowStockCount()
-
-    // Realtime channel subscriptions to update the badge counts automatically
-    const leavesChannel = supabase
-      .channel('leaves-pending-changes')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'leaves' },
-        () => {
-          fetchPendingLeavesCount()
-        }
-      )
-      .subscribe()
-
-    const inventoryChannel = supabase
-      .channel('inventory-stock-changes')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'inventory_items' },
-        () => {
-          fetchLowStockCount()
-        }
-      )
-      .subscribe()
-
     return () => {
-      supabase.removeChannel(leavesChannel)
-      supabase.removeChannel(inventoryChannel)
+      channels.forEach(ch => supabase.removeChannel(ch))
     }
   }, [])
+
 
   const navItems = [
     { href: '/dashboard', label: 'Overview', icon: LayoutDashboard, exact: true },
