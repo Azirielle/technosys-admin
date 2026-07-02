@@ -1,6 +1,5 @@
 "use client"
-
-import { useState, useTransition } from "react"
+import { useState, useTransition, useEffect } from "react"
 import { 
   Package, Plus, Settings, RefreshCw, AlertTriangle, ArrowUpRight, 
   ArrowDownLeft, History, FileText, ClipboardList, CheckCircle2, AlertCircle,
@@ -16,6 +15,8 @@ import {
   logLedgerTransaction
 } from "@/app/actions/inventory"
 import { createClient } from "@/lib/supabase/client"
+import { useRouter } from "next/navigation"
+import Pagination from "@/components/ui/Pagination"
 
 interface LedgerSummary {
   qty: number
@@ -84,6 +85,7 @@ interface InventoryWorkspaceProps {
   initialItems: InventoryItem[]
   initialAudits: InventoryAudit[]
   userId: string
+  initialTab?: "ledger" | "procurement" | "audits"
 }
 
 export default function InventoryWorkspace({ 
@@ -91,23 +93,111 @@ export default function InventoryWorkspace({
   initialProcurement,
   initialItems,
   initialAudits,
-  userId
+  userId,
+  initialTab = "ledger"
 }: InventoryWorkspaceProps) {
-  const [activeTab, setActiveTab] = useState<"ledger" | "procurement" | "audits">("ledger")
+  const [activeTab, setActiveTab] = useState<"ledger" | "procurement" | "audits">(initialTab)
+
+  const handleTabChange = (tab: "ledger" | "procurement" | "audits") => {
+    setActiveTab(tab)
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search)
+      params.set("tab", tab)
+      const newUrl = `${window.location.pathname}?${params.toString()}`
+      window.history.replaceState(null, "", newUrl)
+    }
+  }
+  const router = useRouter()
   const [ledger, setLedger] = useState<InventoryItemWithLedger[]>(initialLedger)
   const [procurement, setProcurement] = useState<ProcurementOrder[]>(initialProcurement)
   const [items, setItems] = useState<InventoryItem[]>(initialItems)
   const [audits, setAudits] = useState<InventoryAudit[]>(initialAudits)
+
+  useEffect(() => {
+    setLedger(initialLedger)
+  }, [initialLedger])
+
+  useEffect(() => {
+    setProcurement(initialProcurement)
+  }, [initialProcurement])
+
+  useEffect(() => {
+    setItems(initialItems)
+  }, [initialItems])
+
+  useEffect(() => {
+    setAudits(initialAudits)
+  }, [initialAudits])
   
   const [isPending, startTransition] = useTransition()
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
   const [successMsg, setSuccessMsg] = useState<string | null>(null)
+
+  // Pagination states
+  const [ledgerPage, setLedgerPage] = useState(1)
+  const ledgerPerPage = 10
+  const [procurementPage, setProcurementPage] = useState(1)
+  const procurementPerPage = 10
+  const [auditsPage, setAuditsPage] = useState(1)
+  const auditsPerPage = 5
+
+  // Reset pagination on tab changes
+  useEffect(() => {
+    setLedgerPage(1)
+    setProcurementPage(1)
+    setAuditsPage(1)
+  }, [activeTab])
+
+
+  const totalLedgerItems = ledger.length
+  const totalLedgerPages = Math.ceil(totalLedgerItems / ledgerPerPage)
+  const paginatedLedger = ledger.slice(
+    (ledgerPage - 1) * ledgerPerPage,
+    ledgerPage * ledgerPerPage
+  )
+
+  const totalProcurementItems = procurement.length
+  const totalProcurementPages = Math.ceil(totalProcurementItems / procurementPerPage)
+  const paginatedProcurement = procurement.slice(
+    (procurementPage - 1) * procurementPerPage,
+    procurementPage * procurementPerPage
+  )
+
+  const totalAuditsItems = audits.length
+  const totalAuditsPages = Math.ceil(totalAuditsItems / auditsPerPage)
+  const paginatedAudits = audits.slice(
+    (auditsPage - 1) * auditsPerPage,
+    auditsPage * auditsPerPage
+  )
 
   // Modals / forms state
   const [isNewItemOpen, setIsNewItemOpen] = useState(false)
   const [isAdjustmentOpen, setIsAdjustmentOpen] = useState(false)
   const [isPoOpen, setIsPoOpen] = useState(false)
   const [isBulkDrawerOpen, setIsBulkDrawerOpen] = useState(false)
+
+  // Listen for Escape key to close bulk import inventory modal
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setIsBulkDrawerOpen(false)
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [])
+
+  // Lock body scroll when bulk import modal is open
+  useEffect(() => {
+    if (isBulkDrawerOpen) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = ''
+    }
+    return () => {
+      document.body.style.overflow = ''
+    }
+  }, [isBulkDrawerOpen])
   
   // Register/Edit item states
   const [name, setName] = useState("")
@@ -238,7 +328,7 @@ export default function InventoryWorkspace({
         setIsNewItemOpen(false)
         
         // Refresh page
-        window.location.reload()
+        router.refresh()
       }
     })
   }
@@ -262,7 +352,7 @@ export default function InventoryWorkspace({
         setIsAdjustmentOpen(false)
         
         // Refresh page
-        window.location.reload()
+        router.refresh()
       }
     })
   }
@@ -291,7 +381,7 @@ export default function InventoryWorkspace({
         setIsPoOpen(false)
         
         // Refresh page
-        window.location.reload()
+        router.refresh()
       }
     })
   }
@@ -300,13 +390,18 @@ export default function InventoryWorkspace({
     setErrorMsg(null)
     setSuccessMsg(null)
 
+    // Optimistically update status to 'delivered' locally
+    setProcurement(prev => prev.map(po => po.id === poId ? { ...po, status: 'delivered', delivered_date: new Date().toISOString() } : po))
+
     startTransition(async () => {
       const res = await deliverProcurementOrder(poId)
       if (res.error) {
+        // Revert local status
+        setProcurement(prev => prev.map(po => po.id === poId ? { ...po, status: 'pending', delivered_date: null } : po))
         setErrorMsg(res.error)
       } else {
         setSuccessMsg("Procurement order marked as DELIVERED. Inventory stock levels updated.")
-        window.location.reload()
+        router.refresh()
       }
     })
   }
@@ -349,7 +444,7 @@ export default function InventoryWorkspace({
         })
         setBulkCsvData("")
         setTimeout(() => {
-          window.location.reload()
+          router.refresh()
         }, 1500)
       }
     } catch (err: any) {
@@ -436,7 +531,7 @@ export default function InventoryWorkspace({
         setIsAuditing(false)
         setAuditNotes("")
         setAuditItemsState([])
-        window.location.reload()
+        router.refresh()
       }
     })
   }
@@ -479,7 +574,7 @@ export default function InventoryWorkspace({
         {!isAuditing && (
           <div className="flex bg-zinc-200/60 p-1 rounded-xl border border-zinc-250">
             <button
-              onClick={() => setActiveTab("ledger")}
+              onClick={() => handleTabChange("ledger")}
               className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-bold transition-all ${
                 activeTab === "ledger" 
                   ? "bg-white text-zinc-950 shadow-sm" 
@@ -489,7 +584,7 @@ export default function InventoryWorkspace({
               <ClipboardList className="w-4 h-4" /> Inventory Ledger
             </button>
             <button
-              onClick={() => setActiveTab("procurement")}
+              onClick={() => handleTabChange("procurement")}
               className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-bold transition-all ${
                 activeTab === "procurement" 
                   ? "bg-white text-zinc-950 shadow-sm" 
@@ -499,7 +594,7 @@ export default function InventoryWorkspace({
               <ShoppingCart className="w-4 h-4" /> Procurement Tracker
             </button>
             <button
-              onClick={() => setActiveTab("audits")}
+              onClick={() => handleTabChange("audits")}
               className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-bold transition-all ${
                 activeTab === "audits" 
                   ? "bg-white text-zinc-950 shadow-sm" 
@@ -700,7 +795,7 @@ export default function InventoryWorkspace({
                       </td>
                     </tr>
                   ) : (
-                    ledger.map(item => {
+                    paginatedLedger.map(item => {
                       const isLowStock = item.quantity <= item.low_stock_threshold
                       return (
                         <tr key={item.id} className="hover:bg-slate-50/40 transition-colors">
@@ -768,6 +863,14 @@ export default function InventoryWorkspace({
                 </tbody>
               </table>
             </div>
+            <Pagination
+              currentPage={ledgerPage}
+              totalPages={totalLedgerPages}
+              totalItems={totalLedgerItems}
+              itemsPerPage={ledgerPerPage}
+              onPageChange={setLedgerPage}
+              itemNamePlural="ledger items"
+            />
           </div>
         </div>
 
@@ -809,7 +912,7 @@ export default function InventoryWorkspace({
                       </td>
                     </tr>
                   ) : (
-                    procurement.map(po => {
+                    paginatedProcurement.map(po => {
                       const isDelivered = po.status === 'delivered'
                       return (
                         <tr key={po.id} className="hover:bg-slate-50/40 transition-colors">
@@ -850,6 +953,14 @@ export default function InventoryWorkspace({
                 </tbody>
               </table>
             </div>
+            <Pagination
+              currentPage={procurementPage}
+              totalPages={totalProcurementPages}
+              totalItems={totalProcurementItems}
+              itemsPerPage={procurementPerPage}
+              onPageChange={setProcurementPage}
+              itemNamePlural="purchase orders"
+            />
           </div>
         </div>
 
@@ -881,7 +992,7 @@ export default function InventoryWorkspace({
                   No inventory audits logged yet.
                 </div>
               ) : (
-                audits.map(audit => {
+                paginatedAudits.map(audit => {
                   const totalDiscrepancies = audit.audit_items.filter(i => i.variance !== 0).length
                   const isExpanded = expandedAuditId === audit.id
 
@@ -954,6 +1065,14 @@ export default function InventoryWorkspace({
                 })
               )}
             </div>
+            <Pagination
+              currentPage={auditsPage}
+              totalPages={totalAuditsPages}
+              totalItems={totalAuditsItems}
+              itemsPerPage={auditsPerPage}
+              onPageChange={setAuditsPage}
+              itemNamePlural="audits"
+            />
           </div>
         </div>
       )}
@@ -1300,8 +1419,13 @@ export default function InventoryWorkspace({
 
       {/* Slide-over Bulk Import Drawer */}
       {isBulkDrawerOpen && (
-        <div className="fixed inset-0 bg-zinc-950/60 z-50 transition-opacity flex justify-end animate-smooth-fade">
-          <div className="w-full max-w-xl bg-white h-full shadow-2xl flex flex-col animate-smooth-slide-in">
+        <div 
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setIsBulkDrawerOpen(false)
+          }}
+          className="fixed inset-0 bg-zinc-950/60 z-50 transition-opacity flex items-center justify-center p-4 sm:p-6 animate-smooth-fade"
+        >
+          <div className="w-full max-w-2xl bg-white max-h-[90vh] shadow-2xl flex flex-col rounded-2xl overflow-hidden animate-smooth-pop">
             {/* Header */}
             <div className="p-6 border-b border-zinc-150 flex items-center justify-between">
               <div>

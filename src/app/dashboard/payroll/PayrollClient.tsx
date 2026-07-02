@@ -1,8 +1,9 @@
 "use client"
 import { useState, useTransition, useEffect, Fragment } from "react"
 import { DollarSign, CheckCircle2, AlertCircle, Loader2, Copy, FileSpreadsheet, ChevronDown, ChevronUp, Search, Calendar, Clock } from "lucide-react"
-import { publishPayslip } from "@/app/actions/payroll"
 import { useRouter } from "next/navigation"
+import { publishPayslip } from "@/app/actions/payroll"
+import Pagination from "@/components/ui/Pagination"
 
 export default function PayrollClient({ 
   technicians, 
@@ -582,70 +583,14 @@ export default function PayrollClient({
             </tbody>
           </table>
         </div>
-
-        {/* Client-side Pagination Footer */}
-        {totalPages > 1 && (
-          <div className="flex items-center justify-between border-t border-zinc-200/80 bg-zinc-50/30 px-6 py-4">
-            <div className="flex-1 flex justify-between sm:hidden">
-              <button
-                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                disabled={currentPageSanitized === 1}
-                className="relative inline-flex items-center px-4 py-2 border border-zinc-300 text-xs font-semibold rounded-lg text-zinc-700 bg-white hover:bg-zinc-50 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-              >
-                Previous
-              </button>
-              <button
-                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                disabled={currentPageSanitized === totalPages}
-                className="ml-3 relative inline-flex items-center px-4 py-2 border border-zinc-300 text-xs font-semibold rounded-lg text-zinc-700 bg-white hover:bg-zinc-50 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-              >
-                Next
-              </button>
-            </div>
-            <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-              <div>
-                <p className="text-xs text-zinc-500 font-medium">
-                  Showing <span className="font-bold text-zinc-800">{(currentPageSanitized - 1) * itemsPerPage + 1}</span> to{" "}
-                  <span className="font-bold text-zinc-800">
-                    {Math.min(currentPageSanitized * itemsPerPage, filteredPayrolls.length)}
-                  </span>{" "}
-                  of <span className="font-bold text-zinc-800">{filteredPayrolls.length}</span> results
-                </p>
-              </div>
-              <div>
-                <nav className="relative z-0 inline-flex rounded-xl shadow-sm -space-x-px" aria-label="Pagination">
-                  <button
-                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                    disabled={currentPageSanitized === 1}
-                    className="relative inline-flex items-center px-3 py-2 rounded-l-xl border border-zinc-200 bg-white text-xs font-bold text-zinc-500 hover:bg-zinc-50 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-                  >
-                    Previous
-                  </button>
-                  {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
-                    <button
-                      key={page}
-                      onClick={() => setCurrentPage(page)}
-                      className={`relative inline-flex items-center px-4 py-2 border text-xs font-bold cursor-pointer ${
-                        page === currentPageSanitized
-                          ? "z-10 bg-zinc-950 border-zinc-950 text-white"
-                          : "bg-white border-zinc-200 text-zinc-500 hover:bg-zinc-50"
-                      }`}
-                    >
-                      {page}
-                    </button>
-                  ))}
-                  <button
-                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                    disabled={currentPageSanitized === totalPages}
-                    className="relative inline-flex items-center px-3 py-2 rounded-r-xl border border-zinc-200 bg-white text-xs font-bold text-zinc-500 hover:bg-zinc-50 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-                  >
-                    Next
-                  </button>
-                </nav>
-              </div>
-            </div>
-          </div>
-        )}
+        <Pagination
+          currentPage={currentPageSanitized}
+          totalPages={totalPages}
+          totalItems={filteredPayrolls.length}
+          itemsPerPage={itemsPerPage}
+          onPageChange={setCurrentPage}
+          itemNamePlural="records"
+        />
       </div>
       
       {/* Footer Info / Rules */}

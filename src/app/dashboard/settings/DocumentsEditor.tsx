@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useTransition } from "react"
+import { useAlertConfirm } from "@/components/ui/AlertConfirmProvider"
 import { 
   FileText, Upload, Trash2, Calendar, File, CheckCircle2, 
   AlertCircle, Loader2, Search, Link as LinkIcon 
@@ -35,6 +36,7 @@ export default function DocumentsEditor({
   const [documents, setDocuments] = useState<DocumentItem[]>(initialDocuments)
   const [isPending, startTransition] = useTransition()
   const [uploading, setUploading] = useState(false)
+  const { alert, confirm } = useAlertConfirm()
   
   // Form states
   const [docName, setDocName] = useState("")
@@ -139,7 +141,12 @@ export default function DocumentsEditor({
   // Handle Delete
   const handleDelete = async (doc: DocumentItem) => {
     if (isReadOnly) return
-    if (!confirm(`Are you sure you want to delete "${doc.name}"?`)) return
+    const confirmed = await confirm(
+      `Are you sure you want to delete "${doc.name}"?`,
+      "Delete Document",
+      "destructive"
+    )
+    if (!confirmed) return
 
     setErrorMsg("")
     setSuccessMsg("")
@@ -163,6 +170,7 @@ export default function DocumentsEditor({
       } catch (err: any) {
         console.error(err)
         setErrorMsg(err.message || "Failed to delete document.")
+        await alert(err.message || "Failed to delete document.", "Delete Failed", "destructive")
       }
     })
   }

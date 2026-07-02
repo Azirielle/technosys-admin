@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { AlertConfirmProvider } from '@/components/ui/AlertConfirmProvider'
 import { usePathname } from 'next/navigation'
 import { LayoutDashboard, Users, Calendar, DollarSign, Settings, LogOut, MessageSquare, Package, ClipboardList, ShieldAlert } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
@@ -173,7 +174,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
 
   return (
-    <div className="flex h-screen bg-zinc-50 overflow-hidden">
+    <AlertConfirmProvider>
+      <div className="flex h-screen bg-zinc-50 overflow-hidden">
       {/* Premium Light Sidebar */}
       <aside className="w-64 bg-white text-slate-900 border-r border-slate-200 flex flex-col z-20">
         <div className="py-6 flex items-center px-6 border-b border-slate-100 justify-center">
@@ -339,7 +341,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           )}
         </div>
       </main>
-    </div>
+      </div>
+    </AlertConfirmProvider>
   )
 }
 

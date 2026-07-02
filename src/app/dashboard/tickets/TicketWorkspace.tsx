@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useTransition, useRef } from "react"
+import { useAlertConfirm } from "@/components/ui/AlertConfirmProvider"
 import { 
   MessageSquare, Clock, User, UserCheck, Inbox, AlertCircle, 
   Filter, CheckCircle2, CornerDownRight, Search, RefreshCw, Send, Loader2
@@ -8,6 +9,7 @@ import {
 import { 
   updateTicketStatus, assignTicket, addTicketComment, getTicketComments 
 } from "@/app/actions/tickets"
+import Pagination from "@/components/ui/Pagination"
 
 interface Profile {
   full_name: string
@@ -57,6 +59,7 @@ export default function TicketWorkspace({
 }: TicketWorkspaceProps) {
   const [tickets, setTickets] = useState<Ticket[]>(initialTickets)
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null)
+  const { alert, confirm } = useAlertConfirm()
   const [comments, setComments] = useState<Comment[]>([])
   const [commentText, setCommentText] = useState("")
   const [loadingComments, setLoadingComments] = useState(false)
@@ -67,6 +70,15 @@ export default function TicketWorkspace({
   const [isPending, startTransition] = useTransition()
   const [commentPending, setCommentPending] = useState(false)
   const chatEndRef = useRef<HTMLDivElement>(null)
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 10
+
+  // Reset page to 1 when filters or search query changes
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [searchQuery, statusFilter, categoryFilter])
 
   // Fetch comments when a ticket is selected
   const loadComments = async (ticketId: string) => {
@@ -112,7 +124,7 @@ export default function TicketWorkspace({
           updated_at: new Date().toISOString()
         })
       } else {
-        alert(res.error)
+        await alert(res.error, "Update Failed", "destructive")
       }
     })
   }
@@ -147,7 +159,7 @@ export default function TicketWorkspace({
           updated_at: new Date().toISOString()
         })
       } else {
-        alert(res.error)
+        await alert(res.error, "Assignment Failed", "destructive")
       }
     })
   }
@@ -175,11 +187,11 @@ export default function TicketWorkspace({
         })
         setTickets(updated)
       } else {
-        alert(res.error)
+        await alert(res.error, "Comment Failed", "destructive")
         setCommentText(contentToSend) // restore input
       }
     } catch (e: any) {
-      alert("Failed to submit comment: " + e.message)
+      await alert("Failed to submit comment: " + e.message, "Comment Failed", "destructive")
       setCommentText(contentToSend)
     } finally {
       setCommentPending(false)
@@ -212,6 +224,13 @@ export default function TicketWorkspace({
 
     return matchesSearch && matchesStatus && matchesCategory
   })
+
+  const totalItems = filteredTickets.length
+  const totalPages = Math.ceil(totalItems / itemsPerPage)
+  const paginatedTickets = filteredTickets.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  )
 
   // Format Helper
   const formatDate = (isoString: string) => {
@@ -399,7 +418,7 @@ export default function TicketWorkspace({
               <p className="text-sm font-medium">No matching tickets</p>
             </div>
           ) : (
-            filteredTickets.map(ticket => (
+            paginatedTickets.map(ticket => (
               <button
                 key={ticket.id}
                 onClick={() => setSelectedTicket(ticket)}
@@ -443,6 +462,14 @@ export default function TicketWorkspace({
             ))
           )}
         </div>
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={totalItems}
+          itemsPerPage={itemsPerPage}
+          onPageChange={setCurrentPage}
+          itemNamePlural="tickets"
+        />
       </div>
 
       {/* RIGHT PANEL: Ticket Workspace & Conversation */}
