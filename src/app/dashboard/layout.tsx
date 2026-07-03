@@ -52,7 +52,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               fetchPendingLeavesCount()
 
               const leavesChannel = supabase
-                .channel('leaves-pending-changes')
+                .channel(`leaves-pending-changes-${Math.random().toString(36).substring(7)}`)
                 .on('postgres_changes', { event: '*', schema: 'public', table: 'leaves' }, fetchPendingLeavesCount)
                 .subscribe()
               channels.push(leavesChannel)
@@ -72,9 +72,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               fetchLowStockCount()
 
               const inventoryChannel = supabase
-                .channel('inventory-stock-changes')
+                .channel(`inventory-stock-changes-${Math.random().toString(36).substring(7)}`)
                 .on('postgres_changes', { event: '*', schema: 'public', table: 'inventory_items' }, fetchLowStockCount)
                 .subscribe()
+              channels.push(inventoryChannel)
             }
 
             // --- Role-gated: Tickets badge count (Option A: Urgent Highlight) ---
@@ -96,7 +97,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               fetchTicketsCount()
 
               const ticketsChannel = supabase
-                .channel('tickets-badge-changes')
+                .channel(`tickets-badge-changes-${Math.random().toString(36).substring(7)}`)
                 .on('postgres_changes', { event: '*', schema: 'public', table: 'tickets' }, fetchTicketsCount)
                 .subscribe()
               channels.push(ticketsChannel)
