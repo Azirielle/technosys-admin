@@ -1,6 +1,7 @@
 "use client"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import { useAlertConfirm } from "@/components/ui/AlertConfirmProvider"
 import { createHoliday, deleteHoliday } from "@/app/actions/announcements"
 import { CalendarDays, Trash2, Loader2, Info, Plus } from "lucide-react"
 
@@ -14,6 +15,7 @@ export default function HolidaysEditor({
   userRole 
 }: HolidaysEditorProps) {
   const router = useRouter()
+  const { alert, confirm } = useAlertConfirm()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
   const [success, setSuccess] = useState(false)
@@ -49,17 +51,22 @@ export default function HolidaysEditor({
 
   const handleDelete = async (id: string) => {
     if (isLocked) return
-    if (!confirm("Are you sure you want to delete this holiday from the calendar?")) return
+    const confirmed = await confirm(
+      "Are you sure you want to delete this holiday from the calendar?",
+      "Delete Holiday",
+      "destructive"
+    )
+    if (!confirmed) return
 
     try {
       const res = await deleteHoliday(id)
       if (res.error) {
-        alert(res.error)
+        await alert(res.error, "Delete Failed", "destructive")
       } else {
         router.refresh()
       }
     } catch (err: any) {
-      alert("Delete failed: " + err.message)
+      await alert("Delete failed: " + err.message, "Error", "destructive")
     }
   }
 

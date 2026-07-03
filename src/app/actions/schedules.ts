@@ -54,6 +54,13 @@ export async function createSchedule(formData: FormData) {
     const trackingMode = (formData.get("trackingMode") as string) || "pacita_hq"
     const allowanceRate = parseFloat(formData.get("allowanceRate") as string || "0")
 
+    // Validate past dates (30 minutes grace period)
+    const now = Date.now()
+    const startMs = new Date(startTime).getTime()
+    if (startMs < now - 1800000) {
+      throw new Error("Cannot dispatch assignments to past dates.")
+    }
+
     // 1. Fetch technician profile to get name for activity logs
     const { data: techProfile } = await supabaseAdmin
       .from('profiles')
@@ -83,11 +90,11 @@ export async function createSchedule(formData: FormData) {
       })
     }
 
-    if (hasConflict(technicianId)) {
+    if (!isVip && hasConflict(technicianId)) {
       throw new Error(`The selected employee "${techName}" is on approved leave during this schedule's timeframe.`)
     }
 
-    if (seniorPartnerId && hasConflict(seniorPartnerId)) {
+    if (!isVip && seniorPartnerId && hasConflict(seniorPartnerId)) {
       throw new Error(`The selected senior partner is on approved leave during this schedule's timeframe.`)
     }
 
@@ -151,6 +158,13 @@ export async function bulkCreateSchedules(data: {
 
     const { staffIds, clientName, location, startTime, endTime, attendanceMode, seniorPartnerMap = {}, isVip = false, allowanceRate = 0 } = data
 
+    // Validate past dates (30 minutes grace period)
+    const now = Date.now()
+    const startMs = new Date(startTime).getTime()
+    if (startMs < now - 1800000) {
+      return { error: "Cannot dispatch assignments to past dates." }
+    }
+
     if (!staffIds || staffIds.length === 0) {
       return { error: "Please select at least one staff member to schedule." }
     }
@@ -188,7 +202,7 @@ export async function bulkCreateSchedules(data: {
         }
       })
 
-      if (hasConflict) {
+      if (!isVip && hasConflict) {
         results.push({ id: staffId, name: staffName, success: false, error: "On approved leave during this time." })
         failureCount++
         continue
@@ -290,6 +304,13 @@ export async function createBulkSchedules(data: {
     if (!location) throw new Error("Location is required.")
     if (!startTime) throw new Error("Start Time is required.")
 
+    // Validate past dates (30 minutes grace period)
+    const now = Date.now()
+    const startMs = new Date(startTime).getTime()
+    if (startMs < now - 1800000) {
+      throw new Error("Cannot dispatch assignments to past dates.")
+    }
+
     // 1. Fetch approved leaves for the selected personnelIds to perform conflict checks
     const { error: leavesErr, data: leaves } = await supabaseAdmin
       .from('leaves')
@@ -338,6 +359,182 @@ export async function createBulkSchedules(data: {
   } catch (err: any) {
     console.error("Failed to create bulk schedules:", err.message || err)
     return { error: err.message || "Failed to create bulk schedules." }
+  }
+}
+
+export async function updateSchedule(formData: FormData) {
+  try {
+    const { authorized } = await verifyRoleAccess('schedules', true)
+    if (!authorized) {
+      return { error: "Unauthorized. Scheduling write permissions required." }
+    }
+
+    const scheduleId = formData.get("scheduleId") as string
+    const technicianId = formData.get("technicianId") as string
+    const rawSeniorPartnerId = formData.get("seniorPartnerId") as string
+    const seniorPartnerId = (rawSeniorPartnerId && rawSeniorPartnerId !== "" && rawSeniorPartnerId !== "none") ? rawSeniorPartnerId : null
+    const clientName = formData.get("clientName") as string
+    const location = formData.get("location") as string
+    const startTime = formData.get("startTime") as string
+    const endTime = formData.get("endTime") as string // Can be empty / null
+    const attendanceMode = (formData.get("attendanceMode") as string) || 'hq'
+    const isVip = formData.get("isVip") === "on"
+    const allowanceRate = parseFloat(formData.get("allowanceRate") as string || "0")
+
+    if (!scheduleId) {
+      throw new Error("Schedule ID is required.")
+    }
+
+    // Retrieve original schedule details
+    const { data: originalSchedule, error: fetchErr } = await supabaseAdmin
+      .from('schedules')
+      .select('*')
+      .eq('id', scheduleId)
+      .single()
+
+    if (fetchErr || !originalSchedule) {
+      throw new Error("Schedule not found.")
+    }
+
+    // 1. Fetch technician profile to get name for activity logs
+    const { data: techProfile } = await supabaseAdmin
+      .from('profiles')
+      .select('full_name')
+      .eq('id', technicianId)
+      .single()
+    const techName = techProfile?.full_name || 'Staff'
+
+    const targetIds = [technicianId, seniorPartnerId].filter(Boolean) as string[]
+
+    const { data: leaves, error: leavesErr } = await supabaseAdmin
+      .from('leaves')
+      .select('*')
+      .in('technician_id', targetIds)
+      .eq('status', 'approved')
+
+    if (leavesErr) throw leavesErr
+
+    const hasConflict = (targetId: string) => {
+      return leaves?.some(leave => {
+        if (leave.technician_id !== targetId) return false
+        if (endTime) {
+          return isRangeOverlappingWithLeave(startTime, endTime, leave.start_date, leave.end_date)
+        } else {
+          return isTimeConflictingWithLeave(startTime, leave.start_date, leave.end_date)
+        }
+      })
+    }
+
+    if (hasConflict(technicianId)) {
+      throw new Error(`The selected employee "${techName}" is on approved leave during this schedule's timeframe.`)
+    }
+
+    if (seniorPartnerId && hasConflict(seniorPartnerId)) {
+      throw new Error(`The selected senior partner is on approved leave during this schedule's timeframe.`)
+    }
+
+    // Update schedule
+    const updateData: any = {
+      technician_id: technicianId,
+      senior_partner_id: seniorPartnerId,
+      client_name: clientName,
+      location,
+      start_time: new Date(startTime).toISOString(),
+      end_time: endTime ? new Date(endTime).toISOString() : null,
+      attendance_mode: attendanceMode,
+      is_vip_hook: isVip
+    }
+
+    const { error: updateErr } = await supabaseAdmin
+      .from('schedules')
+      .update(updateData)
+      .eq('id', scheduleId)
+
+    if (updateErr) throw updateErr
+
+    // Send push notification if technician, location, or start time changed
+    const techChanged = originalSchedule.technician_id !== technicianId
+    const locationChanged = originalSchedule.location !== location
+    const timeChanged = new Date(originalSchedule.start_time).getTime() !== new Date(startTime).getTime()
+
+    if (techChanged || locationChanged || timeChanged) {
+      const { data: targetProfile } = await supabaseAdmin
+        .from('profiles')
+        .select('push_token')
+        .eq('id', technicianId)
+        .single();
+      if (targetProfile?.push_token) {
+        await sendPushNotification(
+          targetProfile.push_token,
+          "Dispatch Schedule Updated",
+          `Your schedule for client "${clientName}" has been updated.`
+        );
+      }
+
+      if (techChanged && originalSchedule.technician_id) {
+        const { data: oldProfile } = await supabaseAdmin
+          .from('profiles')
+          .select('push_token')
+          .eq('id', originalSchedule.technician_id)
+          .single();
+        if (oldProfile?.push_token) {
+          await sendPushNotification(
+            oldProfile.push_token,
+            "Dispatch Cancelled",
+            `Your assignment for client "${originalSchedule.client_name}" has been reassigned/cancelled.`
+          );
+        }
+      }
+    }
+
+    await logActivity('update_schedule', 'schedule', `Updated schedule details for client "${clientName}" (Technician: ${techName})`)
+
+    revalidatePath("/dashboard/schedules")
+    return { success: true }
+  } catch (err: any) {
+    console.error("Failed to update schedule:", err.message || err)
+    return { error: err.message || "Failed to update schedule." }
+  }
+}
+
+export async function deleteSchedule(scheduleId: string) {
+  try {
+    const { authorized } = await verifyRoleAccess('schedules', true)
+    if (!authorized) {
+      return { error: "Unauthorized. Scheduling write permissions required." }
+    }
+
+    if (!scheduleId) {
+      throw new Error("Schedule ID is required.")
+    }
+
+    const { data: sched, error: fetchErr } = await supabaseAdmin
+      .from('schedules')
+      .select('client_name')
+      .eq('id', scheduleId)
+      .single()
+
+    const clientName = sched?.client_name || 'Client'
+
+    const { error: deleteErr } = await supabaseAdmin
+      .from('schedules')
+      .delete()
+      .eq('id', scheduleId)
+
+    if (deleteErr) {
+      if (deleteErr.code === '23503') {
+        return { error: "This schedule cannot be deleted because a technician has already clocked into it or has active DTR records." }
+      }
+      throw deleteErr
+    }
+
+    await logActivity('delete_schedule', 'schedule', `Deleted schedule for client "${clientName}"`)
+
+    revalidatePath("/dashboard/schedules")
+    return { success: true }
+  } catch (err: any) {
+    console.error("Failed to delete schedule:", err.message || err)
+    return { error: err.message || "Failed to delete schedule." }
   }
 }
 

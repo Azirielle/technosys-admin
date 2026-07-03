@@ -1,11 +1,10 @@
 "use client"
-
-import { useState, useTransition } from "react"
+import { useState, useTransition, useEffect } from "react"
 import { 
   Package, Plus, Settings, RefreshCw, AlertTriangle, ArrowUpRight, 
   ArrowDownLeft, History, FileText, ClipboardList, CheckCircle2, AlertCircle,
   TrendingDown, Check, X, Clipboard, User, Upload, Image, FileSpreadsheet,
-  Truck, ShoppingCart, Calendar
+  Truck, ShoppingCart, Calendar, Search
 } from "lucide-react"
 import { 
   createOrUpdateInventoryItem, 
@@ -16,6 +15,8 @@ import {
   logLedgerTransaction
 } from "@/app/actions/inventory"
 import { createClient } from "@/lib/supabase/client"
+import { useRouter } from "next/navigation"
+import Pagination from "@/components/ui/Pagination"
 
 interface LedgerSummary {
   qty: number
@@ -84,6 +85,7 @@ interface InventoryWorkspaceProps {
   initialItems: InventoryItem[]
   initialAudits: InventoryAudit[]
   userId: string
+  initialTab?: "ledger" | "procurement" | "audits"
 }
 
 export default function InventoryWorkspace({ 
@@ -91,23 +93,128 @@ export default function InventoryWorkspace({
   initialProcurement,
   initialItems,
   initialAudits,
-  userId
+  userId,
+  initialTab = "ledger"
 }: InventoryWorkspaceProps) {
-  const [activeTab, setActiveTab] = useState<"ledger" | "procurement" | "audits">("ledger")
+  const [activeTab, setActiveTab] = useState<"ledger" | "procurement" | "audits">(initialTab)
+
+  const handleTabChange = (tab: "ledger" | "procurement" | "audits") => {
+    setActiveTab(tab)
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search)
+      params.set("tab", tab)
+      const newUrl = `${window.location.pathname}?${params.toString()}`
+      window.history.replaceState(null, "", newUrl)
+    }
+  }
+  const router = useRouter()
   const [ledger, setLedger] = useState<InventoryItemWithLedger[]>(initialLedger)
   const [procurement, setProcurement] = useState<ProcurementOrder[]>(initialProcurement)
   const [items, setItems] = useState<InventoryItem[]>(initialItems)
   const [audits, setAudits] = useState<InventoryAudit[]>(initialAudits)
+
+  useEffect(() => {
+    setLedger(initialLedger)
+  }, [initialLedger])
+
+  useEffect(() => {
+    setProcurement(initialProcurement)
+  }, [initialProcurement])
+
+  useEffect(() => {
+    setItems(initialItems)
+  }, [initialItems])
+
+  useEffect(() => {
+    setAudits(initialAudits)
+  }, [initialAudits])
   
   const [isPending, startTransition] = useTransition()
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
   const [successMsg, setSuccessMsg] = useState<string | null>(null)
+
+  // Search and Filter states
+  const [ledgerSearch, setLedgerSearch] = useState("")
+  const [ledgerFilter, setLedgerFilter] = useState<"all" | "low_stock">("all")
+  const [auditSearch, setAuditSearch] = useState("")
+
+  // Pagination states
+  const [ledgerPage, setLedgerPage] = useState(1)
+  const ledgerPerPage = 5
+  const [procurementPage, setProcurementPage] = useState(1)
+  const procurementPerPage = 5
+  const [auditsPage, setAuditsPage] = useState(1)
+  const auditsPerPage = 5
+
+  // Reset pagination on tab changes
+  useEffect(() => {
+    setLedgerPage(1)
+    setProcurementPage(1)
+    setAuditsPage(1)
+  }, [activeTab])
+
+  // Reset ledger pagination on search/filter changes
+  useEffect(() => {
+    setLedgerPage(1)
+  }, [ledgerFilter, ledgerSearch])
+
+  // Filtered Ledger items
+  const filteredLedger = ledger.filter(item => {
+    const matchesSearch = item.name.toLowerCase().includes(ledgerSearch.toLowerCase()) || 
+                          item.sku.toLowerCase().includes(ledgerSearch.toLowerCase())
+    const matchesFilter = ledgerFilter === "all" ? true : item.quantity <= item.low_stock_threshold
+    return matchesSearch && matchesFilter
+  })
+
+  const totalLedgerItems = filteredLedger.length
+  const totalLedgerPages = Math.ceil(totalLedgerItems / ledgerPerPage)
+  const paginatedLedger = filteredLedger.slice(
+    (ledgerPage - 1) * ledgerPerPage,
+    ledgerPage * ledgerPerPage
+  )
+
+  const totalProcurementItems = procurement.length
+  const totalProcurementPages = Math.ceil(totalProcurementItems / procurementPerPage)
+  const paginatedProcurement = procurement.slice(
+    (procurementPage - 1) * procurementPerPage,
+    procurementPage * procurementPerPage
+  )
+
+  const totalAuditsItems = audits.length
+  const totalAuditsPages = Math.ceil(totalAuditsItems / auditsPerPage)
+  const paginatedAudits = audits.slice(
+    (auditsPage - 1) * auditsPerPage,
+    auditsPage * auditsPerPage
+  )
 
   // Modals / forms state
   const [isNewItemOpen, setIsNewItemOpen] = useState(false)
   const [isAdjustmentOpen, setIsAdjustmentOpen] = useState(false)
   const [isPoOpen, setIsPoOpen] = useState(false)
   const [isBulkDrawerOpen, setIsBulkDrawerOpen] = useState(false)
+
+  // Listen for Escape key to close bulk import inventory modal
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setIsBulkDrawerOpen(false)
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [])
+
+  // Lock body scroll when bulk import modal is open
+  useEffect(() => {
+    if (isBulkDrawerOpen) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = ''
+    }
+    return () => {
+      document.body.style.overflow = ''
+    }
+  }, [isBulkDrawerOpen])
   
   // Register/Edit item states
   const [name, setName] = useState("")
@@ -238,7 +345,7 @@ export default function InventoryWorkspace({
         setIsNewItemOpen(false)
         
         // Refresh page
-        window.location.reload()
+        router.refresh()
       }
     })
   }
@@ -262,7 +369,7 @@ export default function InventoryWorkspace({
         setIsAdjustmentOpen(false)
         
         // Refresh page
-        window.location.reload()
+        router.refresh()
       }
     })
   }
@@ -291,7 +398,7 @@ export default function InventoryWorkspace({
         setIsPoOpen(false)
         
         // Refresh page
-        window.location.reload()
+        router.refresh()
       }
     })
   }
@@ -300,13 +407,18 @@ export default function InventoryWorkspace({
     setErrorMsg(null)
     setSuccessMsg(null)
 
+    // Optimistically update status to 'delivered' locally
+    setProcurement(prev => prev.map(po => po.id === poId ? { ...po, status: 'delivered', delivered_date: new Date().toISOString() } : po))
+
     startTransition(async () => {
       const res = await deliverProcurementOrder(poId)
       if (res.error) {
+        // Revert local status
+        setProcurement(prev => prev.map(po => po.id === poId ? { ...po, status: 'pending', delivered_date: null } : po))
         setErrorMsg(res.error)
       } else {
         setSuccessMsg("Procurement order marked as DELIVERED. Inventory stock levels updated.")
-        window.location.reload()
+        router.refresh()
       }
     })
   }
@@ -349,7 +461,7 @@ export default function InventoryWorkspace({
         })
         setBulkCsvData("")
         setTimeout(() => {
-          window.location.reload()
+          router.refresh()
         }, 1500)
       }
     } catch (err: any) {
@@ -436,7 +548,7 @@ export default function InventoryWorkspace({
         setIsAuditing(false)
         setAuditNotes("")
         setAuditItemsState([])
-        window.location.reload()
+        router.refresh()
       }
     })
   }
@@ -462,6 +574,10 @@ export default function InventoryWorkspace({
     })
   }
 
+  const lowStockCount = ledger.filter(item => item.quantity <= item.low_stock_threshold).length
+  const pendingDeliveriesCount = procurement.filter(po => po.status === 'pending').length
+  const lastAudit = audits.length > 0 ? audits[0] : null
+
   return (
     <div className="p-8 pb-20 max-w-7xl mx-auto space-y-6">
       
@@ -479,7 +595,7 @@ export default function InventoryWorkspace({
         {!isAuditing && (
           <div className="flex bg-zinc-200/60 p-1 rounded-xl border border-zinc-250">
             <button
-              onClick={() => setActiveTab("ledger")}
+              onClick={() => handleTabChange("ledger")}
               className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-bold transition-all ${
                 activeTab === "ledger" 
                   ? "bg-white text-zinc-950 shadow-sm" 
@@ -489,7 +605,7 @@ export default function InventoryWorkspace({
               <ClipboardList className="w-4 h-4" /> Inventory Ledger
             </button>
             <button
-              onClick={() => setActiveTab("procurement")}
+              onClick={() => handleTabChange("procurement")}
               className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-bold transition-all ${
                 activeTab === "procurement" 
                   ? "bg-white text-zinc-950 shadow-sm" 
@@ -499,7 +615,7 @@ export default function InventoryWorkspace({
               <ShoppingCart className="w-4 h-4" /> Procurement Tracker
             </button>
             <button
-              onClick={() => setActiveTab("audits")}
+              onClick={() => handleTabChange("audits")}
               className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-bold transition-all ${
                 activeTab === "audits" 
                   ? "bg-white text-zinc-950 shadow-sm" 
@@ -512,12 +628,101 @@ export default function InventoryWorkspace({
         )}
       </div>
 
+      {/* KPI Summary Grid */}
+      {!isAuditing && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {/* Card 1: Total Catalog Items */}
+          <div className="group rounded-[2rem] p-1.5 bg-zinc-100/80 border border-zinc-200 shadow-xs hover:shadow-md transition-all duration-700 ease-[cubic-bezier(0.32,0.72,0,1)]">
+            <div className="bg-white rounded-[calc(2rem-0.375rem)] p-6 shadow-[inset_0_1px_1px_rgba(255,255,255,0.8)] flex flex-col justify-between h-32">
+              <div className="flex justify-between items-start">
+                <span className="text-xs font-bold text-zinc-400 uppercase tracking-wider">Total SKUs</span>
+                <div className="w-8 h-8 rounded-full bg-zinc-50 border border-zinc-100 flex items-center justify-center">
+                  <Package className="w-4 h-4 text-zinc-650" />
+                </div>
+              </div>
+              <div>
+                <span className="text-3xl font-black tracking-tight text-zinc-900">{ledger.length}</span>
+                <span className="text-[10px] text-zinc-400 font-medium ml-2">Registered Items</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Card 2: Low Stock Alerts (Interactive) */}
+          <button
+            onClick={() => setLedgerFilter(prev => prev === "low_stock" ? "all" : "low_stock")}
+            className={`group text-left w-full rounded-[2rem] p-1.5 border transition-all duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] cursor-pointer focus:outline-none ${
+              ledgerFilter === "low_stock"
+                ? "bg-amber-100 border-amber-300 shadow-md ring-2 ring-amber-500/20"
+                : "bg-zinc-100/80 border-zinc-200 shadow-xs hover:shadow-md"
+            }`}
+          >
+            <div className={`rounded-[calc(2rem-0.375rem)] p-6 flex flex-col justify-between h-32 w-full transition-all duration-500 ${
+              ledgerFilter === "low_stock" ? "bg-amber-50/50" : "bg-white"
+            }`}>
+              <div className="flex justify-between items-start">
+                <span className="text-xs font-bold text-amber-600 uppercase tracking-wider">Low Stock Alerts</span>
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${
+                  ledgerFilter === "low_stock" ? "bg-amber-200 text-amber-700" : "bg-amber-50 text-amber-500"
+                }`}>
+                  <AlertTriangle className="w-4 h-4 animate-pulse" />
+                </div>
+              </div>
+              <div className="flex items-end justify-between">
+                <div>
+                  <span className="text-3xl font-black tracking-tight text-amber-700">{lowStockCount}</span>
+                  <span className="text-[10px] text-amber-500 font-medium ml-2">SKUs Below Limit</span>
+                </div>
+                <span className="text-[10px] font-bold text-amber-600 bg-amber-100/80 px-2 py-0.5 rounded-full">
+                  {ledgerFilter === "low_stock" ? "Filter Active" : "Click to Filter"}
+                </span>
+              </div>
+            </div>
+          </button>
+
+          {/* Card 3: Pending Deliveries */}
+          <div className="group rounded-[2rem] p-1.5 bg-zinc-100/80 border border-zinc-200 shadow-xs hover:shadow-md transition-all duration-700 ease-[cubic-bezier(0.32,0.72,0,1)]">
+            <div className="bg-white rounded-[calc(2rem-0.375rem)] p-6 shadow-[inset_0_1px_1px_rgba(255,255,255,0.8)] flex flex-col justify-between h-32">
+              <div className="flex justify-between items-start">
+                <span className="text-xs font-bold text-indigo-650 uppercase tracking-wider">Pending Orders</span>
+                <div className="w-8 h-8 rounded-full bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-500">
+                  <ShoppingCart className="w-4 h-4" />
+                </div>
+              </div>
+              <div>
+                <span className="text-3xl font-black tracking-tight text-indigo-700">{pendingDeliveriesCount}</span>
+                <span className="text-[10px] text-indigo-500 font-medium ml-2">Active Procurements</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Card 4: Last Stocktake */}
+          <div className="group rounded-[2rem] p-1.5 bg-zinc-100/80 border border-zinc-200 shadow-xs hover:shadow-md transition-all duration-700 ease-[cubic-bezier(0.32,0.72,0,1)]">
+            <div className="bg-white rounded-[calc(2rem-0.375rem)] p-6 shadow-[inset_0_1px_1px_rgba(255,255,255,0.8)] flex flex-col justify-between h-32">
+              <div className="flex justify-between items-start">
+                <span className="text-xs font-bold text-zinc-400 uppercase tracking-wider">Last Stocktake</span>
+                <div className="w-8 h-8 rounded-full bg-zinc-50 border border-zinc-100 flex items-center justify-center text-zinc-500">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                </div>
+              </div>
+              <div className="truncate">
+                <span className="text-sm font-bold text-zinc-800 block truncate">
+                  {lastAudit ? lastAudit.auditor?.full_name || "Admin" : "Never"}
+                </span>
+                <span className="text-[9px] text-zinc-405 font-medium mt-1 block">
+                  {lastAudit ? formatDateTime(lastAudit.created_at) : "No audits logged yet"}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {errorMsg && (
         <div className="p-4 bg-red-50 border border-red-200 rounded-xl flex items-start gap-3">
           <AlertCircle className="w-5 h-5 text-red-600 mt-0.5 shrink-0" />
           <div>
-            <h3 className="text-sm font-bold text-red-800">Error</h3>
-            <p className="text-sm text-red-700 mt-1">{errorMsg}</p>
+            <h3 className="text-sm font-bold text-rose-800">Error</h3>
+            <p className="text-sm text-rose-700 mt-1">{errorMsg}</p>
           </div>
         </div>
       )}
@@ -564,6 +769,18 @@ export default function InventoryWorkspace({
               />
             </div>
 
+            {/* Search filter for auditing checklist */}
+            <div className="relative max-w-md">
+              <Search className="absolute left-3 top-2.5 h-4 w-4 text-zinc-400" />
+              <input
+                type="text"
+                placeholder="Filter audit items by name or SKU..."
+                value={auditSearch}
+                onChange={e => setAuditSearch(e.target.value)}
+                className="pl-9 pr-4 py-2 w-full border border-zinc-200 bg-white rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none placeholder-zinc-400 font-medium"
+              />
+            </div>
+
             <div className="overflow-x-auto border border-zinc-250 rounded-xl">
               <table className="w-full text-left border-collapse">
                 <thead>
@@ -577,59 +794,68 @@ export default function InventoryWorkspace({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-zinc-100 text-sm">
-                  {auditItemsState.map(entry => {
-                    const variance = entry.physicalQty - entry.systemQty
-                    const isHighShrinkage = variance < 0 && (Math.abs(variance) / entry.systemQty) >= 0.1
-                    
-                    return (
-                      <tr key={entry.itemId} className="hover:bg-slate-50/50 transition-colors">
-                        <td className="p-4 font-mono font-bold text-xs text-zinc-500">{entry.sku}</td>
-                        <td className="p-4 font-bold text-zinc-800">{entry.name}</td>
-                        <td className="p-4 text-zinc-600 font-semibold">{entry.systemQty} {entry.unit}</td>
-                        <td className="p-4">
-                          <div className="flex items-center gap-2">
-                            <input
-                              type="number"
-                              min={0}
-                              required
-                              value={entry.physicalQty}
-                              onChange={e => handleAuditQtyChange(entry.itemId, e.target.value)}
-                              className="w-20 px-2 py-1 border border-zinc-350 rounded focus:ring-2 focus:ring-emerald-500 focus:outline-none text-right font-bold"
-                            />
-                            <span className="text-zinc-400 text-xs">{entry.unit}</span>
-                          </div>
-                        </td>
-                        <td className="p-4">
-                          <span className={`font-black text-sm ${
-                            variance < 0 
-                              ? "text-rose-600" 
-                              : variance > 0 
-                                ? "text-emerald-600" 
-                                : "text-zinc-400 font-medium"
-                          }`}>
-                            {variance > 0 ? `+${variance}` : variance} {entry.unit}
-                          </span>
-                        </td>
-                        <td className="p-4">
-                          <div className="flex justify-center">
-                            {isHighShrinkage ? (
-                              <span className="text-[9px] px-2 py-0.5 bg-rose-50 text-rose-700 border border-rose-200 rounded-md font-bold uppercase tracking-wider flex items-center gap-0.5 animate-pulse">
-                                <AlertTriangle className="w-3 h-3 shrink-0" /> Shrinkage
+                  {auditItemsState
+                    .filter(entry => 
+                      entry.name.toLowerCase().includes(auditSearch.toLowerCase()) ||
+                      entry.sku.toLowerCase().includes(auditSearch.toLowerCase())
+                    )
+                    .map(entry => {
+                      const variance = entry.physicalQty - entry.systemQty
+                      const isHighShrinkage = variance < 0 && (Math.abs(variance) / entry.systemQty) >= 0.1
+                      
+                      return (
+                        <tr key={entry.itemId} className="hover:bg-slate-50/50 transition-colors">
+                          <td className="p-4 font-mono font-bold text-xs text-zinc-500">{entry.sku}</td>
+                          <td className="p-4 font-bold text-zinc-800">{entry.name}</td>
+                          <td className="p-4 text-zinc-650 font-semibold">{entry.systemQty} {entry.unit}</td>
+                          <td className="p-4">
+                            <div className="flex items-center gap-2">
+                              <input
+                                type="number"
+                                min={0}
+                                required
+                                value={entry.physicalQty}
+                                onChange={e => handleAuditQtyChange(entry.itemId, e.target.value)}
+                                className="w-20 px-2 py-1 border border-zinc-350 rounded focus:ring-2 focus:ring-emerald-500 focus:outline-none text-right font-bold"
+                              />
+                              <span className="text-zinc-400 text-xs">{entry.unit}</span>
+                            </div>
+                          </td>
+                          <td className="p-4">
+                            {variance > 0 ? (
+                              <span className="inline-flex items-center text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-full">
+                                +{variance} {entry.unit}
                               </span>
-                            ) : variance === 0 ? (
-                              <span className="text-[9px] px-2 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-md font-bold uppercase tracking-wider flex items-center gap-0.5">
-                                <Check className="w-3 h-3 shrink-0" /> OK
+                            ) : variance < 0 ? (
+                              <span className="inline-flex items-center text-xs font-bold text-rose-700 bg-rose-50 border border-rose-200 px-2.5 py-1 rounded-full">
+                                {variance} {entry.unit}
                               </span>
                             ) : (
-                              <span className="text-[9px] px-2 py-0.5 bg-amber-50 text-amber-700 border border-amber-200 rounded-md font-bold uppercase tracking-wider flex items-center gap-0.5">
-                                <TrendingDown className="w-3 h-3 shrink-0" /> Adjust
+                              <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-zinc-150 text-zinc-650">
+                                <Check className="w-4 h-4" />
                               </span>
                             )}
-                          </div>
-                        </td>
-                      </tr>
-                    )
-                  })}
+                          </td>
+                          <td className="p-4">
+                            <div className="flex justify-center">
+                              {isHighShrinkage ? (
+                                <span className="text-[9px] px-2 py-0.5 bg-rose-50 text-rose-700 border border-rose-200 rounded-md font-bold uppercase tracking-wider flex items-center gap-0.5 animate-pulse">
+                                  <AlertTriangle className="w-3 h-3 shrink-0" /> Shrinkage
+                                </span>
+                              ) : variance === 0 ? (
+                                <span className="text-[9px] px-2 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-md font-bold uppercase tracking-wider flex items-center gap-0.5">
+                                  <Check className="w-3 h-3 shrink-0" /> OK
+                                </span>
+                              ) : (
+                                <span className="text-[9px] px-2 py-0.5 bg-amber-50 text-amber-700 border border-amber-200 rounded-md font-bold uppercase tracking-wider flex items-center gap-0.5">
+                                  <TrendingDown className="w-3 h-3 shrink-0" /> Adjust
+                                </span>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      )
+                    })}
                 </tbody>
               </table>
             </div>
@@ -654,7 +880,52 @@ export default function InventoryWorkspace({
               <h3 className="text-sm font-bold text-zinc-900">Inventory Ledger Summary</h3>
               <p className="text-xs text-zinc-500">Running balances, last incoming, and last outgoing details for warehouse items.</p>
             </div>
-            <div className="flex gap-2">
+          </div>
+
+          {/* Search and Category Filter Button Track */}
+          <div className="flex flex-col sm:flex-row gap-4 justify-between items-stretch sm:items-center bg-zinc-50/50 p-4 border border-zinc-200 rounded-xl">
+            <div className="flex-1 flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
+              {/* Search Input */}
+              <div className="relative flex-1 max-w-md">
+                <Search className="absolute left-3 top-2.5 h-4 w-4 text-zinc-400" />
+                <input
+                  type="text"
+                  placeholder="Search ledger by name or SKU..."
+                  value={ledgerSearch}
+                  onChange={e => setLedgerSearch(e.target.value)}
+                  className="pl-9 pr-4 py-2 w-full border border-zinc-200 bg-white rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none placeholder-zinc-400 font-medium"
+                />
+              </div>
+
+              {/* Filter Buttons */}
+              <div className="flex bg-zinc-150 p-0.5 rounded-lg border border-zinc-200/60 self-start sm:self-auto">
+                <button
+                  type="button"
+                  onClick={() => setLedgerFilter("all")}
+                  className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all cursor-pointer ${
+                    ledgerFilter === "all"
+                      ? "bg-white text-zinc-950 shadow-xs"
+                      : "text-zinc-500 hover:text-zinc-800"
+                  }`}
+                >
+                  All Items
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setLedgerFilter("low_stock")}
+                  className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                    ledgerFilter === "low_stock"
+                      ? "bg-amber-100 text-amber-700 shadow-xs"
+                      : "text-zinc-500 hover:text-amber-600"
+                  }`}
+                >
+                  <AlertTriangle className="w-3.5 h-3.5" />
+                  Low Stock
+                </button>
+              </div>
+            </div>
+
+            <div className="flex gap-2 self-end sm:self-auto">
               <button 
                 onClick={() => { setIsNewItemOpen(true); cancelEdit(); }}
                 className="inline-flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-xs font-bold transition-all shadow-sm cursor-pointer"
@@ -681,85 +952,113 @@ export default function InventoryWorkspace({
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="bg-zinc-50/50 border-b border-zinc-150 text-[11px] font-bold text-zinc-500">
-                    <th className="p-4 font-extrabold text-zinc-700 border-r border-zinc-150">Item Name</th>
-                    <th className="p-4 font-extrabold text-zinc-700 border-r border-zinc-150 text-center">QTY</th>
-                    <th className="p-4 font-bold text-emerald-700 text-center bg-emerald-50/30">IN</th>
-                    <th className="p-4 font-bold text-emerald-700 bg-emerald-50/30">In Date</th>
-                    <th className="p-4 font-bold text-emerald-700 border-r border-zinc-150 bg-emerald-50/30 text-center">Balance</th>
-                    <th className="p-4 font-bold text-rose-700 text-center bg-rose-50/30">OUT</th>
-                    <th className="p-4 font-bold text-rose-700 bg-rose-50/30">Out Date</th>
-                    <th className="p-4 font-bold text-rose-700 bg-rose-50/30 text-center">Balance</th>
-                    <th className="p-4 text-center">Actions</th>
+                    <th className="p-3 font-extrabold text-zinc-700 border-r border-zinc-150">Item Info</th>
+                    <th className="p-3 font-extrabold text-zinc-700 border-r border-zinc-150 text-center">Stock Qty</th>
+                    <th className="p-3 font-bold text-emerald-700 text-center bg-emerald-50/30">Last IN</th>
+                    <th className="p-3 font-bold text-emerald-700 bg-emerald-50/30">In Date</th>
+                    <th className="p-3 font-bold text-emerald-700 border-r border-zinc-150 bg-emerald-50/30 text-center">Balance</th>
+                    <th className="p-3 font-bold text-rose-700 text-center bg-rose-50/30">Last OUT</th>
+                    <th className="p-3 font-bold text-rose-700 bg-rose-50/30">Out Date</th>
+                    <th className="p-3 font-bold text-rose-700 bg-rose-50/30 text-center">Balance</th>
+                    <th className="p-3 text-center">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-zinc-100 text-sm">
-                  {ledger.length === 0 ? (
+                  {filteredLedger.length === 0 ? (
                     <tr>
-                      <td colSpan={9} className="p-8 text-center text-zinc-400 text-sm">
-                        No inventory items registered. Click "Register Item" to begin.
+                      <td colSpan={9} className="p-8 text-center text-zinc-400 text-sm font-medium">
+                        No inventory items match the current search / filter criteria.
                       </td>
                     </tr>
                   ) : (
-                    ledger.map(item => {
+                    paginatedLedger.map(item => {
                       const isLowStock = item.quantity <= item.low_stock_threshold
                       return (
                         <tr key={item.id} className="hover:bg-slate-50/40 transition-colors">
-                          <td className="p-4 border-r border-zinc-100">
+                          <td className="p-3 border-r border-zinc-100">
                             <div className="flex items-center gap-3">
                               {item.image_url ? (
-                                <img src={item.image_url} alt={item.name} className="w-8 h-8 object-cover rounded-md border border-zinc-200 shrink-0" />
+                                <img src={item.image_url} alt={item.name} className="w-9 h-9 object-cover rounded-lg border border-zinc-150 shadow-2xs shrink-0" />
                               ) : (
-                                <div className="w-8 h-8 bg-zinc-100 border border-zinc-200 rounded-md flex items-center justify-center text-zinc-400 shrink-0">
-                                  <Package className="w-4 h-4" />
+                                <div className="w-9 h-9 bg-zinc-50 border border-zinc-150 rounded-lg flex items-center justify-center text-zinc-400 shrink-0">
+                                  <Package className="w-4.5 h-4.5" />
                                 </div>
                               )}
-                              <div>
-                                <span className="font-bold text-zinc-800 block text-xs">{item.name}</span>
-                                <span className="text-[9px] text-zinc-400 font-mono tracking-wider">{item.sku}</span>
+                              <div className="flex flex-col gap-0.5">
+                                <span className="font-bold text-zinc-850 text-xs tracking-tight line-clamp-1">{item.name}</span>
+                                <div className="flex items-center gap-1.5">
+                                  <span className="text-[9px] bg-zinc-100 text-zinc-650 px-1.5 py-0.5 rounded font-mono font-bold tracking-wider">{item.sku}</span>
+                                  <span className="text-[9px] text-zinc-400 font-medium">/ {item.unit}</span>
+                                </div>
                               </div>
                             </div>
                           </td>
-                          <td className="p-4 border-r border-zinc-100 text-center font-black text-zinc-900 bg-zinc-50/10">
-                            <div className="flex flex-col items-center">
-                              <span>{item.quantity}</span>
-                              <span className="text-[9px] text-zinc-400 font-medium lowercase">{item.unit}</span>
-                              {isLowStock && (
-                                <span className="text-[8px] px-1.5 py-0.5 mt-1 bg-rose-50 text-rose-700 border border-rose-200 rounded font-bold uppercase tracking-wider">
-                                  Low Stock
-                                </span>
-                              )}
+                          <td className="p-3 border-r border-zinc-100 text-center font-bold text-zinc-850 bg-zinc-50/10">
+                            <div className="flex flex-col items-center gap-1">
+                              <div className="flex items-center gap-1.5">
+                                <span className={`text-sm font-black ${isLowStock ? "text-amber-600" : "text-zinc-900"}`}>{item.quantity}</span>
+                                {isLowStock && (
+                                  <AlertTriangle className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                                )}
+                              </div>
+                              {/* Stock Status Bar */}
+                              <div className="w-20 h-1.5 bg-zinc-100 rounded-full overflow-hidden border border-zinc-200">
+                                <div 
+                                  className={`h-full rounded-full transition-all duration-500 ${
+                                    item.quantity === 0
+                                      ? "bg-rose-500 w-0"
+                                      : isLowStock
+                                        ? "bg-amber-500"
+                                        : "bg-emerald-500"
+                                  }`}
+                                  style={{ 
+                                    width: `${Math.min(100, Math.max(8, item.low_stock_threshold > 0 ? (item.quantity / (item.low_stock_threshold * 2.5)) * 100 : 100))}%` 
+                                  }}
+                                />
+                              </div>
                             </div>
                           </td>
                           
                           {/* IN details */}
-                          <td className="p-4 text-center font-bold text-emerald-600 bg-emerald-50/10">
+                          <td className="p-3 text-center font-bold text-emerald-650 bg-emerald-50/10">
                             {item.last_in ? `+${item.last_in.qty}` : "-"}
                           </td>
-                          <td className="p-4 text-xs text-zinc-600 bg-emerald-50/10">
+                          <td className="p-3 text-xs text-zinc-600 bg-emerald-50/10">
                             {item.last_in ? formatDate(item.last_in.date) : "-"}
                           </td>
-                          <td className="p-4 text-center font-semibold text-emerald-800 border-r border-zinc-100 bg-emerald-50/10">
+                          <td className="p-3 text-center font-semibold text-emerald-800 border-r border-zinc-100 bg-emerald-50/10">
                             {item.last_in ? item.last_in.balance : "-"}
                           </td>
 
                           {/* OUT details */}
-                          <td className="p-4 text-center font-bold text-rose-600 bg-rose-50/10">
+                          <td className="p-3 text-center font-bold text-rose-650 bg-rose-50/10">
                             {item.last_out ? `-${item.last_out.qty}` : "-"}
                           </td>
-                          <td className="p-4 text-xs text-zinc-600 bg-rose-50/10">
+                          <td className="p-3 text-xs text-zinc-650 bg-rose-50/10">
                             {item.last_out ? formatDate(item.last_out.date) : "-"}
                           </td>
-                          <td className="p-4 text-center font-semibold text-rose-800 bg-rose-50/10">
+                          <td className="p-3 text-center font-semibold text-rose-800 bg-rose-50/10">
                             {item.last_out ? item.last_out.balance : "-"}
                           </td>
 
-                          <td className="p-4 text-center space-x-2">
-                            <button
-                              onClick={() => startEdit(item)}
-                              className="text-xs font-bold text-zinc-500 hover:text-zinc-900 transition-colors"
-                            >
-                              Edit
-                            </button>
+                          <td className="p-3 text-center">
+                            <div className="inline-flex gap-2">
+                              <button
+                                onClick={() => startEdit(item)}
+                                className="px-2.5 py-1 bg-zinc-550 hover:bg-zinc-200 text-zinc-650 border border-zinc-200 rounded-md text-xs font-bold transition-all cursor-pointer"
+                              >
+                                Edit
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setAdjItemId(item.id)
+                                  setIsAdjustmentOpen(true)
+                                }}
+                                className="px-2.5 py-1 bg-white hover:bg-emerald-50 text-emerald-700 border border-zinc-200 hover:border-emerald-250 rounded-md text-xs font-bold transition-all cursor-pointer"
+                              >
+                                Adjust
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       )
@@ -768,6 +1067,14 @@ export default function InventoryWorkspace({
                 </tbody>
               </table>
             </div>
+            <Pagination
+              currentPage={ledgerPage}
+              totalPages={totalLedgerPages}
+              totalItems={totalLedgerItems}
+              itemsPerPage={ledgerPerPage}
+              onPageChange={setLedgerPage}
+              itemNamePlural="ledger items"
+            />
           </div>
         </div>
 
@@ -793,45 +1100,57 @@ export default function InventoryWorkspace({
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="bg-zinc-50/50 border-b border-zinc-150 text-[11px] font-bold text-zinc-500">
-                    <th className="p-4">Item name</th>
-                    <th className="p-4">PO #</th>
-                    <th className="p-4 text-center">PO Date</th>
-                    <th className="p-4 text-center">QTY</th>
-                    <th className="p-4 text-center">Delivered Date</th>
-                    <th className="p-4 text-right">Status / Action</th>
+                    <th className="p-3">Item Details</th>
+                    <th className="p-3">PO #</th>
+                    <th className="p-3 text-center">QTY</th>
+                    <th className="p-3 text-center">Status</th>
+                    <th className="p-3 text-center">Deliver Date</th>
+                    <th className="p-3 text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-zinc-100 text-sm">
                   {procurement.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="p-8 text-center text-zinc-400 text-sm">
+                      <td colSpan={6} className="p-8 text-center text-zinc-400 text-sm font-medium">
                         No purchase orders placed. Click "Create Purchase Order" to begin.
                       </td>
                     </tr>
                   ) : (
-                    procurement.map(po => {
+                    paginatedProcurement.map(po => {
                       const isDelivered = po.status === 'delivered'
                       return (
                         <tr key={po.id} className="hover:bg-slate-50/40 transition-colors">
-                          <td className="p-4 font-bold text-zinc-800">
-                            {po.item?.name || "Deleted Item"}
-                            <span className="block text-[9px] text-zinc-400 font-mono font-medium">{po.item?.sku || "N/A"}</span>
+                          <td className="p-3">
+                            <div className="flex flex-col gap-0.5">
+                              <span className="font-bold text-zinc-850 text-xs line-clamp-1">{po.item?.name || "Deleted Item"}</span>
+                              <span className="text-[9px] bg-zinc-100 text-zinc-650 px-1.5 py-0.5 rounded font-mono font-bold tracking-wider w-fit">{po.item?.sku || "N/A"}</span>
+                            </div>
                           </td>
-                          <td className="p-4 font-mono font-bold text-zinc-600">{po.po_number}</td>
-                          <td className="p-4 text-center text-zinc-600">{formatDate(po.po_date)}</td>
-                          <td className="p-4 text-center font-black text-zinc-800">{po.qty} <span className="text-[10px] text-zinc-400 lowercase font-medium">{po.item?.unit || 'pcs'}</span></td>
-                          <td className="p-4 text-center text-zinc-600">
+                          <td className="p-3 font-mono font-bold text-xs text-zinc-600">{po.po_number}</td>
+                          <td className="p-3 text-center font-black text-zinc-850">{po.qty} <span className="text-[9px] text-zinc-405 lowercase font-medium">{po.item?.unit || 'pcs'}</span></td>
+                          <td className="p-3 text-center">
                             {isDelivered ? (
-                              <span className="font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded border border-emerald-100">
+                              <span className="inline-flex items-center gap-1 text-[9px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-250 px-2 py-0.5 rounded-full">
+                                <Check className="w-3 h-3 shrink-0" /> Delivered
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 text-[9px] font-bold text-amber-700 bg-amber-50 border border-amber-250 px-2 py-0.5 rounded-full animate-pulse">
+                                <Truck className="w-3 h-3 shrink-0" /> Pending
+                              </span>
+                            )}
+                          </td>
+                          <td className="p-3 text-center text-xs text-zinc-650">
+                            {isDelivered ? (
+                              <span className="font-semibold text-emerald-700 bg-emerald-50/60 px-2 py-0.5 rounded border border-emerald-150 text-[10px]">
                                 {formatDate(po.delivered_date)}
                               </span>
                             ) : (
                               <span className="text-zinc-400 font-medium italic">Pending delivery</span>
                             )}
                           </td>
-                          <td className="p-4 text-right">
+                          <td className="p-3 text-right">
                             {isDelivered ? (
-                              <span className="text-xs font-bold text-emerald-600 flex items-center justify-end gap-1">
+                              <span className="text-xs font-bold text-emerald-600 inline-flex items-center gap-1 mr-2 justify-end">
                                 <Check className="w-3.5 h-3.5" /> Received
                               </span>
                             ) : (
@@ -839,7 +1158,7 @@ export default function InventoryWorkspace({
                                 onClick={() => handleDeliverPo(po.id)}
                                 className="bg-emerald-50 hover:bg-emerald-100 border border-emerald-250 text-emerald-700 px-3 py-1.5 rounded-lg text-xs font-bold transition-all shadow-2xs cursor-pointer"
                               >
-                                Mark as Delivered
+                                Mark Received
                               </button>
                             )}
                           </td>
@@ -850,6 +1169,14 @@ export default function InventoryWorkspace({
                 </tbody>
               </table>
             </div>
+            <Pagination
+              currentPage={procurementPage}
+              totalPages={totalProcurementPages}
+              totalItems={totalProcurementItems}
+              itemsPerPage={procurementPerPage}
+              onPageChange={setProcurementPage}
+              itemNamePlural="purchase orders"
+            />
           </div>
         </div>
 
@@ -881,7 +1208,7 @@ export default function InventoryWorkspace({
                   No inventory audits logged yet.
                 </div>
               ) : (
-                audits.map(audit => {
+                paginatedAudits.map(audit => {
                   const totalDiscrepancies = audit.audit_items.filter(i => i.variance !== 0).length
                   const isExpanded = expandedAuditId === audit.id
 
@@ -954,6 +1281,14 @@ export default function InventoryWorkspace({
                 })
               )}
             </div>
+            <Pagination
+              currentPage={auditsPage}
+              totalPages={totalAuditsPages}
+              totalItems={totalAuditsItems}
+              itemsPerPage={auditsPerPage}
+              onPageChange={setAuditsPage}
+              itemNamePlural="audits"
+            />
           </div>
         </div>
       )}
@@ -1300,8 +1635,13 @@ export default function InventoryWorkspace({
 
       {/* Slide-over Bulk Import Drawer */}
       {isBulkDrawerOpen && (
-        <div className="fixed inset-0 bg-zinc-950/60 z-50 transition-opacity flex justify-end animate-smooth-fade">
-          <div className="w-full max-w-xl bg-white h-full shadow-2xl flex flex-col animate-smooth-slide-in">
+        <div 
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setIsBulkDrawerOpen(false)
+          }}
+          className="fixed inset-0 bg-zinc-950/60 z-50 transition-opacity flex items-center justify-center p-4 sm:p-6 animate-smooth-fade"
+        >
+          <div className="w-full max-w-2xl bg-white max-h-[90vh] shadow-2xl flex flex-col rounded-2xl overflow-hidden animate-smooth-pop">
             {/* Header */}
             <div className="p-6 border-b border-zinc-150 flex items-center justify-between">
               <div>

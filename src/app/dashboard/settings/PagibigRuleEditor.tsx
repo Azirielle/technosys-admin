@@ -1,6 +1,7 @@
 "use client"
 import { useState } from "react"
 import { AlertCircle, ShieldCheck } from "lucide-react"
+import { useAlertConfirm } from "@/components/ui/AlertConfirmProvider"
 import { updatePagibigRules } from "@/app/actions/compliance"
 
 interface PagibigRuleEditorProps {
@@ -12,6 +13,7 @@ export default function PagibigRuleEditor({ userRole }: PagibigRuleEditorProps) 
   const [formData, setFormData] = useState<FormData | null>(null);
   const [isPending, setIsPending] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const { alert } = useAlertConfirm();
 
   const isSuperAdmin = userRole === "super_admin"
 
@@ -34,7 +36,7 @@ export default function PagibigRuleEditor({ userRole }: PagibigRuleEditorProps) 
     if (result?.error) {
       setErrorMsg(result.error);
     } else {
-      alert("Pag-IBIG statutory rules successfully updated.");
+      await alert("Pag-IBIG statutory rules successfully updated.", "Success", "success");
     }
   };
 

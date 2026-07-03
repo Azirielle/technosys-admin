@@ -5,7 +5,11 @@ import InventoryWorkspace from "./InventoryWorkspace"
 
 export const revalidate = 0;
 
-export default async function InventoryPage() {
+export default async function InventoryPage({ searchParams }: { searchParams: Promise<{ tab?: string }> }) {
+  const resolvedParams = await searchParams
+  const rawTab = resolvedParams?.tab
+  const initialTab = (rawTab === "ledger" || rawTab === "procurement" || rawTab === "audits") ? rawTab : "ledger"
+
   const supabase = await createClient()
 
   let user = null
@@ -37,6 +41,7 @@ export default async function InventoryPage() {
       initialItems={items as any}
       initialAudits={audits as any}
       userId={user.id}
+      initialTab={initialTab}
     />
   )
 }

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { AlertConfirmProvider } from '@/components/ui/AlertConfirmProvider'
 import { usePathname } from 'next/navigation'
 import { LayoutDashboard, Users, Calendar, DollarSign, Settings, LogOut, MessageSquare, Package, ClipboardList, ShieldAlert } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
@@ -12,25 +13,94 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [profile, setProfile] = useState<{ full_name: string; role: string } | null>(null)
   const [pendingLeavesCount, setPendingLeavesCount] = useState<number>(0)
   const [lowStockCount, setLowStockCount] = useState<number>(0)
+  const [ticketsBadge, setTicketsBadge] = useState<{ count: number; isUrgent: boolean }>({ count: 0, isUrgent: false })
   const [loading, setLoading] = useState<boolean>(true)
 
+
+
   useEffect(() => {
+    const supabase = createClient()
+    const channels: ReturnType<typeof supabase.channel>[] = []
+
     async function loadProfile() {
       try {
-        const supabase = createClient()
-        
         const { data: { user }, error: userError } = await supabase.auth.getUser()
         console.log("Layout auth getUser:", { user, userError })
+
         if (user) {
           const { data, error: profileError } = await supabase
             .from('profiles')
             .select('full_name, role')
             .eq('id', user.id)
             .single()
-          
+
           console.log("Layout profile fetch:", { data, profileError })
+
           if (data) {
             setProfile(data)
+            const role = data.role as UserRole
+
+            // --- Role-gated: Pending Leaves badge ---
+            if (MODULE_ROLES['leaves']?.includes(role)) {
+              const fetchPendingLeavesCount = async () => {
+                const { count, error } = await supabase
+                  .from('leaves')
+                  .select('*', { count: 'exact', head: true })
+                  .eq('status', 'pending')
+                if (!error && count !== null) setPendingLeavesCount(count)
+              }
+              fetchPendingLeavesCount()
+
+              const leavesChannel = supabase
+                .channel('leaves-pending-changes')
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'leaves' }, fetchPendingLeavesCount)
+                .subscribe()
+              channels.push(leavesChannel)
+            }
+
+            // --- Role-gated: Low Stock Inventory badge ---
+            if (MODULE_ROLES['inventory']?.includes(role)) {
+              const fetchLowStockCount = async () => {
+                const { data: items, error } = await supabase
+                  .from('inventory_items')
+                  .select('id, quantity, low_stock_threshold')
+                if (!error && items) {
+                  const count = items.filter((item: any) => item.quantity <= item.low_stock_threshold).length
+                  setLowStockCount(count)
+                }
+              }
+              fetchLowStockCount()
+
+              const inventoryChannel = supabase
+                .channel('inventory-stock-changes')
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'inventory_items' }, fetchLowStockCount)
+                .subscribe()
+            }
+
+            // --- Role-gated: Tickets badge count (Option A: Urgent Highlight) ---
+            if (MODULE_ROLES['tickets']?.includes(role)) {
+              const fetchTicketsCount = async () => {
+                const { data: activeTickets, error } = await supabase
+                  .from('tickets')
+                  .select('id, priority, status')
+                  .in('status', ['open', 'assigned', 'in_progress'])
+                if (!error && activeTickets) {
+                  const urgentTickets = activeTickets.filter((t: any) => t.priority === 'urgent')
+                  if (urgentTickets.length > 0) {
+                    setTicketsBadge({ count: urgentTickets.length, isUrgent: true })
+                  } else {
+                    setTicketsBadge({ count: activeTickets.length, isUrgent: false })
+                  }
+                }
+              }
+              fetchTicketsCount()
+
+              const ticketsChannel = supabase
+                .channel('tickets-badge-changes')
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'tickets' }, fetchTicketsCount)
+                .subscribe()
+              channels.push(ticketsChannel)
+            }
           }
         }
       } catch (e) {
@@ -39,64 +109,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         setLoading(false)
       }
     }
+
     loadProfile()
 
-    // Setup pending leaves count loading
-    const supabase = createClient()
-
-    const fetchPendingLeavesCount = async () => {
-      const { count, error } = await supabase
-        .from('leaves')
-        .select('*', { count: 'exact', head: true })
-        .eq('status', 'pending')
-
-      if (!error && count !== null) {
-        setPendingLeavesCount(count)
-      }
-    }
-
-    const fetchLowStockCount = async () => {
-      const { data, error } = await supabase
-        .from('inventory_items')
-        .select('id, quantity, low_stock_threshold')
-
-      if (!error && data) {
-        const count = data.filter((item: any) => item.quantity <= item.low_stock_threshold).length
-        setLowStockCount(count)
-      }
-    }
-
-    fetchPendingLeavesCount()
-    fetchLowStockCount()
-
-    // Realtime channel subscriptions to update the badge counts automatically
-    const leavesChannel = supabase
-      .channel('leaves-pending-changes')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'leaves' },
-        () => {
-          fetchPendingLeavesCount()
-        }
-      )
-      .subscribe()
-
-    const inventoryChannel = supabase
-      .channel('inventory-stock-changes')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'inventory_items' },
-        () => {
-          fetchLowStockCount()
-        }
-      )
-      .subscribe()
-
     return () => {
-      supabase.removeChannel(leavesChannel)
-      supabase.removeChannel(inventoryChannel)
+      channels.forEach(ch => supabase.removeChannel(ch))
     }
   }, [])
+
 
   const navItems = [
     { href: '/dashboard', label: 'Overview', icon: LayoutDashboard, exact: true },
@@ -168,12 +188,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     }
   }
 
+
+
   return (
-    <div className="flex h-screen bg-zinc-50 overflow-hidden">
+    <AlertConfirmProvider>
+      <div className="flex h-screen bg-zinc-50 overflow-hidden">
       {/* Premium Light Sidebar */}
       <aside className="w-64 bg-white text-slate-900 border-r border-slate-200 flex flex-col z-20">
-        <div className="py-6 flex items-center px-6 border-b border-slate-100 justify-center">
-          <img src="/logo.png" alt="Technocycle" className="h-28 w-auto object-contain" />
+        <div className="py-4 flex items-center px-6 border-b border-slate-100 justify-center">
+          <img src="/logo.png" alt="Technocycle" className="h-16 w-auto object-contain" />
         </div>
         
         <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
@@ -192,6 +215,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               const Icon = item.icon
               const isLeavesTab = item.href === '/dashboard/leaves'
               const isInventoryTab = item.href === '/dashboard/inventory'
+              const isTicketsTab = item.href === '/dashboard/tickets'
               return (
                 <Link
                   key={item.href}
@@ -214,6 +238,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   {isInventoryTab && lowStockCount > 0 && (
                     <span className="bg-amber-500 text-white text-[10px] font-extrabold px-1.5 py-0.5 rounded-full shadow-sm min-w-[18px] text-center animate-pulse">
                       {lowStockCount}
+                    </span>
+                  )}
+                  {isTicketsTab && ticketsBadge.count > 0 && (
+                    <span className={`text-white text-[10px] font-extrabold px-1.5 py-0.5 rounded-full shadow-sm min-w-[18px] text-center animate-pulse ${
+                      ticketsBadge.isUrgent ? 'bg-rose-500' : 'bg-zinc-500'
+                    }`}>
+                      {ticketsBadge.isUrgent ? `${ticketsBadge.count} Urgent` : ticketsBadge.count}
                     </span>
                   )}
                 </Link>
@@ -272,6 +303,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {/* Main Content Area */}
       <main className="flex-1 flex flex-col overflow-hidden relative">
         <header className="h-16 bg-white border-b border-zinc-200 flex items-center justify-end px-8 z-10 shadow-sm">
+          {/* Profile Section */}
           <div className="flex items-center gap-4">
              <div className="text-right hidden md:block">
                <div className="flex items-center gap-2">
@@ -334,7 +366,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           )}
         </div>
       </main>
-    </div>
+      </div>
+    </AlertConfirmProvider>
   )
 }
 

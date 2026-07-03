@@ -4,15 +4,8 @@ import { getOfficeLocations } from "@/app/actions/geofence"
 import { getAdmins } from "@/app/actions/employees"
 import { getAnnouncements, getHolidays } from "@/app/actions/announcements"
 import { redirect } from "next/navigation"
-import LocationSettings from "./LocationSettings"
-import PhilHealthRuleEditor from "./PhilHealthRuleEditor"
-import PagibigRuleEditor from "./PagibigRuleEditor"
-import SssDataTable from "./SssDataTable"
-import AdminAccounts from "./AdminAccounts"
-import AnnouncementsEditor from "./AnnouncementsEditor"
-import HolidaysEditor from "./HolidaysEditor"
 import { getDocuments } from "@/app/actions/documents"
-import DocumentsEditor from "./DocumentsEditor"
+import SettingsClient from "./SettingsClient"
 
 export const revalidate = 0;
 
@@ -66,83 +59,16 @@ export default async function SettingsPage() {
   const documentsList = await getDocuments()
 
   return (
-    <div className="p-8 pb-20 max-w-5xl mx-auto space-y-12">
-      <div>
-        <h1 className="text-3xl font-extrabold tracking-tight text-zinc-900">Settings</h1>
-        <p className="text-zinc-500 mt-1">Manage branch geofencing parameters, statutory payroll rules, and system access.</p>
-        {userRole !== 'super_admin' && (
-          <div className="mt-4 p-3 bg-amber-50 border border-amber-200 text-amber-800 rounded-xl text-xs font-semibold inline-flex items-center gap-1.5">
-            ⚠️ Standard Admin Access: Settings modifications are locked. Please contact a Super Administrator to make changes.
-          </div>
-        )}
-      </div>
-
-      {/* Geofence Configuration */}
-      <section className="bg-white rounded-2xl border border-zinc-200 p-6 shadow-sm">
-        <h2 className="text-xl font-bold text-zinc-800 mb-6 flex items-center gap-2">
-          📍 Geofence Configuration
-        </h2>
-        <LocationSettings initialLocations={locations || []} userRole={userRole} />
-      </section>
-
-      {/* Compliance Editors */}
-      <section className="bg-white rounded-2xl border border-zinc-200 p-6 shadow-sm space-y-8">
-        <h2 className="text-xl font-bold text-zinc-800 flex items-center gap-2">
-          ⚖️ Statutory Compliance Settings
-        </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <PhilHealthRuleEditor userRole={userRole} />
-          <PagibigRuleEditor userRole={userRole} />
-        </div>
-        <div className="pt-4 border-t border-zinc-100">
-          <SssDataTable initialData={sssBrackets || []} userRole={userRole} />
-        </div>
-      </section>
-
-      {/* Announcements Board */}
-      <section className="bg-white rounded-2xl border border-zinc-200 p-6 shadow-sm">
-        <h2 className="text-xl font-bold text-zinc-800 mb-6 flex items-center gap-2">
-          📢 Company Announcements Board
-        </h2>
-        <AnnouncementsEditor 
-          initialAnnouncements={announcementsList} 
-          officeLocations={locations || []} 
-          userRole={userRole} 
-        />
-      </section>
-
-      {/* Holidays Calendar Manager */}
-      <section className="bg-white rounded-2xl border border-zinc-200 p-6 shadow-sm">
-        <h2 className="text-xl font-bold text-zinc-800 mb-6 flex items-center gap-2">
-          📅 Holidays & Salary Multipliers
-        </h2>
-        <HolidaysEditor 
-          initialHolidays={holidaysList} 
-          userRole={userRole} 
-        />
-      </section>
-
-      {/* Company Documents & Templates Manager */}
-      <section className="bg-white rounded-2xl border border-zinc-200 p-6 shadow-sm">
-        <h2 className="text-xl font-bold text-zinc-800 mb-6 flex items-center gap-2">
-          📂 Company Documents & Forms Management
-        </h2>
-        <DocumentsEditor 
-          initialDocuments={documentsList} 
-          officeLocations={locations || []} 
-          userRole={userRole} 
-        />
-      </section>
-
-      {/* Admin Accounts Management (Super Admin only) */}
-      {userRole === 'super_admin' && (
-        <section className="bg-white rounded-2xl border border-zinc-200 p-6 shadow-sm">
-          <h2 className="text-xl font-bold text-zinc-800 mb-6 flex items-center gap-2">
-            🛡️ Administrative Access Management
-          </h2>
-          <AdminAccounts initialAdmins={adminsList} />
-        </section>
-      )}
+    <div className="p-8 pb-20 max-w-7xl mx-auto">
+      <SettingsClient
+        locations={locations || []}
+        sssBrackets={sssBrackets || []}
+        announcementsList={announcementsList || []}
+        holidaysList={holidaysList || []}
+        adminsList={adminsList || []}
+        documentsList={documentsList || []}
+        userRole={userRole}
+      />
     </div>
   )
 }

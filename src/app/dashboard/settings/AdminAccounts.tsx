@@ -1,6 +1,7 @@
 "use client"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import { useAlertConfirm } from "@/components/ui/AlertConfirmProvider"
 import { UserCheck, Mail, KeyRound, Shield, Trash2, Calendar, Loader2, CheckCircle2, ShieldAlert } from "lucide-react"
 import { createAdmin, deleteAdmin } from "@/app/actions/employees"
 
@@ -45,6 +46,7 @@ const getRoleBadge = (role: string) => {
 
 export default function AdminAccounts({ initialAdmins }: AdminAccountsProps) {
   const router = useRouter()
+  const { alert, confirm } = useAlertConfirm()
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
   const [error, setError] = useState("")
@@ -79,12 +81,12 @@ export default function AdminAccounts({ initialAdmins }: AdminAccountsProps) {
     try {
       const res = await deleteAdmin(id)
       if (res?.error) {
-        alert(res.error)
+        await alert(res.error, "Delete Failed", "destructive")
       } else {
         router.refresh()
       }
     } catch (err: any) {
-      alert("Failed to delete administrator: " + err.message)
+      await alert("Failed to delete administrator: " + err.message, "Error", "destructive")
     } finally {
       setDeleting(false)
       setDeleteId(null)
