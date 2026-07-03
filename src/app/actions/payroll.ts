@@ -76,8 +76,12 @@ export async function getDraftPayroll(startDateStr?: string, endDateStr?: string
     const end = endDateStr ? new Date(endDateStr) : new Date(now.getFullYear(), now.getMonth(), now.getDate() <= 15 ? 10 : 25)
     end.setHours(23,59,59,999)
 
-    // Fetch technicians
-    const { data: technicians, error: techErr } = await supabaseAdmin.from('profiles').select('*').eq('role', 'technician').order('full_name')
+    // Fetch technicians and helpers
+    const { data: technicians, error: techErr } = await supabaseAdmin
+      .from('profiles')
+      .select('*')
+      .in('role', ['technician', 'helper'])
+      .order('full_name')
     if (techErr) throw techErr
 
     // Fetch logs, schedules, leaves, and holidays
