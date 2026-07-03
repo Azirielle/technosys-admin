@@ -2,7 +2,7 @@
  
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { ArrowLeft, Users, Calendar, ClipboardList, DollarSign, MessageSquare, Package, Settings, HelpCircle, Activity, Search } from 'lucide-react'
+import { ArrowLeft, Users, Calendar, ClipboardList, DollarSign, MessageSquare, Package, Settings, HelpCircle, Activity, Search, Megaphone } from 'lucide-react'
 import Pagination from '@/components/ui/Pagination'
  
 const CATEGORIES = [
@@ -14,6 +14,7 @@ const CATEGORIES = [
   { id: 'ticket', label: 'Tickets', icon: MessageSquare, color: 'text-amber-500' },
   { id: 'inventory', label: 'Inventory', icon: Package, color: 'text-blue-500' },
   { id: 'settings', label: 'Settings', icon: Settings, color: 'text-slate-500' },
+  { id: 'announcement', label: 'Announcements', icon: Megaphone, color: 'text-violet-500' },
 ]
  
 export default function ActivityClient({ initialLogs }: { initialLogs: any[] }) {
@@ -35,6 +36,7 @@ export default function ActivityClient({ initialLogs }: { initialLogs: any[] }) 
       case 'ticket': return { icon: MessageSquare, bg: 'bg-amber-50 border-amber-100 text-amber-600' }
       case 'inventory': return { icon: Package, bg: 'bg-blue-50 border-blue-100 text-blue-600' }
       case 'settings': return { icon: Settings, bg: 'bg-slate-50 border-slate-100 text-slate-600' }
+      case 'announcement': return { icon: Megaphone, bg: 'bg-indigo-50 border-indigo-100 text-indigo-600' }
       default: return { icon: HelpCircle, bg: 'bg-zinc-50 border-zinc-100 text-zinc-600' }
     }
   }

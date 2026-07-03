@@ -1,7 +1,7 @@
 "use client"
 import { useState } from 'react'
 import { ComposedChart, Area, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts'
-import { CheckCircle2, AlertCircle, FileText, Fingerprint, Loader2, Users, Calendar, ClipboardList, DollarSign, MessageSquare, Package, Settings, HelpCircle, X, Search, Check } from 'lucide-react'
+import { CheckCircle2, AlertCircle, FileText, Fingerprint, Loader2, Users, Calendar, ClipboardList, DollarSign, MessageSquare, Package, Settings, HelpCircle, X, Search, Check, Megaphone } from 'lucide-react'
 import { simulateBiometricScan } from '@/app/actions/employees'
 import Link from 'next/link'
 
@@ -214,6 +214,7 @@ export default function DashboardCharts({
                     case 'ticket': return { icon: MessageSquare, bg: 'bg-amber-50 border-amber-100 text-amber-600' }
                     case 'inventory': return { icon: Package, bg: 'bg-blue-50 border-blue-100 text-blue-600' }
                     case 'settings': return { icon: Settings, bg: 'bg-slate-50 border-slate-100 text-slate-600' }
+                    case 'announcement': return { icon: Megaphone, bg: 'bg-indigo-50 border-indigo-100 text-indigo-600' }
                     default: return { icon: HelpCircle, bg: 'bg-zinc-50 border-zinc-100 text-zinc-600' }
                   }
                 }
