@@ -33,6 +33,7 @@ export default async function DashboardPage() {
   let recentTechs: any[] = [];
   let allTechs: any[] = [];
   let recentActivities: any[] = [];
+  let officeLocations: any[] = [];
   let dbErrorMsg = "";
   
   let empTrendText = "Team fully onboarded";
@@ -127,6 +128,14 @@ export default async function DashboardPage() {
     const { data: allTechsData, error: allTechsErr } = await allTechsQuery.order('full_name', { ascending: true });
     if (allTechsErr) throw allTechsErr;
     allTechs = allTechsData || [];
+
+    // Fetch active office locations for biometric terminal emulation
+    const { data: officeData } = await supabaseAdmin
+      .from('office_locations')
+      .select('id, name')
+      .eq('is_active', true)
+      .order('name');
+    officeLocations = officeData || [];
 
     // 7. Recent activities
     let recentActQuery = supabaseAdmin.from('activity_logs').select('*, actor:profiles(full_name, branch_id)');
@@ -252,7 +261,13 @@ export default async function DashboardPage() {
         </Link>
       </div>
 
-      <DashboardCharts payslips={payslips} recentTechnicians={recentTechs} allTechnicians={allTechs} recentActivities={recentActivities} />
+      <DashboardCharts 
+        payslips={payslips} 
+        recentTechnicians={recentTechs} 
+        allTechnicians={allTechs} 
+        recentActivities={recentActivities} 
+        officeLocations={officeLocations}
+      />
     </div>
   )
 }

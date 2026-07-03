@@ -631,38 +631,60 @@ export default function InventoryWorkspace({
       {/* KPI Summary Grid */}
       {!isAuditing && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {/* Card 1: Total Catalog Items */}
-          <div className="group rounded-[2rem] p-1.5 bg-zinc-100/80 border border-zinc-200 shadow-xs hover:shadow-md transition-all duration-700 ease-[cubic-bezier(0.32,0.72,0,1)]">
-            <div className="bg-white rounded-[calc(2rem-0.375rem)] p-6 shadow-[inset_0_1px_1px_rgba(255,255,255,0.8)] flex flex-col justify-between h-32">
+          {/* Card 1: Total Catalog Items (Interactive) */}
+          <button
+            onClick={() => {
+              setActiveTab("ledger");
+              setLedgerFilter("all");
+            }}
+            className={`group text-left w-full rounded-[2rem] p-1.5 border transition-all duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] cursor-pointer focus:outline-none ${
+              activeTab === "ledger" && ledgerFilter !== "low_stock"
+                ? "bg-zinc-200 border-zinc-300 shadow-md ring-2 ring-zinc-500/10"
+                : "bg-zinc-100/80 border-zinc-200 shadow-xs hover:shadow-md"
+            }`}
+          >
+            <div className={`rounded-[calc(2rem-0.375rem)] p-6 flex flex-col justify-between h-32 w-full transition-all duration-500 ${
+              activeTab === "ledger" && ledgerFilter !== "low_stock" ? "bg-zinc-50/50" : "bg-white"
+            }`}>
               <div className="flex justify-between items-start">
                 <span className="text-xs font-bold text-zinc-400 uppercase tracking-wider">Total SKUs</span>
-                <div className="w-8 h-8 rounded-full bg-zinc-50 border border-zinc-100 flex items-center justify-center">
-                  <Package className="w-4 h-4 text-zinc-650" />
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${
+                  activeTab === "ledger" && ledgerFilter !== "low_stock" ? "bg-zinc-200 text-zinc-800" : "bg-zinc-50 text-zinc-650"
+                }`}>
+                  <Package className="w-4 h-4" />
                 </div>
               </div>
-              <div>
-                <span className="text-3xl font-black tracking-tight text-zinc-900">{ledger.length}</span>
-                <span className="text-[10px] text-zinc-400 font-medium ml-2">Registered Items</span>
+              <div className="flex items-end justify-between">
+                <div>
+                  <span className="text-3xl font-black tracking-tight text-zinc-900">{ledger.length}</span>
+                  <span className="text-[10px] text-zinc-400 font-medium ml-2">Registered Items</span>
+                </div>
+                <span className="text-[10px] font-bold text-zinc-500 bg-zinc-100 px-2 py-0.5 rounded-full">
+                  {activeTab === "ledger" && ledgerFilter !== "low_stock" ? "Active" : "View Catalog"}
+                </span>
               </div>
             </div>
-          </div>
+          </button>
 
           {/* Card 2: Low Stock Alerts (Interactive) */}
           <button
-            onClick={() => setLedgerFilter(prev => prev === "low_stock" ? "all" : "low_stock")}
+            onClick={() => {
+              setActiveTab("ledger");
+              setLedgerFilter(prev => prev === "low_stock" ? "all" : "low_stock");
+            }}
             className={`group text-left w-full rounded-[2rem] p-1.5 border transition-all duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] cursor-pointer focus:outline-none ${
-              ledgerFilter === "low_stock"
+              activeTab === "ledger" && ledgerFilter === "low_stock"
                 ? "bg-amber-100 border-amber-300 shadow-md ring-2 ring-amber-500/20"
                 : "bg-zinc-100/80 border-zinc-200 shadow-xs hover:shadow-md"
             }`}
           >
             <div className={`rounded-[calc(2rem-0.375rem)] p-6 flex flex-col justify-between h-32 w-full transition-all duration-500 ${
-              ledgerFilter === "low_stock" ? "bg-amber-50/50" : "bg-white"
+              activeTab === "ledger" && ledgerFilter === "low_stock" ? "bg-amber-50/50" : "bg-white"
             }`}>
               <div className="flex justify-between items-start">
                 <span className="text-xs font-bold text-amber-600 uppercase tracking-wider">Low Stock Alerts</span>
                 <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${
-                  ledgerFilter === "low_stock" ? "bg-amber-200 text-amber-700" : "bg-amber-50 text-amber-500"
+                  activeTab === "ledger" && ledgerFilter === "low_stock" ? "bg-amber-200 text-amber-700" : "bg-amber-50 text-amber-500"
                 }`}>
                   <AlertTriangle className="w-4 h-4 animate-pulse" />
                 </div>
@@ -673,47 +695,79 @@ export default function InventoryWorkspace({
                   <span className="text-[10px] text-amber-500 font-medium ml-2">SKUs Below Limit</span>
                 </div>
                 <span className="text-[10px] font-bold text-amber-600 bg-amber-100/80 px-2 py-0.5 rounded-full">
-                  {ledgerFilter === "low_stock" ? "Filter Active" : "Click to Filter"}
+                  {activeTab === "ledger" && ledgerFilter === "low_stock" ? "Filter Active" : "Click to Filter"}
                 </span>
               </div>
             </div>
           </button>
 
-          {/* Card 3: Pending Deliveries */}
-          <div className="group rounded-[2rem] p-1.5 bg-zinc-100/80 border border-zinc-200 shadow-xs hover:shadow-md transition-all duration-700 ease-[cubic-bezier(0.32,0.72,0,1)]">
-            <div className="bg-white rounded-[calc(2rem-0.375rem)] p-6 shadow-[inset_0_1px_1px_rgba(255,255,255,0.8)] flex flex-col justify-between h-32">
+          {/* Card 3: Pending Deliveries (Interactive) */}
+          <button
+            onClick={() => setActiveTab("procurement")}
+            className={`group text-left w-full rounded-[2rem] p-1.5 border transition-all duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] cursor-pointer focus:outline-none ${
+              activeTab === "procurement"
+                ? "bg-indigo-100 border-indigo-300 shadow-md ring-2 ring-indigo-500/20"
+                : "bg-zinc-100/80 border-zinc-200 shadow-xs hover:shadow-md"
+            }`}
+          >
+            <div className={`rounded-[calc(2rem-0.375rem)] p-6 flex flex-col justify-between h-32 w-full transition-all duration-500 ${
+              activeTab === "procurement" ? "bg-indigo-50/50" : "bg-white"
+            }`}>
               <div className="flex justify-between items-start">
                 <span className="text-xs font-bold text-indigo-650 uppercase tracking-wider">Pending Orders</span>
-                <div className="w-8 h-8 rounded-full bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-500">
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${
+                  activeTab === "procurement" ? "bg-indigo-200 text-indigo-700" : "bg-indigo-50 text-indigo-500"
+                }`}>
                   <ShoppingCart className="w-4 h-4" />
                 </div>
               </div>
-              <div>
-                <span className="text-3xl font-black tracking-tight text-indigo-700">{pendingDeliveriesCount}</span>
-                <span className="text-[10px] text-indigo-500 font-medium ml-2">Active Procurements</span>
+              <div className="flex items-end justify-between">
+                <div>
+                  <span className="text-3xl font-black tracking-tight text-indigo-700">{pendingDeliveriesCount}</span>
+                  <span className="text-[10px] text-indigo-500 font-medium ml-2">Active Procurements</span>
+                </div>
+                <span className="text-[10px] font-bold text-indigo-600 bg-indigo-100 px-2 py-0.5 rounded-full">
+                  {activeTab === "procurement" ? "Active" : "View Orders"}
+                </span>
               </div>
             </div>
-          </div>
+          </button>
 
-          {/* Card 4: Last Stocktake */}
-          <div className="group rounded-[2rem] p-1.5 bg-zinc-100/80 border border-zinc-200 shadow-xs hover:shadow-md transition-all duration-700 ease-[cubic-bezier(0.32,0.72,0,1)]">
-            <div className="bg-white rounded-[calc(2rem-0.375rem)] p-6 shadow-[inset_0_1px_1px_rgba(255,255,255,0.8)] flex flex-col justify-between h-32">
+          {/* Card 4: Last Stocktake (Interactive) */}
+          <button
+            onClick={() => setActiveTab("audits")}
+            className={`group text-left w-full rounded-[2rem] p-1.5 border transition-all duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] cursor-pointer focus:outline-none ${
+              activeTab === "audits"
+                ? "bg-emerald-50/80 border-emerald-200 shadow-md ring-2 ring-emerald-500/10"
+                : "bg-zinc-100/80 border-zinc-200 shadow-xs hover:shadow-md"
+            }`}
+          >
+            <div className={`rounded-[calc(2rem-0.375rem)] p-6 flex flex-col justify-between h-32 w-full transition-all duration-500 ${
+              activeTab === "audits" ? "bg-emerald-50/30" : "bg-white"
+            }`}>
               <div className="flex justify-between items-start">
-                <span className="text-xs font-bold text-zinc-400 uppercase tracking-wider">Last Stocktake</span>
-                <div className="w-8 h-8 rounded-full bg-zinc-50 border border-zinc-100 flex items-center justify-center text-zinc-500">
+                <span className="text-xs font-bold text-emerald-700 uppercase tracking-wider">Last Stocktake</span>
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${
+                  activeTab === "audits" ? "bg-emerald-100 text-emerald-700" : "bg-zinc-50 text-zinc-500"
+                }`}>
                   <CheckCircle2 className="w-4 h-4 text-emerald-600" />
                 </div>
               </div>
-              <div className="truncate">
-                <span className="text-sm font-bold text-zinc-800 block truncate">
-                  {lastAudit ? lastAudit.auditor?.full_name || "Admin" : "Never"}
-                </span>
-                <span className="text-[9px] text-zinc-405 font-medium mt-1 block">
-                  {lastAudit ? formatDateTime(lastAudit.created_at) : "No audits logged yet"}
+              <div className="flex items-end justify-between w-full">
+                <div className="truncate flex-1">
+                  <span className="text-sm font-bold text-zinc-800 block truncate">
+                    {lastAudit ? lastAudit.auditor?.full_name || "Admin" : "Never"}
+                  </span>
+                  <span className="text-[9px] text-zinc-400 font-medium mt-0.5 block">
+                    {lastAudit ? formatDateTime(lastAudit.created_at) : "No audits logged yet"}
+                  </span>
+                </div>
+                <span className="text-[10px] font-bold text-emerald-600 bg-emerald-100 px-2 py-0.5 rounded-full ml-2 shrink-0">
+                  {activeTab === "audits" ? "Active" : "View Audits"}
                 </span>
               </div>
             </div>
-          </div>
+          </button>
         </div>
       )}
 
