@@ -90,11 +90,11 @@ export async function createSchedule(formData: FormData) {
       })
     }
 
-    if (hasConflict(technicianId)) {
+    if (!isVip && hasConflict(technicianId)) {
       throw new Error(`The selected employee "${techName}" is on approved leave during this schedule's timeframe.`)
     }
 
-    if (seniorPartnerId && hasConflict(seniorPartnerId)) {
+    if (!isVip && seniorPartnerId && hasConflict(seniorPartnerId)) {
       throw new Error(`The selected senior partner is on approved leave during this schedule's timeframe.`)
     }
 
@@ -202,7 +202,7 @@ export async function bulkCreateSchedules(data: {
         }
       })
 
-      if (hasConflict) {
+      if (!isVip && hasConflict) {
         results.push({ id: staffId, name: staffName, success: false, error: "On approved leave during this time." })
         failureCount++
         continue

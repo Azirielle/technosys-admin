@@ -71,9 +71,25 @@ export default function TicketWorkspace({
   const [commentPending, setCommentPending] = useState(false)
   const chatEndRef = useRef<HTMLDivElement>(null)
 
+  const [assigneeDropdownOpen, setAssigneeDropdownOpen] = useState(false)
+  const assigneeDropdownRef = useRef<HTMLDivElement>(null)
+
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 10
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (assigneeDropdownRef.current && !assigneeDropdownRef.current.contains(event.target as Node)) {
+        setAssigneeDropdownOpen(false)
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside)
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside)
+    }
+  }, [])
 
   // Reset page to 1 when filters or search query changes
   useEffect(() => {
@@ -244,6 +260,23 @@ export default function TicketWorkspace({
     })
   }
 
+  // Elapsed Time Helper
+  const getElapsedTime = (isoString: string) => {
+    const now = new Date()
+    const past = new Date(isoString)
+    const diffMs = now.getTime() - past.getTime()
+    if (diffMs < 0) return "just now"
+    const diffMins = Math.floor(diffMs / 60000)
+    if (diffMins < 1) return "just now"
+    if (diffMins < 60) return `${diffMins}m ago`
+    const diffHours = Math.floor(diffMins / 60)
+    if (diffHours < 24) return `${diffHours}h ago`
+    const diffDays = Math.floor(diffHours / 24)
+    if (diffDays === 1) return "yesterday"
+    if (diffDays < 7) return `${diffDays}d ago`
+    return past.toLocaleDateString("en-US", { month: "short", day: "numeric" })
+  }
+
   // Category Color Class Generator (Contrast Checked >= 4.5:1)
   const getCategoryClass = (category: string) => {
     switch (category) {
@@ -252,6 +285,17 @@ export default function TicketWorkspace({
       case "Benefits Inquiry": return "bg-indigo-50 text-indigo-900 border-indigo-200"
       case "Equipment Issue": return "bg-rose-50 text-rose-900 border-rose-250"
       default: return "bg-slate-50 text-slate-900 border-slate-200"
+    }
+  }
+
+  // Left-border color accents per category
+  const getCategoryBorderClass = (category: string) => {
+    switch (category) {
+      case "Leave Request": return "border-l-blue-400"
+      case "Payroll Dispute": return "border-l-amber-500"
+      case "Benefits Inquiry": return "border-l-indigo-400"
+      case "Equipment Issue": return "border-l-rose-500"
+      default: return "border-l-zinc-300"
     }
   }
 
@@ -275,6 +319,56 @@ export default function TicketWorkspace({
       case "urgent": return "text-rose-600 font-extrabold tracking-wide uppercase text-[10px] bg-rose-50 px-1.5 py-0.5 rounded border border-rose-200"
       default: return "text-zinc-500"
     }
+  }
+
+  // Dynamic counts for category filters (always respects statusFilter and searchQuery)
+  const getCategoryCount = (categoryVal: string) => {
+    return tickets.filter(t => {
+      // Status filter
+      let matchesStatus = true
+      if (statusFilter === "active") {
+        matchesStatus = ["open", "assigned", "in_progress"].includes(t.status)
+      } else if (statusFilter !== "all") {
+        matchesStatus = t.status === statusFilter
+      }
+      
+      // Search filter
+      const matchesSearch = 
+        t.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+        t.employee.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        t.description.toLowerCase().includes(searchQuery.toLowerCase())
+
+      if (!matchesStatus || !matchesSearch) return false
+
+      if (categoryVal === "all") {
+        return true
+      } else {
+        return t.category === categoryVal
+      }
+    }).length
+  }
+
+  // Dynamic counts for status filters (always respects categoryFilter and searchQuery)
+  const getStatusCount = (statusVal: string) => {
+    return tickets.filter(t => {
+      // Category filter
+      const matchesCategory = categoryFilter === "all" || t.category === categoryFilter
+      // Search filter
+      const matchesSearch = 
+        t.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+        t.employee.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        t.description.toLowerCase().includes(searchQuery.toLowerCase())
+      
+      if (!matchesCategory || !matchesSearch) return false
+
+      if (statusVal === "active") {
+        return ["open", "assigned", "in_progress"].includes(t.status)
+      } else if (statusVal === "all") {
+        return true
+      } else {
+        return t.status === statusVal
+      }
+    }).length
   }
 
   // Helper to format stringified JSON descriptions in the sidebar list
@@ -352,7 +446,7 @@ export default function TicketWorkspace({
       <div className="w-96 border-r border-zinc-200 bg-white flex flex-col h-full shadow-sm z-10 shrink-0">
         
         {/* Filter Toolbar */}
-        <div className="p-4 border-b border-zinc-200 space-y-3">
+        <div className="p-4 border-b border-zinc-200 space-y-4">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
             <input
@@ -364,42 +458,77 @@ export default function TicketWorkspace({
             />
           </div>
 
-          <div className="flex gap-2 text-xs">
-            <div className="flex-1">
-              <label className="block text-zinc-400 font-semibold mb-1 text-[10px] uppercase">Category</label>
-              <select
-                value={categoryFilter}
-                onChange={e => setCategoryFilter(e.target.value)}
-                className="w-full py-1.5 px-2 bg-zinc-50 border border-zinc-200 rounded-md font-medium text-zinc-700 outline-none text-xs"
-              >
-                <option value="all">All Categories</option>
-                <option value="Leave Request">Leave Request</option>
-                <option value="Payroll Dispute">Payroll Dispute</option>
-                <option value="Benefits Inquiry">Benefits Inquiry</option>
-                <option value="Equipment Issue">Equipment Issue</option>
-                <option value="Other">Other</option>
-              </select>
+          {/* Segmented Filter Pills */}
+          <div className="space-y-3">
+            <div>
+              <label className="block text-zinc-450 font-bold mb-1.5 text-[10px] uppercase tracking-wider">Category</label>
+              <div className="flex gap-1.5 overflow-x-auto pb-1.5 scrollbar-none">
+                {[
+                  { value: "all", label: "All", activeClass: "bg-zinc-950 text-white border-zinc-950", inactiveClass: "bg-zinc-50 text-zinc-650 border-zinc-200 hover:bg-zinc-100" },
+                  { value: "Leave Request", label: "Leave", activeClass: "bg-blue-600 text-white border-blue-600", inactiveClass: "bg-blue-50/60 text-blue-700 border-blue-200 hover:bg-blue-100/60" },
+                  { value: "Payroll Dispute", label: "Payroll", activeClass: "bg-amber-600 text-white border-amber-600", inactiveClass: "bg-amber-50/60 text-amber-800 border-amber-250 hover:bg-amber-100/60" },
+                  { value: "Benefits Inquiry", label: "Benefits", activeClass: "bg-indigo-600 text-white border-indigo-600", inactiveClass: "bg-indigo-50/60 text-indigo-700 border-indigo-200 hover:bg-indigo-100/60" },
+                  { value: "Equipment Issue", label: "Equipment", activeClass: "bg-rose-600 text-white border-rose-600", inactiveClass: "bg-rose-50/60 text-rose-700 border-rose-250 hover:bg-rose-100/60" },
+                  { value: "Other", label: "Other", activeClass: "bg-zinc-700 text-white border-zinc-700", inactiveClass: "bg-zinc-50 text-zinc-650 border-zinc-200 hover:bg-zinc-100" }
+                ].map(cat => {
+                  const isActive = categoryFilter === cat.value
+                  const count = getCategoryCount(cat.value)
+                  return (
+                    <button
+                      key={cat.value}
+                      onClick={() => setCategoryFilter(cat.value)}
+                      className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-all duration-200 flex items-center gap-1.5 whitespace-nowrap shrink-0 ${
+                        isActive ? cat.activeClass : cat.inactiveClass
+                      }`}
+                    >
+                      <span>{cat.label}</span>
+                      <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-bold ${
+                        isActive ? "bg-white/20 text-white" : "bg-zinc-200/80 text-zinc-500"
+                      }`}>
+                        {count}
+                      </span>
+                    </button>
+                  )
+                })}
+              </div>
             </div>
 
-            <div className="flex-1">
-              <label className="block text-zinc-400 font-semibold mb-1 text-[10px] uppercase">Status Filter</label>
-              <select
-                value={statusFilter}
-                onChange={e => setStatusFilter(e.target.value)}
-                className="w-full py-1.5 px-2 bg-zinc-50 border border-zinc-200 rounded-md font-medium text-zinc-700 outline-none text-xs"
-              >
-                <option value="active">Active (Open/In Prog)</option>
-                <option value="open">Open Only</option>
-                <option value="assigned">Assigned Only</option>
-                <option value="in_progress">In Progress</option>
-                <option value="resolved">Resolved</option>
-                <option value="closed">Closed</option>
-                <option value="all">All Tickets</option>
-              </select>
+            <div>
+              <label className="block text-zinc-455 font-bold mb-1.5 text-[10px] uppercase tracking-wider">Status</label>
+              <div className="flex gap-1.5 overflow-x-auto pb-1.5 scrollbar-none">
+                {[
+                  { value: "active", label: "Active", activeClass: "bg-emerald-600 text-white border-emerald-600" },
+                  { value: "open", label: "Open", activeClass: "bg-blue-600 text-white border-blue-600" },
+                  { value: "assigned", label: "Assigned", activeClass: "bg-indigo-600 text-white border-indigo-600" },
+                  { value: "in_progress", label: "In Progress", activeClass: "bg-violet-600 text-white border-violet-600" },
+                  { value: "resolved", label: "Resolved", activeClass: "bg-zinc-605 bg-zinc-600 text-white border-zinc-600" },
+                  { value: "closed", label: "Closed", activeClass: "bg-slate-600 text-white border-slate-600" },
+                  { value: "all", label: "All", activeClass: "bg-zinc-950 text-white border-zinc-950" }
+                ].map(stat => {
+                  const isActive = statusFilter === stat.value
+                  const count = getStatusCount(stat.value)
+                  return (
+                    <button
+                      key={stat.value}
+                      onClick={() => setStatusFilter(stat.value)}
+                      className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-all duration-200 flex items-center gap-1.5 whitespace-nowrap shrink-0 ${
+                        isActive ? stat.activeClass : "bg-zinc-50 text-zinc-650 border-zinc-200 hover:bg-zinc-100"
+                      }`}
+                    >
+                      <span>{stat.label}</span>
+                      <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-bold ${
+                        isActive ? "bg-white/20 text-white" : "bg-zinc-200/80 text-zinc-500"
+                      }`}>
+                        {count}
+                      </span>
+                    </button>
+                  )
+                })}
+              </div>
             </div>
           </div>
 
-          <div className="flex items-center justify-between text-xs text-zinc-500 pt-1">
+          <div className="flex items-center justify-between text-xs text-zinc-500 pt-1 border-t border-zinc-100">
             <span>Showing {filteredTickets.length} tickets</span>
             <button 
               onClick={refreshAll} 
@@ -411,7 +540,7 @@ export default function TicketWorkspace({
         </div>
 
         {/* Tickets Scroll List */}
-        <div className="flex-1 overflow-y-auto divide-y divide-zinc-100">
+        <div className="flex-1 overflow-y-auto divide-y divide-zinc-100 bg-zinc-50/30">
           {filteredTickets.length === 0 ? (
             <div className="p-8 text-center text-zinc-400 space-y-2">
               <Inbox className="w-8 h-8 mx-auto text-zinc-300" />
@@ -422,14 +551,14 @@ export default function TicketWorkspace({
               <button
                 key={ticket.id}
                 onClick={() => setSelectedTicket(ticket)}
-                className={`w-[calc(100%-1rem)] mx-2 my-1 text-left p-4 hover:bg-slate-50 transition-all flex flex-col gap-2 rounded-xl border ${
+                className={`w-[calc(100%-1rem)] mx-2 my-1.5 text-left p-3.5 hover:bg-slate-50 transition-all flex flex-col gap-2 rounded-lg border border-l-4 shadow-sm ${
                   selectedTicket?.id === ticket.id 
-                    ? "bg-emerald-50/30 border-emerald-500 shadow-sm" 
-                    : "border-zinc-100"
-                }`}
+                    ? "bg-emerald-50/30 border-emerald-500/50" 
+                    : "bg-white border-zinc-200/80"
+                } ${getCategoryBorderClass(ticket.category)}`}
               >
                 <div className="flex justify-between items-start w-full gap-2">
-                  <span className="font-bold text-zinc-800 text-sm line-clamp-1 flex-1">
+                  <span className="font-bold text-zinc-900 text-sm line-clamp-1 flex-1 leading-tight">
                     {ticket.title}
                   </span>
                   <span className={`text-[10px] px-2 py-0.5 rounded-full border shrink-0 font-semibold ${getStatusClass(ticket.status)}`}>
@@ -437,16 +566,19 @@ export default function TicketWorkspace({
                   </span>
                 </div>
 
-                <p className="text-xs text-zinc-500 line-clamp-2">
+                <p className="text-xs text-zinc-550 line-clamp-2 leading-relaxed">
                   {getDisplayDescription(ticket.description)}
                 </p>
 
-                <div className="flex justify-between items-center text-[10px] text-zinc-400 pt-1">
-                  <span className="font-medium flex items-center gap-1">
-                    <User className="w-3 h-3 shrink-0" /> {ticket.employee.full_name}
+                <div className="flex justify-between items-center text-[10px] text-zinc-400 pt-1.5 border-t border-zinc-100">
+                  <span className="font-semibold flex items-center gap-1 text-zinc-500">
+                    <User className="w-3 h-3 shrink-0" />
+                    <span>
+                      By: {ticket.employee.full_name} {ticket.assignee && `• Tech: ${ticket.assignee.full_name}`}
+                    </span>
                   </span>
-                  <span className="flex items-center gap-1">
-                    <Clock className="w-3 h-3 shrink-0" /> {formatDate(ticket.created_at)}
+                  <span className="flex items-center gap-1 font-semibold text-zinc-400">
+                    <Clock className="w-3 h-3 shrink-0" /> {getElapsedTime(ticket.created_at)}
                   </span>
                 </div>
 
@@ -504,9 +636,9 @@ export default function TicketWorkspace({
               </div>
 
               {/* Submitter Info Card */}
-              <div className="flex justify-between items-center gap-4 bg-zinc-50 border border-zinc-150 rounded-xl p-3.5 text-xs text-zinc-600 flex-wrap">
+              <div className="flex justify-between items-center gap-4 bg-zinc-50 border border-zinc-150 rounded-xl p-3.5 text-xs text-zinc-650 flex-wrap">
                 <div className="flex items-center gap-2">
-                  <div className="w-7 h-7 rounded-full bg-slate-200 flex items-center justify-center font-bold text-slate-600">
+                  <div className="w-8 h-8 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center justify-center font-bold shadow-sm">
                     {selectedTicket.employee.full_name.charAt(0)}
                   </div>
                   <div>
@@ -516,29 +648,66 @@ export default function TicketWorkspace({
                 </div>
 
                 <div className="flex items-center gap-4">
-                  <div>
-                    <span className="text-zinc-400 block text-[10px] uppercase font-bold">Assignee</span>
-                    <select
-                      value={selectedTicket.assigned_to || ""}
-                      onChange={e => handleAssignChange(e.target.value || null)}
-                      className="mt-0.5 py-1 px-2.5 bg-white border border-zinc-200 rounded-md font-semibold text-zinc-700 outline-none text-xs"
+                  {/* Assignee Selector Popover */}
+                  <div className="relative" ref={assigneeDropdownRef}>
+                    <span className="text-zinc-400 block text-[10px] uppercase font-bold tracking-wider mb-1">Assignee</span>
+                    <button
+                      type="button"
+                      onClick={() => setAssigneeDropdownOpen(!assigneeDropdownOpen)}
+                      className="flex items-center gap-1.5 py-1.5 px-3 bg-white hover:bg-zinc-50 border border-zinc-200 rounded-md font-semibold text-zinc-700 text-xs transition-all shadow-sm"
                     >
-                      <option value="">Unassigned</option>
-                      {staffList.map(staff => (
-                        <option key={staff.id} value={staff.id}>
-                          {staff.full_name} ({staff.role})
-                        </option>
-                      ))}
-                    </select>
+                      <span>
+                        {selectedTicket.assignee 
+                          ? `${selectedTicket.assignee.full_name} (${selectedTicket.assignee.role})` 
+                          : "Unassigned"}
+                      </span>
+                      <UserCheck className="w-3.5 h-3.5 text-zinc-400" />
+                    </button>
+
+                    {assigneeDropdownOpen && (
+                      <div className="absolute right-0 mt-1 w-64 bg-white border border-zinc-200 rounded-lg shadow-lg py-1 z-50 max-h-60 overflow-y-auto">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            handleAssignChange(null)
+                            setAssigneeDropdownOpen(false)
+                          }}
+                          className={`w-full text-left px-3 py-2 text-xs font-semibold hover:bg-zinc-50 transition-colors ${
+                            !selectedTicket.assigned_to ? "text-emerald-600 bg-emerald-50/30" : "text-zinc-700"
+                          }`}
+                        >
+                          Unassigned
+                        </button>
+                        {staffList.map(staff => {
+                          const isSelected = selectedTicket.assigned_to === staff.id
+                          return (
+                            <button
+                              key={staff.id}
+                              type="button"
+                              onClick={() => {
+                                handleAssignChange(staff.id)
+                                setAssigneeDropdownOpen(false)
+                              }}
+                              className={`w-full text-left px-3 py-2 text-xs font-semibold hover:bg-zinc-50 transition-colors border-t border-zinc-100 flex flex-col ${
+                                isSelected ? "text-emerald-600 bg-emerald-50/30" : "text-zinc-700"
+                              }`}
+                            >
+                              <span>{staff.full_name}</span>
+                              <span className="text-[10px] text-zinc-400 font-normal">{staff.role}</span>
+                            </button>
+                          )
+                        })}
+                      </div>
+                    )}
                   </div>
 
                   <div>
-                    <span className="text-zinc-400 block text-[10px] uppercase font-bold">Ticket Action</span>
-                    <div className="flex items-center gap-1.5 mt-0.5">
+                    <span className="text-zinc-400 block text-[10px] uppercase font-bold tracking-wider mb-1">Ticket Action</span>
+                    <div className="flex items-center gap-1.5">
                       {selectedTicket.status !== "in_progress" && selectedTicket.status !== "resolved" && selectedTicket.status !== "closed" && (
                         <button
                           onClick={() => handleStatusChange("in_progress")}
-                          className="bg-zinc-900 hover:bg-zinc-800 text-white font-bold py-1 px-2.5 rounded text-xs transition-colors"
+                          className="bg-zinc-950 hover:bg-zinc-900 text-white font-bold py-1.5 px-3 rounded-lg text-xs transition-all shadow-sm"
                         >
                           In Progress
                         </button>
@@ -547,7 +716,7 @@ export default function TicketWorkspace({
                       {selectedTicket.status !== "resolved" && selectedTicket.status !== "closed" && (
                         <button
                           onClick={() => handleStatusChange("resolved")}
-                          className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-1 px-2.5 rounded text-xs transition-colors"
+                          className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-1.5 px-3 rounded-lg text-xs transition-all shadow-sm"
                         >
                           Resolve
                         </button>
@@ -556,7 +725,7 @@ export default function TicketWorkspace({
                       {selectedTicket.status === "resolved" && (
                         <button
                           onClick={() => handleStatusChange("closed")}
-                          className="bg-slate-600 hover:bg-slate-700 text-white font-bold py-1 px-2.5 rounded text-xs transition-colors"
+                          className="bg-zinc-500 hover:bg-zinc-600 text-white font-bold py-1.5 px-3 rounded-lg text-xs transition-all shadow-sm"
                         >
                           Close Ticket
                         </button>
@@ -565,7 +734,7 @@ export default function TicketWorkspace({
                       {(selectedTicket.status === "resolved" || selectedTicket.status === "closed") && (
                         <button
                           onClick={() => handleStatusChange("in_progress")}
-                          className="bg-zinc-900 hover:bg-zinc-800 text-white font-bold py-1 px-2.5 rounded text-xs transition-colors"
+                          className="bg-zinc-950 hover:bg-zinc-900 text-white font-bold py-1.5 px-3 rounded-lg text-xs transition-all shadow-sm"
                         >
                           Reopen
                         </button>
@@ -583,7 +752,9 @@ export default function TicketWorkspace({
                 <h4 className="text-xs font-bold text-zinc-400 uppercase tracking-wider flex items-center gap-1.5">
                   <CornerDownRight className="w-3.5 h-3.5 text-zinc-400" /> Original Request
                 </h4>
-                {renderDescription(selectedTicket.description)}
+                <div className="max-h-64 overflow-y-auto pr-1">
+                  {renderDescription(selectedTicket.description)}
+                </div>
               </div>
 
               {/* Discussion Segment */}
@@ -607,32 +778,34 @@ export default function TicketWorkspace({
                       return (
                         <div 
                           key={c.id} 
-                          className={`flex items-start gap-3 max-w-[85%] ${
+                          className={`flex items-end gap-2.5 max-w-[80%] ${
                             isCurrentUser ? "ml-auto flex-row-reverse" : ""
                           }`}
                         >
                           <div className={`w-8 h-8 rounded-full shrink-0 flex items-center justify-center font-bold text-xs ${
-                            isCurrentUser ? "bg-emerald-500 text-white" : "bg-slate-200 text-slate-600"
+                            isCurrentUser ? "bg-emerald-600 text-white shadow-sm" : "bg-zinc-200 text-zinc-700 border border-zinc-300 shadow-sm"
                           }`}>
                             {c.author?.full_name?.charAt(0) || "U"}
                           </div>
 
-                          <div className="space-y-1">
-                            <div className={`flex items-center gap-2 text-[10px] ${
-                              isCurrentUser ? "justify-end" : ""
-                            }`}>
-                              <span className="font-bold text-zinc-700">{c.author?.full_name}</span>
-                              <span className="text-zinc-400">({c.author?.role})</span>
-                              <span className="text-zinc-300">•</span>
-                              <span className="text-zinc-400">{formatDate(c.created_at)}</span>
-                            </div>
-
-                            <div className={`p-3 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap ${
-                              isCurrentUser 
-                                ? "bg-emerald-600 text-white rounded-tr-none shadow-sm" 
-                                : "bg-white border border-zinc-200 text-zinc-800 rounded-tl-none shadow-sm"
-                            }`}>
-                              {c.content}
+                          <div className="flex flex-col gap-1">
+                            {/* Author name above bubble */}
+                            <span className={`text-[10px] font-bold text-zinc-500 ${isCurrentUser ? "text-right" : ""}`}>
+                              {c.author?.full_name} <span className="font-normal text-zinc-400">({c.author?.role})</span>
+                            </span>
+                            
+                            {/* Chat bubble with inline timestamp */}
+                            <div className={`flex items-end gap-2 ${isCurrentUser ? "flex-row-reverse" : ""}`}>
+                              <div className={`p-3 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap shadow-sm ${
+                                isCurrentUser 
+                                  ? "bg-emerald-600 text-white rounded-tr-none" 
+                                  : "bg-white border border-zinc-200 text-zinc-800 rounded-tl-none"
+                              }`}>
+                                {c.content}
+                              </div>
+                              <span className="text-[9px] text-zinc-400 whitespace-nowrap mb-1">
+                                {formatDate(c.created_at)}
+                              </span>
                             </div>
                           </div>
                         </div>

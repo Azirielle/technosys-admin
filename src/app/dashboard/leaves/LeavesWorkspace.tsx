@@ -2,8 +2,9 @@
 
 import React, { useState, useTransition } from 'react'
 import { LeaveRequest, updateLeaveStatus } from '@/app/actions/leaves'
-import { ClipboardList, Calendar, CheckCircle2, XCircle, AlertTriangle, Clock, RefreshCw } from 'lucide-react'
+import { ClipboardList, CalendarDays, CheckCircle2, XCircle, Clock, RefreshCw, Siren, Heart, Compass, Baby, DollarSign, ShieldAlert, Sparkles } from 'lucide-react'
 import Pagination from '@/components/ui/Pagination'
+import { useAlertConfirm } from '@/components/ui/AlertConfirmProvider'
 
 interface LeavesWorkspaceProps {
   initialLeaves: LeaveRequest[]
@@ -12,6 +13,7 @@ interface LeavesWorkspaceProps {
 }
 
 export default function LeavesWorkspace({ initialLeaves, currentUserId, isWriteAllowed = false }: LeavesWorkspaceProps) {
+  const { alert, confirm } = useAlertConfirm()
   const [leaves, setLeaves] = useState<LeaveRequest[]>(initialLeaves)
   const [filter, setFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all')
   const [currentPage, setCurrentPage] = useState(1)
@@ -49,6 +51,37 @@ export default function LeavesWorkspace({ initialLeaves, currentUserId, isWriteA
     })
   }
 
+  // Summary calculations
+  const pendingCount = leaves.filter(l => l.status === 'pending').length
+
+  const todayStr = new Date().toISOString().substring(0, 10)
+  const activeLeavesToday = leaves.filter(l => {
+    if (l.status !== 'approved') return false
+    return todayStr >= l.start_date && todayStr <= l.end_date
+  }).length
+
+  const thisMonthStr = new Date().toISOString().substring(0, 7)
+  const approvedThisMonth = leaves.filter(l => {
+    if (l.status !== 'approved') return false
+    return l.start_date.substring(0, 7) === thisMonthStr || l.end_date.substring(0, 7) === thisMonthStr
+  }).length
+
+  const approvedLeaves = leaves.filter(l => l.status === 'approved')
+  const typeCounts = approvedLeaves.reduce((acc, l) => {
+    acc[l.leave_type] = (acc[l.leave_type] || 0) + 1
+    return acc
+  }, {} as Record<string, number>)
+
+  let mostCommonType = 'None'
+  let maxCount = 0
+  Object.entries(typeCounts).forEach(([type, count]) => {
+    if (count > maxCount) {
+      maxCount = count
+      mostCommonType = type.charAt(0).toUpperCase() + type.slice(1)
+    }
+  })
+  const mostCommonTypeStr = mostCommonType === 'None' ? 'N/A' : `${mostCommonType} (${maxCount})`
+
   // Calculate duration in days
   const calculateDays = (startStr: string, endStr: string) => {
     const start = new Date(startStr)
@@ -77,40 +110,6 @@ export default function LeavesWorkspace({ initialLeaves, currentUserId, isWriteA
     return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
   }
 
-  // Leave Type styling helper
-  const getLeaveTypeStyle = (type: LeaveRequest['leave_type']) => {
-    switch (type) {
-      case 'sick':
-        return 'bg-blue-50 text-blue-700 border-blue-200'
-      case 'vacation':
-        return 'bg-emerald-50 text-emerald-700 border-emerald-200'
-      case 'wedding':
-        return 'bg-indigo-50 text-indigo-700 border-indigo-200'
-      case 'paternal':
-        return 'bg-cyan-50 text-cyan-700 border-cyan-200'
-      case 'maternal':
-        return 'bg-pink-50 text-pink-700 border-pink-200'
-      case 'emergency':
-        return 'bg-amber-50 text-amber-700 border-amber-200'
-      case 'unpaid':
-        return 'bg-slate-100 text-slate-700 border-slate-300'
-      default:
-        return 'bg-zinc-100 text-zinc-700 border-zinc-200'
-    }
-  }
-
-  // Status style helper
-  const getStatusStyle = (status: LeaveRequest['status']) => {
-    switch (status) {
-      case 'approved':
-        return 'bg-emerald-100 text-emerald-800'
-      case 'rejected':
-        return 'bg-rose-100 text-rose-800'
-      case 'pending':
-      default:
-        return 'bg-amber-100 text-amber-800'
-    }
-  }
 
   return (
     <div className="p-8 max-w-6xl mx-auto">
@@ -127,29 +126,101 @@ export default function LeavesWorkspace({ initialLeaves, currentUserId, isWriteA
         </div>
       </div>
 
+      {/* Real-time Leaves Status Dashboard */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        <div 
+          onClick={() => { setFilter('pending'); setCurrentPage(1); }}
+          className={`p-5 rounded-2xl border shadow-xs cursor-pointer transition-all hover:scale-[1.01] ${
+            filter === 'pending' ? 'bg-white border-zinc-450 ring-2 ring-zinc-100 font-bold' : 'bg-white border-zinc-200 opacity-80'
+          }`}
+        >
+          <p className="text-2xs font-extrabold uppercase tracking-wider text-zinc-400">Pending Approval</p>
+          <p className="text-3xl font-extrabold text-zinc-900 mt-2">{pendingCount}</p>
+          <div className="flex items-center gap-1.5 mt-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+            <span className="text-2xs text-zinc-500 font-semibold">Awaiting supervisor review</span>
+          </div>
+        </div>
+
+        <div 
+          onClick={() => { setFilter('approved'); setCurrentPage(1); }}
+          className={`p-5 rounded-2xl border shadow-xs cursor-pointer transition-all hover:scale-[1.01] ${
+            filter === 'approved' ? 'bg-white border-zinc-450 ring-2 ring-zinc-100 font-bold' : 'bg-white border-zinc-200 opacity-80'
+          }`}
+        >
+          <p className="text-2xs font-extrabold uppercase tracking-wider text-zinc-400">Active Leaves Today</p>
+          <p className="text-3xl font-extrabold text-zinc-900 mt-2">{activeLeavesToday}</p>
+          <div className="flex items-center gap-1.5 mt-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            <span className="text-2xs text-zinc-500 font-semibold">Out of office today</span>
+          </div>
+        </div>
+
+        <div 
+          onClick={() => { setFilter('approved'); setCurrentPage(1); }}
+          className={`p-5 rounded-2xl border shadow-xs cursor-pointer transition-all hover:scale-[1.01] ${
+            filter === 'approved' ? 'bg-white border-zinc-450 ring-2 ring-zinc-100 font-bold' : 'bg-white border-zinc-200 opacity-80'
+          }`}
+        >
+          <p className="text-2xs font-extrabold uppercase tracking-wider text-zinc-400">Approved This Month</p>
+          <p className="text-3xl font-extrabold text-zinc-900 mt-2">{approvedThisMonth}</p>
+          <div className="flex items-center gap-1.5 mt-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
+            <span className="text-2xs text-zinc-500 font-semibold">Approved this month</span>
+          </div>
+        </div>
+
+        <div 
+          onClick={() => { setFilter('all'); setCurrentPage(1); }}
+          className="p-5 rounded-2xl border border-zinc-200 bg-white shadow-xs cursor-pointer transition-all hover:scale-[1.01] opacity-80"
+        >
+          <p className="text-2xs font-extrabold uppercase tracking-wider text-zinc-400">Common Reason</p>
+          <p className="text-lg font-extrabold text-zinc-850 mt-3 truncate">{mostCommonTypeStr}</p>
+          <div className="flex items-center gap-1.5 mt-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-teal-500" />
+            <span className="text-2xs text-zinc-500 font-semibold">Leading leave type</span>
+          </div>
+        </div>
+      </div>
+
       {/* Filter Tabs */}
-      <div className="flex gap-2 border-b border-slate-200 mb-6">
-        {(['all', 'pending', 'approved', 'rejected'] as const).map((tab) => (
-          <button
-            key={tab}
-            onClick={() => {
-              setFilter(tab)
-              setCurrentPage(1)
-            }}
-            className={`px-4 py-2 text-sm font-semibold capitalize border-b-2 transition-all duration-200 cursor-pointer ${
-              filter === tab
-                ? 'border-emerald-600 text-emerald-700'
-                : 'border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-300'
-            }`}
-          >
-            {tab}
-            {tab === 'pending' && leaves.filter(l => l.status === 'pending').length > 0 && (
-              <span className="ml-2 bg-amber-500 text-white rounded-full text-xs px-2 py-0.5 font-bold">
-                {leaves.filter(l => l.status === 'pending').length}
-              </span>
-            )}
-          </button>
-        ))}
+      <div className="bg-zinc-100 p-1 rounded-xl flex gap-1 mb-8 max-w-md">
+        {(['all', 'pending', 'approved', 'rejected'] as const).map((tab) => {
+          const isActive = filter === tab
+          const count = tab === 'all' 
+            ? leaves.length 
+            : leaves.filter(l => l.status === tab).length
+
+          return (
+            <button
+              key={tab}
+              onClick={() => {
+                setFilter(tab)
+                setCurrentPage(1)
+              }}
+              className={`flex-1 py-2 text-xs font-bold capitalize rounded-lg transition-all duration-200 cursor-pointer flex items-center justify-center gap-1.5 ${
+                isActive
+                  ? 'bg-white text-zinc-950 shadow-xs animate-smooth-fade'
+                  : 'text-zinc-500 hover:text-zinc-800'
+              }`}
+            >
+              <span>{tab}</span>
+              {count > 0 && (
+                <span className={`text-[10px] font-extrabold px-1.5 py-0.2 rounded-full border ${
+                  isActive
+                    ? 'bg-zinc-950 border-zinc-950 text-white'
+                    : tab === 'pending'
+                    ? 'bg-amber-100 border-amber-200 text-amber-800'
+                    : tab === 'approved'
+                    ? 'bg-emerald-100 border-emerald-250 text-emerald-800'
+                    : 'bg-zinc-200 border-zinc-300 text-zinc-700'
+                }`}>
+                  {count}
+                </span>
+              )}
+            </button>
+          )
+        })}
       </div>
 
       {/* Status Messages */}
@@ -172,108 +243,132 @@ export default function LeavesWorkspace({ initialLeaves, currentUserId, isWriteA
 
       {/* Empty State */}
       {filteredLeaves.length === 0 ? (
-        <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center shadow-sm">
-          <Clock className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-          <h3 className="text-lg font-bold text-slate-800">No requests found</h3>
-          <p className="text-slate-500 mt-1">There are no leave requests under this category.</p>
+        <div className="bg-white rounded-2xl border border-zinc-200 p-16 text-center">
+          <div className="w-14 h-14 rounded-2xl bg-zinc-100 flex items-center justify-center mx-auto mb-5">
+            <Clock className="w-7 h-7 text-zinc-400" />
+          </div>
+          <h3 className="text-base font-bold text-zinc-800">No requests found</h3>
+          <p className="text-zinc-400 mt-1.5 text-sm">There are no leave requests under this category.</p>
         </div>
       ) : (
         /* Requests Grid */
         <div className="space-y-6">
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             {paginatedLeaves.map((leave) => {
               const days = calculateDays(leave.start_date, leave.end_date)
               const isLoading = actionLoadingId === leave.id
 
+              // Per-type icon + accent color config
+              const typeConfig: Record<string, { icon: React.ReactNode; accent: string; badge: string }> = {
+                sick:      { icon: <Heart className="w-4 h-4" />,        accent: 'border-l-blue-400',    badge: 'bg-blue-50 text-blue-700 border-blue-200' },
+                vacation:  { icon: <Compass className="w-4 h-4" />,      accent: 'border-l-emerald-400', badge: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
+                wedding:   { icon: <Sparkles className="w-4 h-4" />,     accent: 'border-l-indigo-400',  badge: 'bg-indigo-50 text-indigo-700 border-indigo-200' },
+                paternal:  { icon: <Baby className="w-4 h-4" />,         accent: 'border-l-cyan-400',    badge: 'bg-cyan-50 text-cyan-700 border-cyan-200' },
+                maternal:  { icon: <Baby className="w-4 h-4" />,         accent: 'border-l-pink-400',    badge: 'bg-pink-50 text-pink-700 border-pink-200' },
+                emergency: { icon: <Siren className="w-4 h-4" />,        accent: 'border-l-amber-400',   badge: 'bg-amber-50 text-amber-700 border-amber-200' },
+                unpaid:    { icon: <DollarSign className="w-4 h-4" />,   accent: 'border-l-zinc-400',    badge: 'bg-zinc-100 text-zinc-600 border-zinc-300' },
+              }
+              const cfg = typeConfig[leave.leave_type] ?? { icon: <CalendarDays className="w-4 h-4" />, accent: 'border-l-zinc-300', badge: 'bg-zinc-100 text-zinc-600 border-zinc-200' }
+
+              const statusPill: Record<string, string> = {
+                approved: 'bg-emerald-100 text-emerald-800 border border-emerald-200',
+                rejected: 'bg-rose-100 text-rose-800 border border-rose-200',
+                pending:  'bg-amber-100 text-amber-800 border border-amber-200',
+              }
+
               return (
                 <div
                   key={leave.id}
-                  className="bg-white rounded-2xl border border-slate-200 p-6 flex flex-col justify-between shadow-sm hover:shadow-md transition-all duration-200 relative overflow-hidden"
+                  className={`bg-white rounded-2xl border border-zinc-200 border-l-4 ${cfg.accent} flex flex-col justify-between shadow-xs hover:shadow-md transition-all duration-200 overflow-hidden`}
                 >
-                  {/* Top header row */}
-                  <div>
-                    <div className="flex justify-between items-start mb-3">
-                      <div>
-                        <h3 className="text-lg font-bold text-slate-900">
+                  {/* Card Body */}
+                  <div className="p-5">
+                    {/* Header row — name + status pill */}
+                    <div className="flex items-start justify-between gap-3 mb-3">
+                      <div className="min-w-0">
+                        <p className="text-sm font-extrabold text-zinc-900 truncate">
                           {leave.technician?.full_name || 'Technician'}
-                        </h3>
-                        <span
-                          className={`inline-block px-2.5 py-0.5 text-xs font-bold uppercase rounded border ${getLeaveTypeStyle(
-                            leave.leave_type
-                          )} mt-1`}
-                        >
+                        </p>
+                        {/* Type badge with icon */}
+                        <span className={`inline-flex items-center gap-1 mt-1.5 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded-md border ${cfg.badge}`}>
+                          {cfg.icon}
                           {leave.leave_type} Leave
                         </span>
                       </div>
-
-                      <span
-                        className={`px-3 py-1 text-xs font-extrabold rounded-full capitalize ${getStatusStyle(
-                          leave.status
-                        )}`}
-                      >
+                      <span className={`shrink-0 px-2.5 py-0.5 text-[10px] font-extrabold rounded-full capitalize ${statusPill[leave.status] ?? statusPill.pending}`}>
                         {leave.status}
                       </span>
                     </div>
 
-                    {/* Dates section */}
-                    <div className="flex items-center gap-2 text-sm text-slate-600 font-medium mb-3">
-                      <Calendar className="w-4 h-4 text-slate-400" />
-                      <span>
-                        {formatDate(leave.start_date)} - {formatDate(leave.end_date)}
-                      </span>
-                      <span className="text-slate-400 font-normal">|</span>
-                      <span className="text-emerald-700 font-semibold bg-emerald-50 border border-emerald-100 rounded-md px-1.5 py-0.5">
-                        {days} {days === 1 ? 'day' : 'days'}
+                    {/* Date + duration chip row */}
+                    <div className="flex items-center gap-2 mb-4 flex-wrap">
+                      <div className="flex items-center gap-1.5 text-xs text-zinc-500 font-medium">
+                        <CalendarDays className="w-3.5 h-3.5 text-zinc-400" />
+                        <span>{formatDate(leave.start_date)}</span>
+                        <span className="text-zinc-300">→</span>
+                        <span>{formatDate(leave.end_date)}</span>
+                      </div>
+                      <span className="ml-auto shrink-0 text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-zinc-950 text-white">
+                        {days}d
                       </span>
                     </div>
 
-                    {/* Reason comment bubble */}
-                    <div className="bg-slate-50 rounded-xl p-3.5 mb-4">
-                      <p className="text-sm text-slate-600 italic whitespace-pre-wrap leading-relaxed">
-                        “{leave.reason}”
+                    {/* Reason bubble */}
+                    <div className="bg-zinc-50 border border-zinc-100 rounded-xl px-3.5 py-3 mb-3">
+                      <p className="text-xs text-zinc-500 italic leading-relaxed line-clamp-3">
+                        "{leave.reason}"
                       </p>
                     </div>
+
+                    {/* Conflict Warning block */}
+                    {leave.status === 'pending' && leave.has_conflicts && (
+                      <div className="border-l-4 border-l-amber-400 bg-amber-50 border border-amber-200 rounded-xl px-3.5 py-3 flex items-start gap-2.5">
+                        <ShieldAlert className="w-4 h-4 shrink-0 text-amber-600 mt-0.5" />
+                        <div>
+                          <p className="text-[10px] font-extrabold uppercase tracking-wider text-amber-800">
+                            Schedule Conflict — {leave.conflict_count} dispatch{(leave.conflict_count ?? 0) > 1 ? 'es' : ''}
+                          </p>
+                          <p className="text-[11px] text-amber-700 mt-0.5 leading-snug">
+                            Approving will automatically unassign this technician from all overlapping dispatches.
+                          </p>
+                        </div>
+                      </div>
+                    )}
                   </div>
 
-                  {/* Conflict Warnings */}
-                  {leave.status === 'pending' && leave.has_conflicts && (
-                    <div className="bg-amber-50 border border-amber-200 text-amber-900 p-3.5 rounded-xl flex items-start gap-2.5 mb-4">
-                      <AlertTriangle className="w-5 h-5 shrink-0 text-amber-600 mt-0.5" />
-                      <div>
-                        <p className="text-xs font-bold uppercase tracking-wider text-amber-800">
-                          Schedule Conflict Warning
-                        </p>
-                        <p className="text-xs text-amber-700 mt-0.5">
-                          This technician has <strong>{leave.conflict_count}</strong> active dispatch schedule(s) during this period. Approving will require reassigning those tasks.
-                        </p>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Admin Actions */}
+                  {/* Admin Actions footer */}
                   {leave.status === 'pending' && isWriteAllowed && (
-                    <div className="flex gap-2 mt-2 pt-3 border-t border-slate-100">
+                    <div className="flex gap-2 px-5 pb-5 pt-0">
                       <button
-                        onClick={() => handleAction(leave.id, 'approved')}
+                        onClick={async () => {
+                          const ok = await confirm(
+                            leave.has_conflicts
+                              ? `Approve leave for ${leave.technician?.full_name ?? 'this technician'}?\n\n⚠️ This will auto-unassign ${leave.conflict_count} conflicting dispatch(es).`
+                              : `Approve leave for ${leave.technician?.full_name ?? 'this technician'}?`,
+                            'Confirm Approval'
+                          )
+                          if (ok) handleAction(leave.id, 'approved')
+                        }}
                         disabled={isLoading || isPending}
-                        className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 rounded-xl text-sm transition-colors duration-200 disabled:opacity-50 cursor-pointer flex items-center justify-center gap-1 shadow-sm"
+                        className="flex-1 bg-zinc-950 hover:bg-zinc-800 text-white font-bold py-2 rounded-xl text-xs transition-colors duration-200 disabled:opacity-50 cursor-pointer flex items-center justify-center gap-1.5"
                       >
-                        {isLoading ? (
-                          <RefreshCw className="w-4 h-4 animate-spin" />
-                        ) : (
-                          'Approve'
-                        )}
+                        {isLoading ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
+                        Approve
                       </button>
                       <button
-                        onClick={() => handleAction(leave.id, 'rejected')}
+                        onClick={async () => {
+                          const ok = await confirm(
+                            `Reject leave request for ${leave.technician?.full_name ?? 'this technician'}? This action cannot be undone.`,
+                            'Confirm Rejection',
+                            'destructive'
+                          )
+                          if (ok) handleAction(leave.id, 'rejected')
+                        }}
                         disabled={isLoading || isPending}
-                        className="flex-1 bg-rose-600 hover:bg-rose-700 text-white font-bold py-2 rounded-xl text-sm transition-colors duration-200 disabled:opacity-50 cursor-pointer flex items-center justify-center gap-1 shadow-sm"
+                        className="flex-1 bg-white hover:bg-rose-50 border border-zinc-200 hover:border-rose-300 text-zinc-700 hover:text-rose-700 font-bold py-2 rounded-xl text-xs transition-all duration-200 disabled:opacity-50 cursor-pointer flex items-center justify-center gap-1.5"
                       >
-                        {isLoading ? (
-                          <RefreshCw className="w-4 h-4 animate-spin" />
-                        ) : (
-                          'Reject'
-                        )}
+                        {isLoading ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <XCircle className="w-3.5 h-3.5" />}
+                        Reject
                       </button>
                     </div>
                   )}
