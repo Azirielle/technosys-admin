@@ -13,6 +13,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [profile, setProfile] = useState<{ full_name: string; role: string } | null>(null)
   const [pendingLeavesCount, setPendingLeavesCount] = useState<number>(0)
   const [lowStockCount, setLowStockCount] = useState<number>(0)
+  const [ticketsBadge, setTicketsBadge] = useState<{ count: number; isUrgent: boolean }>({ count: 0, isUrgent: false })
   const [loading, setLoading] = useState<boolean>(true)
 
 
@@ -74,7 +75,31 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 .channel('inventory-stock-changes')
                 .on('postgres_changes', { event: '*', schema: 'public', table: 'inventory_items' }, fetchLowStockCount)
                 .subscribe()
-              channels.push(inventoryChannel)
+            }
+
+            // --- Role-gated: Tickets badge count (Option A: Urgent Highlight) ---
+            if (MODULE_ROLES['tickets']?.includes(role)) {
+              const fetchTicketsCount = async () => {
+                const { data: activeTickets, error } = await supabase
+                  .from('tickets')
+                  .select('id, priority, status')
+                  .in('status', ['open', 'assigned', 'in_progress'])
+                if (!error && activeTickets) {
+                  const urgentTickets = activeTickets.filter((t: any) => t.priority === 'urgent')
+                  if (urgentTickets.length > 0) {
+                    setTicketsBadge({ count: urgentTickets.length, isUrgent: true })
+                  } else {
+                    setTicketsBadge({ count: activeTickets.length, isUrgent: false })
+                  }
+                }
+              }
+              fetchTicketsCount()
+
+              const ticketsChannel = supabase
+                .channel('tickets-badge-changes')
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'tickets' }, fetchTicketsCount)
+                .subscribe()
+              channels.push(ticketsChannel)
             }
           }
         }
@@ -190,6 +215,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               const Icon = item.icon
               const isLeavesTab = item.href === '/dashboard/leaves'
               const isInventoryTab = item.href === '/dashboard/inventory'
+              const isTicketsTab = item.href === '/dashboard/tickets'
               return (
                 <Link
                   key={item.href}
@@ -212,6 +238,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   {isInventoryTab && lowStockCount > 0 && (
                     <span className="bg-amber-500 text-white text-[10px] font-extrabold px-1.5 py-0.5 rounded-full shadow-sm min-w-[18px] text-center animate-pulse">
                       {lowStockCount}
+                    </span>
+                  )}
+                  {isTicketsTab && ticketsBadge.count > 0 && (
+                    <span className={`text-white text-[10px] font-extrabold px-1.5 py-0.5 rounded-full shadow-sm min-w-[18px] text-center animate-pulse ${
+                      ticketsBadge.isUrgent ? 'bg-rose-500' : 'bg-zinc-500'
+                    }`}>
+                      {ticketsBadge.isUrgent ? `${ticketsBadge.count} Urgent` : ticketsBadge.count}
                     </span>
                   )}
                 </Link>
