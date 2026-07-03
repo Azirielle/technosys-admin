@@ -83,12 +83,38 @@ export async function getDraftPayroll(startDateStr?: string, endDateStr?: string
     // Fetch logs, schedules, leaves, and holidays
     const { data: logs } = await supabaseAdmin.from('time_logs').select('*').gte('created_at', start.toISOString()).lte('created_at', end.toISOString())
     const { data: scheds } = await supabaseAdmin.from('schedules').select('*')
-    const { data: leaves } = await supabaseAdmin.from('leaves').select('*').eq('status', 'approved')
+    // Fix 3: Only fetch approved leaves that overlap the cutoff window
+    // (start_date <= cutoff_end  AND  end_date >= cutoff_start)
+    const { data: leaves } = await supabaseAdmin
+      .from('leaves')
+      .select('*')
+      .eq('status', 'approved')
+      .lte('start_date', end.toISOString().split('T')[0])
+      .gte('end_date', start.toISOString().split('T')[0])
     const { data: holidays } = await supabaseAdmin.from('holidays').select('*').eq('is_active', true)
 
     const holidayMap = new Map((holidays || []).map(h => [h.holiday_date, Number(h.multiplier || 1.3)]))
 
     const payrollList = await Promise.all((technicians || []).map(async (emp) => {
+      // Fix 1: Guard against missing or zero base_salary — return a flagged zero-pay record
+      if (!emp.base_salary || Number(emp.base_salary) === 0) {
+        console.warn(`[payroll] ${emp.full_name} has no base_salary set — skipping computation.`)
+        return {
+          technician: emp,
+          workedHours: 0,
+          paidLeaveDays: 0,
+          unpaidLeaveDays: 0,
+          paidLeaveHours: 0,
+          unpaidLeaveHours: 0,
+          totalHours: 0,
+          hasOpenLogs: false,
+          defaultAllowances: 0,
+          hourlyRate: 0,
+          calculation: { grossPay: 0, sssDeduction: 0, philhealthDeduction: 0, pagibigDeduction: 0, totalDeductions: 0, netPay: 0 },
+          warning: 'base_salary_not_set' as const,
+        }
+      }
+
       const empLogs = (logs || []).filter(l => l.technician_id === emp.id)
       const hasOpenLogs = empLogs.some(log => log.app_time_in && !log.app_time_out)
 

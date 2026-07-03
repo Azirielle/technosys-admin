@@ -43,29 +43,47 @@ export async function calculatePayrollDeductions(
   
   const totalMonthlyGross = previousGross + currentCycleGross;
 
-  // 2. Fetch Statutory Rules
+  // Fix 2: If no bracket matches (grossPay outside all ranges), fall back to the highest bracket
   const { data: sssRule } = await supabaseAdmin.from('sss_brackets')
     .select('*')
     .lte('min_compensation', totalMonthlyGross)
     .gte('max_compensation', totalMonthlyGross)
     .order('created_at', { ascending: false })
     .limit(1)
-    .maybeSingle();
-    
+    .maybeSingle()
+
+  // Fallback: highest SSS bracket if no range matched
+  const sssRuleFinal = sssRule ?? await supabaseAdmin
+    .from('sss_brackets')
+    .select('*')
+    .order('max_compensation', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+    .then(r => { if (!sssRule) console.warn(`[ph-taxes] No SSS bracket matched gross ${totalMonthlyGross} — using highest bracket fallback`); return r.data })
+
   const { data: hdmfRule } = await supabaseAdmin.from('pagibig_brackets')
     .select('*')
     .lte('min_compensation', totalMonthlyGross)
     .gte('max_compensation', totalMonthlyGross)
     .order('created_at', { ascending: false })
     .limit(1)
-    .maybeSingle();
-    
+    .maybeSingle()
+
+  // Fallback: highest Pag-IBIG bracket if no range matched
+  const hdmfRuleFinal = hdmfRule ?? await supabaseAdmin
+    .from('pagibig_brackets')
+    .select('*')
+    .order('max_compensation', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+    .then(r => { if (!hdmfRule) console.warn(`[ph-taxes] No Pag-IBIG bracket matched gross ${totalMonthlyGross} — using highest bracket fallback`); return r.data })
+
   const { data: phRule } = await supabaseAdmin.from('philhealth_rules')
-    .select('*').order('created_at', { ascending: false }).limit(1).single();
+    .select('*').order('created_at', { ascending: false }).limit(1).single()
 
   // 3. Calculate Final Required Monthly Totals
-  const requiredMonthlySSS = Number(sssRule?.employee_share || 0);
-  const requiredMonthlyHDMF = Number(hdmfRule?.employee_share || 0);
+  const requiredMonthlySSS = Number(sssRuleFinal?.employee_share || 0)
+  const requiredMonthlyHDMF = Number(hdmfRuleFinal?.employee_share || 0)
   
   let requiredMonthlyPH = 0;
   if (phRule) {
@@ -83,25 +101,24 @@ export async function calculatePayrollDeductions(
   if (currentCycleType === '15th') {
     // Deduct standard predicted monthly requirement on the 15th
     if (phRule?.target_pay_cycle === '15th' || phRule?.target_pay_cycle === 'both') {
-      philhealth_deduction = requiredMonthlyPH;
+      philhealth_deduction = requiredMonthlyPH
     }
-    if (hdmfRule?.target_pay_cycle === '15th' || hdmfRule?.target_pay_cycle === 'both') {
-      pagibig_deduction = requiredMonthlyHDMF;
+    if (hdmfRuleFinal?.target_pay_cycle === '15th' || hdmfRuleFinal?.target_pay_cycle === 'both') {
+      pagibig_deduction = requiredMonthlyHDMF
     }
-    if (sssRule?.target_pay_cycle === '15th' || sssRule?.target_pay_cycle === 'both') {
-      sss_deduction = requiredMonthlySSS;
+    if (sssRuleFinal?.target_pay_cycle === '15th' || sssRuleFinal?.target_pay_cycle === 'both') {
+      sss_deduction = requiredMonthlySSS
     }
   } else if (currentCycleType === 'end_of_month' || currentCycleType === 'custom') {
     // GLOBAL TRUE-UP: Recalculate true requirement based on FINAL total monthly gross
-    // custom applies same as end_of_month for testing purposes
-    if (sssRule?.target_pay_cycle === 'end_of_month' || sssRule?.target_pay_cycle === 'both' || requiredMonthlySSS > prevSSS) {
-       sss_deduction = Math.max(0, requiredMonthlySSS - prevSSS);
+    if (sssRuleFinal?.target_pay_cycle === 'end_of_month' || sssRuleFinal?.target_pay_cycle === 'both' || requiredMonthlySSS > prevSSS) {
+       sss_deduction = Math.max(0, requiredMonthlySSS - prevSSS)
     }
     if (phRule?.target_pay_cycle === 'end_of_month' || phRule?.target_pay_cycle === 'both' || requiredMonthlyPH > prevPH) {
-       philhealth_deduction = Math.max(0, requiredMonthlyPH - prevPH);
+       philhealth_deduction = Math.max(0, requiredMonthlyPH - prevPH)
     }
-    if (hdmfRule?.target_pay_cycle === 'end_of_month' || hdmfRule?.target_pay_cycle === 'both' || requiredMonthlyHDMF > prevHDMF) {
-       pagibig_deduction = Math.max(0, requiredMonthlyHDMF - prevHDMF);
+    if (hdmfRuleFinal?.target_pay_cycle === 'end_of_month' || hdmfRuleFinal?.target_pay_cycle === 'both' || requiredMonthlyHDMF > prevHDMF) {
+       pagibig_deduction = Math.max(0, requiredMonthlyHDMF - prevHDMF)
     }
   }
 

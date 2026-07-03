@@ -428,11 +428,16 @@ export default function PayrollClient({
                       className={`hover:bg-zinc-50/50 transition-colors cursor-pointer ${isExpanded ? 'bg-zinc-50/20' : ''}`}
                     >
                       <td className="px-6 py-4">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
                           <p className="font-bold text-zinc-900">{emp.full_name}</p>
                           {p.hasOpenLogs && (
                             <span className="inline-flex items-center gap-0.5 text-[9px] font-extrabold text-amber-700 bg-amber-50 border border-amber-200 px-1 py-0.5 rounded-md uppercase tracking-wider animate-pulse">
                               ⚠️ Open Log
+                            </span>
+                          )}
+                          {p.warning === 'base_salary_not_set' && (
+                            <span className="inline-flex items-center gap-0.5 text-[9px] font-extrabold text-rose-700 bg-rose-50 border border-rose-200 px-1.5 py-0.5 rounded-md uppercase tracking-wider">
+                              ✕ No Salary Set
                             </span>
                           )}
                         </div>
