@@ -179,10 +179,49 @@ export default function GeofenceMap({ latitude, longitude, radius, onLocationCha
     }
   }
 
+  const [suggestions, setSuggestions] = useState<any[]>([])
+  const [showSuggestions, setShowSuggestions] = useState(false)
+
+  useEffect(() => {
+    const query = searchQuery.trim()
+    if (query.length < 3) {
+      setSuggestions([])
+      setShowSuggestions(false)
+      return
+    }
+
+    const delayDebounceFn = setTimeout(async () => {
+      try {
+        const res = await fetch(
+          `https://nominatim.openstreetmap.org/search?format=json&countrycodes=ph&limit=5&q=${encodeURIComponent(query)}`
+        )
+        const data = await res.json()
+        if (data && Array.isArray(data)) {
+          setSuggestions(data)
+          setShowSuggestions(true)
+        }
+      } catch (err) {
+        console.error("Autocomplete suggestions error:", err)
+      }
+    }, 400)
+
+    return () => clearTimeout(delayDebounceFn)
+  }, [searchQuery])
+
+  const handleSelectSuggestion = (item: any) => {
+    const lat = parseFloat(item.lat)
+    const lng = parseFloat(item.lon)
+    onLocationChange(lat, lng)
+    setSearchQuery(item.display_name)
+    setShowSuggestions(false)
+    setSuggestions([])
+  }
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
       e.preventDefault()
       e.stopPropagation()
+      setShowSuggestions(false)
       handleSearch()
     }
   }
@@ -210,7 +249,7 @@ export default function GeofenceMap({ latitude, longitude, radius, onLocationCha
           </div>
 
           {/* Search bar inside header */}
-          <div className="flex gap-2 max-w-md w-full">
+          <div className="relative flex gap-2 max-w-md w-full">
             <div className="relative flex-1">
               <input
                 type="text"
@@ -218,9 +257,30 @@ export default function GeofenceMap({ latitude, longitude, radius, onLocationCha
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyDown={handleKeyDown}
+                onFocus={() => {
+                  if (suggestions.length > 0) setShowSuggestions(true)
+                }}
+                onBlur={() => {
+                  setTimeout(() => setShowSuggestions(false), 200)
+                }}
                 className="w-full pl-9 pr-3 py-1.5 border border-zinc-200 bg-zinc-50 rounded-lg text-xs focus:ring-2 focus:ring-emerald-500 focus:bg-white focus:outline-none transition-all"
               />
               <Search className="w-3.5 h-3.5 text-zinc-400 absolute left-3 top-2.5" />
+              {showSuggestions && suggestions.length > 0 && (
+                <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-zinc-200 rounded-xl shadow-lg max-h-48 overflow-y-auto z-[2000] py-1">
+                  {suggestions.map((item, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => handleSelectSuggestion(item)}
+                      className="w-full text-left px-3 py-1.5 text-[10px] text-zinc-700 hover:bg-zinc-50 border-b border-zinc-100 last:border-0 flex items-start gap-2 transition-colors cursor-pointer"
+                    >
+                      <MapPin className="w-3 h-3 text-zinc-400 mt-0.5 shrink-0" />
+                      <span className="line-clamp-2">{item.display_name}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
             <button
               type="button"
@@ -231,7 +291,7 @@ export default function GeofenceMap({ latitude, longitude, radius, onLocationCha
               {isSearching ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Search"}
             </button>
           </div>
-
+ 
           <button
             type="button"
             onClick={exitFullscreen}
@@ -243,7 +303,7 @@ export default function GeofenceMap({ latitude, longitude, radius, onLocationCha
         </div>
       ) : (
         /* Inline Search Bar */
-        <div className="flex gap-2">
+        <div className="relative flex gap-2">
           <div className="relative flex-1">
             <input
               type="text"
@@ -251,9 +311,30 @@ export default function GeofenceMap({ latitude, longitude, radius, onLocationCha
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onKeyDown={handleKeyDown}
+              onFocus={() => {
+                if (suggestions.length > 0) setShowSuggestions(true)
+              }}
+              onBlur={() => {
+                setTimeout(() => setShowSuggestions(false), 200)
+              }}
               className="w-full pl-9 pr-3 py-1.5 border border-zinc-300 rounded-lg text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none"
             />
             <Search className="w-3.5 h-3.5 text-zinc-400 absolute left-3 top-2.5" />
+            {showSuggestions && suggestions.length > 0 && (
+              <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-zinc-200 rounded-xl shadow-lg max-h-48 overflow-y-auto z-[2000] py-1">
+                {suggestions.map((item, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => handleSelectSuggestion(item)}
+                    className="w-full text-left px-3 py-1.5 text-[10px] text-zinc-700 hover:bg-zinc-50 border-b border-zinc-100 last:border-0 flex items-start gap-2 transition-colors cursor-pointer"
+                  >
+                    <MapPin className="w-3 h-3 text-zinc-400 mt-0.5 shrink-0" />
+                    <span className="line-clamp-2">{item.display_name}</span>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
           <button
             type="button"

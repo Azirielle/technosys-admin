@@ -2,6 +2,7 @@
 import { supabaseAdmin } from "@/lib/supabase/admin"
 import { createClient } from "@/lib/supabase/server"
 import { revalidatePath } from "next/cache"
+import { logActivity } from "@/app/actions/activity"
 
 // ------------------------------------------------------------
 // Announcements Server Actions
@@ -56,6 +57,17 @@ export async function createAnnouncement(formData: FormData) {
       })
 
     if (error) throw error
+
+    // Log the announcement creation activity
+    try {
+      await logActivity({
+        action: 'create',
+        category: 'announcement',
+        description: `Published a new company announcement: "${title}"`
+      })
+    } catch (logErr: any) {
+      console.warn("Failed to log announcement activity:", logErr.message || logErr)
+    }
 
     revalidatePath('/dashboard/settings')
     revalidatePath('/dashboard')

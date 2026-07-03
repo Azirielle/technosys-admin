@@ -316,7 +316,8 @@ export default function EmployeesClient({
       email: formData.get("email"),
       password: formData.get("password"),
       baseSalary: Number(formData.get("baseSalary")),
-      role: formData.get("role") || "technician"
+      role: formData.get("role") || "technician",
+      branchId: formData.get("branchId") || null
     }
 
     try {

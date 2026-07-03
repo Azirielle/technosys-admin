@@ -1,7 +1,7 @@
 "use client"
 import { useState } from 'react'
 import { ComposedChart, Area, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts'
-import { CheckCircle2, AlertCircle, FileText, Fingerprint, Loader2, Users, Calendar, ClipboardList, DollarSign, MessageSquare, Package, Settings, HelpCircle, X, Search, Check } from 'lucide-react'
+import { CheckCircle2, AlertCircle, FileText, Fingerprint, Loader2, Users, Calendar, ClipboardList, DollarSign, MessageSquare, Package, Settings, HelpCircle, X, Search, Check, Megaphone } from 'lucide-react'
 import { simulateBiometricScan } from '@/app/actions/employees'
 import Link from 'next/link'
 
@@ -9,18 +9,20 @@ export default function DashboardCharts({
   payslips, 
   recentTechnicians, 
   allTechnicians = [],
-  recentActivities = []
+  recentActivities = [],
+  officeLocations = []
 }: { 
   payslips: any[]
   recentTechnicians: any[]
   allTechnicians?: any[] 
   recentActivities?: any[]
+  officeLocations?: any[]
 }) {
   const [selectedTechId, setSelectedTechId] = useState('')
   const [simulating, setSimulating] = useState(false)
   const [simResult, setSimResult] = useState<{ success?: boolean; error?: string } | null>(null)
   const [isEmulatorOpen, setIsEmulatorOpen] = useState(false)
-  const [selectedLocation, setSelectedLocation] = useState('Pacita HQ')
+  const [selectedLocation, setSelectedLocation] = useState(officeLocations[0]?.name || 'Pacita HQ')
 
   const [employeeSearchQuery, setEmployeeSearchQuery] = useState('')
   const [employeeRoleFilter, setEmployeeRoleFilter] = useState<'all' | 'technician' | 'helper'>('all')
@@ -214,6 +216,7 @@ export default function DashboardCharts({
                     case 'ticket': return { icon: MessageSquare, bg: 'bg-amber-50 border-amber-100 text-amber-600' }
                     case 'inventory': return { icon: Package, bg: 'bg-blue-50 border-blue-100 text-blue-600' }
                     case 'settings': return { icon: Settings, bg: 'bg-slate-50 border-slate-100 text-slate-600' }
+                    case 'announcement': return { icon: Megaphone, bg: 'bg-indigo-50 border-indigo-100 text-indigo-600' }
                     default: return { icon: HelpCircle, bg: 'bg-zinc-50 border-zinc-100 text-zinc-600' }
                   }
                 }
@@ -486,10 +489,20 @@ export default function DashboardCharts({
                       }}
                       className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all cursor-pointer"
                     >
-                      <option value="Pacita HQ">Pacita HQ</option>
-                      <option value="Makati Branch">Makati Branch</option>
-                      <option value="Cebu Branch">Cebu Branch</option>
-                      <option value="Davao Branch">Davao Branch</option>
+                      {officeLocations.length === 0 ? (
+                        <>
+                          <option value="Pacita HQ">Pacita HQ</option>
+                          <option value="Makati Branch">Makati Branch</option>
+                          <option value="Cebu Branch">Cebu Branch</option>
+                          <option value="Davao Branch">Davao Branch</option>
+                        </>
+                      ) : (
+                        officeLocations.map((office: any) => (
+                          <option key={office.id} value={office.name}>
+                            {office.name}
+                          </option>
+                        ))
+                      )}
                     </select>
                   </div>
                 </div>
