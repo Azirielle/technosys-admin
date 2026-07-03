@@ -9,18 +9,20 @@ export default function DashboardCharts({
   payslips, 
   recentTechnicians, 
   allTechnicians = [],
-  recentActivities = []
+  recentActivities = [],
+  officeLocations = []
 }: { 
   payslips: any[]
   recentTechnicians: any[]
   allTechnicians?: any[] 
   recentActivities?: any[]
+  officeLocations?: any[]
 }) {
   const [selectedTechId, setSelectedTechId] = useState('')
   const [simulating, setSimulating] = useState(false)
   const [simResult, setSimResult] = useState<{ success?: boolean; error?: string } | null>(null)
   const [isEmulatorOpen, setIsEmulatorOpen] = useState(false)
-  const [selectedLocation, setSelectedLocation] = useState('Pacita HQ')
+  const [selectedLocation, setSelectedLocation] = useState(officeLocations[0]?.name || 'Pacita HQ')
 
   const [employeeSearchQuery, setEmployeeSearchQuery] = useState('')
   const [employeeRoleFilter, setEmployeeRoleFilter] = useState<'all' | 'technician' | 'helper'>('all')
@@ -487,10 +489,20 @@ export default function DashboardCharts({
                       }}
                       className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all cursor-pointer"
                     >
-                      <option value="Pacita HQ">Pacita HQ</option>
-                      <option value="Makati Branch">Makati Branch</option>
-                      <option value="Cebu Branch">Cebu Branch</option>
-                      <option value="Davao Branch">Davao Branch</option>
+                      {officeLocations.length === 0 ? (
+                        <>
+                          <option value="Pacita HQ">Pacita HQ</option>
+                          <option value="Makati Branch">Makati Branch</option>
+                          <option value="Cebu Branch">Cebu Branch</option>
+                          <option value="Davao Branch">Davao Branch</option>
+                        </>
+                      ) : (
+                        officeLocations.map((office: any) => (
+                          <option key={office.id} value={office.name}>
+                            {office.name}
+                          </option>
+                        ))
+                      )}
                     </select>
                   </div>
                 </div>
