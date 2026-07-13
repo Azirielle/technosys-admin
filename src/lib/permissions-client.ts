@@ -1,10 +1,8 @@
 export type UserRole =
   | 'super_admin'
   | 'ceo'
-  | 'coo'
   | 'svp'
   | 'branch_manager'
-  | 'supervisor'
   | 'hr'
   | 'accountant'
   | 'coordinator'
@@ -14,23 +12,23 @@ export type UserRole =
 
 // Modules view access list
 export const MODULE_ROLES: Record<string, UserRole[]> = {
-  overview: ['super_admin', 'ceo', 'coo', 'svp', 'admin', 'hr', 'accountant', 'coordinator', 'branch_manager', 'supervisor'],
-  employees: ['super_admin', 'ceo', 'coo', 'svp', 'admin', 'hr', 'accountant', 'branch_manager', 'supervisor', 'coordinator'], // Read-only allowed for Accountant/Coordinator
-  schedules: ['super_admin', 'ceo', 'coo', 'svp', 'admin', 'coordinator', 'branch_manager', 'supervisor', 'accountant', 'hr'], // Read-only for Accountant/HR to audit DTR/Leaves
-  leaves: ['super_admin', 'ceo', 'coo', 'svp', 'admin', 'hr', 'branch_manager', 'supervisor'],
-  payroll: ['super_admin', 'ceo', 'coo', 'svp', 'admin', 'accountant'],
-  tickets: ['super_admin', 'ceo', 'coo', 'svp', 'admin', 'hr', 'coordinator', 'branch_manager', 'supervisor'],
-  inventory: ['super_admin', 'ceo', 'coo', 'svp', 'admin', 'hr', 'coordinator', 'branch_manager', 'supervisor'],
-  settings: ['super_admin', 'ceo', 'coo', 'admin'],
+  overview: ['super_admin', 'ceo', 'svp', 'admin', 'hr', 'accountant', 'coordinator', 'branch_manager'],
+  employees: ['super_admin', 'ceo', 'svp', 'admin', 'hr', 'accountant', 'branch_manager', 'coordinator'], // Read-only allowed for Accountant/Coordinator
+  schedules: ['super_admin', 'ceo', 'svp', 'admin', 'coordinator', 'branch_manager', 'accountant', 'hr'], // Read-only for Accountant/HR to audit DTR/Leaves
+  leaves: ['super_admin', 'ceo', 'svp', 'admin', 'hr', 'branch_manager'],
+  payroll: ['super_admin', 'ceo', 'svp', 'admin', 'accountant'],
+  tickets: ['super_admin', 'ceo', 'svp', 'admin', 'hr', 'coordinator', 'branch_manager'],
+  inventory: ['super_admin', 'ceo', 'svp', 'admin', 'hr', 'coordinator', 'branch_manager'],
+  settings: ['super_admin', 'ceo', 'admin'],
 }
 
 // Modules write/modify access list (mutations)
 export const WRITE_ROLES: Record<string, UserRole[]> = {
-  employees: ['super_admin', 'ceo', 'coo', 'svp', 'admin', 'hr'],
-  schedules: ['super_admin', 'ceo', 'coo', 'svp', 'admin', 'coordinator'],
-  leaves: ['super_admin', 'ceo', 'coo', 'svp', 'admin', 'hr'], // Only HR & Execs approve leaves
-  payroll: ['super_admin', 'ceo', 'coo', 'svp', 'admin', 'accountant'],
-  tickets: ['super_admin', 'ceo', 'coo', 'svp', 'admin', 'hr', 'coordinator', 'branch_manager', 'supervisor'],
-  inventory: ['super_admin', 'ceo', 'coo', 'svp', 'admin', 'hr', 'coordinator'],
-  settings: ['super_admin', 'ceo', 'coo', 'admin'],
+  employees: ['super_admin', 'ceo', 'svp', 'admin', 'hr'],
+  schedules: ['super_admin', 'ceo', 'svp', 'admin', 'coordinator'],
+  leaves: ['super_admin', 'ceo', 'svp', 'admin', 'hr'], // Only HR & Execs approve leaves
+  payroll: ['super_admin', 'ceo', 'svp', 'admin', 'accountant'],
+  tickets: ['super_admin', 'ceo', 'svp', 'admin', 'hr', 'coordinator', 'branch_manager'],
+  inventory: ['super_admin', 'ceo', 'svp', 'admin', 'hr', 'coordinator'],
+  settings: ['super_admin', 'ceo', 'admin'],
 }
