@@ -21,7 +21,7 @@ import {
   CalendarRange,
   GripVertical
 } from "lucide-react"
-import { createSchedule, bulkCreateSchedules, toggleVipHook } from "@/app/actions/schedules"
+import { createSchedule, bulkCreateSchedules, toggleVipHook, updateSchedule, deleteSchedule } from "@/app/actions/schedules"
 import { useRouter } from "next/navigation"
 
 const getLeaveRangeMs = (startDate: string, endDate: string) => {
@@ -62,11 +62,13 @@ export default function SchedulesClient({
   const [techId, setTechId] = useState("")
   const [seniorPartnerId, setSeniorPartnerId] = useState("")
   const [startTime, setStartTime] = useState("")
-  const [clientName, setClientName] = useState("")
-  const [location, setLocation] = useState("")
+  const [destinations, setDestinations] = useState<any[]>([{ clientName: "", location: "", geofenceLat: null, geofenceLng: null, geofenceRadius: 500 }])
   const [attendanceMode, setAttendanceMode] = useState("direct_dispatch")
   const [allowanceRate, setAllowanceRate] = useState<number>(200)
+  const clientName = destinations[0]?.clientName || ""
+  const location = destinations[0]?.location || ""
   const [isVip, setIsVip] = useState(false)
+  const [editingScheduleId, setEditingScheduleId] = useState<string | null>(null)
   
   const [selectedStaffIds, setSelectedStaffIds] = useState<string[]>([])
   const [bulkSeniorPartnerMap, setBulkSeniorPartnerMap] = useState<Record<string, string>>({})
@@ -95,8 +97,8 @@ export default function SchedulesClient({
   const [draggedOverDate, setDraggedOverDate] = useState<string | null>(null)
   const [workforceQuery, setWorkforceQuery] = useState("")
 
-  const handleDragStart = (e: React.DragEvent, id: string, name: string) => {
-    e.dataTransfer.setData("application/json", JSON.stringify({ id, name }))
+  const handleDragStart = (e: React.DragEvent, type: 'technician' | 'schedule', data: any) => {
+    e.dataTransfer.setData("application/json", JSON.stringify({ type, data }))
     e.dataTransfer.effectAllowed = "move"
   }
 
@@ -141,8 +143,7 @@ export default function SchedulesClient({
       
       // Open modal with pre-filled inputs
       setSeniorPartnerId("")
-      setClientName("")
-      setLocation("")
+      setDestinations([{ clientName: "", location: "", geofenceLat: null, geofenceLng: null, geofenceRadius: 500 }])
       setAttendanceMode("hq")
       setAllowanceRate(0)
       setIsVip(false)
@@ -281,11 +282,11 @@ export default function SchedulesClient({
   }
 
   const handleOpenModal = () => {
+    setEditingScheduleId(null)
     setTechId(initialStaff[0]?.id || "")
     setSeniorPartnerId("")
     setStartTime("")
-    setClientName("")
-    setLocation("")
+    setDestinations([{ clientName: "", location: "", geofenceLat: null, geofenceLng: null, geofenceRadius: 500 }])
     setAttendanceMode("direct_dispatch")
     setAllowanceRate(200)
     setIsVip(false)
@@ -307,6 +308,7 @@ export default function SchedulesClient({
   }
 
   const handleOpenModalWithDate = (date: Date) => {
+    setEditingScheduleId(null)
     const y = date.getFullYear()
     const m = String(date.getMonth() + 1).padStart(2, '0')
     const day = String(date.getDate()).padStart(2, '0')
@@ -315,8 +317,7 @@ export default function SchedulesClient({
     setTechId(initialStaff[0]?.id || "")
     setSeniorPartnerId("")
     setStartTime(formattedDate)
-    setClientName("")
-    setLocation("")
+    setDestinations([{ clientName: "", location: "", geofenceLat: null, geofenceLng: null, geofenceRadius: 500 }])
     setAttendanceMode("direct_dispatch")
     setAllowanceRate(200)
     setIsVip(false)
@@ -338,6 +339,48 @@ export default function SchedulesClient({
     setShowModal(true)
   }
 
+  const handleDeleteSchedule = async (schedId: string) => {
+    if (!confirm("Are you sure you want to delete this schedule?")) return
+    setSelectedSchedule(null)
+    const res = await deleteSchedule(schedId)
+    if (res?.error) setErrorMsg(res.error)
+    else {
+      setSuccessMsg("Schedule deleted successfully!")
+      setTimeout(() => setSuccessMsg(""), 3000)
+    }
+  }
+
+  const handleEditSchedule = (sched: any) => {
+    setEditingScheduleId(sched.id)
+    setTechId(sched.technician_id || "")
+    setSeniorPartnerId(sched.senior_partner_id || "")
+    if (sched.start_time) {
+      const d = new Date(sched.start_time)
+      const y = d.getFullYear()
+      const m = String(d.getMonth() + 1).padStart(2, '0')
+      const day = String(d.getDate()).padStart(2, '0')
+      const h = String(d.getHours()).padStart(2, '0')
+      const min = String(d.getMinutes()).padStart(2, '0')
+      setStartTime(`${y}-${m}-${day}T${h}:${min}`)
+    } else {
+      setStartTime("")
+    }
+    
+    setDestinations([{
+      clientName: sched.client_name || "",
+      location: sched.location || "",
+      geofenceLat: sched.geofence_lat || null,
+      geofenceLng: sched.geofence_lng || null,
+      geofenceRadius: sched.geofence_radius || 500
+    }])
+    setAttendanceMode(sched.attendance_mode || "hq")
+    setAllowanceRate(sched.allowance_rate || 200)
+    setIsVip(sched.is_vip_hook || false)
+    setSelectedSchedule(null)
+    setScheduleType('single')
+    setShowModal(true)
+  }
+
   const handleCreateSingle = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setErrorMsg("")
@@ -348,8 +391,9 @@ export default function SchedulesClient({
 
     const formData = new FormData()
     formData.append("technicianId", techId)
-    formData.append("clientName", clientName)
-    formData.append("location", location)
+    formData.append("destinations", JSON.stringify(destinations))
+    formData.append("clientName", destinations[0].clientName)
+    formData.append("location", destinations[0].location)
     formData.append("startTime", startTime)
     formData.append("attendanceMode", attendanceMode)
     formData.append("allowanceRate", allowanceRate.toString())
@@ -359,9 +403,12 @@ export default function SchedulesClient({
     if (isVip) {
       formData.append("isVip", "on")
     }
+    if (editingScheduleId) {
+      formData.append("scheduleId", editingScheduleId)
+    }
     
     startTransition(async () => {
-      const res = await createSchedule(formData)
+      const res = editingScheduleId ? await updateSchedule(formData) : await createSchedule(formData)
       if (res?.error) {
         setErrorMsg(res.error)
       } else {
@@ -615,15 +662,7 @@ export default function SchedulesClient({
                   </button>
                 </div>
 
-                {isWriteAllowed && (
-                  <button
-                    onClick={handleOpenModal}
-                    className="p-1.5 bg-zinc-900 hover:bg-zinc-800 active:scale-95 text-white rounded-xl transition-all shadow-3xs cursor-pointer flex items-center justify-center border border-zinc-900 shrink-0"
-                    title="Dispatch Assignment"
-                  >
-                    <Plus className="w-3.5 h-3.5" />
-                  </button>
-                )}
+                
               </div>
             </div>
 
@@ -653,6 +692,7 @@ export default function SchedulesClient({
                         onDragEnter={(e) => handleDragEnter(e, dateKey)}
                         onDragLeave={handleDragLeave}
                         onDrop={(e) => handleDrop(e, dayDate)}
+                          onDoubleClick={(e) => { e.stopPropagation(); handleOpenModalWithDate(dayDate); }}
                         className={`min-h-[115px] flex flex-col p-2.5 transition-all relative group border-r border-b border-zinc-200/60 ${
                           isDraggedOver 
                             ? 'bg-indigo-50/20 ring-2 ring-inset ring-indigo-500 z-10 scale-[1.01] shadow-md' 
@@ -745,6 +785,7 @@ export default function SchedulesClient({
                         onDragEnter={(e) => handleDragEnter(e, dateKey)}
                         onDragLeave={handleDragLeave}
                         onDrop={(e) => handleDrop(e, dayDate)}
+                          onDoubleClick={(e) => { e.stopPropagation(); handleOpenModalWithDate(dayDate); }}
                         className={`flex-1 min-w-[200px] flex flex-col border rounded-2xl overflow-hidden transition-all duration-200 bg-white ${
                           isDraggedOver 
                             ? 'border-indigo-500 bg-indigo-50/10 ring-2 ring-inset ring-indigo-500 scale-[1.01] shadow-md z-10' 
@@ -1036,7 +1077,7 @@ export default function SchedulesClient({
                         <div 
                           key={tech.id}
                           draggable={isWriteAllowed}
-                          onDragStart={isWriteAllowed ? (e) => handleDragStart(e, tech.id, tech.full_name) : undefined}
+                          onDragStart={isWriteAllowed ? (e) => handleDragStart(e, 'technician', { id: tech.id, name: tech.full_name }) : undefined}
                           className={`flex items-center justify-between p-2.5 rounded-xl border transition-all duration-150 ${
                             isWriteAllowed 
                               ? 'bg-zinc-50 border-zinc-200/80 hover:border-zinc-350 hover:bg-white hover:shadow-3xs cursor-grab active:cursor-grabbing select-none' 
@@ -1093,7 +1134,7 @@ export default function SchedulesClient({
                         <div 
                           key={tech.id}
                           draggable={isWriteAllowed}
-                          onDragStart={isWriteAllowed ? (e) => handleDragStart(e, tech.id, tech.full_name) : undefined}
+                          onDragStart={isWriteAllowed ? (e) => handleDragStart(e, 'technician', { id: tech.id, name: tech.full_name }) : undefined}
                           className={`flex items-center justify-between p-2.5 rounded-xl border transition-all duration-150 ${
                             isWriteAllowed 
                               ? 'bg-zinc-50 border-zinc-200/80 hover:border-zinc-350 hover:bg-white hover:shadow-3xs cursor-grab active:cursor-grabbing select-none' 
@@ -1218,7 +1259,7 @@ export default function SchedulesClient({
             </div>
             
             {isWriteAllowed && (
-              <div className="p-6 bg-zinc-50 border-t border-zinc-100 flex items-center justify-between gap-3">
+              <div className="p-6 bg-zinc-50 border-t border-zinc-100 flex flex-col gap-3">
                 <button 
                   onClick={() => {
                     handleToggleVip(selectedSchedule.id, selectedSchedule.is_vip_hook)
@@ -1233,6 +1274,20 @@ export default function SchedulesClient({
                 >
                   {isPending ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : selectedSchedule.is_vip_hook ? '❌ Remove VIP Status' : '⭐ Make VIP Schedule'}
                 </button>
+                <div className="flex gap-2">
+                  <button 
+                    onClick={() => handleEditSchedule(selectedSchedule)}
+                    className="flex-1 py-2 rounded-xl text-xs font-bold transition-all bg-white hover:bg-zinc-50 text-zinc-700 border border-zinc-200 shadow-sm cursor-pointer"
+                  >
+                    Edit Schedule
+                  </button>
+                  <button 
+                    onClick={() => handleDeleteSchedule(selectedSchedule.id)}
+                    className="flex-1 py-2 rounded-xl text-xs font-bold transition-all bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 shadow-sm cursor-pointer"
+                  >
+                    Delete
+                  </button>
+                </div>
               </div>
             )}
           </div>
@@ -1312,11 +1367,11 @@ export default function SchedulesClient({
                 </h3>
                 <div>
                   <label className="block text-[10px] font-extrabold uppercase tracking-wider text-zinc-400 mb-1.5">Client Name / Job Title</label>
-                  <input required type="text" value={clientName} onChange={(e) => setClientName(e.target.value)} className="w-full px-3.5 py-2 border border-zinc-200 rounded-xl bg-zinc-50/50 hover:bg-zinc-50/20 text-zinc-900 text-xs font-semibold focus:outline-none focus:bg-white focus:ring-2 focus:ring-zinc-950/5 focus:border-zinc-900 transition-all placeholder:text-zinc-400 placeholder:font-medium" placeholder="e.g. Pacita Mall Aircon Cleaning" />
+                  <input required type="text" value={clientName} onChange={(e) => setDestinations(prev => { const newD = [...prev]; newD[0].clientName = e.target.value; return newD; })} className="w-full px-3.5 py-2 border border-zinc-200 rounded-xl bg-zinc-50/50 hover:bg-zinc-50/20 text-zinc-900 text-xs font-semibold focus:outline-none focus:bg-white focus:ring-2 focus:ring-zinc-950/5 focus:border-zinc-900 transition-all placeholder:text-zinc-400 placeholder:font-medium" placeholder="e.g. Pacita Mall Aircon Cleaning" />
                 </div>
                 <div>
                   <label className="block text-[10px] font-extrabold uppercase tracking-wider text-zinc-400 mb-1.5">Location / Site Address</label>
-                  <input required type="text" value={location} onChange={(e) => setLocation(e.target.value)} className="w-full px-3.5 py-2 border border-zinc-200 rounded-xl bg-zinc-50/50 hover:bg-zinc-50/20 text-zinc-900 text-xs font-semibold focus:outline-none focus:bg-white focus:ring-2 focus:ring-zinc-950/5 focus:border-zinc-900 transition-all placeholder:text-zinc-400 placeholder:font-medium" placeholder="e.g. San Pedro, Laguna" />
+                  <input required type="text" value={location} onChange={(e) => setDestinations(prev => { const newD = [...prev]; newD[0].location = e.target.value; return newD; })} className="w-full px-3.5 py-2 border border-zinc-200 rounded-xl bg-zinc-50/50 hover:bg-zinc-50/20 text-zinc-900 text-xs font-semibold focus:outline-none focus:bg-white focus:ring-2 focus:ring-zinc-950/5 focus:border-zinc-900 transition-all placeholder:text-zinc-400 placeholder:font-medium" placeholder="e.g. San Pedro, Laguna" />
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
@@ -1620,7 +1675,7 @@ export default function SchedulesClient({
                     </div>
                   )}
 
-                  <button type="submit" disabled={isPending || (!!currentConflict && !isVip) || !clientName.trim() || !location.trim() || !startTime} className="w-full bg-zinc-900 hover:bg-zinc-800 disabled:opacity-50 disabled:hover:bg-zinc-900 text-white py-2.5 rounded-xl text-xs font-extrabold tracking-wide transition-all shadow-sm flex items-center justify-center gap-2 cursor-pointer active:scale-98">
+                  <button type="submit" disabled={isPending || (!!currentConflict && !isVip) || destinations.some(d => !d.clientName.trim() || !d.location.trim()) || !startTime} className="w-full bg-zinc-900 hover:bg-zinc-800 disabled:opacity-50 disabled:hover:bg-zinc-900 text-white py-2.5 rounded-xl text-xs font-extrabold tracking-wide transition-all shadow-sm flex items-center justify-center gap-2 cursor-pointer active:scale-98">
                     {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Save Dispatch Schedule"}
                   </button>
                 </form>
@@ -1741,7 +1796,7 @@ export default function SchedulesClient({
                     </div>
                   )}
 
-                  <button type="submit" disabled={isPending || selectedStaffIds.length === 0 || !clientName.trim() || !location.trim() || !startTime} className="w-full bg-zinc-900 hover:bg-zinc-800 disabled:opacity-50 disabled:hover:bg-zinc-900 text-white py-2.5 rounded-xl text-xs font-extrabold tracking-wide transition-all shadow-sm flex items-center justify-center gap-2 cursor-pointer active:scale-98">
+                  <button type="submit" disabled={isPending || selectedStaffIds.length === 0 || destinations.some(d => !d.clientName.trim() || !d.location.trim()) || !startTime} className="w-full bg-zinc-900 hover:bg-zinc-800 disabled:opacity-50 disabled:hover:bg-zinc-900 text-white py-2.5 rounded-xl text-xs font-extrabold tracking-wide transition-all shadow-sm flex items-center justify-center gap-2 cursor-pointer active:scale-98">
                     {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : `Dispatch Selected Team (${selectedStaffIds.length})`}
                   </button>
                 </form>

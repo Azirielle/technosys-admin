@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { MapPin, Scale, Calendar, Shield, AlertCircle } from "lucide-react"
+
 import LocationSettings from "./LocationSettings"
 import PhilHealthRuleEditor from "./PhilHealthRuleEditor"
 import PagibigRuleEditor from "./PagibigRuleEditor"
@@ -10,6 +11,8 @@ import AnnouncementsEditor from "./AnnouncementsEditor"
 import HolidaysEditor from "./HolidaysEditor"
 import DocumentsEditor from "./DocumentsEditor"
 import AdminAccounts from "./AdminAccounts"
+import CeoOverrides from "./CeoOverrides"
+import DeletionQueue from "./DeletionQueue"
 
 interface SettingsClientProps {
   locations: any[]
@@ -19,6 +22,8 @@ interface SettingsClientProps {
   adminsList: any[]
   documentsList: any[]
   userRole: string
+  activeOverrides: any[]
+  deletionRequests: any[]
 }
 
 export default function SettingsClient({
@@ -28,9 +33,12 @@ export default function SettingsClient({
   holidaysList,
   adminsList,
   documentsList,
-  userRole
+  userRole,
+  activeOverrides,
+  deletionRequests
 }: SettingsClientProps) {
   const isSuperAdmin = userRole === "super_admin"
+  const isCeo = userRole === "ceo"
 
   // Define navigational tabs
   const tabs = [
@@ -59,6 +67,22 @@ export default function SettingsClient({
             label: "Access Control",
             icon: Shield,
             description: "Super Admin account management"
+          }
+        ]
+      : []),
+    ...(isSuperAdmin || isCeo
+      ? [
+          {
+            id: "overrides",
+            label: "CEO Overrides",
+            icon: Shield,
+            description: "Temporary role transfers"
+          },
+          {
+            id: "deletions",
+            label: "Deletion Queue",
+            icon: Shield,
+            description: "Review delete requests"
           }
         ]
       : [])
@@ -201,6 +225,18 @@ export default function SettingsClient({
                   <p className="text-xs text-zinc-500 mt-0.5">Control administrative credentials and privilege assignments.</p>
                 </div>
                 <AdminAccounts initialAdmins={adminsList} />
+              </div>
+            )}
+
+            {activeTab === "overrides" && (isSuperAdmin || isCeo) && (
+              <div className="animate-in fade-in slide-in-from-right-4 duration-500 fill-mode-forwards">
+                <CeoOverrides adminsList={adminsList} activeOverrides={activeOverrides} />
+              </div>
+            )}
+
+            {activeTab === "deletions" && (isSuperAdmin || isCeo) && (
+              <div className="animate-in fade-in slide-in-from-right-4 duration-500 fill-mode-forwards">
+                <DeletionQueue deletionRequests={deletionRequests} />
               </div>
             )}
           </div>

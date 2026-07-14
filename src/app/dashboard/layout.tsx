@@ -4,17 +4,19 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { AlertConfirmProvider } from '@/components/ui/AlertConfirmProvider'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, Users, Calendar, DollarSign, Settings, LogOut, MessageSquare, Package, ClipboardList, ShieldAlert } from 'lucide-react'
+import { LayoutDashboard, Users, Calendar, Clock, DollarSign, Settings, LogOut, MessageSquare, Package, ClipboardList, ShieldAlert, Map, Megaphone } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { MODULE_ROLES, type UserRole } from '@/lib/permissions-client'
-
+import GlobalRealtimeSync from '@/components/GlobalRealtimeSync'
+import { QuickBroadcastDrawer } from '@/components/broadcaster/QuickBroadcastDrawer'
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
-  const [profile, setProfile] = useState<{ full_name: string; role: string } | null>(null)
+  const [profile, setProfile] = useState<{ full_name: string; role: string; activeRoles: string[]; isOverridden: boolean } | null>(null)
   const [pendingLeavesCount, setPendingLeavesCount] = useState<number>(0)
   const [lowStockCount, setLowStockCount] = useState<number>(0)
   const [ticketsBadge, setTicketsBadge] = useState<{ count: number; isUrgent: boolean }>({ count: 0, isUrgent: false })
   const [loading, setLoading] = useState<boolean>(true)
+  const [isQuickBroadcastOpen, setIsQuickBroadcastOpen] = useState(false)
 
 
 
@@ -37,11 +39,27 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           console.log("Layout profile fetch:", { data, profileError })
 
           if (data) {
-            setProfile(data)
-            const role = data.role as UserRole
+            let activeRoles = [data.role as string]
+            let isOverridden = false
 
-            // --- Role-gated: Pending Leaves badge ---
-            if (MODULE_ROLES['leaves']?.includes(role)) {
+            // Fetch overrides
+            const { data: overrides } = await supabase
+              .from('role_overrides')
+              .select('granted_role')
+              .eq('target_user_id', user.id)
+              .gt('expires_at', new Date().toISOString())
+
+            if (overrides && overrides.length > 0) {
+              const granted = overrides.map(o => o.granted_role)
+              activeRoles = [...activeRoles, ...granted]
+              isOverridden = true
+            }
+
+            setProfile({ ...data, activeRoles, isOverridden })
+
+            // Check if ANY active role has access to leaves
+            const hasLeavesAccess = activeRoles.some(r => MODULE_ROLES['leaves']?.includes(r as UserRole))
+            if (hasLeavesAccess) {
               const fetchPendingLeavesCount = async () => {
                 const { count, error } = await supabase
                   .from('leaves')
@@ -59,13 +77,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             }
 
             // --- Role-gated: Low Stock Inventory badge ---
-            if (MODULE_ROLES['inventory']?.includes(role)) {
+            const hasInventoryAccess = activeRoles.some(r => MODULE_ROLES['inventory']?.includes(r as UserRole))
+            if (hasInventoryAccess) {
               const fetchLowStockCount = async () => {
                 const { data: items, error } = await supabase
                   .from('inventory_items')
-                  .select('id, quantity, low_stock_threshold')
+                  .select('id, available_qty, total_qty')
                 if (!error && items) {
-                  const count = items.filter((item: any) => item.quantity <= item.low_stock_threshold).length
+                  const count = items.filter((item: any) => item.available_qty <= (item.total_qty * 0.2)).length
                   setLowStockCount(count)
                 }
               }
@@ -79,7 +98,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             }
 
             // --- Role-gated: Tickets badge count (Option A: Urgent Highlight) ---
-            if (MODULE_ROLES['tickets']?.includes(role)) {
+            const hasTicketsAccess = activeRoles.some(r => MODULE_ROLES['tickets']?.includes(r as UserRole))
+            if (hasTicketsAccess) {
               const fetchTicketsCount = async () => {
                 const { data: activeTickets, error } = await supabase
                   .from('tickets')
@@ -121,22 +141,30 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   const navItems = [
     { href: '/dashboard', label: 'Overview', icon: LayoutDashboard, exact: true },
+    { href: '/dashboard/live-map', label: 'Live Map', icon: Map },
     { href: '/dashboard/employees', label: 'Employees', icon: Users },
     { href: '/dashboard/schedules', label: 'Schedules', icon: Calendar },
+    { href: '/dashboard/attendance', label: 'Attendance', icon: Clock },
     { href: '/dashboard/leaves', label: 'Leaves', icon: ClipboardList },
     { href: '/dashboard/payroll', label: 'Payroll', icon: DollarSign },
     { href: '/dashboard/tickets', label: 'Tickets', icon: MessageSquare },
     { href: '/dashboard/inventory', label: 'Inventory', icon: Package },
+    { href: '/dashboard/broadcaster', label: 'Broadcaster', icon: Megaphone },
+      { href: '/dashboard/warnings', label: 'Warnings', icon: ShieldAlert },
   ]
 
   const getActiveModule = (path: string) => {
     if (path === '/dashboard') return 'overview'
+    if (path.startsWith('/dashboard/live-map')) return 'overview'
     if (path.startsWith('/dashboard/employees')) return 'employees'
     if (path.startsWith('/dashboard/schedules')) return 'schedules'
+    if (path.startsWith('/dashboard/attendance')) return 'attendance'
     if (path.startsWith('/dashboard/leaves')) return 'leaves'
     if (path.startsWith('/dashboard/payroll')) return 'payroll'
     if (path.startsWith('/dashboard/tickets')) return 'tickets'
     if (path.startsWith('/dashboard/inventory')) return 'inventory'
+      if (path.startsWith('/dashboard/broadcaster')) return 'broadcaster'
+      if (path.startsWith('/dashboard/warnings')) return 'warnings'
     if (path.startsWith('/dashboard/settings')) return 'settings'
     return null
   }
@@ -145,15 +173,24 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   
   // Guard logic: if not loading and user is logged in, check permission
   const isAuthorized = loading || !profile || !activeModule || 
-    (MODULE_ROLES[activeModule]?.includes(profile.role as UserRole))
+    (profile.activeRoles.some(r => MODULE_ROLES[activeModule]?.includes(r as UserRole)))
 
-  const allowedNavItems = navItems.filter((item) => {
+  const allowedNavItems = navItems.map((item) => {
     const moduleName = getActiveModule(item.href) || 'overview'
-    if (loading || !profile) return true
-    return MODULE_ROLES[moduleName]?.includes(profile.role as UserRole)
-  })
+    if (loading || !profile) return { ...item, isBorrowed: false }
+    
+    const baseAccess = MODULE_ROLES[moduleName]?.includes(profile.role as UserRole)
+    const overrideAccess = profile.activeRoles.some(r => MODULE_ROLES[moduleName]?.includes(r as UserRole))
+    
+    if (!overrideAccess) return null
+    
+    return {
+      ...item,
+      isBorrowed: !baseAccess && overrideAccess
+    }
+  }).filter(Boolean) as (typeof navItems[0] & { isBorrowed: boolean })[]
 
-  const isActive = (item: typeof navItems[0]) => {
+  const isActive = (item: typeof allowedNavItems[0]) => {
     if (item.exact) {
       return pathname === item.href
     }
@@ -193,6 +230,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   return (
     <AlertConfirmProvider>
+      <GlobalRealtimeSync />
       <div className="flex h-screen bg-zinc-50 overflow-hidden">
       {/* Premium Light Sidebar */}
       <aside className="w-64 bg-white text-slate-900 border-r border-slate-200 flex flex-col z-20">
@@ -229,7 +267,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 >
                   <div className="flex items-center gap-3">
                     <Icon className={`w-5 h-5 transition-colors ${active ? 'text-emerald-600' : 'text-slate-400 group-hover:text-emerald-600'}`} />
-                    <span>{item.label}</span>
+                      <span className="truncate">{item.label}</span>
+                      {item.isBorrowed && (
+                        <span className="ml-auto text-[10px] uppercase font-bold tracking-wider text-amber-500 bg-amber-50 px-1.5 py-0.5 rounded-sm border border-amber-200">
+                          CEO Override
+                        </span>
+                      )}
                   </div>
                   {isLeavesTab && pendingLeavesCount > 0 && (
                     <span className="bg-rose-500 text-white text-[10px] font-extrabold px-1.5 py-0.5 rounded-full shadow-sm min-w-[18px] text-center animate-pulse">
@@ -306,6 +349,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <header className="h-16 bg-white border-b border-zinc-200 flex items-center justify-end px-8 z-10 shadow-sm">
           {/* Profile Section */}
           <div className="flex items-center gap-4">
+             <button 
+                onClick={() => setIsQuickBroadcastOpen(true)}
+                className="w-10 h-10 rounded-full flex items-center justify-center text-zinc-500 hover:text-indigo-600 hover:bg-indigo-50 border border-zinc-200 shadow-sm transition-colors cursor-pointer"
+             >
+               <Megaphone className="w-4 h-4" />
+             </button>
+
              <div className="text-right hidden md:block">
                <div className="flex items-center gap-2">
                  <p className="text-sm font-bold text-zinc-900">{profile ? profile.full_name : "Loading..."}</p>
@@ -368,6 +418,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </div>
       </main>
       </div>
+      <QuickBroadcastDrawer isOpen={isQuickBroadcastOpen} onClose={() => setIsQuickBroadcastOpen(false)} />
     </AlertConfirmProvider>
   )
 }
