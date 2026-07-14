@@ -1,0 +1,6127 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "description": "",
+    "title": "standard public schema",
+    "version": "14.5"
+  },
+  "host": "ggknkdyuglzcnkwhvdak.supabase.co:443",
+  "basePath": "/",
+  "schemes": [
+    "https"
+  ],
+  "consumes": [
+    "application/json",
+    "application/vnd.pgrst.object+json;nulls=stripped",
+    "application/vnd.pgrst.object+json",
+    "text/csv"
+  ],
+  "produces": [
+    "application/json",
+    "application/vnd.pgrst.object+json;nulls=stripped",
+    "application/vnd.pgrst.object+json",
+    "text/csv"
+  ],
+  "paths": {
+    "/": {
+      "get": {
+        "produces": [
+          "application/openapi+json",
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "summary": "OpenAPI description (this document)",
+        "tags": [
+          "Introspection"
+        ]
+      }
+    },
+    "/inventory_audits": {
+      "get": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/rowFilter.inventory_audits.id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.inventory_audits.created_at"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.inventory_audits.auditor_id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.inventory_audits.notes"
+          },
+          {
+            "$ref": "#/parameters/select"
+          },
+          {
+            "$ref": "#/parameters/order"
+          },
+          {
+            "$ref": "#/parameters/range"
+          },
+          {
+            "$ref": "#/parameters/rangeUnit"
+          },
+          {
+            "$ref": "#/parameters/offset"
+          },
+          {
+            "$ref": "#/parameters/limit"
+          },
+          {
+            "$ref": "#/parameters/preferCount"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "items": {
+                "$ref": "#/definitions/inventory_audits"
+              },
+              "type": "array"
+            }
+          },
+          "206": {
+            "description": "Partial Content"
+          }
+        },
+        "tags": [
+          "inventory_audits"
+        ]
+      },
+      "post": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/body.inventory_audits"
+          },
+          {
+            "$ref": "#/parameters/select"
+          },
+          {
+            "$ref": "#/parameters/preferPost"
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Created"
+          }
+        },
+        "tags": [
+          "inventory_audits"
+        ]
+      },
+      "delete": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/rowFilter.inventory_audits.id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.inventory_audits.created_at"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.inventory_audits.auditor_id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.inventory_audits.notes"
+          },
+          {
+            "$ref": "#/parameters/preferReturn"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        },
+        "tags": [
+          "inventory_audits"
+        ]
+      },
+      "patch": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/rowFilter.inventory_audits.id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.inventory_audits.created_at"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.inventory_audits.auditor_id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.inventory_audits.notes"
+          },
+          {
+            "$ref": "#/parameters/body.inventory_audits"
+          },
+          {
+            "$ref": "#/parameters/preferReturn"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        },
+        "tags": [
+          "inventory_audits"
+        ]
+      }
+    },
+    "/office_locations": {
+      "get": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/rowFilter.office_locations.id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.office_locations.name"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.office_locations.latitude"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.office_locations.longitude"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.office_locations.radius_meters"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.office_locations.is_active"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.office_locations.created_at"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.office_locations.updated_at"
+          },
+          {
+            "$ref": "#/parameters/select"
+          },
+          {
+            "$ref": "#/parameters/order"
+          },
+          {
+            "$ref": "#/parameters/range"
+          },
+          {
+            "$ref": "#/parameters/rangeUnit"
+          },
+          {
+            "$ref": "#/parameters/offset"
+          },
+          {
+            "$ref": "#/parameters/limit"
+          },
+          {
+            "$ref": "#/parameters/preferCount"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "items": {
+                "$ref": "#/definitions/office_locations"
+              },
+              "type": "array"
+            }
+          },
+          "206": {
+            "description": "Partial Content"
+          }
+        },
+        "tags": [
+          "office_locations"
+        ]
+      },
+      "post": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/body.office_locations"
+          },
+          {
+            "$ref": "#/parameters/select"
+          },
+          {
+            "$ref": "#/parameters/preferPost"
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Created"
+          }
+        },
+        "tags": [
+          "office_locations"
+        ]
+      },
+      "delete": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/rowFilter.office_locations.id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.office_locations.name"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.office_locations.latitude"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.office_locations.longitude"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.office_locations.radius_meters"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.office_locations.is_active"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.office_locations.created_at"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.office_locations.updated_at"
+          },
+          {
+            "$ref": "#/parameters/preferReturn"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        },
+        "tags": [
+          "office_locations"
+        ]
+      },
+      "patch": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/rowFilter.office_locations.id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.office_locations.name"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.office_locations.latitude"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.office_locations.longitude"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.office_locations.radius_meters"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.office_locations.is_active"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.office_locations.created_at"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.office_locations.updated_at"
+          },
+          {
+            "$ref": "#/parameters/body.office_locations"
+          },
+          {
+            "$ref": "#/parameters/preferReturn"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        },
+        "tags": [
+          "office_locations"
+        ]
+      }
+    },
+    "/profiles": {
+      "get": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/rowFilter.profiles.id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.profiles.full_name"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.profiles.role"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.profiles.base_salary"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.profiles.created_at"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.profiles.branch_id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.profiles.lifecycle_status"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.profiles.manager_id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.profiles.hire_date"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.profiles.employment_status"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.profiles.has_sss_id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.profiles.has_philhealth_id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.profiles.has_pagibig_id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.profiles.has_nbi_clearance"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.profiles.has_resume"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.profiles.has_medical_clearance"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.profiles.push_token"
+          },
+          {
+            "$ref": "#/parameters/select"
+          },
+          {
+            "$ref": "#/parameters/order"
+          },
+          {
+            "$ref": "#/parameters/range"
+          },
+          {
+            "$ref": "#/parameters/rangeUnit"
+          },
+          {
+            "$ref": "#/parameters/offset"
+          },
+          {
+            "$ref": "#/parameters/limit"
+          },
+          {
+            "$ref": "#/parameters/preferCount"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "items": {
+                "$ref": "#/definitions/profiles"
+              },
+              "type": "array"
+            }
+          },
+          "206": {
+            "description": "Partial Content"
+          }
+        },
+        "tags": [
+          "profiles"
+        ]
+      },
+      "post": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/body.profiles"
+          },
+          {
+            "$ref": "#/parameters/select"
+          },
+          {
+            "$ref": "#/parameters/preferPost"
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Created"
+          }
+        },
+        "tags": [
+          "profiles"
+        ]
+      },
+      "delete": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/rowFilter.profiles.id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.profiles.full_name"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.profiles.role"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.profiles.base_salary"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.profiles.created_at"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.profiles.branch_id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.profiles.lifecycle_status"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.profiles.manager_id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.profiles.hire_date"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.profiles.employment_status"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.profiles.has_sss_id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.profiles.has_philhealth_id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.profiles.has_pagibig_id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.profiles.has_nbi_clearance"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.profiles.has_resume"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.profiles.has_medical_clearance"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.profiles.push_token"
+          },
+          {
+            "$ref": "#/parameters/preferReturn"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        },
+        "tags": [
+          "profiles"
+        ]
+      },
+      "patch": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/rowFilter.profiles.id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.profiles.full_name"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.profiles.role"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.profiles.base_salary"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.profiles.created_at"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.profiles.branch_id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.profiles.lifecycle_status"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.profiles.manager_id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.profiles.hire_date"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.profiles.employment_status"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.profiles.has_sss_id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.profiles.has_philhealth_id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.profiles.has_pagibig_id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.profiles.has_nbi_clearance"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.profiles.has_resume"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.profiles.has_medical_clearance"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.profiles.push_token"
+          },
+          {
+            "$ref": "#/parameters/body.profiles"
+          },
+          {
+            "$ref": "#/parameters/preferReturn"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        },
+        "tags": [
+          "profiles"
+        ]
+      }
+    },
+    "/dtr_override_logs": {
+      "get": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/rowFilter.dtr_override_logs.id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.dtr_override_logs.modifier_id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.dtr_override_logs.target_id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.dtr_override_logs.log_id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.dtr_override_logs.original_time_in"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.dtr_override_logs.original_time_out"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.dtr_override_logs.new_time_in"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.dtr_override_logs.new_time_out"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.dtr_override_logs.justification"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.dtr_override_logs.created_at"
+          },
+          {
+            "$ref": "#/parameters/select"
+          },
+          {
+            "$ref": "#/parameters/order"
+          },
+          {
+            "$ref": "#/parameters/range"
+          },
+          {
+            "$ref": "#/parameters/rangeUnit"
+          },
+          {
+            "$ref": "#/parameters/offset"
+          },
+          {
+            "$ref": "#/parameters/limit"
+          },
+          {
+            "$ref": "#/parameters/preferCount"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "items": {
+                "$ref": "#/definitions/dtr_override_logs"
+              },
+              "type": "array"
+            }
+          },
+          "206": {
+            "description": "Partial Content"
+          }
+        },
+        "tags": [
+          "dtr_override_logs"
+        ]
+      },
+      "post": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/body.dtr_override_logs"
+          },
+          {
+            "$ref": "#/parameters/select"
+          },
+          {
+            "$ref": "#/parameters/preferPost"
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Created"
+          }
+        },
+        "tags": [
+          "dtr_override_logs"
+        ]
+      },
+      "delete": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/rowFilter.dtr_override_logs.id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.dtr_override_logs.modifier_id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.dtr_override_logs.target_id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.dtr_override_logs.log_id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.dtr_override_logs.original_time_in"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.dtr_override_logs.original_time_out"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.dtr_override_logs.new_time_in"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.dtr_override_logs.new_time_out"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.dtr_override_logs.justification"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.dtr_override_logs.created_at"
+          },
+          {
+            "$ref": "#/parameters/preferReturn"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        },
+        "tags": [
+          "dtr_override_logs"
+        ]
+      },
+      "patch": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/rowFilter.dtr_override_logs.id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.dtr_override_logs.modifier_id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.dtr_override_logs.target_id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.dtr_override_logs.log_id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.dtr_override_logs.original_time_in"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.dtr_override_logs.original_time_out"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.dtr_override_logs.new_time_in"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.dtr_override_logs.new_time_out"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.dtr_override_logs.justification"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.dtr_override_logs.created_at"
+          },
+          {
+            "$ref": "#/parameters/body.dtr_override_logs"
+          },
+          {
+            "$ref": "#/parameters/preferReturn"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        },
+        "tags": [
+          "dtr_override_logs"
+        ]
+      }
+    },
+    "/tickets": {
+      "get": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/rowFilter.tickets.id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.tickets.employee_id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.tickets.title"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.tickets.category"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.tickets.description"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.tickets.status"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.tickets.priority"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.tickets.assigned_to"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.tickets.created_at"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.tickets.updated_at"
+          },
+          {
+            "$ref": "#/parameters/select"
+          },
+          {
+            "$ref": "#/parameters/order"
+          },
+          {
+            "$ref": "#/parameters/range"
+          },
+          {
+            "$ref": "#/parameters/rangeUnit"
+          },
+          {
+            "$ref": "#/parameters/offset"
+          },
+          {
+            "$ref": "#/parameters/limit"
+          },
+          {
+            "$ref": "#/parameters/preferCount"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "items": {
+                "$ref": "#/definitions/tickets"
+              },
+              "type": "array"
+            }
+          },
+          "206": {
+            "description": "Partial Content"
+          }
+        },
+        "tags": [
+          "tickets"
+        ]
+      },
+      "post": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/body.tickets"
+          },
+          {
+            "$ref": "#/parameters/select"
+          },
+          {
+            "$ref": "#/parameters/preferPost"
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Created"
+          }
+        },
+        "tags": [
+          "tickets"
+        ]
+      },
+      "delete": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/rowFilter.tickets.id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.tickets.employee_id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.tickets.title"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.tickets.category"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.tickets.description"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.tickets.status"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.tickets.priority"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.tickets.assigned_to"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.tickets.created_at"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.tickets.updated_at"
+          },
+          {
+            "$ref": "#/parameters/preferReturn"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        },
+        "tags": [
+          "tickets"
+        ]
+      },
+      "patch": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/rowFilter.tickets.id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.tickets.employee_id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.tickets.title"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.tickets.category"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.tickets.description"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.tickets.status"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.tickets.priority"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.tickets.assigned_to"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.tickets.created_at"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.tickets.updated_at"
+          },
+          {
+            "$ref": "#/parameters/body.tickets"
+          },
+          {
+            "$ref": "#/parameters/preferReturn"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        },
+        "tags": [
+          "tickets"
+        ]
+      }
+    },
+    "/physical_biometric_scans": {
+      "get": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/rowFilter.physical_biometric_scans.id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.physical_biometric_scans.employee_id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.physical_biometric_scans.scanned_at"
+          },
+          {
+            "$ref": "#/parameters/select"
+          },
+          {
+            "$ref": "#/parameters/order"
+          },
+          {
+            "$ref": "#/parameters/range"
+          },
+          {
+            "$ref": "#/parameters/rangeUnit"
+          },
+          {
+            "$ref": "#/parameters/offset"
+          },
+          {
+            "$ref": "#/parameters/limit"
+          },
+          {
+            "$ref": "#/parameters/preferCount"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "items": {
+                "$ref": "#/definitions/physical_biometric_scans"
+              },
+              "type": "array"
+            }
+          },
+          "206": {
+            "description": "Partial Content"
+          }
+        },
+        "tags": [
+          "physical_biometric_scans"
+        ]
+      },
+      "post": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/body.physical_biometric_scans"
+          },
+          {
+            "$ref": "#/parameters/select"
+          },
+          {
+            "$ref": "#/parameters/preferPost"
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Created"
+          }
+        },
+        "tags": [
+          "physical_biometric_scans"
+        ]
+      },
+      "delete": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/rowFilter.physical_biometric_scans.id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.physical_biometric_scans.employee_id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.physical_biometric_scans.scanned_at"
+          },
+          {
+            "$ref": "#/parameters/preferReturn"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        },
+        "tags": [
+          "physical_biometric_scans"
+        ]
+      },
+      "patch": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/rowFilter.physical_biometric_scans.id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.physical_biometric_scans.employee_id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.physical_biometric_scans.scanned_at"
+          },
+          {
+            "$ref": "#/parameters/body.physical_biometric_scans"
+          },
+          {
+            "$ref": "#/parameters/preferReturn"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        },
+        "tags": [
+          "physical_biometric_scans"
+        ]
+      }
+    },
+    "/pagibig_brackets": {
+      "get": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/rowFilter.pagibig_brackets.id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.pagibig_brackets.min_compensation"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.pagibig_brackets.max_compensation"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.pagibig_brackets.employee_share"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.pagibig_brackets.target_pay_cycle"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.pagibig_brackets.created_at"
+          },
+          {
+            "$ref": "#/parameters/select"
+          },
+          {
+            "$ref": "#/parameters/order"
+          },
+          {
+            "$ref": "#/parameters/range"
+          },
+          {
+            "$ref": "#/parameters/rangeUnit"
+          },
+          {
+            "$ref": "#/parameters/offset"
+          },
+          {
+            "$ref": "#/parameters/limit"
+          },
+          {
+            "$ref": "#/parameters/preferCount"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "items": {
+                "$ref": "#/definitions/pagibig_brackets"
+              },
+              "type": "array"
+            }
+          },
+          "206": {
+            "description": "Partial Content"
+          }
+        },
+        "tags": [
+          "pagibig_brackets"
+        ]
+      },
+      "post": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/body.pagibig_brackets"
+          },
+          {
+            "$ref": "#/parameters/select"
+          },
+          {
+            "$ref": "#/parameters/preferPost"
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Created"
+          }
+        },
+        "tags": [
+          "pagibig_brackets"
+        ]
+      },
+      "delete": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/rowFilter.pagibig_brackets.id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.pagibig_brackets.min_compensation"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.pagibig_brackets.max_compensation"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.pagibig_brackets.employee_share"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.pagibig_brackets.target_pay_cycle"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.pagibig_brackets.created_at"
+          },
+          {
+            "$ref": "#/parameters/preferReturn"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        },
+        "tags": [
+          "pagibig_brackets"
+        ]
+      },
+      "patch": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/rowFilter.pagibig_brackets.id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.pagibig_brackets.min_compensation"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.pagibig_brackets.max_compensation"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.pagibig_brackets.employee_share"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.pagibig_brackets.target_pay_cycle"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.pagibig_brackets.created_at"
+          },
+          {
+            "$ref": "#/parameters/body.pagibig_brackets"
+          },
+          {
+            "$ref": "#/parameters/preferReturn"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        },
+        "tags": [
+          "pagibig_brackets"
+        ]
+      }
+    },
+    "/activity_logs": {
+      "get": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/rowFilter.activity_logs.id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.activity_logs.actor_id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.activity_logs.action_type"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.activity_logs.target_category"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.activity_logs.description"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.activity_logs.created_at"
+          },
+          {
+            "$ref": "#/parameters/select"
+          },
+          {
+            "$ref": "#/parameters/order"
+          },
+          {
+            "$ref": "#/parameters/range"
+          },
+          {
+            "$ref": "#/parameters/rangeUnit"
+          },
+          {
+            "$ref": "#/parameters/offset"
+          },
+          {
+            "$ref": "#/parameters/limit"
+          },
+          {
+            "$ref": "#/parameters/preferCount"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "items": {
+                "$ref": "#/definitions/activity_logs"
+              },
+              "type": "array"
+            }
+          },
+          "206": {
+            "description": "Partial Content"
+          }
+        },
+        "tags": [
+          "activity_logs"
+        ]
+      },
+      "post": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/body.activity_logs"
+          },
+          {
+            "$ref": "#/parameters/select"
+          },
+          {
+            "$ref": "#/parameters/preferPost"
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Created"
+          }
+        },
+        "tags": [
+          "activity_logs"
+        ]
+      },
+      "delete": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/rowFilter.activity_logs.id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.activity_logs.actor_id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.activity_logs.action_type"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.activity_logs.target_category"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.activity_logs.description"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.activity_logs.created_at"
+          },
+          {
+            "$ref": "#/parameters/preferReturn"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        },
+        "tags": [
+          "activity_logs"
+        ]
+      },
+      "patch": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/rowFilter.activity_logs.id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.activity_logs.actor_id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.activity_logs.action_type"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.activity_logs.target_category"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.activity_logs.description"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.activity_logs.created_at"
+          },
+          {
+            "$ref": "#/parameters/body.activity_logs"
+          },
+          {
+            "$ref": "#/parameters/preferReturn"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        },
+        "tags": [
+          "activity_logs"
+        ]
+      }
+    },
+    "/schedules": {
+      "get": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/rowFilter.schedules.id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.schedules.technician_id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.schedules.client_name"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.schedules.location"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.schedules.start_time"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.schedules.end_time"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.schedules.is_vip_hook"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.schedules.created_at"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.schedules.attendance_mode"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.schedules.senior_partner_id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.schedules.attendance_tracking_mode"
+          },
+          {
+            "$ref": "#/parameters/select"
+          },
+          {
+            "$ref": "#/parameters/order"
+          },
+          {
+            "$ref": "#/parameters/range"
+          },
+          {
+            "$ref": "#/parameters/rangeUnit"
+          },
+          {
+            "$ref": "#/parameters/offset"
+          },
+          {
+            "$ref": "#/parameters/limit"
+          },
+          {
+            "$ref": "#/parameters/preferCount"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "items": {
+                "$ref": "#/definitions/schedules"
+              },
+              "type": "array"
+            }
+          },
+          "206": {
+            "description": "Partial Content"
+          }
+        },
+        "tags": [
+          "schedules"
+        ]
+      },
+      "post": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/body.schedules"
+          },
+          {
+            "$ref": "#/parameters/select"
+          },
+          {
+            "$ref": "#/parameters/preferPost"
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Created"
+          }
+        },
+        "tags": [
+          "schedules"
+        ]
+      },
+      "delete": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/rowFilter.schedules.id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.schedules.technician_id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.schedules.client_name"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.schedules.location"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.schedules.start_time"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.schedules.end_time"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.schedules.is_vip_hook"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.schedules.created_at"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.schedules.attendance_mode"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.schedules.senior_partner_id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.schedules.attendance_tracking_mode"
+          },
+          {
+            "$ref": "#/parameters/preferReturn"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        },
+        "tags": [
+          "schedules"
+        ]
+      },
+      "patch": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/rowFilter.schedules.id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.schedules.technician_id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.schedules.client_name"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.schedules.location"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.schedules.start_time"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.schedules.end_time"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.schedules.is_vip_hook"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.schedules.created_at"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.schedules.attendance_mode"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.schedules.senior_partner_id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.schedules.attendance_tracking_mode"
+          },
+          {
+            "$ref": "#/parameters/body.schedules"
+          },
+          {
+            "$ref": "#/parameters/preferReturn"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        },
+        "tags": [
+          "schedules"
+        ]
+      }
+    },
+    "/leaves": {
+      "get": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/rowFilter.leaves.id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.leaves.technician_id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.leaves.start_date"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.leaves.end_date"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.leaves.leave_type"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.leaves.reason"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.leaves.status"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.leaves.created_at"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.leaves.updated_at"
+          },
+          {
+            "$ref": "#/parameters/select"
+          },
+          {
+            "$ref": "#/parameters/order"
+          },
+          {
+            "$ref": "#/parameters/range"
+          },
+          {
+            "$ref": "#/parameters/rangeUnit"
+          },
+          {
+            "$ref": "#/parameters/offset"
+          },
+          {
+            "$ref": "#/parameters/limit"
+          },
+          {
+            "$ref": "#/parameters/preferCount"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "items": {
+                "$ref": "#/definitions/leaves"
+              },
+              "type": "array"
+            }
+          },
+          "206": {
+            "description": "Partial Content"
+          }
+        },
+        "tags": [
+          "leaves"
+        ]
+      },
+      "post": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/body.leaves"
+          },
+          {
+            "$ref": "#/parameters/select"
+          },
+          {
+            "$ref": "#/parameters/preferPost"
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Created"
+          }
+        },
+        "tags": [
+          "leaves"
+        ]
+      },
+      "delete": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/rowFilter.leaves.id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.leaves.technician_id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.leaves.start_date"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.leaves.end_date"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.leaves.leave_type"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.leaves.reason"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.leaves.status"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.leaves.created_at"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.leaves.updated_at"
+          },
+          {
+            "$ref": "#/parameters/preferReturn"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        },
+        "tags": [
+          "leaves"
+        ]
+      },
+      "patch": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/rowFilter.leaves.id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.leaves.technician_id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.leaves.start_date"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.leaves.end_date"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.leaves.leave_type"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.leaves.reason"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.leaves.status"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.leaves.created_at"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.leaves.updated_at"
+          },
+          {
+            "$ref": "#/parameters/body.leaves"
+          },
+          {
+            "$ref": "#/parameters/preferReturn"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        },
+        "tags": [
+          "leaves"
+        ]
+      }
+    },
+    "/inventory_items": {
+      "get": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/rowFilter.inventory_items.id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.inventory_items.name"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.inventory_items.sku"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.inventory_items.quantity"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.inventory_items.unit"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.inventory_items.low_stock_threshold"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.inventory_items.created_at"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.inventory_items.updated_at"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.inventory_items.image_url"
+          },
+          {
+            "$ref": "#/parameters/select"
+          },
+          {
+            "$ref": "#/parameters/order"
+          },
+          {
+            "$ref": "#/parameters/range"
+          },
+          {
+            "$ref": "#/parameters/rangeUnit"
+          },
+          {
+            "$ref": "#/parameters/offset"
+          },
+          {
+            "$ref": "#/parameters/limit"
+          },
+          {
+            "$ref": "#/parameters/preferCount"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "items": {
+                "$ref": "#/definitions/inventory_items"
+              },
+              "type": "array"
+            }
+          },
+          "206": {
+            "description": "Partial Content"
+          }
+        },
+        "tags": [
+          "inventory_items"
+        ]
+      },
+      "post": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/body.inventory_items"
+          },
+          {
+            "$ref": "#/parameters/select"
+          },
+          {
+            "$ref": "#/parameters/preferPost"
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Created"
+          }
+        },
+        "tags": [
+          "inventory_items"
+        ]
+      },
+      "delete": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/rowFilter.inventory_items.id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.inventory_items.name"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.inventory_items.sku"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.inventory_items.quantity"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.inventory_items.unit"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.inventory_items.low_stock_threshold"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.inventory_items.created_at"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.inventory_items.updated_at"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.inventory_items.image_url"
+          },
+          {
+            "$ref": "#/parameters/preferReturn"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        },
+        "tags": [
+          "inventory_items"
+        ]
+      },
+      "patch": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/rowFilter.inventory_items.id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.inventory_items.name"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.inventory_items.sku"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.inventory_items.quantity"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.inventory_items.unit"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.inventory_items.low_stock_threshold"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.inventory_items.created_at"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.inventory_items.updated_at"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.inventory_items.image_url"
+          },
+          {
+            "$ref": "#/parameters/body.inventory_items"
+          },
+          {
+            "$ref": "#/parameters/preferReturn"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        },
+        "tags": [
+          "inventory_items"
+        ]
+      }
+    },
+    "/time_logs": {
+      "get": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/rowFilter.time_logs.id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.time_logs.technician_id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.time_logs.app_time_in"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.time_logs.verified_with_machine"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.time_logs.created_at"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.time_logs.latitude"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.time_logs.longitude"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.time_logs.geofence_status"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.time_logs.app_time_out"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.time_logs.total_hours"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.time_logs.is_mocked"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.time_logs.gps_accuracy"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.time_logs.is_manual_entry"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.time_logs.is_suspicious"
+          },
+          {
+            "$ref": "#/parameters/select"
+          },
+          {
+            "$ref": "#/parameters/order"
+          },
+          {
+            "$ref": "#/parameters/range"
+          },
+          {
+            "$ref": "#/parameters/rangeUnit"
+          },
+          {
+            "$ref": "#/parameters/offset"
+          },
+          {
+            "$ref": "#/parameters/limit"
+          },
+          {
+            "$ref": "#/parameters/preferCount"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "items": {
+                "$ref": "#/definitions/time_logs"
+              },
+              "type": "array"
+            }
+          },
+          "206": {
+            "description": "Partial Content"
+          }
+        },
+        "tags": [
+          "time_logs"
+        ]
+      },
+      "post": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/body.time_logs"
+          },
+          {
+            "$ref": "#/parameters/select"
+          },
+          {
+            "$ref": "#/parameters/preferPost"
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Created"
+          }
+        },
+        "tags": [
+          "time_logs"
+        ]
+      },
+      "delete": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/rowFilter.time_logs.id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.time_logs.technician_id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.time_logs.app_time_in"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.time_logs.verified_with_machine"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.time_logs.created_at"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.time_logs.latitude"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.time_logs.longitude"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.time_logs.geofence_status"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.time_logs.app_time_out"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.time_logs.total_hours"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.time_logs.is_mocked"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.time_logs.gps_accuracy"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.time_logs.is_manual_entry"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.time_logs.is_suspicious"
+          },
+          {
+            "$ref": "#/parameters/preferReturn"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        },
+        "tags": [
+          "time_logs"
+        ]
+      },
+      "patch": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/rowFilter.time_logs.id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.time_logs.technician_id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.time_logs.app_time_in"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.time_logs.verified_with_machine"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.time_logs.created_at"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.time_logs.latitude"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.time_logs.longitude"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.time_logs.geofence_status"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.time_logs.app_time_out"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.time_logs.total_hours"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.time_logs.is_mocked"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.time_logs.gps_accuracy"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.time_logs.is_manual_entry"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.time_logs.is_suspicious"
+          },
+          {
+            "$ref": "#/parameters/body.time_logs"
+          },
+          {
+            "$ref": "#/parameters/preferReturn"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        },
+        "tags": [
+          "time_logs"
+        ]
+      }
+    },
+    "/philhealth_rules": {
+      "get": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/rowFilter.philhealth_rules.id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.philhealth_rules.wage_floor"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.philhealth_rules.wage_ceiling"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.philhealth_rules.total_rate_percentage"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.philhealth_rules.employee_share_percentage"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.philhealth_rules.target_pay_cycle"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.philhealth_rules.created_at"
+          },
+          {
+            "$ref": "#/parameters/select"
+          },
+          {
+            "$ref": "#/parameters/order"
+          },
+          {
+            "$ref": "#/parameters/range"
+          },
+          {
+            "$ref": "#/parameters/rangeUnit"
+          },
+          {
+            "$ref": "#/parameters/offset"
+          },
+          {
+            "$ref": "#/parameters/limit"
+          },
+          {
+            "$ref": "#/parameters/preferCount"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "items": {
+                "$ref": "#/definitions/philhealth_rules"
+              },
+              "type": "array"
+            }
+          },
+          "206": {
+            "description": "Partial Content"
+          }
+        },
+        "tags": [
+          "philhealth_rules"
+        ]
+      },
+      "post": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/body.philhealth_rules"
+          },
+          {
+            "$ref": "#/parameters/select"
+          },
+          {
+            "$ref": "#/parameters/preferPost"
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Created"
+          }
+        },
+        "tags": [
+          "philhealth_rules"
+        ]
+      },
+      "delete": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/rowFilter.philhealth_rules.id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.philhealth_rules.wage_floor"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.philhealth_rules.wage_ceiling"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.philhealth_rules.total_rate_percentage"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.philhealth_rules.employee_share_percentage"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.philhealth_rules.target_pay_cycle"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.philhealth_rules.created_at"
+          },
+          {
+            "$ref": "#/parameters/preferReturn"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        },
+        "tags": [
+          "philhealth_rules"
+        ]
+      },
+      "patch": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/rowFilter.philhealth_rules.id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.philhealth_rules.wage_floor"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.philhealth_rules.wage_ceiling"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.philhealth_rules.total_rate_percentage"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.philhealth_rules.employee_share_percentage"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.philhealth_rules.target_pay_cycle"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.philhealth_rules.created_at"
+          },
+          {
+            "$ref": "#/parameters/body.philhealth_rules"
+          },
+          {
+            "$ref": "#/parameters/preferReturn"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        },
+        "tags": [
+          "philhealth_rules"
+        ]
+      }
+    },
+    "/announcements": {
+      "get": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/rowFilter.announcements.id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.announcements.title"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.announcements.content"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.announcements.target_branch_id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.announcements.created_by"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.announcements.created_at"
+          },
+          {
+            "$ref": "#/parameters/select"
+          },
+          {
+            "$ref": "#/parameters/order"
+          },
+          {
+            "$ref": "#/parameters/range"
+          },
+          {
+            "$ref": "#/parameters/rangeUnit"
+          },
+          {
+            "$ref": "#/parameters/offset"
+          },
+          {
+            "$ref": "#/parameters/limit"
+          },
+          {
+            "$ref": "#/parameters/preferCount"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "items": {
+                "$ref": "#/definitions/announcements"
+              },
+              "type": "array"
+            }
+          },
+          "206": {
+            "description": "Partial Content"
+          }
+        },
+        "tags": [
+          "announcements"
+        ]
+      },
+      "post": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/body.announcements"
+          },
+          {
+            "$ref": "#/parameters/select"
+          },
+          {
+            "$ref": "#/parameters/preferPost"
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Created"
+          }
+        },
+        "tags": [
+          "announcements"
+        ]
+      },
+      "delete": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/rowFilter.announcements.id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.announcements.title"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.announcements.content"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.announcements.target_branch_id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.announcements.created_by"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.announcements.created_at"
+          },
+          {
+            "$ref": "#/parameters/preferReturn"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        },
+        "tags": [
+          "announcements"
+        ]
+      },
+      "patch": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/rowFilter.announcements.id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.announcements.title"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.announcements.content"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.announcements.target_branch_id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.announcements.created_by"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.announcements.created_at"
+          },
+          {
+            "$ref": "#/parameters/body.announcements"
+          },
+          {
+            "$ref": "#/parameters/preferReturn"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        },
+        "tags": [
+          "announcements"
+        ]
+      }
+    },
+    "/holidays": {
+      "get": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/rowFilter.holidays.id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.holidays.name"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.holidays.holiday_date"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.holidays.multiplier"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.holidays.is_active"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.holidays.created_at"
+          },
+          {
+            "$ref": "#/parameters/select"
+          },
+          {
+            "$ref": "#/parameters/order"
+          },
+          {
+            "$ref": "#/parameters/range"
+          },
+          {
+            "$ref": "#/parameters/rangeUnit"
+          },
+          {
+            "$ref": "#/parameters/offset"
+          },
+          {
+            "$ref": "#/parameters/limit"
+          },
+          {
+            "$ref": "#/parameters/preferCount"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "items": {
+                "$ref": "#/definitions/holidays"
+              },
+              "type": "array"
+            }
+          },
+          "206": {
+            "description": "Partial Content"
+          }
+        },
+        "tags": [
+          "holidays"
+        ]
+      },
+      "post": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/body.holidays"
+          },
+          {
+            "$ref": "#/parameters/select"
+          },
+          {
+            "$ref": "#/parameters/preferPost"
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Created"
+          }
+        },
+        "tags": [
+          "holidays"
+        ]
+      },
+      "delete": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/rowFilter.holidays.id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.holidays.name"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.holidays.holiday_date"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.holidays.multiplier"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.holidays.is_active"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.holidays.created_at"
+          },
+          {
+            "$ref": "#/parameters/preferReturn"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        },
+        "tags": [
+          "holidays"
+        ]
+      },
+      "patch": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/rowFilter.holidays.id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.holidays.name"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.holidays.holiday_date"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.holidays.multiplier"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.holidays.is_active"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.holidays.created_at"
+          },
+          {
+            "$ref": "#/parameters/body.holidays"
+          },
+          {
+            "$ref": "#/parameters/preferReturn"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        },
+        "tags": [
+          "holidays"
+        ]
+      }
+    },
+    "/ticket_comments": {
+      "get": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/rowFilter.ticket_comments.id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.ticket_comments.ticket_id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.ticket_comments.author_id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.ticket_comments.content"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.ticket_comments.created_at"
+          },
+          {
+            "$ref": "#/parameters/select"
+          },
+          {
+            "$ref": "#/parameters/order"
+          },
+          {
+            "$ref": "#/parameters/range"
+          },
+          {
+            "$ref": "#/parameters/rangeUnit"
+          },
+          {
+            "$ref": "#/parameters/offset"
+          },
+          {
+            "$ref": "#/parameters/limit"
+          },
+          {
+            "$ref": "#/parameters/preferCount"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "items": {
+                "$ref": "#/definitions/ticket_comments"
+              },
+              "type": "array"
+            }
+          },
+          "206": {
+            "description": "Partial Content"
+          }
+        },
+        "tags": [
+          "ticket_comments"
+        ]
+      },
+      "post": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/body.ticket_comments"
+          },
+          {
+            "$ref": "#/parameters/select"
+          },
+          {
+            "$ref": "#/parameters/preferPost"
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Created"
+          }
+        },
+        "tags": [
+          "ticket_comments"
+        ]
+      },
+      "delete": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/rowFilter.ticket_comments.id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.ticket_comments.ticket_id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.ticket_comments.author_id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.ticket_comments.content"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.ticket_comments.created_at"
+          },
+          {
+            "$ref": "#/parameters/preferReturn"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        },
+        "tags": [
+          "ticket_comments"
+        ]
+      },
+      "patch": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/rowFilter.ticket_comments.id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.ticket_comments.ticket_id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.ticket_comments.author_id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.ticket_comments.content"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.ticket_comments.created_at"
+          },
+          {
+            "$ref": "#/parameters/body.ticket_comments"
+          },
+          {
+            "$ref": "#/parameters/preferReturn"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        },
+        "tags": [
+          "ticket_comments"
+        ]
+      }
+    },
+    "/stock_transactions": {
+      "get": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/rowFilter.stock_transactions.id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.stock_transactions.item_id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.stock_transactions.ticket_id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.stock_transactions.technician_id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.stock_transactions.type"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.stock_transactions.quantity"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.stock_transactions.notes"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.stock_transactions.created_at"
+          },
+          {
+            "$ref": "#/parameters/select"
+          },
+          {
+            "$ref": "#/parameters/order"
+          },
+          {
+            "$ref": "#/parameters/range"
+          },
+          {
+            "$ref": "#/parameters/rangeUnit"
+          },
+          {
+            "$ref": "#/parameters/offset"
+          },
+          {
+            "$ref": "#/parameters/limit"
+          },
+          {
+            "$ref": "#/parameters/preferCount"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "items": {
+                "$ref": "#/definitions/stock_transactions"
+              },
+              "type": "array"
+            }
+          },
+          "206": {
+            "description": "Partial Content"
+          }
+        },
+        "tags": [
+          "stock_transactions"
+        ]
+      },
+      "post": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/body.stock_transactions"
+          },
+          {
+            "$ref": "#/parameters/select"
+          },
+          {
+            "$ref": "#/parameters/preferPost"
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Created"
+          }
+        },
+        "tags": [
+          "stock_transactions"
+        ]
+      },
+      "delete": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/rowFilter.stock_transactions.id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.stock_transactions.item_id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.stock_transactions.ticket_id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.stock_transactions.technician_id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.stock_transactions.type"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.stock_transactions.quantity"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.stock_transactions.notes"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.stock_transactions.created_at"
+          },
+          {
+            "$ref": "#/parameters/preferReturn"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        },
+        "tags": [
+          "stock_transactions"
+        ]
+      },
+      "patch": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/rowFilter.stock_transactions.id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.stock_transactions.item_id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.stock_transactions.ticket_id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.stock_transactions.technician_id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.stock_transactions.type"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.stock_transactions.quantity"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.stock_transactions.notes"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.stock_transactions.created_at"
+          },
+          {
+            "$ref": "#/parameters/body.stock_transactions"
+          },
+          {
+            "$ref": "#/parameters/preferReturn"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        },
+        "tags": [
+          "stock_transactions"
+        ]
+      }
+    },
+    "/payslips": {
+      "get": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/rowFilter.payslips.id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.payslips.technician_id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.payslips.period_start"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.payslips.period_end"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.payslips.gross_pay"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.payslips.sss_deduction"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.payslips.philhealth_deduction"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.payslips.pagibig_deduction"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.payslips.net_pay"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.payslips.status"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.payslips.created_at"
+          },
+          {
+            "$ref": "#/parameters/select"
+          },
+          {
+            "$ref": "#/parameters/order"
+          },
+          {
+            "$ref": "#/parameters/range"
+          },
+          {
+            "$ref": "#/parameters/rangeUnit"
+          },
+          {
+            "$ref": "#/parameters/offset"
+          },
+          {
+            "$ref": "#/parameters/limit"
+          },
+          {
+            "$ref": "#/parameters/preferCount"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "items": {
+                "$ref": "#/definitions/payslips"
+              },
+              "type": "array"
+            }
+          },
+          "206": {
+            "description": "Partial Content"
+          }
+        },
+        "tags": [
+          "payslips"
+        ]
+      },
+      "post": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/body.payslips"
+          },
+          {
+            "$ref": "#/parameters/select"
+          },
+          {
+            "$ref": "#/parameters/preferPost"
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Created"
+          }
+        },
+        "tags": [
+          "payslips"
+        ]
+      },
+      "delete": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/rowFilter.payslips.id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.payslips.technician_id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.payslips.period_start"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.payslips.period_end"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.payslips.gross_pay"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.payslips.sss_deduction"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.payslips.philhealth_deduction"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.payslips.pagibig_deduction"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.payslips.net_pay"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.payslips.status"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.payslips.created_at"
+          },
+          {
+            "$ref": "#/parameters/preferReturn"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        },
+        "tags": [
+          "payslips"
+        ]
+      },
+      "patch": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/rowFilter.payslips.id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.payslips.technician_id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.payslips.period_start"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.payslips.period_end"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.payslips.gross_pay"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.payslips.sss_deduction"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.payslips.philhealth_deduction"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.payslips.pagibig_deduction"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.payslips.net_pay"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.payslips.status"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.payslips.created_at"
+          },
+          {
+            "$ref": "#/parameters/body.payslips"
+          },
+          {
+            "$ref": "#/parameters/preferReturn"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        },
+        "tags": [
+          "payslips"
+        ]
+      }
+    },
+    "/sss_brackets": {
+      "get": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/rowFilter.sss_brackets.id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.sss_brackets.min_compensation"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.sss_brackets.max_compensation"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.sss_brackets.monthly_salary_credit"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.sss_brackets.employee_share"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.sss_brackets.employer_share"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.sss_brackets.target_pay_cycle"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.sss_brackets.created_at"
+          },
+          {
+            "$ref": "#/parameters/select"
+          },
+          {
+            "$ref": "#/parameters/order"
+          },
+          {
+            "$ref": "#/parameters/range"
+          },
+          {
+            "$ref": "#/parameters/rangeUnit"
+          },
+          {
+            "$ref": "#/parameters/offset"
+          },
+          {
+            "$ref": "#/parameters/limit"
+          },
+          {
+            "$ref": "#/parameters/preferCount"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "items": {
+                "$ref": "#/definitions/sss_brackets"
+              },
+              "type": "array"
+            }
+          },
+          "206": {
+            "description": "Partial Content"
+          }
+        },
+        "tags": [
+          "sss_brackets"
+        ]
+      },
+      "post": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/body.sss_brackets"
+          },
+          {
+            "$ref": "#/parameters/select"
+          },
+          {
+            "$ref": "#/parameters/preferPost"
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Created"
+          }
+        },
+        "tags": [
+          "sss_brackets"
+        ]
+      },
+      "delete": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/rowFilter.sss_brackets.id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.sss_brackets.min_compensation"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.sss_brackets.max_compensation"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.sss_brackets.monthly_salary_credit"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.sss_brackets.employee_share"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.sss_brackets.employer_share"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.sss_brackets.target_pay_cycle"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.sss_brackets.created_at"
+          },
+          {
+            "$ref": "#/parameters/preferReturn"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        },
+        "tags": [
+          "sss_brackets"
+        ]
+      },
+      "patch": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/rowFilter.sss_brackets.id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.sss_brackets.min_compensation"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.sss_brackets.max_compensation"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.sss_brackets.monthly_salary_credit"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.sss_brackets.employee_share"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.sss_brackets.employer_share"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.sss_brackets.target_pay_cycle"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.sss_brackets.created_at"
+          },
+          {
+            "$ref": "#/parameters/body.sss_brackets"
+          },
+          {
+            "$ref": "#/parameters/preferReturn"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        },
+        "tags": [
+          "sss_brackets"
+        ]
+      }
+    },
+    "/documents": {
+      "get": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/rowFilter.documents.id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.documents.name"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.documents.category"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.documents.file_url"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.documents.file_size"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.documents.uploaded_by"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.documents.branch_id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.documents.created_at"
+          },
+          {
+            "$ref": "#/parameters/select"
+          },
+          {
+            "$ref": "#/parameters/order"
+          },
+          {
+            "$ref": "#/parameters/range"
+          },
+          {
+            "$ref": "#/parameters/rangeUnit"
+          },
+          {
+            "$ref": "#/parameters/offset"
+          },
+          {
+            "$ref": "#/parameters/limit"
+          },
+          {
+            "$ref": "#/parameters/preferCount"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "items": {
+                "$ref": "#/definitions/documents"
+              },
+              "type": "array"
+            }
+          },
+          "206": {
+            "description": "Partial Content"
+          }
+        },
+        "tags": [
+          "documents"
+        ]
+      },
+      "post": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/body.documents"
+          },
+          {
+            "$ref": "#/parameters/select"
+          },
+          {
+            "$ref": "#/parameters/preferPost"
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Created"
+          }
+        },
+        "tags": [
+          "documents"
+        ]
+      },
+      "delete": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/rowFilter.documents.id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.documents.name"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.documents.category"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.documents.file_url"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.documents.file_size"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.documents.uploaded_by"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.documents.branch_id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.documents.created_at"
+          },
+          {
+            "$ref": "#/parameters/preferReturn"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        },
+        "tags": [
+          "documents"
+        ]
+      },
+      "patch": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/rowFilter.documents.id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.documents.name"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.documents.category"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.documents.file_url"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.documents.file_size"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.documents.uploaded_by"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.documents.branch_id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.documents.created_at"
+          },
+          {
+            "$ref": "#/parameters/body.documents"
+          },
+          {
+            "$ref": "#/parameters/preferReturn"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        },
+        "tags": [
+          "documents"
+        ]
+      }
+    },
+    "/inventory_audit_items": {
+      "get": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/rowFilter.inventory_audit_items.id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.inventory_audit_items.audit_id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.inventory_audit_items.item_id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.inventory_audit_items.system_quantity"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.inventory_audit_items.physical_quantity"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.inventory_audit_items.variance"
+          },
+          {
+            "$ref": "#/parameters/select"
+          },
+          {
+            "$ref": "#/parameters/order"
+          },
+          {
+            "$ref": "#/parameters/range"
+          },
+          {
+            "$ref": "#/parameters/rangeUnit"
+          },
+          {
+            "$ref": "#/parameters/offset"
+          },
+          {
+            "$ref": "#/parameters/limit"
+          },
+          {
+            "$ref": "#/parameters/preferCount"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "items": {
+                "$ref": "#/definitions/inventory_audit_items"
+              },
+              "type": "array"
+            }
+          },
+          "206": {
+            "description": "Partial Content"
+          }
+        },
+        "tags": [
+          "inventory_audit_items"
+        ]
+      },
+      "post": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/body.inventory_audit_items"
+          },
+          {
+            "$ref": "#/parameters/select"
+          },
+          {
+            "$ref": "#/parameters/preferPost"
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Created"
+          }
+        },
+        "tags": [
+          "inventory_audit_items"
+        ]
+      },
+      "delete": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/rowFilter.inventory_audit_items.id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.inventory_audit_items.audit_id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.inventory_audit_items.item_id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.inventory_audit_items.system_quantity"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.inventory_audit_items.physical_quantity"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.inventory_audit_items.variance"
+          },
+          {
+            "$ref": "#/parameters/preferReturn"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        },
+        "tags": [
+          "inventory_audit_items"
+        ]
+      },
+      "patch": {
+        "parameters": [
+          {
+            "$ref": "#/parameters/rowFilter.inventory_audit_items.id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.inventory_audit_items.audit_id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.inventory_audit_items.item_id"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.inventory_audit_items.system_quantity"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.inventory_audit_items.physical_quantity"
+          },
+          {
+            "$ref": "#/parameters/rowFilter.inventory_audit_items.variance"
+          },
+          {
+            "$ref": "#/parameters/body.inventory_audit_items"
+          },
+          {
+            "$ref": "#/parameters/preferReturn"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        },
+        "tags": [
+          "inventory_audit_items"
+        ]
+      }
+    },
+    "/rpc/rls_auto_enable": {
+      "post": {
+        "parameters": [
+          {
+            "in": "body",
+            "name": "args",
+            "required": true,
+            "schema": {
+              "type": "object"
+            }
+          },
+          {
+            "$ref": "#/parameters/preferParams"
+          }
+        ],
+        "produces": [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "(rpc) rls_auto_enable"
+        ]
+      }
+    },
+    "/rpc/get_server_time": {
+      "post": {
+        "parameters": [
+          {
+            "in": "body",
+            "name": "args",
+            "required": true,
+            "schema": {
+              "type": "object"
+            }
+          },
+          {
+            "$ref": "#/parameters/preferParams"
+          }
+        ],
+        "produces": [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "(rpc) get_server_time"
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "inventory_audits": {
+      "required": [
+        "id",
+        "auditor_id"
+      ],
+      "properties": {
+        "id": {
+          "default": "gen_random_uuid()",
+          "description": "Note:\nThis is a Primary Key.<pk/>",
+          "format": "uuid",
+          "type": "string"
+        },
+        "created_at": {
+          "default": "now()",
+          "format": "timestamp with time zone",
+          "type": "string"
+        },
+        "auditor_id": {
+          "description": "Note:\nThis is a Foreign Key to `profiles.id`.<fk table='profiles' column='id'/>",
+          "format": "uuid",
+          "type": "string"
+        },
+        "notes": {
+          "format": "text",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "office_locations": {
+      "required": [
+        "id",
+        "name",
+        "latitude",
+        "longitude",
+        "radius_meters",
+        "is_active"
+      ],
+      "properties": {
+        "id": {
+          "default": "gen_random_uuid()",
+          "description": "Note:\nThis is a Primary Key.<pk/>",
+          "format": "uuid",
+          "type": "string"
+        },
+        "name": {
+          "default": "Main Office",
+          "format": "text",
+          "type": "string"
+        },
+        "latitude": {
+          "format": "double precision",
+          "type": "number"
+        },
+        "longitude": {
+          "format": "double precision",
+          "type": "number"
+        },
+        "radius_meters": {
+          "default": 50,
+          "format": "integer",
+          "type": "integer"
+        },
+        "is_active": {
+          "default": true,
+          "format": "boolean",
+          "type": "boolean"
+        },
+        "created_at": {
+          "default": "now()",
+          "format": "timestamp with time zone",
+          "type": "string"
+        },
+        "updated_at": {
+          "default": "now()",
+          "format": "timestamp with time zone",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "profiles": {
+      "required": [
+        "id",
+        "full_name",
+        "lifecycle_status",
+        "has_sss_id",
+        "has_philhealth_id",
+        "has_pagibig_id",
+        "has_nbi_clearance",
+        "has_resume",
+        "has_medical_clearance"
+      ],
+      "properties": {
+        "id": {
+          "description": "Note:\nThis is a Primary Key.<pk/>",
+          "format": "uuid",
+          "type": "string"
+        },
+        "full_name": {
+          "format": "text",
+          "type": "string"
+        },
+        "role": {
+          "default": "technician",
+          "enum": [
+            "admin",
+            "technician",
+            "super_admin",
+            "ceo",
+            "coo",
+            "svp",
+            "branch_manager",
+            "supervisor",
+            "accountant",
+            "hr",
+            "coordinator",
+            "helper"
+          ],
+          "format": "public.user_role",
+          "type": "string"
+        },
+        "base_salary": {
+          "default": 0,
+          "format": "numeric",
+          "type": "number"
+        },
+        "created_at": {
+          "default": "timezone('utc'::text, now())",
+          "format": "timestamp with time zone",
+          "type": "string"
+        },
+        "branch_id": {
+          "description": "Note:\nThis is a Foreign Key to `office_locations.id`.<fk table='office_locations' column='id'/>",
+          "format": "uuid",
+          "type": "string"
+        },
+        "lifecycle_status": {
+          "default": "active",
+          "format": "text",
+          "type": "string"
+        },
+        "manager_id": {
+          "description": "Note:\nThis is a Foreign Key to `profiles.id`.<fk table='profiles' column='id'/>",
+          "format": "uuid",
+          "type": "string"
+        },
+        "hire_date": {
+          "default": "now()",
+          "format": "timestamp with time zone",
+          "type": "string"
+        },
+        "employment_status": {
+          "default": "ojt",
+          "format": "text",
+          "type": "string"
+        },
+        "has_sss_id": {
+          "default": false,
+          "format": "boolean",
+          "type": "boolean"
+        },
+        "has_philhealth_id": {
+          "default": false,
+          "format": "boolean",
+          "type": "boolean"
+        },
+        "has_pagibig_id": {
+          "default": false,
+          "format": "boolean",
+          "type": "boolean"
+        },
+        "has_nbi_clearance": {
+          "default": false,
+          "format": "boolean",
+          "type": "boolean"
+        },
+        "has_resume": {
+          "default": false,
+          "format": "boolean",
+          "type": "boolean"
+        },
+        "has_medical_clearance": {
+          "default": false,
+          "format": "boolean",
+          "type": "boolean"
+        },
+        "push_token": {
+          "format": "text",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "dtr_override_logs": {
+      "required": [
+        "id",
+        "justification"
+      ],
+      "properties": {
+        "id": {
+          "default": "gen_random_uuid()",
+          "description": "Note:\nThis is a Primary Key.<pk/>",
+          "format": "uuid",
+          "type": "string"
+        },
+        "modifier_id": {
+          "description": "Note:\nThis is a Foreign Key to `profiles.id`.<fk table='profiles' column='id'/>",
+          "format": "uuid",
+          "type": "string"
+        },
+        "target_id": {
+          "description": "Note:\nThis is a Foreign Key to `profiles.id`.<fk table='profiles' column='id'/>",
+          "format": "uuid",
+          "type": "string"
+        },
+        "log_id": {
+          "description": "Note:\nThis is a Foreign Key to `time_logs.id`.<fk table='time_logs' column='id'/>",
+          "format": "uuid",
+          "type": "string"
+        },
+        "original_time_in": {
+          "format": "timestamp with time zone",
+          "type": "string"
+        },
+        "original_time_out": {
+          "format": "timestamp with time zone",
+          "type": "string"
+        },
+        "new_time_in": {
+          "format": "timestamp with time zone",
+          "type": "string"
+        },
+        "new_time_out": {
+          "format": "timestamp with time zone",
+          "type": "string"
+        },
+        "justification": {
+          "format": "text",
+          "type": "string"
+        },
+        "created_at": {
+          "default": "now()",
+          "format": "timestamp with time zone",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "tickets": {
+      "required": [
+        "id",
+        "employee_id",
+        "title",
+        "category",
+        "description",
+        "status",
+        "priority"
+      ],
+      "properties": {
+        "id": {
+          "default": "gen_random_uuid()",
+          "description": "Note:\nThis is a Primary Key.<pk/>",
+          "format": "uuid",
+          "type": "string"
+        },
+        "employee_id": {
+          "description": "Note:\nThis is a Foreign Key to `profiles.id`.<fk table='profiles' column='id'/>",
+          "format": "uuid",
+          "type": "string"
+        },
+        "title": {
+          "format": "text",
+          "type": "string"
+        },
+        "category": {
+          "format": "text",
+          "type": "string"
+        },
+        "description": {
+          "format": "text",
+          "type": "string"
+        },
+        "status": {
+          "default": "open",
+          "format": "text",
+          "type": "string"
+        },
+        "priority": {
+          "default": "medium",
+          "format": "text",
+          "type": "string"
+        },
+        "assigned_to": {
+          "description": "Note:\nThis is a Foreign Key to `profiles.id`.<fk table='profiles' column='id'/>",
+          "format": "uuid",
+          "type": "string"
+        },
+        "created_at": {
+          "default": "now()",
+          "format": "timestamp with time zone",
+          "type": "string"
+        },
+        "updated_at": {
+          "default": "now()",
+          "format": "timestamp with time zone",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "physical_biometric_scans": {
+      "required": [
+        "id",
+        "employee_id"
+      ],
+      "properties": {
+        "id": {
+          "default": "gen_random_uuid()",
+          "description": "Note:\nThis is a Primary Key.<pk/>",
+          "format": "uuid",
+          "type": "string"
+        },
+        "employee_id": {
+          "description": "Note:\nThis is a Foreign Key to `profiles.id`.<fk table='profiles' column='id'/>",
+          "format": "uuid",
+          "type": "string"
+        },
+        "scanned_at": {
+          "default": "now()",
+          "format": "timestamp with time zone",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "pagibig_brackets": {
+      "required": [
+        "id",
+        "min_compensation",
+        "max_compensation",
+        "employee_share"
+      ],
+      "properties": {
+        "id": {
+          "default": "extensions.uuid_generate_v4()",
+          "description": "Note:\nThis is a Primary Key.<pk/>",
+          "format": "uuid",
+          "type": "string"
+        },
+        "min_compensation": {
+          "format": "numeric",
+          "type": "number"
+        },
+        "max_compensation": {
+          "format": "numeric",
+          "type": "number"
+        },
+        "employee_share": {
+          "format": "numeric",
+          "type": "number"
+        },
+        "target_pay_cycle": {
+          "default": "15th",
+          "enum": [
+            "15th",
+            "end_of_month",
+            "both"
+          ],
+          "format": "public.pay_cycle_target",
+          "type": "string"
+        },
+        "created_at": {
+          "default": "now()",
+          "format": "timestamp with time zone",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "activity_logs": {
+      "required": [
+        "id",
+        "action_type",
+        "target_category",
+        "description"
+      ],
+      "properties": {
+        "id": {
+          "default": "gen_random_uuid()",
+          "description": "Note:\nThis is a Primary Key.<pk/>",
+          "format": "uuid",
+          "type": "string"
+        },
+        "actor_id": {
+          "description": "Note:\nThis is a Foreign Key to `profiles.id`.<fk table='profiles' column='id'/>",
+          "format": "uuid",
+          "type": "string"
+        },
+        "action_type": {
+          "format": "text",
+          "type": "string"
+        },
+        "target_category": {
+          "format": "text",
+          "type": "string"
+        },
+        "description": {
+          "format": "text",
+          "type": "string"
+        },
+        "created_at": {
+          "default": "now()",
+          "format": "timestamp with time zone",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "schedules": {
+      "required": [
+        "id",
+        "client_name",
+        "location",
+        "start_time",
+        "attendance_mode",
+        "attendance_tracking_mode"
+      ],
+      "properties": {
+        "id": {
+          "default": "extensions.uuid_generate_v4()",
+          "description": "Note:\nThis is a Primary Key.<pk/>",
+          "format": "uuid",
+          "type": "string"
+        },
+        "technician_id": {
+          "description": "Note:\nThis is a Foreign Key to `profiles.id`.<fk table='profiles' column='id'/>",
+          "format": "uuid",
+          "type": "string"
+        },
+        "client_name": {
+          "format": "text",
+          "type": "string"
+        },
+        "location": {
+          "format": "text",
+          "type": "string"
+        },
+        "start_time": {
+          "format": "timestamp with time zone",
+          "type": "string"
+        },
+        "end_time": {
+          "format": "timestamp with time zone",
+          "type": "string"
+        },
+        "is_vip_hook": {
+          "default": false,
+          "format": "boolean",
+          "type": "boolean"
+        },
+        "created_at": {
+          "default": "timezone('utc'::text, now())",
+          "format": "timestamp with time zone",
+          "type": "string"
+        },
+        "attendance_mode": {
+          "default": "hq",
+          "format": "text",
+          "type": "string"
+        },
+        "senior_partner_id": {
+          "description": "Note:\nThis is a Foreign Key to `profiles.id`.<fk table='profiles' column='id'/>",
+          "format": "uuid",
+          "type": "string"
+        },
+        "attendance_tracking_mode": {
+          "default": "pacita_hq",
+          "format": "character varying",
+          "maxLength": 50,
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "leaves": {
+      "required": [
+        "id",
+        "technician_id",
+        "start_date",
+        "end_date",
+        "leave_type",
+        "reason",
+        "status"
+      ],
+      "properties": {
+        "id": {
+          "default": "gen_random_uuid()",
+          "description": "Note:\nThis is a Primary Key.<pk/>",
+          "format": "uuid",
+          "type": "string"
+        },
+        "technician_id": {
+          "description": "Note:\nThis is a Foreign Key to `profiles.id`.<fk table='profiles' column='id'/>",
+          "format": "uuid",
+          "type": "string"
+        },
+        "start_date": {
+          "format": "date",
+          "type": "string"
+        },
+        "end_date": {
+          "format": "date",
+          "type": "string"
+        },
+        "leave_type": {
+          "format": "text",
+          "type": "string"
+        },
+        "reason": {
+          "format": "text",
+          "type": "string"
+        },
+        "status": {
+          "default": "pending",
+          "format": "text",
+          "type": "string"
+        },
+        "created_at": {
+          "default": "now()",
+          "format": "timestamp with time zone",
+          "type": "string"
+        },
+        "updated_at": {
+          "default": "now()",
+          "format": "timestamp with time zone",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "inventory_items": {
+      "required": [
+        "id",
+        "name",
+        "sku",
+        "quantity",
+        "unit",
+        "low_stock_threshold"
+      ],
+      "properties": {
+        "id": {
+          "default": "gen_random_uuid()",
+          "description": "Note:\nThis is a Primary Key.<pk/>",
+          "format": "uuid",
+          "type": "string"
+        },
+        "name": {
+          "format": "text",
+          "type": "string"
+        },
+        "sku": {
+          "format": "text",
+          "type": "string"
+        },
+        "quantity": {
+          "default": 0,
+          "format": "integer",
+          "type": "integer"
+        },
+        "unit": {
+          "default": "pcs",
+          "format": "text",
+          "type": "string"
+        },
+        "low_stock_threshold": {
+          "default": 5,
+          "format": "integer",
+          "type": "integer"
+        },
+        "created_at": {
+          "default": "now()",
+          "format": "timestamp with time zone",
+          "type": "string"
+        },
+        "updated_at": {
+          "default": "now()",
+          "format": "timestamp with time zone",
+          "type": "string"
+        },
+        "image_url": {
+          "format": "text",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "time_logs": {
+      "required": [
+        "id",
+        "is_manual_entry"
+      ],
+      "properties": {
+        "id": {
+          "default": "extensions.uuid_generate_v4()",
+          "description": "Note:\nThis is a Primary Key.<pk/>",
+          "format": "uuid",
+          "type": "string"
+        },
+        "technician_id": {
+          "description": "Note:\nThis is a Foreign Key to `profiles.id`.<fk table='profiles' column='id'/>",
+          "format": "uuid",
+          "type": "string"
+        },
+        "app_time_in": {
+          "default": "timezone('utc'::text, now())",
+          "format": "timestamp with time zone",
+          "type": "string"
+        },
+        "verified_with_machine": {
+          "default": false,
+          "format": "boolean",
+          "type": "boolean"
+        },
+        "created_at": {
+          "default": "timezone('utc'::text, now())",
+          "format": "timestamp with time zone",
+          "type": "string"
+        },
+        "latitude": {
+          "format": "double precision",
+          "type": "number"
+        },
+        "longitude": {
+          "format": "double precision",
+          "type": "number"
+        },
+        "geofence_status": {
+          "default": "unknown",
+          "format": "text",
+          "type": "string"
+        },
+        "app_time_out": {
+          "format": "timestamp with time zone",
+          "type": "string"
+        },
+        "total_hours": {
+          "format": "numeric",
+          "type": "number"
+        },
+        "is_mocked": {
+          "default": false,
+          "format": "boolean",
+          "type": "boolean"
+        },
+        "gps_accuracy": {
+          "format": "double precision",
+          "type": "number"
+        },
+        "is_manual_entry": {
+          "default": false,
+          "format": "boolean",
+          "type": "boolean"
+        },
+        "is_suspicious": {
+          "default": false,
+          "format": "boolean",
+          "type": "boolean"
+        }
+      },
+      "type": "object"
+    },
+    "philhealth_rules": {
+      "required": [
+        "id",
+        "wage_floor",
+        "wage_ceiling",
+        "total_rate_percentage",
+        "employee_share_percentage"
+      ],
+      "properties": {
+        "id": {
+          "default": "extensions.uuid_generate_v4()",
+          "description": "Note:\nThis is a Primary Key.<pk/>",
+          "format": "uuid",
+          "type": "string"
+        },
+        "wage_floor": {
+          "format": "numeric",
+          "type": "number"
+        },
+        "wage_ceiling": {
+          "format": "numeric",
+          "type": "number"
+        },
+        "total_rate_percentage": {
+          "format": "numeric",
+          "type": "number"
+        },
+        "employee_share_percentage": {
+          "format": "numeric",
+          "type": "number"
+        },
+        "target_pay_cycle": {
+          "default": "both",
+          "enum": [
+            "15th",
+            "end_of_month",
+            "both"
+          ],
+          "format": "public.pay_cycle_target",
+          "type": "string"
+        },
+        "created_at": {
+          "default": "now()",
+          "format": "timestamp with time zone",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "announcements": {
+      "required": [
+        "id",
+        "title",
+        "content"
+      ],
+      "properties": {
+        "id": {
+          "default": "gen_random_uuid()",
+          "description": "Note:\nThis is a Primary Key.<pk/>",
+          "format": "uuid",
+          "type": "string"
+        },
+        "title": {
+          "format": "text",
+          "type": "string"
+        },
+        "content": {
+          "format": "text",
+          "type": "string"
+        },
+        "target_branch_id": {
+          "description": "Note:\nThis is a Foreign Key to `office_locations.id`.<fk table='office_locations' column='id'/>",
+          "format": "uuid",
+          "type": "string"
+        },
+        "created_by": {
+          "description": "Note:\nThis is a Foreign Key to `profiles.id`.<fk table='profiles' column='id'/>",
+          "format": "uuid",
+          "type": "string"
+        },
+        "created_at": {
+          "default": "now()",
+          "format": "timestamp with time zone",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "holidays": {
+      "required": [
+        "id",
+        "name",
+        "holiday_date",
+        "multiplier",
+        "is_active"
+      ],
+      "properties": {
+        "id": {
+          "default": "gen_random_uuid()",
+          "description": "Note:\nThis is a Primary Key.<pk/>",
+          "format": "uuid",
+          "type": "string"
+        },
+        "name": {
+          "format": "text",
+          "type": "string"
+        },
+        "holiday_date": {
+          "format": "date",
+          "type": "string"
+        },
+        "multiplier": {
+          "default": 1.3,
+          "format": "numeric",
+          "type": "number"
+        },
+        "is_active": {
+          "default": true,
+          "format": "boolean",
+          "type": "boolean"
+        },
+        "created_at": {
+          "default": "now()",
+          "format": "timestamp with time zone",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "ticket_comments": {
+      "required": [
+        "id",
+        "ticket_id",
+        "author_id",
+        "content"
+      ],
+      "properties": {
+        "id": {
+          "default": "gen_random_uuid()",
+          "description": "Note:\nThis is a Primary Key.<pk/>",
+          "format": "uuid",
+          "type": "string"
+        },
+        "ticket_id": {
+          "description": "Note:\nThis is a Foreign Key to `tickets.id`.<fk table='tickets' column='id'/>",
+          "format": "uuid",
+          "type": "string"
+        },
+        "author_id": {
+          "description": "Note:\nThis is a Foreign Key to `profiles.id`.<fk table='profiles' column='id'/>",
+          "format": "uuid",
+          "type": "string"
+        },
+        "content": {
+          "format": "text",
+          "type": "string"
+        },
+        "created_at": {
+          "default": "now()",
+          "format": "timestamp with time zone",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "stock_transactions": {
+      "required": [
+        "id",
+        "item_id",
+        "type",
+        "quantity"
+      ],
+      "properties": {
+        "id": {
+          "default": "gen_random_uuid()",
+          "description": "Note:\nThis is a Primary Key.<pk/>",
+          "format": "uuid",
+          "type": "string"
+        },
+        "item_id": {
+          "description": "Note:\nThis is a Foreign Key to `inventory_items.id`.<fk table='inventory_items' column='id'/>",
+          "format": "uuid",
+          "type": "string"
+        },
+        "ticket_id": {
+          "description": "Note:\nThis is a Foreign Key to `tickets.id`.<fk table='tickets' column='id'/>",
+          "format": "uuid",
+          "type": "string"
+        },
+        "technician_id": {
+          "description": "Note:\nThis is a Foreign Key to `profiles.id`.<fk table='profiles' column='id'/>",
+          "format": "uuid",
+          "type": "string"
+        },
+        "type": {
+          "format": "text",
+          "type": "string"
+        },
+        "quantity": {
+          "format": "integer",
+          "type": "integer"
+        },
+        "notes": {
+          "format": "text",
+          "type": "string"
+        },
+        "created_at": {
+          "default": "now()",
+          "format": "timestamp with time zone",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "payslips": {
+      "required": [
+        "id",
+        "period_start",
+        "period_end",
+        "gross_pay",
+        "sss_deduction",
+        "philhealth_deduction",
+        "pagibig_deduction",
+        "net_pay"
+      ],
+      "properties": {
+        "id": {
+          "default": "extensions.uuid_generate_v4()",
+          "description": "Note:\nThis is a Primary Key.<pk/>",
+          "format": "uuid",
+          "type": "string"
+        },
+        "technician_id": {
+          "description": "Note:\nThis is a Foreign Key to `profiles.id`.<fk table='profiles' column='id'/>",
+          "format": "uuid",
+          "type": "string"
+        },
+        "period_start": {
+          "format": "date",
+          "type": "string"
+        },
+        "period_end": {
+          "format": "date",
+          "type": "string"
+        },
+        "gross_pay": {
+          "format": "numeric",
+          "type": "number"
+        },
+        "sss_deduction": {
+          "format": "numeric",
+          "type": "number"
+        },
+        "philhealth_deduction": {
+          "format": "numeric",
+          "type": "number"
+        },
+        "pagibig_deduction": {
+          "format": "numeric",
+          "type": "number"
+        },
+        "net_pay": {
+          "format": "numeric",
+          "type": "number"
+        },
+        "status": {
+          "default": "draft",
+          "format": "text",
+          "type": "string"
+        },
+        "created_at": {
+          "default": "timezone('utc'::text, now())",
+          "format": "timestamp with time zone",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "sss_brackets": {
+      "required": [
+        "id",
+        "min_compensation",
+        "max_compensation",
+        "monthly_salary_credit",
+        "employee_share",
+        "employer_share"
+      ],
+      "properties": {
+        "id": {
+          "default": "extensions.uuid_generate_v4()",
+          "description": "Note:\nThis is a Primary Key.<pk/>",
+          "format": "uuid",
+          "type": "string"
+        },
+        "min_compensation": {
+          "format": "numeric",
+          "type": "number"
+        },
+        "max_compensation": {
+          "format": "numeric",
+          "type": "number"
+        },
+        "monthly_salary_credit": {
+          "format": "numeric",
+          "type": "number"
+        },
+        "employee_share": {
+          "format": "numeric",
+          "type": "number"
+        },
+        "employer_share": {
+          "format": "numeric",
+          "type": "number"
+        },
+        "target_pay_cycle": {
+          "default": "end_of_month",
+          "enum": [
+            "15th",
+            "end_of_month",
+            "both"
+          ],
+          "format": "public.pay_cycle_target",
+          "type": "string"
+        },
+        "created_at": {
+          "default": "now()",
+          "format": "timestamp with time zone",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "documents": {
+      "required": [
+        "id",
+        "name",
+        "category",
+        "file_url",
+        "file_size",
+        "created_at"
+      ],
+      "properties": {
+        "id": {
+          "default": "gen_random_uuid()",
+          "description": "Note:\nThis is a Primary Key.<pk/>",
+          "format": "uuid",
+          "type": "string"
+        },
+        "name": {
+          "format": "text",
+          "type": "string"
+        },
+        "category": {
+          "format": "text",
+          "type": "string"
+        },
+        "file_url": {
+          "format": "text",
+          "type": "string"
+        },
+        "file_size": {
+          "format": "integer",
+          "type": "integer"
+        },
+        "uploaded_by": {
+          "description": "Note:\nThis is a Foreign Key to `profiles.id`.<fk table='profiles' column='id'/>",
+          "format": "uuid",
+          "type": "string"
+        },
+        "branch_id": {
+          "description": "Note:\nThis is a Foreign Key to `office_locations.id`.<fk table='office_locations' column='id'/>",
+          "format": "uuid",
+          "type": "string"
+        },
+        "created_at": {
+          "default": "timezone('utc'::text, now())",
+          "format": "timestamp with time zone",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "inventory_audit_items": {
+      "required": [
+        "id",
+        "audit_id",
+        "item_id",
+        "system_quantity",
+        "physical_quantity",
+        "variance"
+      ],
+      "properties": {
+        "id": {
+          "default": "gen_random_uuid()",
+          "description": "Note:\nThis is a Primary Key.<pk/>",
+          "format": "uuid",
+          "type": "string"
+        },
+        "audit_id": {
+          "description": "Note:\nThis is a Foreign Key to `inventory_audits.id`.<fk table='inventory_audits' column='id'/>",
+          "format": "uuid",
+          "type": "string"
+        },
+        "item_id": {
+          "description": "Note:\nThis is a Foreign Key to `inventory_items.id`.<fk table='inventory_items' column='id'/>",
+          "format": "uuid",
+          "type": "string"
+        },
+        "system_quantity": {
+          "format": "integer",
+          "type": "integer"
+        },
+        "physical_quantity": {
+          "format": "integer",
+          "type": "integer"
+        },
+        "variance": {
+          "format": "integer",
+          "type": "integer"
+        }
+      },
+      "type": "object"
+    }
+  },
+  "parameters": {
+    "preferParams": {
+      "name": "Prefer",
+      "description": "Preference",
+      "required": false,
+      "in": "header",
+      "type": "string"
+    },
+    "preferReturn": {
+      "name": "Prefer",
+      "description": "Preference",
+      "required": false,
+      "enum": [
+        "return=representation",
+        "return=minimal",
+        "return=none"
+      ],
+      "in": "header",
+      "type": "string"
+    },
+    "preferCount": {
+      "name": "Prefer",
+      "description": "Preference",
+      "required": false,
+      "enum": [
+        "count=none"
+      ],
+      "in": "header",
+      "type": "string"
+    },
+    "preferPost": {
+      "name": "Prefer",
+      "description": "Preference",
+      "required": false,
+      "enum": [
+        "return=representation",
+        "return=minimal",
+        "return=none",
+        "resolution=ignore-duplicates",
+        "resolution=merge-duplicates"
+      ],
+      "in": "header",
+      "type": "string"
+    },
+    "select": {
+      "name": "select",
+      "description": "Filtering Columns",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "on_conflict": {
+      "name": "on_conflict",
+      "description": "On Conflict",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "order": {
+      "name": "order",
+      "description": "Ordering",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "range": {
+      "name": "Range",
+      "description": "Limiting and Pagination",
+      "required": false,
+      "in": "header",
+      "type": "string"
+    },
+    "rangeUnit": {
+      "name": "Range-Unit",
+      "description": "Limiting and Pagination",
+      "required": false,
+      "default": "items",
+      "in": "header",
+      "type": "string"
+    },
+    "offset": {
+      "name": "offset",
+      "description": "Limiting and Pagination",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "limit": {
+      "name": "limit",
+      "description": "Limiting and Pagination",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "body.inventory_audits": {
+      "name": "inventory_audits",
+      "description": "inventory_audits",
+      "required": false,
+      "in": "body",
+      "schema": {
+        "$ref": "#/definitions/inventory_audits"
+      }
+    },
+    "rowFilter.inventory_audits.id": {
+      "name": "id",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.inventory_audits.created_at": {
+      "name": "created_at",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.inventory_audits.auditor_id": {
+      "name": "auditor_id",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.inventory_audits.notes": {
+      "name": "notes",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "body.office_locations": {
+      "name": "office_locations",
+      "description": "office_locations",
+      "required": false,
+      "in": "body",
+      "schema": {
+        "$ref": "#/definitions/office_locations"
+      }
+    },
+    "rowFilter.office_locations.id": {
+      "name": "id",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.office_locations.name": {
+      "name": "name",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.office_locations.latitude": {
+      "name": "latitude",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.office_locations.longitude": {
+      "name": "longitude",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.office_locations.radius_meters": {
+      "name": "radius_meters",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.office_locations.is_active": {
+      "name": "is_active",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.office_locations.created_at": {
+      "name": "created_at",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.office_locations.updated_at": {
+      "name": "updated_at",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "body.profiles": {
+      "name": "profiles",
+      "description": "profiles",
+      "required": false,
+      "in": "body",
+      "schema": {
+        "$ref": "#/definitions/profiles"
+      }
+    },
+    "rowFilter.profiles.id": {
+      "name": "id",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.profiles.full_name": {
+      "name": "full_name",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.profiles.role": {
+      "name": "role",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.profiles.base_salary": {
+      "name": "base_salary",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.profiles.created_at": {
+      "name": "created_at",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.profiles.branch_id": {
+      "name": "branch_id",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.profiles.lifecycle_status": {
+      "name": "lifecycle_status",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.profiles.manager_id": {
+      "name": "manager_id",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.profiles.hire_date": {
+      "name": "hire_date",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.profiles.employment_status": {
+      "name": "employment_status",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.profiles.has_sss_id": {
+      "name": "has_sss_id",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.profiles.has_philhealth_id": {
+      "name": "has_philhealth_id",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.profiles.has_pagibig_id": {
+      "name": "has_pagibig_id",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.profiles.has_nbi_clearance": {
+      "name": "has_nbi_clearance",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.profiles.has_resume": {
+      "name": "has_resume",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.profiles.has_medical_clearance": {
+      "name": "has_medical_clearance",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.profiles.push_token": {
+      "name": "push_token",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "body.dtr_override_logs": {
+      "name": "dtr_override_logs",
+      "description": "dtr_override_logs",
+      "required": false,
+      "in": "body",
+      "schema": {
+        "$ref": "#/definitions/dtr_override_logs"
+      }
+    },
+    "rowFilter.dtr_override_logs.id": {
+      "name": "id",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.dtr_override_logs.modifier_id": {
+      "name": "modifier_id",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.dtr_override_logs.target_id": {
+      "name": "target_id",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.dtr_override_logs.log_id": {
+      "name": "log_id",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.dtr_override_logs.original_time_in": {
+      "name": "original_time_in",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.dtr_override_logs.original_time_out": {
+      "name": "original_time_out",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.dtr_override_logs.new_time_in": {
+      "name": "new_time_in",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.dtr_override_logs.new_time_out": {
+      "name": "new_time_out",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.dtr_override_logs.justification": {
+      "name": "justification",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.dtr_override_logs.created_at": {
+      "name": "created_at",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "body.tickets": {
+      "name": "tickets",
+      "description": "tickets",
+      "required": false,
+      "in": "body",
+      "schema": {
+        "$ref": "#/definitions/tickets"
+      }
+    },
+    "rowFilter.tickets.id": {
+      "name": "id",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.tickets.employee_id": {
+      "name": "employee_id",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.tickets.title": {
+      "name": "title",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.tickets.category": {
+      "name": "category",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.tickets.description": {
+      "name": "description",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.tickets.status": {
+      "name": "status",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.tickets.priority": {
+      "name": "priority",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.tickets.assigned_to": {
+      "name": "assigned_to",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.tickets.created_at": {
+      "name": "created_at",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.tickets.updated_at": {
+      "name": "updated_at",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "body.physical_biometric_scans": {
+      "name": "physical_biometric_scans",
+      "description": "physical_biometric_scans",
+      "required": false,
+      "in": "body",
+      "schema": {
+        "$ref": "#/definitions/physical_biometric_scans"
+      }
+    },
+    "rowFilter.physical_biometric_scans.id": {
+      "name": "id",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.physical_biometric_scans.employee_id": {
+      "name": "employee_id",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.physical_biometric_scans.scanned_at": {
+      "name": "scanned_at",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "body.pagibig_brackets": {
+      "name": "pagibig_brackets",
+      "description": "pagibig_brackets",
+      "required": false,
+      "in": "body",
+      "schema": {
+        "$ref": "#/definitions/pagibig_brackets"
+      }
+    },
+    "rowFilter.pagibig_brackets.id": {
+      "name": "id",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.pagibig_brackets.min_compensation": {
+      "name": "min_compensation",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.pagibig_brackets.max_compensation": {
+      "name": "max_compensation",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.pagibig_brackets.employee_share": {
+      "name": "employee_share",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.pagibig_brackets.target_pay_cycle": {
+      "name": "target_pay_cycle",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.pagibig_brackets.created_at": {
+      "name": "created_at",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "body.activity_logs": {
+      "name": "activity_logs",
+      "description": "activity_logs",
+      "required": false,
+      "in": "body",
+      "schema": {
+        "$ref": "#/definitions/activity_logs"
+      }
+    },
+    "rowFilter.activity_logs.id": {
+      "name": "id",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.activity_logs.actor_id": {
+      "name": "actor_id",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.activity_logs.action_type": {
+      "name": "action_type",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.activity_logs.target_category": {
+      "name": "target_category",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.activity_logs.description": {
+      "name": "description",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.activity_logs.created_at": {
+      "name": "created_at",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "body.schedules": {
+      "name": "schedules",
+      "description": "schedules",
+      "required": false,
+      "in": "body",
+      "schema": {
+        "$ref": "#/definitions/schedules"
+      }
+    },
+    "rowFilter.schedules.id": {
+      "name": "id",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.schedules.technician_id": {
+      "name": "technician_id",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.schedules.client_name": {
+      "name": "client_name",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.schedules.location": {
+      "name": "location",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.schedules.start_time": {
+      "name": "start_time",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.schedules.end_time": {
+      "name": "end_time",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.schedules.is_vip_hook": {
+      "name": "is_vip_hook",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.schedules.created_at": {
+      "name": "created_at",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.schedules.attendance_mode": {
+      "name": "attendance_mode",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.schedules.senior_partner_id": {
+      "name": "senior_partner_id",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.schedules.attendance_tracking_mode": {
+      "name": "attendance_tracking_mode",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "body.leaves": {
+      "name": "leaves",
+      "description": "leaves",
+      "required": false,
+      "in": "body",
+      "schema": {
+        "$ref": "#/definitions/leaves"
+      }
+    },
+    "rowFilter.leaves.id": {
+      "name": "id",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.leaves.technician_id": {
+      "name": "technician_id",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.leaves.start_date": {
+      "name": "start_date",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.leaves.end_date": {
+      "name": "end_date",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.leaves.leave_type": {
+      "name": "leave_type",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.leaves.reason": {
+      "name": "reason",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.leaves.status": {
+      "name": "status",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.leaves.created_at": {
+      "name": "created_at",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.leaves.updated_at": {
+      "name": "updated_at",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "body.inventory_items": {
+      "name": "inventory_items",
+      "description": "inventory_items",
+      "required": false,
+      "in": "body",
+      "schema": {
+        "$ref": "#/definitions/inventory_items"
+      }
+    },
+    "rowFilter.inventory_items.id": {
+      "name": "id",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.inventory_items.name": {
+      "name": "name",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.inventory_items.sku": {
+      "name": "sku",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.inventory_items.quantity": {
+      "name": "quantity",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.inventory_items.unit": {
+      "name": "unit",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.inventory_items.low_stock_threshold": {
+      "name": "low_stock_threshold",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.inventory_items.created_at": {
+      "name": "created_at",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.inventory_items.updated_at": {
+      "name": "updated_at",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.inventory_items.image_url": {
+      "name": "image_url",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "body.time_logs": {
+      "name": "time_logs",
+      "description": "time_logs",
+      "required": false,
+      "in": "body",
+      "schema": {
+        "$ref": "#/definitions/time_logs"
+      }
+    },
+    "rowFilter.time_logs.id": {
+      "name": "id",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.time_logs.technician_id": {
+      "name": "technician_id",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.time_logs.app_time_in": {
+      "name": "app_time_in",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.time_logs.verified_with_machine": {
+      "name": "verified_with_machine",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.time_logs.created_at": {
+      "name": "created_at",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.time_logs.latitude": {
+      "name": "latitude",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.time_logs.longitude": {
+      "name": "longitude",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.time_logs.geofence_status": {
+      "name": "geofence_status",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.time_logs.app_time_out": {
+      "name": "app_time_out",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.time_logs.total_hours": {
+      "name": "total_hours",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.time_logs.is_mocked": {
+      "name": "is_mocked",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.time_logs.gps_accuracy": {
+      "name": "gps_accuracy",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.time_logs.is_manual_entry": {
+      "name": "is_manual_entry",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.time_logs.is_suspicious": {
+      "name": "is_suspicious",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "body.philhealth_rules": {
+      "name": "philhealth_rules",
+      "description": "philhealth_rules",
+      "required": false,
+      "in": "body",
+      "schema": {
+        "$ref": "#/definitions/philhealth_rules"
+      }
+    },
+    "rowFilter.philhealth_rules.id": {
+      "name": "id",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.philhealth_rules.wage_floor": {
+      "name": "wage_floor",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.philhealth_rules.wage_ceiling": {
+      "name": "wage_ceiling",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.philhealth_rules.total_rate_percentage": {
+      "name": "total_rate_percentage",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.philhealth_rules.employee_share_percentage": {
+      "name": "employee_share_percentage",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.philhealth_rules.target_pay_cycle": {
+      "name": "target_pay_cycle",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.philhealth_rules.created_at": {
+      "name": "created_at",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "body.announcements": {
+      "name": "announcements",
+      "description": "announcements",
+      "required": false,
+      "in": "body",
+      "schema": {
+        "$ref": "#/definitions/announcements"
+      }
+    },
+    "rowFilter.announcements.id": {
+      "name": "id",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.announcements.title": {
+      "name": "title",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.announcements.content": {
+      "name": "content",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.announcements.target_branch_id": {
+      "name": "target_branch_id",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.announcements.created_by": {
+      "name": "created_by",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.announcements.created_at": {
+      "name": "created_at",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "body.holidays": {
+      "name": "holidays",
+      "description": "holidays",
+      "required": false,
+      "in": "body",
+      "schema": {
+        "$ref": "#/definitions/holidays"
+      }
+    },
+    "rowFilter.holidays.id": {
+      "name": "id",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.holidays.name": {
+      "name": "name",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.holidays.holiday_date": {
+      "name": "holiday_date",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.holidays.multiplier": {
+      "name": "multiplier",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.holidays.is_active": {
+      "name": "is_active",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.holidays.created_at": {
+      "name": "created_at",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "body.ticket_comments": {
+      "name": "ticket_comments",
+      "description": "ticket_comments",
+      "required": false,
+      "in": "body",
+      "schema": {
+        "$ref": "#/definitions/ticket_comments"
+      }
+    },
+    "rowFilter.ticket_comments.id": {
+      "name": "id",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.ticket_comments.ticket_id": {
+      "name": "ticket_id",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.ticket_comments.author_id": {
+      "name": "author_id",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.ticket_comments.content": {
+      "name": "content",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.ticket_comments.created_at": {
+      "name": "created_at",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "body.stock_transactions": {
+      "name": "stock_transactions",
+      "description": "stock_transactions",
+      "required": false,
+      "in": "body",
+      "schema": {
+        "$ref": "#/definitions/stock_transactions"
+      }
+    },
+    "rowFilter.stock_transactions.id": {
+      "name": "id",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.stock_transactions.item_id": {
+      "name": "item_id",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.stock_transactions.ticket_id": {
+      "name": "ticket_id",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.stock_transactions.technician_id": {
+      "name": "technician_id",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.stock_transactions.type": {
+      "name": "type",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.stock_transactions.quantity": {
+      "name": "quantity",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.stock_transactions.notes": {
+      "name": "notes",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.stock_transactions.created_at": {
+      "name": "created_at",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "body.payslips": {
+      "name": "payslips",
+      "description": "payslips",
+      "required": false,
+      "in": "body",
+      "schema": {
+        "$ref": "#/definitions/payslips"
+      }
+    },
+    "rowFilter.payslips.id": {
+      "name": "id",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.payslips.technician_id": {
+      "name": "technician_id",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.payslips.period_start": {
+      "name": "period_start",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.payslips.period_end": {
+      "name": "period_end",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.payslips.gross_pay": {
+      "name": "gross_pay",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.payslips.sss_deduction": {
+      "name": "sss_deduction",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.payslips.philhealth_deduction": {
+      "name": "philhealth_deduction",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.payslips.pagibig_deduction": {
+      "name": "pagibig_deduction",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.payslips.net_pay": {
+      "name": "net_pay",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.payslips.status": {
+      "name": "status",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.payslips.created_at": {
+      "name": "created_at",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "body.sss_brackets": {
+      "name": "sss_brackets",
+      "description": "sss_brackets",
+      "required": false,
+      "in": "body",
+      "schema": {
+        "$ref": "#/definitions/sss_brackets"
+      }
+    },
+    "rowFilter.sss_brackets.id": {
+      "name": "id",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.sss_brackets.min_compensation": {
+      "name": "min_compensation",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.sss_brackets.max_compensation": {
+      "name": "max_compensation",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.sss_brackets.monthly_salary_credit": {
+      "name": "monthly_salary_credit",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.sss_brackets.employee_share": {
+      "name": "employee_share",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.sss_brackets.employer_share": {
+      "name": "employer_share",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.sss_brackets.target_pay_cycle": {
+      "name": "target_pay_cycle",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.sss_brackets.created_at": {
+      "name": "created_at",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "body.documents": {
+      "name": "documents",
+      "description": "documents",
+      "required": false,
+      "in": "body",
+      "schema": {
+        "$ref": "#/definitions/documents"
+      }
+    },
+    "rowFilter.documents.id": {
+      "name": "id",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.documents.name": {
+      "name": "name",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.documents.category": {
+      "name": "category",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.documents.file_url": {
+      "name": "file_url",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.documents.file_size": {
+      "name": "file_size",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.documents.uploaded_by": {
+      "name": "uploaded_by",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.documents.branch_id": {
+      "name": "branch_id",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.documents.created_at": {
+      "name": "created_at",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "body.inventory_audit_items": {
+      "name": "inventory_audit_items",
+      "description": "inventory_audit_items",
+      "required": false,
+      "in": "body",
+      "schema": {
+        "$ref": "#/definitions/inventory_audit_items"
+      }
+    },
+    "rowFilter.inventory_audit_items.id": {
+      "name": "id",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.inventory_audit_items.audit_id": {
+      "name": "audit_id",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.inventory_audit_items.item_id": {
+      "name": "item_id",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.inventory_audit_items.system_quantity": {
+      "name": "system_quantity",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.inventory_audit_items.physical_quantity": {
+      "name": "physical_quantity",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    },
+    "rowFilter.inventory_audit_items.variance": {
+      "name": "variance",
+      "required": false,
+      "in": "query",
+      "type": "string"
+    }
+  },
+  "externalDocs": {
+    "description": "PostgREST Documentation",
+    "url": "https://postgrest.org/en/v14/references/api.html"
+  }
+}

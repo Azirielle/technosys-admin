@@ -22,7 +22,8 @@ import {
   UserCheck,
   History,
   Users,
-  Search
+  Search,
+  Edit2
 } from "lucide-react"
 import { 
   deleteTechnician, 
@@ -39,6 +40,7 @@ import {
 import { createClient } from "@/lib/supabase/client"
 import { logActivity } from "@/app/actions/activity"
 import Pagination from "@/components/ui/Pagination"
+import EmployeeEditModal from "./EmployeeEditModal"
 
 interface EmployeesClientProps {
   initialTechnicians: TechnicianInfo[]
@@ -79,6 +81,7 @@ export default function EmployeesClient({
   const [editClockIn, setEditClockIn] = useState('')
   const [editClockOut, setEditClockOut] = useState('')
   const [editJustification, setEditJustification] = useState('')
+  const [editingEmployee, setEditingEmployee] = useState<TechnicianInfo | null>(null)
   const [loadingAction, setLoadingAction] = useState(false)
   const [feedbackMsg, setFeedbackMsg] = useState({ type: '', text: '' })
 
@@ -147,6 +150,7 @@ export default function EmployeesClient({
       if (e.key === 'Escape') {
         setSelectedEmployee(null)
         setIsBulkDrawerOpen(false)
+        setEditingEmployee(null)
       }
     }
     window.addEventListener('keydown', handleKeyDown)
@@ -155,7 +159,7 @@ export default function EmployeesClient({
 
   // Lock body scroll when a modal is open
   useEffect(() => {
-    if (selectedEmployee || isBulkDrawerOpen) {
+    if (selectedEmployee || isBulkDrawerOpen || editingEmployee) {
       document.body.style.overflow = 'hidden'
     } else {
       document.body.style.overflow = ''
@@ -163,7 +167,7 @@ export default function EmployeesClient({
     return () => {
       document.body.style.overflow = ''
     }
-  }, [selectedEmployee, isBulkDrawerOpen])
+  }, [selectedEmployee, isBulkDrawerOpen, editingEmployee])
   const [bulkRows, setBulkRows] = useState<Array<{
     fullName: string
     email: string
@@ -765,35 +769,18 @@ export default function EmployeesClient({
                       </div>
 
                       <div className="flex items-center gap-6">
-                        {deleteId === tech.id ? (
-                          <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
-                            <button 
-                              onClick={(e) => handleDelete(tech.id, e)}
-                              disabled={deleting}
-                              className="px-2.5 py-1.5 bg-rose-600 text-white text-xs font-bold rounded-lg hover:bg-rose-700 transition-colors disabled:opacity-50"
-                            >
-                              {deleting ? "..." : "Confirm"}
-                            </button>
-                            <button 
-                              onClick={(e) => { e.stopPropagation(); setDeleteId(null); }}
-                              disabled={deleting}
-                              className="px-2.5 py-1.5 bg-zinc-200 text-zinc-700 text-xs font-bold rounded-lg hover:bg-zinc-300 transition-colors"
-                            >
-                              Cancel
-                            </button>
-                          </div>
-                        ) : (
-                          <div className="flex items-center gap-2">
-                            <button 
-                              onClick={(e) => { e.stopPropagation(); setDeleteId(tech.id); }}
-                              className="p-2 text-zinc-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl opacity-0 group-hover:opacity-100 focus:opacity-100 transition-all cursor-pointer"
-                              title="Delete Employee"
-                            >
-                              <Trash2 className="w-4.5 h-4.5" />
-                            </button>
-                            <ChevronRight className="w-5 h-5 text-zinc-300 group-hover:text-zinc-500 transition-colors" />
-                          </div>
+                        {canEdit201 && (
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setEditingEmployee(tech); }}
+                            className="p-2 text-zinc-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl opacity-0 group-hover:opacity-100 focus:opacity-100 transition-all cursor-pointer"
+                            title="Edit Profile"
+                          >
+                            <Edit2 className="w-4.5 h-4.5" />
+                          </button>
                         )}
+                        <div className="flex items-center gap-2">
+                          <ChevronRight className="w-5 h-5 text-zinc-300 group-hover:text-zinc-500 transition-colors" />
+                        </div>
                       </div>
                     </div>
                   )
@@ -1633,6 +1620,13 @@ export default function EmployeesClient({
             </div>
           </div>
         </div>
+      )}
+
+      {editingEmployee && (
+        <EmployeeEditModal 
+          employee={editingEmployee}
+          onClose={() => setEditingEmployee(null)}
+        />
       )}
     </div>
   )

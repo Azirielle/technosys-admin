@@ -56,7 +56,7 @@ export function proxy(request: NextRequest) {
     default-src 'self';
     script-src 'self' 'unsafe-eval' 'unsafe-inline';
     style-src 'self' 'unsafe-inline';
-    img-src 'self' blob: data: https://*.supabase.co https://*.tile.openstreetmap.org https://unpkg.com;
+    img-src 'self' blob: data: https://*.supabase.co https://*.tile.openstreetmap.org https://unpkg.com https://images.unsplash.com https://via.placeholder.com;
     font-src 'self' data:;
     object-src 'none';
     base-uri 'self';

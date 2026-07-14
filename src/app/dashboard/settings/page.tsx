@@ -49,14 +49,26 @@ export default async function SettingsPage() {
   const announcementsList = await getAnnouncements()
   const holidaysList = await getHolidays()
 
-  // Fetch admins list (Super Admins only)
+  // Fetch admins list (Super Admins and CEO)
   let adminsList: any[] = []
-  if (userRole === 'super_admin') {
+  if (userRole === 'super_admin' || userRole === 'ceo') {
     adminsList = await getAdmins()
   }
 
   // Fetch documents list
-  const documentsList = await getDocuments()
+  const documentsList = await import("@/app/actions/documents").then(m => m.getDocuments())
+
+  // Fetch active overrides
+  const { overrides: activeOverrides } = await import("@/app/actions/overrides").then(m => m.getActiveOverrides())
+
+  // Fetch deletion requests
+  let deletionRequests: any[] = []
+  if (userRole === 'super_admin' || userRole === 'ceo') {
+    const res = await import("@/app/actions/crud").then(m => m.getDeletionRequests())
+    if (res.requests) {
+      deletionRequests = res.requests
+    }
+  }
 
   return (
     <div className="p-8 pb-20 max-w-7xl mx-auto">
@@ -68,6 +80,8 @@ export default async function SettingsPage() {
         adminsList={adminsList || []}
         documentsList={documentsList || []}
         userRole={userRole}
+        activeOverrides={activeOverrides || []}
+        deletionRequests={deletionRequests}
       />
     </div>
   )
