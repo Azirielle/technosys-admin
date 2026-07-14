@@ -19,11 +19,13 @@ export default async function PayrollPage(props: { searchParams?: Promise<{ star
     )
   }
 
-  // Fetch published payslips to determine status
+  // Fetch published payslips to determine status within the selected date range
   const { data: payslips } = await supabaseAdmin
     .from('payslips')
     .select('*')
     .eq('status', 'published')
+    .gte('period_start', result.startDate)
+    .lte('period_end', result.endDate)
 
   const { authorized: isWriteAllowed } = await verifyRoleAccess('payroll', true)
 

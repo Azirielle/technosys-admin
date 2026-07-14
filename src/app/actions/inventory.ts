@@ -1,53 +1,9 @@
 "use server"
 import { supabaseAdmin } from "@/lib/supabase/admin"
-import { createClient } from "@/lib/supabase/server"
 import { revalidatePath } from "next/cache"
-import { z } from "zod"
 import { logActivity } from "./activity"
 
-async function notifyLowStockAdmins(name: string, sku: string, quantity: number, threshold: number, unit: string) {
-  try {
-    const { data: admins } = await supabaseAdmin
-      .from('profiles')
-      .select('push_token')
-      .in('role', ['admin', 'super_admin'])
-      .not('push_token', 'is', null);
-
-    if (admins && admins.length > 0) {
-      const tokens = admins.map(a => a.push_token).filter(Boolean);
-      if (tokens.length > 0) {
-        const messages = tokens.map(token => ({
-          to: token,
-          sound: 'default',
-          title: '⚠️ Low Stock Alert',
-          body: `Inventory item "${name}" (SKU: ${sku}) has fallen below its safety threshold. Current stock: ${quantity} ${unit} (Limit: ${threshold} ${unit}).`,
-          data: { itemId: sku }
-        }));
-
-        const res = await fetch('https://exp.host/--/api/v2/push/send', {
-          method: 'POST',
-          headers: {
-            'Accept': 'application/json',
-            'Accept-encoding': 'gzip, deflate',
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(messages)
-        });
-
-        if (!res.ok) {
-          const errText = await res.text();
-          console.error("Expo low-stock batch push failed:", errText);
-        } else {
-          console.log("Expo low-stock push batch sent successfully for item", sku);
-        }
-      }
-    }
-  } catch (err: any) {
-    console.error("Failed to notify admins of low stock:", err.message || err);
-  }
-}
-
-// 1. Fetch all inventory items
+// 1. Fetch all inventory items (Tools Catalog)
 export async function getInventoryItems() {
   try {
     const { data, error } = await supabaseAdmin
@@ -63,290 +19,27 @@ export async function getInventoryItems() {
   }
 }
 
-// 2. Fetch inventory items that are low in stock
-export async function getLowStockItems() {
-  try {
-    const { data, error } = await supabaseAdmin
-      .from('inventory_items')
-      .select('*')
-      .order('name', { ascending: true })
-
-    if (error) throw error
-    return (data || []).filter(item => item.quantity <= item.low_stock_threshold)
-  } catch (err: any) {
-    console.error("Failed to fetch low stock items:", err.message)
-    return []
-  }
-}
-
-// 3. Fetch inventory ledger summary matching the client's grid format:
-// Item name | QTY | IN | In Date | Balance | Out | Out Date | Balance |
-export async function getInventoryLedger() {
-  try {
-    const { data: items, error: itemsError } = await supabaseAdmin
-      .from('inventory_items')
-      .select('*')
-      .order('name', { ascending: true })
-
-    if (itemsError) throw itemsError
-
-    const { data: ledger, error: ledgerError } = await supabaseAdmin
-      .from('inventory_ledger')
-      .select('*')
-      .order('transaction_date', { ascending: false })
-
-    if (ledgerError) throw ledgerError
-
-    return (items || []).map(item => {
-      const itemTransactions = (ledger || []).filter(tx => tx.item_id === item.id)
-      const lastInTx = itemTransactions.find(tx => tx.type === 'in')
-      const lastOutTx = itemTransactions.find(tx => tx.type === 'out')
-
-      return {
-        ...item,
-        last_in: lastInTx ? {
-          qty: lastInTx.qty_change,
-          date: lastInTx.transaction_date,
-          balance: lastInTx.balance
-        } : null,
-        last_out: lastOutTx ? {
-          qty: Math.abs(lastOutTx.qty_change),
-          date: lastOutTx.transaction_date,
-          balance: lastOutTx.balance
-        } : null
-      }
-    })
-  } catch (err: any) {
-    console.error("Failed to fetch inventory ledger:", err.message)
-    return []
-  }
-}
-
-// 4. Fetch all procurement orders
-export async function getProcurementOrders() {
-  try {
-    const { data, error } = await supabaseAdmin
-      .from('procurement_orders')
-      .select(`
-        *,
-        item:inventory_items!item_id(name, sku, unit)
-      `)
-      .order('po_date', { ascending: false })
-
-    if (error) throw error
-    return data || []
-  } catch (err: any) {
-    console.error("Failed to fetch procurement orders:", err.message)
-    return []
-  }
-}
-
-// 5. Create a procurement order
-export async function createProcurementOrder(formData: FormData) {
-  try {
-    const itemId = formData.get("item_id")?.toString()
-    const poNumber = formData.get("po_number")?.toString().trim()
-    const poDate = formData.get("po_date")?.toString() || new Date().toISOString().split('T')[0]
-    const qty = Number(formData.get("qty"))
-
-    if (!itemId || !poNumber || isNaN(qty) || qty <= 0) {
-      return { error: "Item, PO Number, and a valid quantity greater than 0 are required." }
-    }
-
-    const { error } = await supabaseAdmin
-      .from('procurement_orders')
-      .insert({
-        item_id: itemId,
-        po_number: poNumber,
-        po_date: poDate,
-        qty,
-        status: 'pending'
-      })
-
-    if (error) {
-      if (error.code === '23505') {
-        return { error: `PO # "${poNumber}" already exists.` }
-      }
-      throw error
-    }
-
-    await logActivity({
-      category: 'inventory',
-      action: 'created_po',
-      description: `Created Procurement Purchase Order PO# ${poNumber} for ${qty} units`
-    })
-
-    revalidatePath('/dashboard/inventory')
-    return { success: true }
-  } catch (err: any) {
-    console.error("Failed to create procurement order:", err.message)
-    return { error: "Database transaction failed: " + err.message }
-  }
-}
-
-// 6. Mark a procurement order as delivered, update inventory stock, and log in the ledger
-export async function deliverProcurementOrder(poId: string, deliveredDateStr?: string) {
-  try {
-    const deliveredDate = deliveredDateStr || new Date().toISOString().split('T')[0]
-
-    // Fetch PO details
-    const { data: po, error: poErr } = await supabaseAdmin
-      .from('procurement_orders')
-      .select('*, item:inventory_items!item_id(name, quantity)')
-      .eq('id', poId)
-      .single()
-
-    if (poErr || !po) {
-      throw new Error("Procurement order not found.")
-    }
-
-    if (po.status === 'delivered') {
-      return { error: "This procurement order has already been delivered." }
-    }
-
-    // Update PO status
-    const { error: poUpdateErr } = await supabaseAdmin
-      .from('procurement_orders')
-      .update({
-        status: 'delivered',
-        delivered_date: deliveredDate
-      })
-      .eq('id', poId)
-
-    if (poUpdateErr) throw poUpdateErr
-
-    // Update inventory item quantity
-    const currentQty = po.item?.quantity || 0
-    const nextQty = currentQty + po.qty
-
-    const { error: itemUpdateErr } = await supabaseAdmin
-      .from('inventory_items')
-      .update({
-        quantity: nextQty,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', po.item_id)
-
-    if (itemUpdateErr) throw itemUpdateErr
-
-    // Log in the ledger
-    const { error: ledgerErr } = await supabaseAdmin
-      .from('inventory_ledger')
-      .insert({
-        item_id: po.item_id,
-        qty_change: po.qty,
-        type: 'in',
-        transaction_date: new Date().toISOString(),
-        balance: nextQty,
-        notes: `Delivered PO# ${po.po_number}`
-      })
-
-    if (ledgerErr) throw ledgerErr
-
-    await logActivity({
-      category: 'inventory',
-      action: 'delivered_po',
-      description: `Delivered Procurement Order PO# ${po.po_number} (${po.qty} units added to stock)`
-    })
-
-    revalidatePath('/dashboard/inventory')
-    return { success: true }
-  } catch (err: any) {
-    console.error(`Failed to deliver procurement order ${poId}:`, err.message)
-    return { error: "Transaction failed: " + err.message }
-  }
-}
-
-// 7. General ledger transaction logger (for manual IN/OUT adjustments)
-export async function logLedgerTransaction(itemId: string, qtyChange: number, type: 'in' | 'out', notes?: string) {
-  try {
-    if (isNaN(qtyChange) || qtyChange <= 0) {
-      return { error: "Quantity must be greater than zero." }
-    }
-
-    // Fetch item
-    const { data: item, error: fetchErr } = await supabaseAdmin
-      .from('inventory_items')
-      .select('name, quantity')
-      .eq('id', itemId)
-      .single()
-
-    if (fetchErr || !item) {
-      throw new Error("Inventory item not found.")
-    }
-
-    const currentQty = item.quantity
-    let nextQty = currentQty
-    let signedChange = qtyChange
-
-    if (type === 'in') {
-      nextQty = currentQty + qtyChange
-      signedChange = qtyChange
-    } else {
-      if (currentQty < qtyChange) {
-        return { error: `Insufficient stock. Current stock is ${currentQty}, but attempting to deduct ${qtyChange}.` }
-      }
-      nextQty = currentQty - qtyChange
-      signedChange = -qtyChange
-    }
-
-    // Update item quantity
-    const { error: updateErr } = await supabaseAdmin
-      .from('inventory_items')
-      .update({
-        quantity: nextQty,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', itemId)
-
-    if (updateErr) throw updateErr
-
-    // Log ledger entry
-    const { error: ledgerErr } = await supabaseAdmin
-      .from('inventory_ledger')
-      .insert({
-        item_id: itemId,
-        qty_change: signedChange,
-        type,
-        transaction_date: new Date().toISOString(),
-        balance: nextQty,
-        notes: notes?.trim() || `Manual ${type.toUpperCase()} transaction`
-      })
-
-    if (ledgerErr) throw ledgerErr
-
-    await logActivity({
-      category: 'inventory',
-      action: type === 'in' ? 'restocked' : 'checkout',
-      description: `${type === 'in' ? 'Restocked' : 'Checked out'} ${qtyChange} units of "${item.name}" (Notes: ${notes?.trim() || 'N/A'})`
-    })
-
-    revalidatePath('/dashboard/inventory')
-    return { success: true }
-  } catch (err: any) {
-    console.error("Failed to log ledger transaction:", err.message)
-    return { error: "Transaction failed: " + err.message }
-  }
-}
-
-// 8. Create or update an inventory item
+// 2. Create or update a tool item (Coordinator Encoder)
 export async function createOrUpdateInventoryItem(formData: FormData) {
   try {
     const id = formData.get("id")?.toString()
     const name = formData.get("name")?.toString().trim()
-    const sku = formData.get("sku")?.toString().trim().toUpperCase()
-    const quantity = Number(formData.get("quantity"))
-    const unit = formData.get("unit")?.toString().trim() || "pcs"
-    const low_stock_threshold = Number(formData.get("low_stock_threshold"))
+    const description = formData.get("description")?.toString().trim() || ""
+    const total_qty = Number(formData.get("total_qty"))
+    const available_qty = Number(formData.get("available_qty"))
     const image_url = formData.get("image_url")?.toString() || null
     const imageFile = formData.get("image") as File | null
 
-    if (!name || !sku) {
-      return { error: "Name and SKU are required." }
+    if (!name) {
+      return { error: "Tool Name is required." }
     }
 
-    if (isNaN(quantity) || isNaN(low_stock_threshold) || quantity < 0 || low_stock_threshold < 0) {
-      return { error: "Quantity and low stock threshold must be non-negative numbers." }
+    if (isNaN(total_qty) || isNaN(available_qty) || total_qty < 0 || available_qty < 0) {
+      return { error: "Quantities must be non-negative numbers." }
+    }
+
+    if (available_qty > total_qty) {
+      return { error: "Available quantity cannot exceed total quantity in inventory." }
     }
 
     let dbError
@@ -354,7 +47,7 @@ export async function createOrUpdateInventoryItem(formData: FormData) {
     let existingItem: any = null
 
     if (id) {
-      // Fetch existing item
+      // Fetch existing tool
       const { data } = await supabaseAdmin
         .from('inventory_items')
         .select('*')
@@ -364,6 +57,7 @@ export async function createOrUpdateInventoryItem(formData: FormData) {
       existingItem = data
       finalImageUrl = existingItem?.image_url || image_url
 
+      // Handle Image Upload if a file is supplied
       if (imageFile && imageFile.size > 0) {
         if (existingItem?.image_url) {
           try {
@@ -395,37 +89,21 @@ export async function createOrUpdateInventoryItem(formData: FormData) {
         finalImageUrl = publicUrl
       }
 
-      // If quantity is adjusted directly via edit form, write a ledger entry
-      const difference = quantity - (existingItem?.quantity || 0)
-      if (difference !== 0) {
-        const { error: ledgerErr } = await supabaseAdmin
-          .from('inventory_ledger')
-          .insert({
-            item_id: id,
-            qty_change: difference,
-            type: difference > 0 ? 'in' : 'out',
-            transaction_date: new Date().toISOString(),
-            balance: quantity,
-            notes: "Manual adjustment via edit form"
-          })
-        if (ledgerErr) throw ledgerErr
-      }
-
-      // Update
+      // Update item parameters
       const { error } = await supabaseAdmin
         .from('inventory_items')
         .update({
           name,
-          sku,
-          quantity,
-          unit,
-          low_stock_threshold,
+          description,
+          total_qty,
+          available_qty,
           image_url: finalImageUrl,
           updated_at: new Date().toISOString()
         })
         .eq('id', id)
       dbError = error
     } else {
+      // Create new tool
       if (imageFile && imageFile.size > 0) {
         const fileExt = imageFile.name.split('.').pop()
         const fileName = `${crypto.randomUUID()}.${fileExt}`
@@ -444,52 +122,26 @@ export async function createOrUpdateInventoryItem(formData: FormData) {
         finalImageUrl = publicUrl
       }
 
-      // Insert
-      const { data: inserted, error } = await supabaseAdmin
+      // Insert new tool
+      const { error } = await supabaseAdmin
         .from('inventory_items')
         .insert({
           name,
-          sku,
-          quantity,
-          unit,
-          low_stock_threshold,
+          description,
+          total_qty,
+          available_qty,
           image_url: finalImageUrl
         })
-        .select()
-        .single()
       
       dbError = error
-
-      // Log initial quantity in ledger
-      if (!error && inserted && quantity > 0) {
-        const { error: ledgerErr } = await supabaseAdmin
-          .from('inventory_ledger')
-          .insert({
-            item_id: inserted.id,
-            qty_change: quantity,
-            type: 'in',
-            transaction_date: new Date().toISOString(),
-            balance: quantity,
-            notes: "Initial stock registration"
-          })
-        if (ledgerErr) throw ledgerErr
-      }
     }
 
     if (dbError) throw dbError
 
-    if (id && existingItem) {
-      const wasAbove = existingItem.quantity > existingItem.low_stock_threshold;
-      const isBelowNow = quantity <= low_stock_threshold;
-      if (wasAbove && isBelowNow) {
-        await notifyLowStockAdmins(name, sku, quantity, low_stock_threshold, unit);
-      }
-    }
-
     await logActivity({
       category: 'inventory',
       action: id ? 'updated' : 'created',
-      description: `${id ? 'Updated' : 'Created'} inventory item "${name}" (SKU: ${sku}, Quantity: ${quantity})`
+      description: `${id ? 'Updated' : 'Created'} inventory tool "${name}" (Total: ${total_qty}, Available: ${available_qty})`
     })
 
     revalidatePath('/dashboard/inventory')
@@ -500,235 +152,225 @@ export async function createOrUpdateInventoryItem(formData: FormData) {
   }
 }
 
-// 9. Log a restock transaction (deprecated in favor of logLedgerTransaction, but kept for compatibility)
-export async function restockItem(itemId: string, quantity: number, notes?: string) {
-  return logLedgerTransaction(itemId, quantity, 'in', notes || 'Restocked via admin panel')
+// 3. Delete a tool item
+export async function deleteInventoryItem(id: string) {
+  try {
+    // Check if there are active borrows for this tool
+    const { count, error: countErr } = await supabaseAdmin
+      .from('tool_assignments')
+      .select('*', { count: 'exact', head: true })
+      .eq('tool_id', id)
+      .eq('status', 'borrowed')
+
+    if (countErr) throw countErr
+    if (count && count > 0) {
+      return { error: "Cannot delete this tool. Technicians currently have active checkouts of this tool." }
+    }
+
+    const { error } = await supabaseAdmin
+      .from('inventory_items')
+      .delete()
+      .eq('id', id)
+
+    if (error) throw error
+
+    await logActivity({
+      category: 'inventory',
+      action: 'deleted',
+      description: `Deleted tool item ID: ${id}`
+    })
+
+    revalidatePath('/dashboard/inventory')
+    return { success: true }
+  } catch (err: any) {
+    console.error("Failed to delete inventory item:", err.message)
+    return { error: "Delete transaction failed: " + err.message }
+  }
 }
 
-// 10. Fetch all inventory audits (adapted to look at inventory_ledger balance changes if needed, but keeping details mostly consistent)
-export async function getInventoryAudits() {
+// 4. Fetch list of active technicians and helpers
+export async function getTechnicians() {
   try {
     const { data, error } = await supabaseAdmin
-      .from('inventory_audits')
-      .select(`
-        *,
-        auditor:profiles!auditor_id(full_name),
-        audit_items:inventory_audit_items(
-          *,
-          item:inventory_items!item_id(name, sku, unit)
-        )
-      `)
-      .order('created_at', { ascending: false })
+      .from('profiles')
+      .select('id, full_name, role, avatar_url')
+      .in('role', ['technician', 'helper'])
+      .order('full_name', { ascending: true })
 
     if (error) throw error
     return data || []
   } catch (err: any) {
-    console.error("Failed to fetch inventory audits:", err.message)
+    console.error("Failed to fetch technicians:", err.message)
     return []
   }
 }
 
-// 11. Create a new inventory audit and auto-adjust stock variances in the ledger
-export async function createInventoryAudit(
-  notes: string, 
-  auditorId: string, 
-  auditItems: Array<{ itemId: string; systemQty: number; physicalQty: number }>
-) {
+// 5. Fetch tool assignments (optionally filtered by technician)
+export async function getToolAssignments(technicianId?: string) {
   try {
-    if (!auditorId) {
-      return { error: "Auditor session ID is required." }
+    let query = supabaseAdmin
+      .from('tool_assignments')
+      .select(`
+        *,
+        tool:inventory_items!tool_id(name, image_url),
+        technician:profiles!technician_id(full_name, role)
+      `)
+      .order('borrowed_at', { ascending: false })
+
+    if (technicianId) {
+      query = query.eq('technician_id', technicianId)
     }
 
-    if (!auditItems || auditItems.length === 0) {
-      return { error: "At least one item must be audited." }
-    }
-
-    const { data: audit, error: auditErr } = await supabaseAdmin
-      .from('inventory_audits')
-      .insert({
-        auditor_id: auditorId,
-        notes: notes?.trim() || 'Manual stocktake reconciliation'
-      })
-      .select()
-      .single()
-
-    if (auditErr || !audit) {
-      throw auditErr || new Error("Failed to initialize audit record header.")
-    }
-
-    for (const entry of auditItems) {
-      const variance = entry.physicalQty - entry.systemQty
-
-      const { error: detailErr } = await supabaseAdmin
-        .from('inventory_audit_items')
-        .insert({
-          audit_id: audit.id,
-          item_id: entry.itemId,
-          system_quantity: entry.systemQty,
-          physical_quantity: entry.physicalQty,
-          variance
-        })
-
-      if (detailErr) throw detailErr
-
-      if (variance !== 0) {
-        const { data: item } = await supabaseAdmin
-          .from('inventory_items')
-          .select('name, sku, low_stock_threshold, unit')
-          .eq('id', entry.itemId)
-          .single();
-
-        if (item) {
-          const wasAbove = entry.systemQty > item.low_stock_threshold;
-          const isBelowNow = entry.physicalQty <= item.low_stock_threshold;
-          if (wasAbove && isBelowNow) {
-            await notifyLowStockAdmins(item.name, item.sku, entry.physicalQty, item.low_stock_threshold, item.unit);
-          }
-        }
-
-        // Adjust inventory items stock level
-        const { error: adjustErr } = await supabaseAdmin
-          .from('inventory_items')
-          .update({
-            quantity: entry.physicalQty,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', entry.itemId)
-
-        if (adjustErr) throw adjustErr
-
-        // Post stock ledger transaction
-        const { error: txErr } = await supabaseAdmin
-          .from('inventory_ledger')
-          .insert({
-            item_id: entry.itemId,
-            qty_change: variance,
-            type: variance > 0 ? 'in' : 'out',
-            transaction_date: new Date().toISOString(),
-            balance: entry.physicalQty,
-            notes: `Audit Adjustment: Variance offset logged during Audit #${audit.id.substring(0, 8)}`
-          })
-
-        if (txErr) throw txErr
-      }
-    }
-
-    const { data: auditor } = await supabaseAdmin
-      .from('profiles')
-      .select('full_name')
-      .eq('id', auditorId)
-      .single()
-    const auditorName = auditor?.full_name || 'Admin'
-
-    await logActivity({
-      category: 'inventory',
-      action: 'audited',
-      description: `Completed physical stocktake reconciliation audit by ${auditorName} (${auditItems.length} items audited)`
-    })
-
-    revalidatePath('/dashboard/inventory')
-    return { success: true, auditId: audit.id }
+    const { data, error } = await query
+    if (error) throw error
+    return data || []
   } catch (err: any) {
-    console.error("Reconciliation audit transaction failed:", err.message)
-    return { error: "Transaction aborted: " + err.message }
+    console.error("Failed to fetch tool assignments:", err.message)
+    return []
   }
 }
 
-const inventoryImportSchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  sku: z.string().min(1, "SKU is required").transform(val => val.toUpperCase().trim()),
-  quantity: z.preprocess((val) => Number(val), z.number().min(0, "Quantity must be at least 0")),
-  unit: z.string().optional().default("pcs"),
-  low_stock_threshold: z.preprocess((val) => val === undefined || val === "" || isNaN(Number(val)) ? 5 : Number(val), z.number().min(0, "Low stock threshold must be at least 0"))
-})
-
-// 12. Bulk register inventory items
-export async function bulkRegisterInventory(itemsRaw: any[]) {
+// 6. Assign/Borrow a tool to a technician
+export async function assignTool(technicianId: string, toolId: string, quantity: number, notes?: string) {
   try {
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return { error: "Not authenticated" }
+    if (isNaN(quantity) || quantity <= 0) {
+      return { error: "Quantity must be greater than 0." }
+    }
 
-    const { data: profile } = await supabaseAdmin
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
+    // Fetch tool to verify available stock level
+    const { data: tool, error: toolErr } = await supabaseAdmin
+      .from('inventory_items')
+      .select('name, available_qty')
+      .eq('id', toolId)
       .single()
 
-    if (!profile || !['super_admin', 'admin', 'ceo', 'coo', 'hr', 'coordinator', 'accountant', 'branch_manager', 'supervisor'].includes(profile.role)) {
-      return { error: "Security Restriction: You do not have permission to register inventory items." }
+    if (toolErr || !tool) {
+      return { error: "Tool not found in inventory catalog." }
     }
 
-    const results = []
-    let successCount = 0
-    let failureCount = 0
-
-    const { data: existingItems } = await supabaseAdmin.from('inventory_items').select('sku')
-    const existingSkus = new Set((existingItems || []).map(i => i.sku.toUpperCase().trim()))
-
-    for (let index = 0; index < itemsRaw.length; index++) {
-      const row = itemsRaw[index]
-      const rowNum = index + 1
-
-      const parseResult = inventoryImportSchema.safeParse(row)
-      if (!parseResult.success) {
-        const errors = parseResult.error.issues.map((e: any) => e.message).join(', ')
-        results.push({ rowNum, sku: row.sku || 'Unknown', success: false, error: `Validation error: ${errors}` })
-        failureCount++
-        continue
-      }
-
-      const item = parseResult.data
-
-      if (existingSkus.has(item.sku)) {
-        results.push({ rowNum, sku: item.sku, success: false, error: `Duplicate SKU: "${item.sku}" already exists in inventory.` })
-        failureCount++
-        continue
-      }
-
-      try {
-        const { data: inserted, error: insertError } = await supabaseAdmin
-          .from('inventory_items')
-          .insert({
-            name: item.name,
-            sku: item.sku,
-            quantity: item.quantity,
-            unit: item.unit,
-            low_stock_threshold: item.low_stock_threshold
-          })
-          .select()
-          .single()
-
-        if (insertError) throw insertError
-
-        // Log initial stock in ledger
-        if (inserted && item.quantity > 0) {
-          const { error: ledgerErr } = await supabaseAdmin
-            .from('inventory_ledger')
-            .insert({
-              item_id: inserted.id,
-              qty_change: item.quantity,
-              type: 'in',
-              transaction_date: new Date().toISOString(),
-              balance: item.quantity,
-              notes: "Initial stock registration via bulk import"
-            })
-          if (ledgerErr) throw ledgerErr
-        }
-
-        existingSkus.add(item.sku)
-        results.push({ rowNum, sku: item.sku, success: true })
-        successCount++
-      } catch (err: any) {
-        results.push({ rowNum, sku: item.sku, success: false, error: err.message || "Failed to insert item." })
-        failureCount++
-      }
+    if (tool.available_qty < quantity) {
+      return { error: `Insufficient stock. Only ${tool.available_qty} available in warehouse.` }
     }
+
+    // Insert borrow checkout assignment
+    const { error: insertErr } = await supabaseAdmin
+      .from('tool_assignments')
+      .insert({
+        technician_id: technicianId,
+        tool_id: toolId,
+        quantity,
+        status: 'borrowed',
+        notes: notes?.trim() || null
+      })
+
+    if (insertErr) throw insertErr
+
+    // Decrement available quantity in catalog
+    const { error: updateErr } = await supabaseAdmin
+      .from('inventory_items')
+      .update({
+        available_qty: tool.available_qty - quantity,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', toolId)
+
+    if (updateErr) throw updateErr
+
+    // Fetch technician name
+    const { data: tech } = await supabaseAdmin
+      .from('profiles')
+      .select('full_name')
+      .eq('id', technicianId)
+      .single()
+    const techName = tech?.full_name || 'Technician'
+
+    await logActivity({
+      category: 'inventory',
+      action: 'checkout',
+      description: `Assigned ${quantity}x "${tool.name}" to ${techName} (Notes: ${notes || 'None'})`
+    })
 
     revalidatePath('/dashboard/inventory')
-    return { success: true, successCount, failureCount, results }
+    return { success: true }
   } catch (err: any) {
-    console.error("Bulk inventory registration failed:", err.message)
-    return { error: "Bulk registration failed: " + err.message }
+    console.error("Failed to assign tool:", err.message)
+    return { error: "Borrow transaction failed: " + err.message }
+  }
+}
+
+// 7. Process return / damage / loss of a tool
+export async function returnTool(assignmentId: string, status: 'returned' | 'lost' | 'damaged', notes?: string) {
+  try {
+    // Fetch active assignment record
+    const { data: assign, error: assignErr } = await supabaseAdmin
+      .from('tool_assignments')
+      .select('*, tool:inventory_items!tool_id(name, total_qty, available_qty)')
+      .eq('id', assignmentId)
+      .single()
+
+    if (assignErr || !assign) {
+      return { error: "Handover assignment record not found." }
+    }
+
+    if (assign.status !== 'borrowed') {
+      return { error: "This tool assignment has already been processed/returned." }
+    }
+
+    // Update assignment status
+    const { error: updateAssignErr } = await supabaseAdmin
+      .from('tool_assignments')
+      .update({
+        returned_at: new Date().toISOString(),
+        status,
+        notes: notes?.trim() || null
+      })
+      .eq('id', assignmentId)
+
+    if (updateAssignErr) throw updateAssignErr
+
+    const tool = assign.tool
+    let nextAvailable = tool.available_qty
+    let nextTotal = tool.total_qty
+
+    if (status === 'returned') {
+      // Put back in warehouse stock
+      nextAvailable = tool.available_qty + assign.quantity
+    } else {
+      // Lost or damaged beyond repair:
+      // It does not return to available stock, and it decreases total inventory assets
+      nextTotal = Math.max(0, tool.total_qty - assign.quantity)
+    }
+
+    // Update quantities in catalog
+    const { error: updateToolErr } = await supabaseAdmin
+      .from('inventory_items')
+      .update({
+        total_qty: nextTotal,
+        available_qty: nextAvailable,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', assign.tool_id)
+
+    if (updateToolErr) throw updateToolErr
+
+    // Fetch technician name
+    const { data: tech } = await supabaseAdmin
+      .from('profiles')
+      .select('full_name')
+      .eq('id', assign.technician_id)
+      .single()
+    const techName = tech?.full_name || 'Technician'
+
+    await logActivity({
+      category: 'inventory',
+      action: status === 'returned' ? 'restocked' : status,
+      description: `Processed return for ${assign.quantity}x "${tool.name}" from ${techName} with status: ${status.toUpperCase()} (Notes: ${notes || 'None'})`
+    })
+
+    revalidatePath('/dashboard/inventory')
+    return { success: true }
+  } catch (err: any) {
+    console.error("Failed to process tool return:", err.message)
+    return { error: "Return transaction failed: " + err.message }
   }
 }

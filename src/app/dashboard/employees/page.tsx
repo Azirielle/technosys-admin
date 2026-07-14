@@ -12,13 +12,11 @@ export default async function EmployeesPage() {
   const technicians = await getTechnicians()
   const officeLocations = await getOfficeLocations()
 
-  // Fetch active logs for today (clocked in and not yet clocked out)
-  const today = new Date().toISOString().split('T')[0]
+  // Fetch active logs (clocked in and not yet clocked out)
   const { data: activeLogs } = await supabaseAdmin
     .from('time_logs')
     .select('technician_id')
     .is('app_time_out', null)
-    .gte('created_at', `${today}T00:00:00Z`)
 
   const activeIds = (activeLogs || []).map(log => log.technician_id)
 

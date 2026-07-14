@@ -45,8 +45,28 @@ export async function createSchedule(formData: FormData) {
     const technicianId = formData.get("technicianId") as string
     const rawSeniorPartnerId = formData.get("seniorPartnerId") as string
     const seniorPartnerId = (rawSeniorPartnerId && rawSeniorPartnerId !== "" && rawSeniorPartnerId !== "none") ? rawSeniorPartnerId : null
-    const clientName = formData.get("clientName") as string
-    const location = formData.get("location") as string
+    const destinationsStr = formData.get("destinations") as string
+    let destinations = []
+    
+    if (destinationsStr) {
+      destinations = JSON.parse(destinationsStr)
+    } else {
+      const clientName = formData.get("clientName") as string
+      const location = formData.get("location") as string
+      const geofenceLatStr = formData.get("geofenceLat") as string
+      const geofenceLngStr = formData.get("geofenceLng") as string
+      const geofenceRadiusStr = formData.get("geofenceRadius") as string
+      
+      if (clientName && location) {
+        destinations = [{
+          clientName,
+          location,
+          geofenceLat: geofenceLatStr ? parseFloat(geofenceLatStr) : null,
+          geofenceLng: geofenceLngStr ? parseFloat(geofenceLngStr) : null,
+          geofenceRadius: geofenceRadiusStr ? parseInt(geofenceRadiusStr) : 500
+        }]
+      }
+    }
     const startTime = formData.get("startTime") as string
     const endTime = formData.get("endTime") as string // Can be empty / null
     const attendanceMode = (formData.get("attendanceMode") as string) || 'hq'
@@ -98,17 +118,25 @@ export async function createSchedule(formData: FormData) {
       throw new Error(`The selected senior partner is on approved leave during this schedule's timeframe.`)
     }
 
-    // 3. Insert schedule
-    const insertData: any = {
-      technician_id: technicianId,
-      senior_partner_id: seniorPartnerId,
-      client_name: clientName,
-      location,
-      start_time: new Date(startTime).toISOString(),
-      end_time: endTime ? new Date(endTime).toISOString() : null,
-      attendance_mode: attendanceMode,
-      is_vip_hook: isVip
-    }
+    // 3. Prepare inserts for multiple destinations
+    const insertData = destinations.map((dest: any, index: number) => {
+      const st = new Date(startTime)
+      st.setHours(st.getHours() + index) // Stagger by 1 hour for each subsequent destination
+      
+      return {
+        technician_id: technicianId,
+        senior_partner_id: seniorPartnerId,
+        client_name: dest.clientName,
+        location: dest.location,
+        geofence_lat: dest.geofenceLat,
+        geofence_lon: dest.geofenceLng,
+        geofence_radius: dest.geofenceRadius || 500,
+        start_time: st.toISOString(),
+        end_time: endTime ? new Date(endTime).toISOString() : null,
+        attendance_mode: attendanceMode,
+        is_vip_hook: isVip
+      }
+    })
 
     const { error } = await supabaseAdmin.from('schedules').insert(insertData)
     if (error) throw error
@@ -128,7 +156,8 @@ export async function createSchedule(formData: FormData) {
     }
 
     // 4. Log administrative activity
-    await logActivity('create_schedule', 'schedule', `Scheduled ${techName} to client "${clientName}" (Mode: ${attendanceMode})`)
+    const clientLog = destinations.length > 1 ? `${destinations.length} destinations` : `client "${destinations[0]?.clientName}"`
+    await logActivity('create_schedule', 'schedule', `Scheduled ${techName} to ${clientLog} (Mode: ${attendanceMode})`)
 
     revalidatePath("/dashboard/schedules")
     return { success: true }
@@ -141,8 +170,12 @@ export async function createSchedule(formData: FormData) {
 // Bulk Create Schedules Server Action
 export async function bulkCreateSchedules(data: {
   staffIds: string[]
-  clientName: string
-  location: string
+  destinations?: any[]
+  clientName?: string
+  location?: string
+  geofenceLat?: number | null
+  geofenceLng?: number | null
+  geofenceRadius?: number
   startTime: string
   endTime?: string
   attendanceMode: string
@@ -156,7 +189,18 @@ export async function bulkCreateSchedules(data: {
       return { error: "Unauthorized. Scheduling write permissions required." }
     }
 
-    const { staffIds, clientName, location, startTime, endTime, attendanceMode, seniorPartnerMap = {}, isVip = false, allowanceRate = 0 } = data
+    const { staffIds, destinations: inputDestinations, clientName, location, geofenceLat, geofenceLng, geofenceRadius = 500, startTime, endTime, attendanceMode, seniorPartnerMap = {}, isVip = false, allowanceRate = 0 } = data
+    
+    let destinations = inputDestinations || []
+    if (destinations.length === 0 && clientName && location) {
+      destinations = [{
+        clientName,
+        location,
+        geofenceLat: geofenceLat ?? null,
+        geofenceLng: geofenceLng ?? null,
+        geofenceRadius
+      }]
+    }
 
     // Validate past dates (30 minutes grace period)
     const now = Date.now()
@@ -211,16 +255,25 @@ export async function bulkCreateSchedules(data: {
       try {
         const seniorPartnerId = seniorPartnerMap[staffId] || null
         
-        await supabaseAdmin.from('schedules').insert({
-          technician_id: staffId,
-          client_name: clientName,
-          location,
-          start_time: new Date(startTime).toISOString(),
-          end_time: endTime ? new Date(endTime).toISOString() : null,
-          attendance_mode: attendanceMode,
-          senior_partner_id: seniorPartnerId,
-          is_vip_hook: isVip
+        const insertData = destinations.map((dest: any, index: number) => {
+          const st = new Date(startTime)
+          st.setHours(st.getHours() + index)
+          return {
+            technician_id: staffId,
+            client_name: dest.clientName,
+            location: dest.location,
+            geofence_lat: dest.geofenceLat,
+            geofence_lon: dest.geofenceLng,
+            geofence_radius: dest.geofenceRadius || 500,
+            start_time: st.toISOString(),
+            end_time: endTime ? new Date(endTime).toISOString() : null,
+            attendance_mode: attendanceMode,
+            senior_partner_id: seniorPartnerId,
+            is_vip_hook: isVip
+          }
         })
+        
+        await supabaseAdmin.from('schedules').insert(insertData)
 
         // Look up target profile and send push notification
         const { data: targetProfile } = await supabaseAdmin
@@ -245,7 +298,8 @@ export async function bulkCreateSchedules(data: {
     }
 
     // Log administrative activity
-    await logActivity('create_schedule', 'schedule', `Bulk scheduled ${successCount} staff to client "${clientName}" (Mode: ${attendanceMode})`)
+    const clientLog = destinations.length > 1 ? `${destinations.length} destinations` : `client "${destinations[0]?.clientName}"`
+    await logActivity('create_schedule', 'schedule', `Bulk scheduled ${successCount} staff to ${clientLog} (Mode: ${attendanceMode})`)
 
     revalidatePath("/dashboard/schedules")
     return { success: true, results, successCount, failureCount }

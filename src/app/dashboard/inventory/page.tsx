@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
-import { getInventoryItems, getInventoryLedger, getProcurementOrders, getInventoryAudits } from "@/app/actions/inventory"
+import { getInventoryItems, getTechnicians, getToolAssignments } from "@/app/actions/inventory"
 import InventoryWorkspace from "./InventoryWorkspace"
 
 export const revalidate = 0;
@@ -8,7 +8,7 @@ export const revalidate = 0;
 export default async function InventoryPage({ searchParams }: { searchParams: Promise<{ tab?: string }> }) {
   const resolvedParams = await searchParams
   const rawTab = resolvedParams?.tab
-  const initialTab = (rawTab === "ledger" || rawTab === "procurement" || rawTab === "audits") ? rawTab : "ledger"
+  const initialTab = (rawTab === "handover" || rawTab === "catalog") ? rawTab : "handover"
 
   const supabase = await createClient()
 
@@ -26,20 +26,18 @@ export default async function InventoryPage({ searchParams }: { searchParams: Pr
     redirect('/login')
   }
 
-  // Fetch ledger summaries, POs, items, and audits in parallel
-  const [ledger, procurement, items, audits] = await Promise.all([
-    getInventoryLedger(),
-    getProcurementOrders(),
-    getInventoryItems(),
-    getInventoryAudits()
+  // Fetch technicians, assignments, and items in parallel
+  const [technicians, assignments, items] = await Promise.all([
+    getTechnicians(),
+    getToolAssignments(),
+    getInventoryItems()
   ])
 
   return (
     <InventoryWorkspace 
-      initialLedger={ledger as any}
-      initialProcurement={procurement as any}
+      initialTechnicians={technicians as any}
+      initialAssignments={assignments as any}
       initialItems={items as any}
-      initialAudits={audits as any}
       userId={user.id}
       initialTab={initialTab}
     />
