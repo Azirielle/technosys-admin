@@ -67,10 +67,12 @@ export default function PayrollClient({
       const emp = p.technician
       const allowanceStr = allowanceOverrides[emp.id] !== undefined ? allowanceOverrides[emp.id] : String(p.defaultAllowances)
       const allowance = parseFloat(allowanceStr) || 0
-      const otStr = otOverrides[emp.id] !== undefined ? otOverrides[emp.id] : "0"
+      const initialOt = (p.breakdown?.otHours || 0) + (p.breakdown?.sundayOtHours || 0)
+      const otStr = otOverrides[emp.id] !== undefined ? otOverrides[emp.id] : String(initialOt)
       const otHours = parseFloat(otStr) || 0
-      const otPay = otHours * (p.hourlyRate * 1.25)
-      const grossPay = p.calculation.grossPay + otPay
+      const additionalOtHours = otHours - initialOt
+      const additionalOtPay = additionalOtHours * (p.hourlyRate * 1.25)
+      const grossPay = p.calculation.grossPay + additionalOtPay
       const netPay = Math.max(0, grossPay - p.calculation.sssDeduction - p.calculation.philhealthDeduction - p.calculation.pagibigDeduction + allowance)
 
       return [
@@ -104,10 +106,12 @@ export default function PayrollClient({
       const emp = p.technician
       const allowanceStr = allowanceOverrides[emp.id] !== undefined ? allowanceOverrides[emp.id] : String(p.defaultAllowances)
       const allowance = parseFloat(allowanceStr) || 0
-      const otStr = otOverrides[emp.id] !== undefined ? otOverrides[emp.id] : "0"
+      const initialOt = (p.breakdown?.otHours || 0) + (p.breakdown?.sundayOtHours || 0)
+      const otStr = otOverrides[emp.id] !== undefined ? otOverrides[emp.id] : String(initialOt)
       const otHours = parseFloat(otStr) || 0
-      const otPay = otHours * (p.hourlyRate * 1.25)
-      const grossPay = p.calculation.grossPay + otPay
+      const additionalOtHours = otHours - initialOt
+      const additionalOtPay = additionalOtHours * (p.hourlyRate * 1.25)
+      const grossPay = p.calculation.grossPay + additionalOtPay
       const netPay = Math.max(0, grossPay - p.calculation.sssDeduction - p.calculation.philhealthDeduction - p.calculation.pagibigDeduction + allowance)
 
       return [
@@ -129,13 +133,12 @@ export default function PayrollClient({
     alert("Payroll table copied to clipboard! You can paste (Ctrl+V) directly into Excel.")
   }
 
-  const handlePublish = (p: any, allowances: number, otHours: number, netPay: number) => {
+  const handlePublish = (p: any, allowances: number, otHours: number, netPay: number, grossPay: number) => {
     const emp = p.technician
-    const otPay = otHours * (p.hourlyRate * 1.25)
     startTransition(async () => {
       const res = await publishPayslip({
         technician_id: emp.id,
-        gross_pay: p.calculation.grossPay + otPay,
+        gross_pay: grossPay,
         sss_deduction: p.calculation.sssDeduction,
         philhealth_deduction: p.calculation.philhealthDeduction,
         pagibig_deduction: p.calculation.pagibigDeduction,
@@ -159,14 +162,17 @@ export default function PayrollClient({
         const emp = p.technician
         const allowanceStr = allowanceOverrides[emp.id] !== undefined ? allowanceOverrides[emp.id] : String(p.defaultAllowances)
         const allowances = parseFloat(allowanceStr) || 0
-        const otStr = otOverrides[emp.id] !== undefined ? otOverrides[emp.id] : "0"
+        const initialOt = (p.breakdown?.otHours || 0) + (p.breakdown?.sundayOtHours || 0)
+        const otStr = otOverrides[emp.id] !== undefined ? otOverrides[emp.id] : String(initialOt)
         const otHours = parseFloat(otStr) || 0
-        const otPay = otHours * (p.hourlyRate * 1.25)
-        const netPay = Math.max(0, p.calculation.grossPay + otPay - p.calculation.sssDeduction - p.calculation.philhealthDeduction - p.calculation.pagibigDeduction + allowances)
+        const additionalOtHours = otHours - initialOt
+        const additionalOtPay = additionalOtHours * (p.hourlyRate * 1.25)
+        const grossPay = p.calculation.grossPay + additionalOtPay
+        const netPay = Math.max(0, grossPay - p.calculation.sssDeduction - p.calculation.philhealthDeduction - p.calculation.pagibigDeduction + allowances)
 
         return publishPayslip({
           technician_id: emp.id,
-          gross_pay: p.calculation.grossPay + otPay,
+          gross_pay: grossPay,
           sss_deduction: p.calculation.sssDeduction,
           philhealth_deduction: p.calculation.philhealthDeduction,
           pagibig_deduction: p.calculation.pagibigDeduction,
@@ -402,10 +408,12 @@ export default function PayrollClient({
                 const allowanceStr = allowanceOverrides[emp.id] !== undefined ? allowanceOverrides[emp.id] : String(defaultAllowance)
                 const allowances = parseFloat(allowanceStr) || 0
 
-                const otStr = otOverrides[emp.id] !== undefined ? otOverrides[emp.id] : "0"
+                const initialOt = (p.breakdown?.otHours || 0) + (p.breakdown?.sundayOtHours || 0)
+                const otStr = otOverrides[emp.id] !== undefined ? otOverrides[emp.id] : String(initialOt)
                 const otHours = parseFloat(otStr) || 0
-                const otPay = otHours * (p.hourlyRate * 1.25)
-                const grossPay = p.calculation.grossPay + otPay
+                const additionalOtHours = otHours - initialOt
+                const additionalOtPay = additionalOtHours * (p.hourlyRate * 1.25)
+                const grossPay = p.calculation.grossPay + additionalOtPay
                 
                 const netPay = Math.max(0, grossPay - p.calculation.sssDeduction - p.calculation.philhealthDeduction - p.calculation.pagibigDeduction + allowances)
                 const isPublished = publishedPayslips.some(ps => ps.technician_id === emp.id)
@@ -415,9 +423,12 @@ export default function PayrollClient({
                 const pagibig = p.calculation.pagibigDeduction
                 const totalDeductions = sss + philhealth + pagibig
 
-                const basicPay = p.hourlyRate * p.totalHours
-                const holidayPay = Math.max(0, p.calculation.grossPay - (p.hourlyRate * p.totalHours))
-                const totalEarnings = p.calculation.grossPay + otPay
+                const regHours = p.breakdown?.regularHours || p.totalHours
+                const basicPay = regHours * p.hourlyRate
+                const holidayPay = p.breakdown?.holidayHours ? p.breakdown.holidayHours * p.hourlyRate : 0
+                const totalOtPay = (initialOt * p.hourlyRate * 1.25) + additionalOtPay
+                const sundayPay = (p.breakdown?.sundayHours || 0) * p.hourlyRate * 1.3
+                const totalEarnings = grossPay
 
                 const isExpanded = !!expandedRows[emp.id]
 
@@ -507,7 +518,7 @@ export default function PayrollClient({
                           </span>
                         ) : isWriteAllowed ? (
                           <button 
-                            onClick={() => handlePublish(p, allowances, otHours, netPay)}
+                            onClick={() => handlePublish(p, allowances, otHours, netPay, grossPay)}
                             disabled={isPending}
                             className="inline-flex items-center gap-1.5 text-xs font-bold text-white bg-zinc-950 hover:bg-zinc-800 px-3 py-1.5 rounded-full transition-colors disabled:opacity-50 cursor-pointer shadow-sm"
                           >
@@ -535,16 +546,24 @@ export default function PayrollClient({
                               </h4>
                               <div className="space-y-3 text-xs">
                                 <div className="flex justify-between items-center py-1.5 border-b border-zinc-100">
-                                  <span className="text-zinc-500 font-medium">Basic Pay ({p.totalHours} hrs @ {formatPhp(p.hourlyRate)}/hr)</span>
+                                  <span className="text-zinc-500 font-medium">Basic Pay ({regHours} hrs @ {formatPhp(p.hourlyRate)}/hr)</span>
                                   <span className="font-semibold text-zinc-800 font-tabular">{formatPhp(basicPay)}</span>
                                 </div>
-                                <div className="flex justify-between items-center py-1.5 border-b border-zinc-100">
-                                  <span className="text-zinc-500 font-medium">Holiday Pay</span>
-                                  <span className="font-semibold text-zinc-800 font-tabular">{formatPhp(holidayPay)}</span>
-                                </div>
+                                {p.breakdown?.sundayHours > 0 && (
+                                  <div className="flex justify-between items-center py-1.5 border-b border-zinc-100">
+                                    <span className="text-zinc-500 font-medium">Rest Day Pay ({p.breakdown.sundayHours} hrs @ 130%)</span>
+                                    <span className="font-semibold text-zinc-800 font-tabular">{formatPhp(sundayPay)}</span>
+                                  </div>
+                                )}
+                                {p.breakdown?.holidayHours > 0 && (
+                                  <div className="flex justify-between items-center py-1.5 border-b border-zinc-100">
+                                    <span className="text-zinc-500 font-medium">Holiday Pay</span>
+                                    <span className="font-semibold text-zinc-800 font-tabular">{formatPhp(holidayPay)}</span>
+                                  </div>
+                                )}
                                 <div className="flex justify-between items-center py-1.5 border-b border-zinc-100">
                                   <span className="text-zinc-500 font-medium">Overtime Pay ({otHours} hrs @ 125% rate)</span>
-                                  <span className="font-semibold text-zinc-800 font-tabular">{formatPhp(otPay)}</span>
+                                  <span className="font-semibold text-zinc-800 font-tabular">{formatPhp(totalOtPay)}</span>
                                 </div>
                                 <div className="flex justify-between items-center pt-2 font-bold text-sm text-zinc-900">
                                   <span>Total Gross Earnings</span>

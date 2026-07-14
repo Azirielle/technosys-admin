@@ -76,6 +76,11 @@ export async function getDraftPayroll(startDateStr?: string, endDateStr?: string
     const end = endDateStr ? new Date(endDateStr) : new Date(now.getFullYear(), now.getMonth(), now.getDate() <= 15 ? 10 : 25)
     end.setHours(23,59,59,999)
 
+    // Standard Multipliers (PH Labor Code)
+    const OT_MULTIPLIER = 1.25
+    const SUNDAY_MULTIPLIER = 1.30
+    const SUNDAY_OT_MULTIPLIER = 1.69
+
     // Fetch technicians and helpers
     const { data: technicians, error: techErr } = await supabaseAdmin
       .from('profiles')
@@ -122,23 +127,39 @@ export async function getDraftPayroll(startDateStr?: string, endDateStr?: string
       const empLogs = (logs || []).filter(l => l.technician_id === emp.id)
       const hasOpenLogs = empLogs.some(log => log.app_time_in && !log.app_time_out)
 
-      // 1. Calculate regular hours capped at 8 per daily time log
-      let regularHours = 0
-      let weightedHours = 0
+      // 1. Calculate regular hours, OT, and Rest Day hours
+      let regHours = 0
+      let otHours = 0
+      let sunHours = 0
+      let sunOtHours = 0
+      let holidayHours = 0
+      
       const clockedInDates = new Set<string>()
 
       empLogs.forEach(log => {
         const rawHours = Number(log.total_hours || 0)
-        const cappedHours = Math.min(8, rawHours)
-        regularHours += cappedHours
-
+        
         if (log.app_time_in) {
+          const inDate = new Date(log.app_time_in)
           const dateStr = log.app_time_in.split('T')[0]
           clockedInDates.add(dateStr)
-          const multiplier = holidayMap.get(dateStr) || 1.0
-          weightedHours += cappedHours * multiplier
-        } else {
-          weightedHours += cappedHours
+          
+          const isSunday = inDate.getDay() === 0
+          const holidayMult = holidayMap.get(dateStr)
+          
+          const regularChunk = Math.min(8, rawHours)
+          const otChunk = Math.max(0, rawHours - 8)
+
+          if (holidayMult) {
+            // Oversimplified holiday handling for now: just scale total hours by the multiplier
+            holidayHours += rawHours * holidayMult
+          } else if (isSunday) {
+            sunHours += regularChunk
+            sunOtHours += otChunk
+          } else {
+            regHours += regularChunk
+            otHours += otChunk
+          }
         }
       })
 
@@ -162,7 +183,8 @@ export async function getDraftPayroll(startDateStr?: string, endDateStr?: string
 
       const paidLeaveHours = paidLeaveDays * 8
       const unpaidLeaveHours = unpaidLeaveDays * 8
-      const totalHours = regularHours + paidLeaveHours
+      const totalActualHours = regHours + otHours + sunHours + sunOtHours
+      const totalPaidHours = totalActualHours + paidLeaveHours
 
       // 3. Compute default allowances based on schedules
       let defaultAllowances = 0
@@ -200,21 +222,37 @@ export async function getDraftPayroll(startDateStr?: string, endDateStr?: string
         currDay.setDate(currDay.getDate() + 1)
       }
 
-      // 4. Compute gross pay based on standard 160 hours/month rate
-      const hourlyRate = Number(emp.base_salary || 0) / 160
-      const computedGross = Number((hourlyRate * (weightedHours + paidLeaveHours)).toFixed(2))
+      // 4. Compute gross pay based on standard 208 hours/month rate (6-day week)
+      const hourlyRate = Number(emp.base_salary || 0) / 208
+      
+      const computedGross = Number((
+        (regHours * hourlyRate) +
+        (otHours * hourlyRate * OT_MULTIPLIER) +
+        (sunHours * hourlyRate * SUNDAY_MULTIPLIER) +
+        (sunOtHours * hourlyRate * SUNDAY_OT_MULTIPLIER) +
+        (holidayHours * hourlyRate) + // Note: holidayHours already has multiplier applied
+        (paidLeaveHours * hourlyRate) +
+        defaultAllowances
+      ).toFixed(2))
 
       // Get calculations using ph-taxes
       const calc = await calculatePayrollDeductions(emp.id, computedGross, end)
 
       return {
         technician: emp,
-        workedHours: Number(regularHours.toFixed(2)),
+        // Breakdown buckets for UI
+        breakdown: {
+          regularHours: Number(regHours.toFixed(2)),
+          otHours: Number(otHours.toFixed(2)),
+          sundayHours: Number(sunHours.toFixed(2)),
+          sundayOtHours: Number(sunOtHours.toFixed(2)),
+          holidayHours: Number(holidayHours.toFixed(2)),
+          paidLeaveHours: Number(paidLeaveHours.toFixed(2))
+        },
         paidLeaveDays,
         unpaidLeaveDays,
-        paidLeaveHours,
         unpaidLeaveHours,
-        totalHours: Number(totalHours.toFixed(2)),
+        totalHours: Number(totalPaidHours.toFixed(2)),
         hasOpenLogs,
         defaultAllowances,
         hourlyRate,
