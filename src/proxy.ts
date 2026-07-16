@@ -7,22 +7,7 @@ export function proxy(request: NextRequest) {
   
   const pathname = request.nextUrl.pathname;
 
-  // 1. Intercept root path and redirect to /dashboard with 0-byte body
-  if (pathname === '/') {
-    const dashUrl = new URL('/dashboard', request.url);
-    return new NextResponse(null, {
-      status: 302,
-      headers: {
-        'Location': dashUrl.toString(),
-        'X-Frame-Options': 'DENY',
-        'X-Content-Type-Options': 'nosniff',
-        'Referrer-Policy': 'strict-origin-when-cross-origin',
-        'Content-Security-Policy': "frame-ancestors 'none';",
-        'Server': 'Webserver',
-        'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload'
-      }
-    });
-  }
+  // 1. Root path rendering is handled by GatewayPortal in app/page.tsx
 
   // 2. Intercept unauthenticated /dashboard access and redirect to /login with 0-byte body
   const hasAuthCookie = request.cookies.getAll().some(c => c.name.startsWith('sb-') && c.name.includes('-auth-token'));
