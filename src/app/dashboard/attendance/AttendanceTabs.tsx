@@ -1,6 +1,6 @@
 "use client"
 import { useState } from "react"
-import PendingSelfiesWidget from "../PendingSelfiesWidget"
+import SelfieAuditWidget from "../SelfieAuditWidget"
 import AttendanceHistoryTable from "./AttendanceHistoryTable"
 import { Clock, History } from "lucide-react"
 
@@ -42,7 +42,7 @@ export default function AttendanceTabs({ pendingSelfies, history, canApprove }: 
       <div className="p-6 flex-grow bg-slate-50/20">
         {activeTab === 'pending' && (
           pendingSelfies.length > 0 ? (
-            <PendingSelfiesWidget pendingSelfies={pendingSelfies} canApprove={canApprove} />
+            <SelfieAuditWidget recentSelfies={pendingSelfies} canApprove={canApprove} />
           ) : (
             <div className="flex flex-col items-center justify-center h-full py-20 text-slate-400">
               <Clock className="w-16 h-16 mb-4 opacity-50" />

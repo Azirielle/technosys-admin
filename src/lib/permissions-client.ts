@@ -25,6 +25,7 @@ export const MODULE_ROLES: Record<string, UserRole[]> = {
   settings: ['super_admin', 'ceo', 'coo', 'admin'],
   broadcaster: ['super_admin', 'ceo', 'coo', 'svp', 'admin', 'hr', 'coordinator'],
   warnings: ['super_admin', 'ceo', 'admin', 'hr', 'coordinator', 'branch_manager', 'supervisor'],
+  app_management: ['super_admin', 'ceo', 'admin'],
 }
 
 // Modules write/modify access list (mutations)
@@ -39,4 +40,5 @@ export const WRITE_ROLES: Record<string, UserRole[]> = {
   settings: ['super_admin', 'ceo', 'coo', 'admin'],
   broadcaster: ['super_admin', 'ceo', 'coo', 'svp', 'admin', 'hr', 'coordinator'],
   warnings: ['super_admin', 'ceo', 'admin', 'hr', 'coordinator', 'branch_manager', 'supervisor'],
+  app_management: ['super_admin', 'ceo', 'admin'],
 }
