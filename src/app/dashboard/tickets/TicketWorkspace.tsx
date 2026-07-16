@@ -4,7 +4,8 @@ import { useState, useEffect, useTransition, useRef } from "react"
 import { useAlertConfirm } from "@/components/ui/AlertConfirmProvider"
 import { 
   MessageSquare, Clock, User, UserCheck, Inbox, AlertCircle, 
-  Filter, CheckCircle2, CornerDownRight, Search, RefreshCw, Send, Loader2
+  Filter, CheckCircle2, CornerDownRight, Search, RefreshCw, Send, Loader2,
+  Paperclip
 } from "lucide-react"
 import { 
   updateTicketStatus, assignTicket, addTicketComment, getTicketComments 
@@ -38,6 +39,8 @@ interface Comment {
   content: string
   created_at: string
   author: Profile
+  attachment_url?: string | null
+  attachment_type?: string | null
 }
 
 interface Staff {
@@ -802,6 +805,34 @@ export default function TicketWorkspace({
                                   : "bg-white border border-zinc-200 text-zinc-800 rounded-tl-none"
                               }`}>
                                 {c.content}
+                                
+                                {c.attachment_url && (
+                                  <div className={c.content ? "mt-2 pt-2 border-t border-zinc-200/20 border-dashed" : ""}>
+                                    {c.attachment_type === 'image' ? (
+                                      <a href={c.attachment_url} target="_blank" rel="noopener noreferrer" className="block max-w-[200px] overflow-hidden rounded-md border border-zinc-200 bg-white">
+                                        <img 
+                                          src={c.attachment_url} 
+                                          alt="Attachment" 
+                                          className="w-full h-auto max-h-[160px] object-cover hover:opacity-90 transition-opacity" 
+                                        />
+                                      </a>
+                                    ) : (
+                                      <a 
+                                        href={c.attachment_url} 
+                                        target="_blank" 
+                                        rel="noopener noreferrer" 
+                                        className={`flex items-center gap-2 p-2 rounded-lg border text-xs font-semibold hover:bg-zinc-50 transition-colors ${
+                                          isCurrentUser 
+                                            ? "bg-zinc-800/20 border-zinc-500/20 text-white hover:bg-zinc-800/30" 
+                                            : "bg-zinc-50 border-zinc-200 text-zinc-700 hover:bg-zinc-100"
+                                        }`}
+                                      >
+                                        <Paperclip className="w-3.5 h-3.5 shrink-0" />
+                                        <span className="truncate max-w-[150px]">View Attachment (PDF)</span>
+                                      </a>
+                                    )}
+                                  </div>
+                                )}
                               </div>
                               <span className="text-[9px] text-zinc-400 whitespace-nowrap mb-1">
                                 {formatDate(c.created_at)}
