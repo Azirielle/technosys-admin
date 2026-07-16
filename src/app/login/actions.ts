@@ -15,10 +15,12 @@ export async function login(formData: FormData) {
     password,
   })
 
+  const nextPath = formData.get('next') as string | null
+
   if (error) {
     return redirect('/login?message=Invalid email or password.')
   }
 
   revalidatePath('/', 'layout')
-  redirect('/dashboard')
+  redirect(nextPath || '/dashboard')
 }

@@ -63,6 +63,7 @@ export default function LoginForm() {
         setIsLoading(false)
       }}>
         <CardContent className="space-y-5 px-8">
+          <input type="hidden" name="next" value={searchParams?.get('next') || ''} />
           <AnimatePresence>
             {message && (
               <motion.div 
