@@ -6,8 +6,9 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { login } from "@/app/login/actions"
-import { Loader2, Eye, EyeOff, ShieldCheck, Key } from "lucide-react"
+import { Loader2, Eye, EyeOff, ShieldCheck, Key, User } from "lucide-react"
 import { useState } from 'react'
+import { motion, AnimatePresence } from "framer-motion"
 
 export default function LoginForm() {
   const searchParams = useSearchParams()
@@ -36,36 +37,48 @@ export default function LoginForm() {
   }
 
   return (
-    <Card className="border-slate-200 bg-white shadow-xl rounded-2xl overflow-hidden relative border w-full max-w-md mx-auto">
-      {/* Premium top brand identifier bar */}
-      <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-emerald-500 via-emerald-600 to-emerald-500"></div>
-
-      <CardHeader className="space-y-1 pb-5 pt-7">
-        <CardTitle className="text-xl font-bold text-slate-800 tracking-tight flex items-center gap-2">
-          <ShieldCheck className="w-5.5 h-5.5 text-emerald-600" />
-          {isTechnicianPortal ? "Employee Verification" : "Operator Verification"}
-        </CardTitle>
-        <CardDescription className="text-slate-500 text-xs leading-relaxed">
-          {isTechnicianPortal 
-            ? "Please sign in with your employee credentials to access the internal app download portal."
-            : "Sign in to access secure corporate configurations. Standard Admins and Super Admins share this authentication gateway."}
-        </CardDescription>
-      </CardHeader>
+  return (
+    <motion.div 
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+      className="w-full max-w-md mx-auto"
+    >
+      <Card className="border-white/50 bg-white/60 backdrop-blur-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-3xl overflow-hidden relative border w-full max-w-md mx-auto ring-1 ring-black/5">
+        
+        <CardHeader className="space-y-1 pb-5 pt-8 px-8">
+          <CardTitle className="text-xl font-bold text-slate-800 tracking-tight flex items-center gap-2">
+            {isTechnicianPortal ? <User className="w-5 h-5 text-blue-600" /> : <ShieldCheck className="w-5 h-5 text-emerald-600" />}
+            {isTechnicianPortal ? "Employee Verification" : "Operator Verification"}
+          </CardTitle>
+          <CardDescription className="text-slate-500 text-xs leading-relaxed font-medium">
+            {isTechnicianPortal 
+              ? "Please sign in with your employee credentials to access the internal app download portal."
+              : "Sign in to access secure corporate configurations. Standard Admins and Super Admins share this authentication gateway."}
+          </CardDescription>
+        </CardHeader>
       
       <form action={async (formData) => {
         setIsLoading(true)
         await login(formData)
         setIsLoading(false)
       }}>
-        <CardContent className="space-y-4">
-          {message && (
-            <div className="rounded-xl bg-red-50 p-3 text-xs text-red-600 border border-red-100 font-bold">
-              ⚠️ {message}
-            </div>
-          )}
+        <CardContent className="space-y-5 px-8">
+          <AnimatePresence>
+            {message && (
+              <motion.div 
+                initial={{ opacity: 0, height: 0, marginTop: 0 }}
+                animate={{ opacity: 1, height: "auto", marginTop: 16 }}
+                exit={{ opacity: 0, height: 0, marginTop: 0 }}
+                className="rounded-2xl bg-red-50/80 backdrop-blur-md p-4 text-xs text-red-600 border border-red-100/50 font-bold overflow-hidden"
+              >
+                ⚠️ {message}
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           <div className="space-y-2">
-            <Label htmlFor="email" className="text-slate-600 text-xs font-extrabold uppercase tracking-wider">
+            <Label htmlFor="email" className="text-slate-500 text-[10px] font-extrabold uppercase tracking-widest ml-1">
               Email Address
             </Label>
             <Input 
@@ -76,12 +89,12 @@ export default function LoginForm() {
               required 
               value={email}
               onChange={e => setEmail(e.target.value)}
-              className="bg-white border-slate-200 text-slate-900 placeholder:text-slate-400 focus-visible:ring-emerald-600 focus-visible:border-emerald-600 rounded-xl h-11 transition-all duration-200"
+              className="bg-white/50 backdrop-blur-sm border-white/40 text-slate-900 placeholder:text-slate-400 focus-visible:ring-emerald-500/30 focus-visible:border-emerald-500/50 rounded-2xl h-12 px-4 shadow-[0_2px_10px_rgb(0,0,0,0.02)] transition-all duration-300"
             />
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="password" className="text-slate-600 text-xs font-extrabold uppercase tracking-wider">
+          <div className="space-y-1.5">
+            <Label htmlFor="password" className="text-slate-500 text-[10px] font-extrabold uppercase tracking-widest ml-1">
               Password
             </Label>
             <div className="relative">
@@ -93,7 +106,7 @@ export default function LoginForm() {
                 required 
                 value={password}
                 onChange={e => setPassword(e.target.value)}
-                className="bg-white border-slate-200 text-slate-900 focus-visible:ring-emerald-600 focus-visible:border-emerald-600 rounded-xl h-11 pr-10 transition-all duration-200"
+                className="bg-white/50 backdrop-blur-sm border-white/40 text-slate-900 focus-visible:ring-emerald-500/30 focus-visible:border-emerald-500/50 rounded-2xl h-12 px-4 pr-10 shadow-[0_2px_10px_rgb(0,0,0,0.02)] transition-all duration-300"
               />
               <button
                 type="button"
@@ -107,58 +120,69 @@ export default function LoginForm() {
           </div>
 
           {/* Test Credentials Helper */}
-          <div className="pt-3 border-t border-slate-100">
+          <div className="pt-4 mt-2">
             <button
               type="button"
               onClick={() => setShowCredentialsHelp(!showCredentialsHelp)}
-              className="text-xs text-emerald-700 hover:text-emerald-800 font-bold cursor-pointer flex items-center gap-1 transition-colors duration-150"
+              className="text-[10px] text-emerald-600 hover:text-emerald-700 font-extrabold uppercase tracking-widest cursor-pointer flex items-center gap-1.5 transition-colors duration-150 ml-1"
             >
-              <Key className="w-3.5 h-3.5 text-emerald-600" />
-              {showCredentialsHelp ? "Hide test credentials helper" : "Show test credentials helper"}
+              <Key className="w-3 h-3" />
+              {showCredentialsHelp ? "Hide Dev Accounts" : "Show Dev Accounts"}
             </button>
             
-            {showCredentialsHelp && (
-              <div className="mt-3 p-4 bg-slate-50 rounded-2xl border border-slate-200/60 flex flex-col gap-3">
-                <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Select a role to auto-fill:</p>
-                <div className="grid grid-cols-2 gap-2">
-                  {testAccounts.map((acc) => (
-                    <button
-                      key={acc.role}
-                      type="button"
-                      onClick={() => handleFillCredentials(acc.email, acc.pass)}
-                      className={`px-3 py-2.5 rounded-xl border text-[11px] font-bold text-left transition-all duration-150 cursor-pointer flex flex-col justify-center gap-0.5 active:scale-95 ${acc.color}`}
-                    >
-                      <span>{acc.role}</span>
-                      <span className="text-[9px] opacity-75 font-normal truncate block w-full">{acc.email}</span>
-                    </button>
-                  ))}
-                </div>
-                <p className="text-[9px] text-slate-400 italic">
-                  *Clicking any profile above will auto-fill the login credentials. Password for all test accounts is `password123`.
-                </p>
-              </div>
-            )}
+            <AnimatePresence>
+              {showCredentialsHelp && (
+                <motion.div 
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="overflow-hidden"
+                >
+                  <div className="mt-4 p-5 bg-white/40 backdrop-blur-md rounded-3xl border border-white/50 flex flex-col gap-3 shadow-[0_4px_20px_rgb(0,0,0,0.03)]">
+                    <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest ml-1">Select an identity:</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      {testAccounts.map((acc) => (
+                        <motion.button
+                          whileHover={{ scale: 1.02 }}
+                          whileTap={{ scale: 0.98 }}
+                          key={acc.role}
+                          type="button"
+                          onClick={() => handleFillCredentials(acc.email, acc.pass)}
+                          className={`px-3 py-3 rounded-2xl border text-[11px] font-bold text-left transition-all duration-150 cursor-pointer flex flex-col justify-center gap-0.5 ${acc.color}`}
+                        >
+                          <span>{acc.role}</span>
+                          <span className="text-[9px] opacity-75 font-normal truncate block w-full">{acc.email}</span>
+                        </motion.button>
+                      ))}
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         </CardContent>
         
-        <CardFooter className="pt-2 pb-6">
-          <Button 
-            type="submit" 
-            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-xl text-sm transition-all duration-200 disabled:opacity-50 cursor-pointer flex items-center justify-center gap-1 shadow-md shadow-emerald-600/10 border-0"
-            disabled={isLoading}
-          >
-            {isLoading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Signing in...
-              </>
-            ) : (
-              'Verify & Access'
-            )}
-          </Button>
+        <CardFooter className="pt-4 pb-8 px-8">
+          <motion.div className="w-full" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+            <Button 
+              type="submit" 
+              className={`w-full text-white font-bold py-6 rounded-2xl text-[13px] tracking-wide transition-all duration-300 disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2 shadow-lg border border-white/20 ${isTechnicianPortal ? 'bg-gradient-to-r from-blue-500 to-indigo-500 hover:shadow-blue-500/25' : 'bg-gradient-to-r from-emerald-500 to-teal-500 hover:shadow-emerald-500/25'}`}
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Authenticating...
+                </>
+              ) : (
+                'Secure Login'
+              )}
+            </Button>
+          </motion.div>
         </CardFooter>
       </form>
     </Card>
+    </motion.div>
   )
 }
 
