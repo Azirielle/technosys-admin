@@ -75,7 +75,12 @@ export async function getSignedDownloadUrl() {
       throw new Error("No active app version found.")
     }
 
-    // Generate a 5-minute signed URL
+    // Bypass signed URL if it's an external link
+    if (activeVersion.apk_file_url.startsWith('http')) {
+      return { url: activeVersion.apk_file_url }
+    }
+
+    // Generate a 5-minute signed URL for Supabase storage
     const { data: signedData, error: signError } = await supabaseAdmin
       .storage
       .from('app-releases')
