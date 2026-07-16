@@ -1,6 +1,11 @@
-import { redirect } from 'next/navigation'
+import type { Metadata } from 'next'
+import GatewayPortal from '@/components/gateway-portal'
 
-export default function Home() {
-  // Automatically redirect root to the dashboard (which will redirect to login if not authenticated)
-  redirect('/dashboard')
+export const metadata: Metadata = {
+  title: 'TechnoSys — Access Portal',
+  description: 'Select your role to access the TechnoSys internal system.',
+}
+
+export default function GatewayPage() {
+  return <GatewayPortal />
 }
