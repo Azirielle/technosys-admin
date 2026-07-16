@@ -12,6 +12,7 @@ import { useState } from 'react'
 export default function LoginForm() {
   const searchParams = useSearchParams()
   const message = searchParams?.get('message')
+  const isTechnicianPortal = searchParams?.get('next') === '/technician'
   const [isLoading, setIsLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [showCredentialsHelp, setShowCredentialsHelp] = useState(false)
@@ -42,10 +43,12 @@ export default function LoginForm() {
       <CardHeader className="space-y-1 pb-5 pt-7">
         <CardTitle className="text-xl font-bold text-slate-800 tracking-tight flex items-center gap-2">
           <ShieldCheck className="w-5.5 h-5.5 text-emerald-600" />
-          Operator Verification
+          {isTechnicianPortal ? "Employee Verification" : "Operator Verification"}
         </CardTitle>
         <CardDescription className="text-slate-500 text-xs leading-relaxed">
-          Sign in to access secure corporate configurations. Standard Admins and Super Admins share this authentication gateway.
+          {isTechnicianPortal 
+            ? "Please sign in with your employee credentials to access the internal app download portal."
+            : "Sign in to access secure corporate configurations. Standard Admins and Super Admins share this authentication gateway."}
         </CardDescription>
       </CardHeader>
       

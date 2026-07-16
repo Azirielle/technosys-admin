@@ -7,7 +7,9 @@ export const metadata: Metadata = {
   description: "Secure login to the TechnoSys HRIS enterprise administration console.",
 }
 
-export default function LoginPage() {
+export default function LoginPage({ searchParams }: { searchParams: { next?: string } }) {
+  const isTechnicianPortal = searchParams?.next === '/technician';
+  
   return (
     <div className="flex min-h-screen items-center justify-center bg-zinc-50 p-4 overflow-hidden relative">
       {/* Subtle Corporate Grid Pattern Background */}
@@ -27,7 +29,7 @@ export default function LoginPage() {
             <span className="text-emerald-600">TechnoSys</span> <span className="font-semibold text-slate-500">HRIS</span>
           </h1>
           <p className="mt-1 text-slate-400 font-bold text-[10px] uppercase tracking-[0.2em]">
-            Enterprise Administration Console
+            {isTechnicianPortal ? "Employee Portal Login" : "Enterprise Administration Console"}
           </p>
         </div>
         
