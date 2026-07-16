@@ -8,7 +8,7 @@ import {
   Paperclip
 } from "lucide-react"
 import { 
-  updateTicketStatus, assignTicket, addTicketComment, getTicketComments 
+  updateTicketStatus, assignTicket, addTicketComment, getTicketComments, markCommentsAsRead
 } from "@/app/actions/tickets"
 import Pagination from "@/components/ui/Pagination"
 
@@ -41,6 +41,8 @@ interface Comment {
   author: Profile
   attachment_url?: string | null
   attachment_type?: string | null
+  status?: string
+  read_at?: string | null
 }
 
 interface Staff {
@@ -103,7 +105,18 @@ export default function TicketWorkspace({
   const loadComments = async (ticketId: string) => {
     setLoadingComments(true)
     try {
-      const data = await getTicketComments(ticketId)
+      let data = await getTicketComments(ticketId)
+
+      // Mark comments written by others as read
+      const unreadComments = data.filter(c => c.author_id !== currentUserId && c.read_at === null);
+      if (unreadComments.length > 0) {
+        markCommentsAsRead(ticketId, currentUserId).catch(err => {
+          console.error("Failed to mark comments as read:", err);
+        });
+        
+        data = data.map(c => c.author_id !== currentUserId ? { ...c, read_at: new Date().toISOString() } : c);
+      }
+
       setComments(data as any[])
     } catch (e) {
       console.error(e)
@@ -191,6 +204,19 @@ export default function TicketWorkspace({
     const contentToSend = commentText.trim()
     setCommentText("")
 
+    const tempCommentId = 'temp-' + Date.now()
+    const tempComment = {
+      id: tempCommentId,
+      ticket_id: selectedTicket.id,
+      author_id: currentUserId,
+      content: contentToSend,
+      created_at: new Date().toISOString(),
+      status: 'sending',
+      author: { full_name: "TechnoSys Admin", role: 'admin' }
+    }
+
+    setComments(prev => [...prev, tempComment as any])
+
     try {
       const res = await addTicketComment(selectedTicket.id, currentUserId, contentToSend)
       if (res.success) {
@@ -206,11 +232,13 @@ export default function TicketWorkspace({
         })
         setTickets(updated)
       } else {
-        await alert(res.error, "Comment Failed", "destructive")
+        await alert(res.error || "Comment Failed", "Comment Failed", "destructive")
+        setComments(prev => prev.filter(c => c.id !== tempCommentId))
         setCommentText(contentToSend) // restore input
       }
     } catch (e: any) {
       await alert("Failed to submit comment: " + e.message, "Comment Failed", "destructive")
+      setComments(prev => prev.filter(c => c.id !== tempCommentId))
       setCommentText(contentToSend)
     } finally {
       setCommentPending(false)
@@ -834,8 +862,20 @@ export default function TicketWorkspace({
                                   </div>
                                 )}
                               </div>
-                              <span className="text-[9px] text-zinc-400 whitespace-nowrap mb-1">
-                                {formatDate(c.created_at)}
+                              <span className="text-[9px] text-zinc-400 whitespace-nowrap mb-1 flex flex-col items-end gap-0.5">
+                                <span>{formatDate(c.created_at)}</span>
+                                {isCurrentUser && (
+                                  <span className={`text-[8px] font-bold ${
+                                    c.status === 'sending' 
+                                      ? 'text-zinc-400 animate-pulse' 
+                                      : c.read_at 
+                                        ? 'text-emerald-500 font-semibold' 
+                                        : 'text-zinc-400'
+                                  }`}>
+                                    {c.status === 'sending' && 'Sending...'}
+                                    {!c.status && (c.read_at ? '✓✓ Seen' : '✓ Delivered')}
+                                  </span>
+                                )}
                               </span>
                             </div>
                           </div>

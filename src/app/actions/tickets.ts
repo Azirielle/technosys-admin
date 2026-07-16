@@ -221,3 +221,22 @@ export async function addTicketComment(ticketId: string, authorId: string, conte
     return { error: err.message || "Failed to add comment." }
   }
 }
+
+// 8. Mark comments as read for a ticket
+export async function markCommentsAsRead(ticketId: string, userId: string) {
+  try {
+    const { error } = await supabaseAdmin
+      .from('ticket_comments')
+      .update({ read_at: new Date().toISOString() })
+      .eq('ticket_id', ticketId)
+      .neq('author_id', userId)
+      .is('read_at', null)
+
+    if (error) throw error
+    revalidatePath('/dashboard/tickets')
+    return { success: true }
+  } catch (err: any) {
+    console.error(`Failed to mark comments as read for ticket ${ticketId}:`, err.message || err)
+    return { error: err.message || "Failed to mark comments as read." }
+  }
+}
