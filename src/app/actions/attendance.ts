@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache"
 import { verifyRoleAccess } from "@/lib/permissions"
 import { logActivity } from "./activity"
 
-export async function getPendingSelfies() {
+export async function getRecentSelfies() {
   try {
     const { data, error } = await supabaseAdmin
       .from('time_logs')
@@ -16,7 +16,7 @@ export async function getPendingSelfies() {
         technician_id,
         technician:profiles!technician_id(full_name, role)
       `)
-      .eq('photo_status', 'pending')
+      .neq('photo_status', 'flagged').limit(20)
       .not('photo_url', 'is', null)
       .order('app_time_in', { ascending: false })
 
@@ -41,49 +41,33 @@ export async function getPendingSelfies() {
   }
 }
 
-export async function processSelfieApproval(logId: string, status: 'approved' | 'rejected') {
+export async function flagSuspiciousSelfie(logId: string) {
   try {
     const { authorized, userId } = await verifyRoleAccess('attendance', true) 
     if (!authorized || !userId) {
-      return { error: "Unauthorized. You do not have permission to approve attendance photos." }
+      return { error: "Unauthorized. You do not have permission to flag attendance photos." }
     }
 
-    const { data: log, error: fetchErr } = await supabaseAdmin
-      .from('time_logs')
-      .select('technician_id, app_time_in, technician:profiles!technician_id(full_name)')
-      .eq('id', logId)
-      .single()
-
-    if (fetchErr || !log) {
-      return { error: "Time log not found." }
-    }
-
-    const { error: updateErr } = await supabaseAdmin
+    const { error } = await supabaseAdmin
       .from('time_logs')
       .update({ 
-        photo_status: status,
-        reviewed_by: userId,
-        reviewed_at: new Date().toISOString()
+        photo_status: 'flagged'
       })
       .eq('id', logId)
 
-    if (updateErr) throw updateErr
+    if (error) throw error
 
-    // Log the activity
-    const techName = Array.isArray(log.technician) ? log.technician[0]?.full_name : (log.technician as any)?.full_name || 'Technician'
-    await logActivity({
-      category: 'compliance',
-      action: 'updated',
-      description: `${status === 'approved' ? 'Approved' : 'Rejected'} DTR selfie for ${techName} on ${new Date(log.app_time_in).toLocaleDateString()}`
-    })
+    await logActivity(userId, 'attendance_flagged', `Selfie flagged as suspicious for log ${logId}`)
 
-    revalidatePath("/dashboard/attendance")
+    revalidatePath('/dashboard/attendance')
     return { success: true }
   } catch (err: any) {
-    console.error("Failed to process selfie approval:", err.message)
+    console.error("Selfie flagging failed:", err.message)
     return { error: err.message }
   }
 }
+
+
 
 export async function getAttendanceHistory() {
   try {
