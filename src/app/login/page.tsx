@@ -8,6 +8,8 @@ export const metadata: Metadata = {
   description: "Secure login to the TechnoSys employee hub.",
 }
 
+export const dynamic = 'force-dynamic';
+
 export default function LoginPage({ searchParams }: { searchParams: { next?: string } }) {
   const isTechnicianPortal = searchParams?.next === '/technician';
   
