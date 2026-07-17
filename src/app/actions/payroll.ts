@@ -142,6 +142,9 @@ export async function getDraftPayroll(startDateStr?: string, endDateStr?: string
       let holidayHours = 0
       let lateDeductions = 0
       let approvedOtHours = 0
+      let approvedOtHoursReg = 0
+      let approvedOtHoursSun = 0
+      let approvedOtHoursHol = 0
       
       const clockedInDates = new Set<string>()
 
@@ -203,10 +206,19 @@ export async function getDraftPayroll(startDateStr?: string, endDateStr?: string
             regHours += workedHours
           }
 
-          // e. Retrieve approved overtime request hours for this date
+          // e. Retrieve approved overtime request hours for this date and apply daily multipliers
           const dayOt = empOtReqs.find(r => r.request_date === dateStr)
           if (dayOt) {
-            approvedOtHours += Number(dayOt.requested_hours || 0)
+            const otHrs = Number(dayOt.requested_hours || 0)
+            approvedOtHours += otHrs
+
+            if (holidayMult) {
+              approvedOtHoursHol += otHrs * holidayMult
+            } else if (isSunday) {
+              approvedOtHoursSun += otHrs * SUNDAY_MULTIPLIER
+            } else {
+              approvedOtHoursReg += otHrs
+            }
           }
         }
       })
@@ -273,11 +285,13 @@ export async function getDraftPayroll(startDateStr?: string, endDateStr?: string
       // 4. Compute gross pay based on standard 208 hours/month rate (6-day week)
       const hourlyRate = Number(emp.base_salary || 0) / 208
       
+      const approvedOtPay = (approvedOtHoursReg + approvedOtHoursSun + approvedOtHoursHol) * hourlyRate
+
       const computedGross = Number((
         (regHours * hourlyRate) +
         (sunHours * hourlyRate * SUNDAY_MULTIPLIER) +
         (holidayHours * hourlyRate) + 
-        (approvedOtHours * hourlyRate) + // Approved OT paid straight linearly (1.0x hourly)
+        approvedOtPay + // Multiplier-adjusted Overtime Pay
         (paidLeaveHours * hourlyRate) +
         defaultAllowances -
         lateDeductions // Late penalty deducted directly from gross
@@ -294,6 +308,7 @@ export async function getDraftPayroll(startDateStr?: string, endDateStr?: string
         breakdown: {
           regularHours: Number(regHours.toFixed(2)),
           otHours: Number(approvedOtHours.toFixed(2)),
+          otPay: Number(approvedOtPay.toFixed(2)),
           sundayHours: Number(sunHours.toFixed(2)),
           sundayOtHours: 0,
           holidayHours: Number(holidayHours.toFixed(2)),

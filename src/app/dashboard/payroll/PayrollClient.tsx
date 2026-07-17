@@ -428,7 +428,9 @@ export default function PayrollClient({
                 const regHours = p.breakdown?.regularHours || p.totalHours
                 const basicPay = regHours * p.hourlyRate
                 const holidayPay = p.breakdown?.holidayHours ? p.breakdown.holidayHours * p.hourlyRate : 0
-                const totalOtPay = (initialOt * p.hourlyRate * otMultiplier) + additionalOtPay
+                const totalOtPay = p.breakdown?.otPay !== undefined 
+                   ? (p.breakdown.otPay + additionalOtPay) 
+                   : (initialOt * p.hourlyRate * otMultiplier) + additionalOtPay
                 const sundayPay = (p.breakdown?.sundayHours || 0) * p.hourlyRate * 1.3
                 const totalEarnings = grossPay
 
@@ -565,7 +567,7 @@ export default function PayrollClient({
                                 )}
                                 <div className="flex justify-between items-center py-1.5 border-b border-zinc-100">
                                   <span className="text-zinc-500 font-medium">
-                                    Overtime Pay ({otHours} hrs @ {p.breakdown?.lateDeductions !== undefined ? '100%' : '125%'} rate)
+                                    Overtime Pay ({otHours} hrs)
                                   </span>
                                   <span className="font-semibold text-zinc-800 font-tabular">{formatPhp(totalOtPay)}</span>
                                 </div>
