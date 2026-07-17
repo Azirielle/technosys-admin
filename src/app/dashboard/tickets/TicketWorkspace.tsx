@@ -133,8 +133,59 @@ export default function TicketWorkspace({
   }
 
   useEffect(() => {
-    if (selectedTicket) {
-      loadComments(selectedTicket.id)
+    if (!selectedTicket) return
+
+    // Load initial comments
+    loadComments(selectedTicket.id)
+
+    // Subscribe to realtime comments changes
+    const channel = supabase
+      .channel(`ticket-comments-${selectedTicket.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*', // Listen to INSERT, UPDATE, DELETE
+          schema: 'public',
+          table: 'ticket_comments',
+          filter: `ticket_id=eq.${selectedTicket.id}`
+        },
+        async (payload) => {
+          console.log("Realtime comment payload received:", payload)
+          
+          if (payload.eventType === 'INSERT') {
+            const newComment = payload.new as Comment
+            
+            // If comment is from technician, mark it as read immediately if this workspace is active
+            if (newComment.author_id !== currentUserId && !newComment.read_at) {
+              try {
+                await markCommentsAsRead(selectedTicket.id, currentUserId)
+                newComment.read_at = new Date().toISOString()
+              } catch (err) {
+                console.warn("Failed to mark comment as read in realtime:", err)
+              }
+            }
+
+            // Append comment to state if not already present
+            setComments(prev => {
+              const tempId = `temp-${newComment.created_at}`
+              const exists = prev.some(c => c.id === newComment.id || c.id === tempId || (c.status === 'sending' && c.content === newComment.content))
+              if (exists) {
+                // Replace temporary sending comment or update existing
+                return prev.map(c => (c.id === newComment.id || c.id.startsWith('temp-') || (c.status === 'sending' && c.content === newComment.content)) ? newComment : c)
+              }
+              return [...prev, newComment]
+            })
+          } 
+          else if (payload.eventType === 'UPDATE') {
+            const updatedComment = payload.new as Comment
+            setComments(prev => prev.map(c => c.id === updatedComment.id ? updatedComment : c))
+          }
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
     }
   }, [selectedTicket?.id])
 
