@@ -10,6 +10,7 @@ interface DialogState {
   isOpen: boolean
   title: string
   message: string
+  rawMessage?: string
   type: DialogType
   variant: DialogVariant
   resolve: ((value: boolean) => void) | null
@@ -22,6 +23,99 @@ interface AlertConfirmContextType {
 
 const AlertConfirmContext = createContext<AlertConfirmContextType | undefined>(undefined)
 
+const sanitizeErrorMessage = (title: string, message: string) => {
+  const text = `${title} ${message}`.toLowerCase();
+  let cleanMessage = message;
+  let rawMessage: string | undefined = undefined;
+
+  // Signatures of raw errors
+  const isRaw = 
+    text.includes('unknownhostexception') || 
+    text.includes('fetch failed') || 
+    text.includes('network request failed') ||
+    text.includes('unable to resolve host') ||
+    text.includes('network error') ||
+    text.includes('invalid_credentials') || 
+    text.includes('invalid claim') || 
+    text.includes('invalid email or password') ||
+    text.includes('duplicate key value') || 
+    text.includes('violates unique constraint') || 
+    text.includes('already exists') ||
+    text.includes('row level security') || 
+    text.includes('violates row-level security') || 
+    text.includes('violates rls') ||
+    text.includes('violates foreign key constraint') ||
+    text.includes('foreign key violation') ||
+    text.includes('jwt expired') || 
+    text.includes('session expired') || 
+    text.includes('invalid ticket') ||
+    text.includes('bucket not found') ||
+    text.includes('storage bucket');
+
+  if (isRaw) {
+    rawMessage = message; // Keep original ugly trace
+
+    // Connection / DNS errors
+    if (
+      text.includes('unknownhostexception') || 
+      text.includes('fetch failed') || 
+      text.includes('network request failed') ||
+      text.includes('unable to resolve host') ||
+      text.includes('network error')
+    ) {
+      cleanMessage = 'Connection Error. Please check your internet connection and try again.';
+    }
+    // Auth invalid credentials
+    else if (
+      text.includes('invalid_credentials') || 
+      text.includes('invalid claim') || 
+      text.includes('invalid email or password')
+    ) {
+      cleanMessage = 'Invalid email or password. Please try again.';
+    }
+    // Database unique key constraint
+    else if (
+      text.includes('duplicate key value') || 
+      text.includes('violates unique constraint') || 
+      text.includes('already exists')
+    ) {
+      cleanMessage = 'This record already exists in the system.';
+    }
+    // Row Level Security (RLS) policies
+    else if (
+      text.includes('row level security') || 
+      text.includes('violates row-level security') || 
+      text.includes('violates rls')
+    ) {
+      cleanMessage = 'Access Denied. You do not have permission to perform this action.';
+    }
+    // Database foreign key constraint
+    else if (
+      text.includes('violates foreign key constraint') ||
+      text.includes('foreign key violation')
+    ) {
+      cleanMessage = 'Operation failed. Associated reference record was not found.';
+    }
+    // JWT expired
+    else if (
+      text.includes('jwt expired') || 
+      text.includes('session expired') || 
+      text.includes('invalid ticket')
+    ) {
+      cleanMessage = 'Your session has expired. Please log in again.';
+    }
+    // Supabase storage bucket errors
+    else if (
+      text.includes('bucket not found') ||
+      text.includes('storage bucket')
+    ) {
+      cleanMessage = 'File system storage error. Please contact system support.';
+    }
+  }
+
+  return { cleanMessage, rawMessage };
+};
+
 export function AlertConfirmProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<DialogState>({
     isOpen: false,
@@ -31,6 +125,7 @@ export function AlertConfirmProvider({ children }: { children: React.ReactNode }
     variant: 'default',
     resolve: null
   })
+  const [showDetails, setShowDetails] = useState(false)
 
   const [mounted, setMounted] = useState(false)
 
@@ -39,11 +134,14 @@ export function AlertConfirmProvider({ children }: { children: React.ReactNode }
   }, [])
 
   const alert = (message: string, title: string = "Notice", variant: DialogVariant = 'default') => {
+    setShowDetails(false)
+    const { cleanMessage, rawMessage } = sanitizeErrorMessage(title, message)
     return new Promise<boolean>((resolve) => {
       setState({
         isOpen: true,
         title,
-        message,
+        message: cleanMessage,
+        rawMessage,
         type: 'alert',
         variant,
         resolve
@@ -52,11 +150,14 @@ export function AlertConfirmProvider({ children }: { children: React.ReactNode }
   }
 
   const confirm = (message: string, title: string = "Confirm Action", variant: DialogVariant = 'default') => {
+    setShowDetails(false)
+    const { cleanMessage, rawMessage } = sanitizeErrorMessage(title, message)
     return new Promise<boolean>((resolve) => {
       setState({
         isOpen: true,
         title,
-        message,
+        message: cleanMessage,
+        rawMessage,
         type: 'confirm',
         variant,
         resolve
@@ -146,6 +247,35 @@ export function AlertConfirmProvider({ children }: { children: React.ReactNode }
               <div className="flex-1 min-w-0">
                 <h3 className="text-base font-extrabold text-zinc-950 leading-tight">{state.title}</h3>
                 <p className="mt-2 text-xs text-zinc-500 leading-normal whitespace-pre-wrap">{state.message}</p>
+                
+                {/* Collapsible Monospace Details Accordion */}
+                {state.rawMessage && (
+                  <div className="mt-4 border-t border-zinc-100 pt-3">
+                    <button
+                      type="button"
+                      onClick={() => setShowDetails(!showDetails)}
+                      className="flex items-center text-[10px] font-bold text-zinc-400 hover:text-zinc-600 uppercase tracking-wider cursor-pointer outline-none gap-1"
+                    >
+                      <span>{showDetails ? 'Hide Details' : 'Show Details'}</span>
+                      <svg
+                        className={`w-3 h-3 transform transition-transform duration-200 ${showDetails ? 'rotate-180' : ''}`}
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        strokeWidth={2.5}
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </button>
+                    {showDetails && (
+                      <div className="mt-2 p-2.5 bg-zinc-50 rounded-lg border border-zinc-200 max-h-36 overflow-y-auto">
+                        <code className="text-[10px] text-zinc-650 font-mono break-all whitespace-pre-wrap leading-normal">
+                          {state.rawMessage}
+                        </code>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
             

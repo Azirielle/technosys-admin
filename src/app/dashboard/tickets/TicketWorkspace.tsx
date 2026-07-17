@@ -5,8 +5,9 @@ import { useAlertConfirm } from "@/components/ui/AlertConfirmProvider"
 import { 
   MessageSquare, Clock, User, UserCheck, Inbox, AlertCircle, 
   Filter, CheckCircle2, CornerDownRight, Search, RefreshCw, Send, Loader2,
-  Paperclip
+  Paperclip, File, X
 } from "lucide-react"
+import { createClient } from "@/lib/supabase/client"
 import { 
   updateTicketStatus, assignTicket, addTicketComment, getTicketComments, markCommentsAsRead
 } from "@/app/actions/tickets"
@@ -75,6 +76,12 @@ export default function TicketWorkspace({
   const [isPending, startTransition] = useTransition()
   const [commentPending, setCommentPending] = useState(false)
   const chatEndRef = useRef<HTMLDivElement>(null)
+
+  // Client-side Supabase and attachments state
+  const supabase = createClient()
+  const [attachmentFile, setAttachmentFile] = useState<File | null>(null)
+  const [uploadingAttachment, setUploadingAttachment] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const [assigneeDropdownOpen, setAssigneeDropdownOpen] = useState(false)
   const assigneeDropdownRef = useRef<HTMLDivElement>(null)
@@ -198,27 +205,55 @@ export default function TicketWorkspace({
 
   const handlePostComment = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!selectedTicket || !commentText.trim() || commentPending) return
+    if (!selectedTicket || (!commentText.trim() && !attachmentFile) || commentPending) return
 
     setCommentPending(true)
     const contentToSend = commentText.trim()
+    
+    // Clear inputs immediately
     setCommentText("")
+    const fileToUpload = attachmentFile
+    setAttachmentFile(null)
 
     const tempCommentId = 'temp-' + Date.now()
     const tempComment = {
       id: tempCommentId,
       ticket_id: selectedTicket.id,
       author_id: currentUserId,
-      content: contentToSend,
+      content: contentToSend || (fileToUpload ? `Sent an attachment: ${fileToUpload.name}` : ''),
       created_at: new Date().toISOString(),
       status: 'sending',
-      author: { full_name: "TechnoSys Admin", role: 'admin' }
+      author: { full_name: "TechnoSys Admin", role: 'admin' },
+      attachment_url: fileToUpload ? URL.createObjectURL(fileToUpload) : null,
+      attachment_type: fileToUpload ? (fileToUpload.type.startsWith('image/') ? 'image' : 'pdf') : null
     }
 
     setComments(prev => [...prev, tempComment as any])
 
     try {
-      const res = await addTicketComment(selectedTicket.id, currentUserId, contentToSend)
+      let attachmentUrl: string | null = null
+      let attachmentType: string | null = null
+
+      if (fileToUpload) {
+        setUploadingAttachment(true)
+        const fileExt = fileToUpload.name.split('.').pop()
+        const fileName = `comment-${Date.now()}-${Math.random().toString(36).substring(2, 7)}.${fileExt}`
+        
+        const { data: storageData, error: storageErr } = await supabase.storage
+          .from('chat-attachments')
+          .upload(fileName, fileToUpload, { cacheControl: '3650000', upsert: true })
+
+        if (storageErr) throw storageErr
+
+        const { data: urlData } = supabase.storage
+          .from('chat-attachments')
+          .getPublicUrl(fileName)
+
+        attachmentUrl = urlData.publicUrl
+        attachmentType = fileToUpload.type.startsWith('image/') ? 'image' : 'pdf'
+      }
+
+      const res = await addTicketComment(selectedTicket.id, currentUserId, contentToSend, attachmentUrl, attachmentType)
       if (res.success) {
         // Refetch comments
         await loadComments(selectedTicket.id)
@@ -235,13 +270,16 @@ export default function TicketWorkspace({
         await alert(res.error || "Comment Failed", "Comment Failed", "destructive")
         setComments(prev => prev.filter(c => c.id !== tempCommentId))
         setCommentText(contentToSend) // restore input
+        if (fileToUpload) setAttachmentFile(fileToUpload) // restore attachment
       }
     } catch (e: any) {
       await alert("Failed to submit comment: " + e.message, "Comment Failed", "destructive")
       setComments(prev => prev.filter(c => c.id !== tempCommentId))
       setCommentText(contentToSend)
+      if (fileToUpload) setAttachmentFile(fileToUpload)
     } finally {
       setCommentPending(false)
+      setUploadingAttachment(false)
     }
   }
 
@@ -890,7 +928,38 @@ export default function TicketWorkspace({
 
             {/* Comment Composer */}
             <div className="bg-white border-t border-zinc-200 p-4 shrink-0 shadow-[0_-2px_8px_rgba(0,0,0,0.02)]">
-              <form onSubmit={handlePostComment} className="flex gap-3">
+              {/* Attachment Preview Bar */}
+              {attachmentFile && (
+                <div className="flex items-center gap-2 p-2 px-3 bg-zinc-50 border border-zinc-200 rounded-xl mb-3 shrink-0 animate-in fade-in slide-in-from-bottom-1 duration-150">
+                  <File className="w-4 h-4 text-zinc-500 shrink-0" />
+                  <span className="text-xs font-semibold text-zinc-700 truncate max-w-[240px]">
+                    {attachmentFile.name} ({(attachmentFile.size / 1024).toFixed(1)} KB)
+                  </span>
+                  {uploadingAttachment && (
+                    <Loader2 className="w-3.5 h-3.5 text-emerald-600 animate-spin shrink-0 ml-1" />
+                  )}
+                  <button
+                    type="button"
+                    disabled={uploadingAttachment || commentPending}
+                    onClick={() => setAttachmentFile(null)}
+                    className="p-1 hover:bg-zinc-200 rounded-lg ml-auto cursor-pointer text-zinc-400 hover:text-zinc-650 transition-colors"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
+
+              <form onSubmit={handlePostComment} className="flex gap-3 items-end">
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  className="hidden"
+                  onChange={e => {
+                    const file = e.target.files?.[0]
+                    if (file) setAttachmentFile(file)
+                  }}
+                />
+
                 <textarea
                   value={commentText}
                   onChange={e => setCommentText(e.target.value)}
@@ -904,12 +973,23 @@ export default function TicketWorkspace({
                   }}
                   className="flex-1 p-3 border border-zinc-200 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all resize-none"
                 />
+
+                <button
+                  type="button"
+                  disabled={uploadingAttachment || commentPending}
+                  onClick={() => fileInputRef.current?.click()}
+                  className="p-3 border border-zinc-200 hover:bg-zinc-50 text-zinc-600 rounded-xl transition-all cursor-pointer flex items-center justify-center shrink-0 h-[46px] w-[46px]"
+                  title="Attach File"
+                >
+                  <Paperclip className="w-5 h-5" />
+                </button>
+
                 <button
                   type="submit"
-                  disabled={!commentText.trim() || commentPending}
-                  className="bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 text-white font-bold p-3 px-5 rounded-xl transition-all self-end flex items-center gap-1.5 text-sm"
+                  disabled={(!commentText.trim() && !attachmentFile) || uploadingAttachment || commentPending}
+                  className="bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 text-white font-bold p-3 px-5 rounded-xl transition-all flex items-center gap-1.5 text-sm shrink-0 h-[46px]"
                 >
-                  {commentPending ? (
+                  {commentPending || uploadingAttachment ? (
                     <Loader2 className="w-4 h-4 animate-spin" />
                   ) : (
                     <>

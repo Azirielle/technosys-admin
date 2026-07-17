@@ -185,7 +185,13 @@ export async function assignTicket(ticketId: string, adminId: string | null) {
 }
 
 // 7. Add ticket comment
-export async function addTicketComment(ticketId: string, authorId: string, content: string) {
+export async function addTicketComment(
+  ticketId: string, 
+  authorId: string, 
+  content: string,
+  attachmentUrl?: string | null,
+  attachmentType?: string | null
+) {
   try {
     if (!content.trim()) {
       return { error: "Comment content cannot be empty." }
@@ -196,7 +202,9 @@ export async function addTicketComment(ticketId: string, authorId: string, conte
       .insert({
         ticket_id: ticketId,
         author_id: authorId,
-        content: content.trim()
+        content: content.trim(),
+        attachment_url: attachmentUrl || null,
+        attachment_type: attachmentType || null
       })
 
     if (error) throw error
