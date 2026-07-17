@@ -120,46 +120,48 @@ export default function LoginForm() {
           </div>
 
           {/* Test Credentials Helper */}
-          <div className="pt-4 mt-2">
-            <button
-              type="button"
-              onClick={() => setShowCredentialsHelp(!showCredentialsHelp)}
-              className="text-[10px] text-emerald-600 hover:text-emerald-700 font-extrabold uppercase tracking-widest cursor-pointer flex items-center gap-1.5 transition-colors duration-150 ml-1"
-            >
-              <Key className="w-3 h-3" />
-              {showCredentialsHelp ? "Hide Dev Accounts" : "Show Dev Accounts"}
-            </button>
-            
-            <AnimatePresence>
-              {showCredentialsHelp && (
-                <motion.div 
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: "auto" }}
-                  exit={{ opacity: 0, height: 0 }}
-                  className="overflow-hidden"
-                >
-                  <div className="mt-4 p-5 bg-white/40 backdrop-blur-md rounded-3xl border border-white/50 flex flex-col gap-3 shadow-[0_4px_20px_rgb(0,0,0,0.03)]">
-                    <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest ml-1">Select an identity:</p>
-                    <div className="grid grid-cols-2 gap-2">
-                      {testAccounts.map((acc) => (
-                        <motion.button
-                          whileHover={{ scale: 1.02 }}
-                          whileTap={{ scale: 0.98 }}
-                          key={acc.role}
-                          type="button"
-                          onClick={() => handleFillCredentials(acc.email, acc.pass)}
-                          className={`px-3 py-3 rounded-2xl border text-[11px] font-bold text-left transition-all duration-150 cursor-pointer flex flex-col justify-center gap-0.5 ${acc.color}`}
-                        >
-                          <span>{acc.role}</span>
-                          <span className="text-[9px] opacity-75 font-normal truncate block w-full">{acc.email}</span>
-                        </motion.button>
-                      ))}
+          {!isTechnicianPortal && (
+            <div className="pt-4 mt-2">
+              <button
+                type="button"
+                onClick={() => setShowCredentialsHelp(!showCredentialsHelp)}
+                className="text-[10px] text-emerald-600 hover:text-emerald-700 font-extrabold uppercase tracking-widest cursor-pointer flex items-center gap-1.5 transition-colors duration-150 ml-1"
+              >
+                <Key className="w-3 h-3" />
+                {showCredentialsHelp ? "Hide Dev Accounts" : "Show Dev Accounts"}
+              </button>
+              
+              <AnimatePresence>
+                {showCredentialsHelp && (
+                  <motion.div 
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="overflow-hidden"
+                  >
+                    <div className="mt-4 p-5 bg-white/40 backdrop-blur-md rounded-3xl border border-white/50 flex flex-col gap-3 shadow-[0_4px_20px_rgb(0,0,0,0.03)]">
+                      <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest ml-1">Select an identity:</p>
+                      <div className="grid grid-cols-2 gap-2">
+                        {testAccounts.map((acc) => (
+                          <motion.button
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
+                            key={acc.role}
+                            type="button"
+                            onClick={() => handleFillCredentials(acc.email, acc.pass)}
+                            className={`px-3 py-3 rounded-2xl border text-[11px] font-bold text-left transition-all duration-150 cursor-pointer flex flex-col justify-center gap-0.5 ${acc.color}`}
+                          >
+                            <span>{acc.role}</span>
+                            <span className="text-[9px] opacity-75 font-normal truncate block w-full">{acc.email}</span>
+                          </motion.button>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          )}
         </CardContent>
         
         <CardFooter className="pt-4 pb-8 px-8">

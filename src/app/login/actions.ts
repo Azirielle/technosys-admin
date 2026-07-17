@@ -9,16 +9,56 @@ export async function login(formData: FormData) {
   
   const email = formData.get('email') as string
   const password = formData.get('password') as string
+  const nextPath = formData.get('next') as string | null
+  const isTechnicianPortal = nextPath === '/technician'
 
   const { error } = await supabase.auth.signInWithPassword({
     email,
     password,
   })
 
-  const nextPath = formData.get('next') as string | null
-
   if (error) {
-    return redirect('/login?message=Invalid email or password.')
+    const errorMsg = 'Invalid email or password.'
+    return redirect(`/login?${isTechnicianPortal ? 'next=/technician&' : ''}message=${encodeURIComponent(errorMsg)}`)
+  }
+
+  // Fetch authenticated user info
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) {
+    await supabase.auth.signOut()
+    const errorMsg = 'Authentication session failed.'
+    return redirect(`/login?${isTechnicianPortal ? 'next=/technician&' : ''}message=${encodeURIComponent(errorMsg)}`)
+  }
+
+  // Fetch the role of the profile
+  const { data: profile, error: profileErr } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single()
+
+  if (profileErr || !profile) {
+    await supabase.auth.signOut()
+    const errorMsg = 'User profile or authorization details could not be found.'
+    return redirect(`/login?${isTechnicianPortal ? 'next=/technician&' : ''}message=${encodeURIComponent(errorMsg)}`)
+  }
+
+  const role = profile.role as string
+
+  if (isTechnicianPortal) {
+    // Only technician and helper accounts are permitted to log in to the download/technician portal
+    if (role !== 'technician' && role !== 'helper') {
+      await supabase.auth.signOut()
+      const errorMsg = 'Access Denied. Only Technician and Helper accounts can log in here.'
+      return redirect(`/login?next=/technician&message=${encodeURIComponent(errorMsg)}`)
+    }
+  } else {
+    // Technicians and helpers are restricted from accessing the admin dashboard portal
+    if (role === 'technician' || role === 'helper') {
+      await supabase.auth.signOut()
+      const errorMsg = 'Access Denied. Technicians and Helpers must access from the mobile application.'
+      return redirect(`/login?message=${encodeURIComponent(errorMsg)}`)
+    }
   }
 
   revalidatePath('/', 'layout')
