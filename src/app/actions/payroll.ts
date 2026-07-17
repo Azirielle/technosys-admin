@@ -5,6 +5,11 @@ import { verifyRoleAccess } from "@/lib/permissions"
 import { logActivity } from "./activity"
 import { calculatePayrollDeductions } from "@/lib/ph-taxes"
 
+// Helper: Convert UTC Date to Manila local calendar time for accurate shifting hours comparison
+function getManilaTime(date: Date) {
+  const manilaString = date.toLocaleString('en-US', { timeZone: 'Asia/Manila' })
+  return new Date(manilaString)
+}
 
 export async function publishPayslip(data: any) {
   try {
@@ -77,9 +82,7 @@ export async function getDraftPayroll(startDateStr?: string, endDateStr?: string
     end.setHours(23,59,59,999)
 
     // Standard Multipliers (PH Labor Code)
-    const OT_MULTIPLIER = 1.25
     const SUNDAY_MULTIPLIER = 1.30
-    const SUNDAY_OT_MULTIPLIER = 1.69
 
     // Fetch technicians and helpers
     const { data: technicians, error: techErr } = await supabaseAdmin
@@ -89,11 +92,9 @@ export async function getDraftPayroll(startDateStr?: string, endDateStr?: string
       .order('full_name')
     if (techErr) throw techErr
 
-    // Fetch logs, schedules, leaves, and holidays
+    // Fetch logs, schedules, leaves, holidays, and approved overtime requests
     const { data: logs } = await supabaseAdmin.from('time_logs').select('*').gte('created_at', start.toISOString()).lte('created_at', end.toISOString())
     const { data: scheds } = await supabaseAdmin.from('schedules').select('*')
-    // Fix 3: Only fetch approved leaves that overlap the cutoff window
-    // (start_date <= cutoff_end  AND  end_date >= cutoff_start)
     const { data: leaves } = await supabaseAdmin
       .from('leaves')
       .select('*')
@@ -101,6 +102,13 @@ export async function getDraftPayroll(startDateStr?: string, endDateStr?: string
       .lte('start_date', end.toISOString().split('T')[0])
       .gte('end_date', start.toISOString().split('T')[0])
     const { data: holidays } = await supabaseAdmin.from('holidays').select('*').eq('is_active', true)
+    
+    const { data: otReqs } = await supabaseAdmin
+      .from('overtime_requests')
+      .select('*')
+      .eq('status', 'approved')
+      .gte('request_date', start.toISOString().split('T')[0])
+      .lte('request_date', end.toISOString().split('T')[0])
 
     const holidayMap = new Map((holidays || []).map(h => [h.holiday_date, Number(h.multiplier || 1.3)]))
 
@@ -125,40 +133,80 @@ export async function getDraftPayroll(startDateStr?: string, endDateStr?: string
       }
 
       const empLogs = (logs || []).filter(l => l.technician_id === emp.id)
+      const empOtReqs = (otReqs || []).filter(r => r.technician_id === emp.id)
       const hasOpenLogs = empLogs.some(log => log.app_time_in && !log.app_time_out)
 
-      // 1. Calculate regular hours, OT, and Rest Day hours
+      // 1. Calculate regular hours, Rest Day hours, Holiday hours, Late Penalties, and OT
       let regHours = 0
-      let otHours = 0
       let sunHours = 0
-      let sunOtHours = 0
       let holidayHours = 0
+      let lateDeductions = 0
+      let approvedOtHours = 0
       
       const clockedInDates = new Set<string>()
 
       empLogs.forEach(log => {
-        const rawHours = Number(log.total_hours || 0)
-        
         if (log.app_time_in) {
           const inDate = new Date(log.app_time_in)
           const dateStr = log.app_time_in.split('T')[0]
           clockedInDates.add(dateStr)
+
+          const manilaIn = getManilaTime(inDate)
+          const sStart = new Date(manilaIn)
+          sStart.setHours(8, 0, 0, 0)
           
-          const isSunday = inDate.getDay() === 0
+          const sGraceEnd = new Date(manilaIn)
+          sGraceEnd.setHours(8, 10, 0, 0)
+
+          const sEnd = new Date(manilaIn)
+          sEnd.setHours(17, 0, 0, 0)
+
+          // a. Calculate late penalty (₱1.00 per minute late starting at 8:11 AM)
+          if (manilaIn > sGraceEnd) {
+            const lateMs = manilaIn.getTime() - sGraceEnd.getTime()
+            const lateMins = Math.floor(lateMs / (60 * 1000))
+            lateDeductions += lateMins * 1.00
+          }
+
+          // b. Shift start capping: hours only count starting from 8:00 AM
+          const paidStart = manilaIn < sStart ? sStart : manilaIn
+          
+          // c. Shift end capping: hours cap at 5:00 PM unless approved OT exists
+          const outDate = log.app_time_out ? new Date(log.app_time_out) : null
+          const manilaOut = outDate ? getManilaTime(outDate) : null
+          const paidEnd = (manilaOut && manilaOut < sEnd) ? manilaOut : sEnd
+
+          let workedHours = 0
+          if (paidEnd && paidStart < paidEnd) {
+            const elapsedMs = paidEnd.getTime() - paidStart.getTime()
+            workedHours = elapsedMs / (1000 * 60 * 60)
+
+            // d. Subtract 1-hour unpaid lunch break if shift overlaps the full noon window (12 PM - 1 PM)
+            const lunchStart = new Date(manilaIn)
+            lunchStart.setHours(12, 0, 0, 0)
+            const lunchEnd = new Date(manilaIn)
+            lunchEnd.setHours(13, 0, 0, 0)
+
+            if (paidStart < lunchStart && paidEnd > lunchEnd) {
+              workedHours = Math.max(0, workedHours - 1.0)
+            }
+          }
+
+          const isSunday = manilaIn.getDay() === 0
           const holidayMult = holidayMap.get(dateStr)
-          
-          const regularChunk = Math.min(8, rawHours)
-          const otChunk = Math.max(0, rawHours - 8)
 
           if (holidayMult) {
-            // Oversimplified holiday handling for now: just scale total hours by the multiplier
-            holidayHours += rawHours * holidayMult
+            holidayHours += workedHours * holidayMult
           } else if (isSunday) {
-            sunHours += regularChunk
-            sunOtHours += otChunk
+            sunHours += workedHours
           } else {
-            regHours += regularChunk
-            otHours += otChunk
+            regHours += workedHours
+          }
+
+          // e. Retrieve approved overtime request hours for this date
+          const dayOt = empOtReqs.find(r => r.request_date === dateStr)
+          if (dayOt) {
+            approvedOtHours += Number(dayOt.requested_hours || 0)
           }
         }
       })
@@ -183,7 +231,7 @@ export async function getDraftPayroll(startDateStr?: string, endDateStr?: string
 
       const paidLeaveHours = paidLeaveDays * 8
       const unpaidLeaveHours = unpaidLeaveDays * 8
-      const totalActualHours = regHours + otHours + sunHours + sunOtHours
+      const totalActualHours = regHours + sunHours + approvedOtHours
       const totalPaidHours = totalActualHours + paidLeaveHours
 
       // 3. Compute default allowances based on schedules
@@ -227,27 +275,30 @@ export async function getDraftPayroll(startDateStr?: string, endDateStr?: string
       
       const computedGross = Number((
         (regHours * hourlyRate) +
-        (otHours * hourlyRate * OT_MULTIPLIER) +
         (sunHours * hourlyRate * SUNDAY_MULTIPLIER) +
-        (sunOtHours * hourlyRate * SUNDAY_OT_MULTIPLIER) +
-        (holidayHours * hourlyRate) + // Note: holidayHours already has multiplier applied
+        (holidayHours * hourlyRate) + 
+        (approvedOtHours * hourlyRate) + // Approved OT paid straight linearly (1.0x hourly)
         (paidLeaveHours * hourlyRate) +
-        defaultAllowances
+        defaultAllowances -
+        lateDeductions // Late penalty deducted directly from gross
       ).toFixed(2))
 
+      const finalGross = Math.max(0, computedGross)
+
       // Get calculations using ph-taxes
-      const calc = await calculatePayrollDeductions(emp.id, computedGross, end)
+      const calc = await calculatePayrollDeductions(emp.id, finalGross, end)
 
       return {
         technician: emp,
         // Breakdown buckets for UI
         breakdown: {
           regularHours: Number(regHours.toFixed(2)),
-          otHours: Number(otHours.toFixed(2)),
+          otHours: Number(approvedOtHours.toFixed(2)),
           sundayHours: Number(sunHours.toFixed(2)),
-          sundayOtHours: Number(sunOtHours.toFixed(2)),
+          sundayOtHours: 0,
           holidayHours: Number(holidayHours.toFixed(2)),
-          paidLeaveHours: Number(paidLeaveHours.toFixed(2))
+          paidLeaveHours: Number(paidLeaveHours.toFixed(2)),
+          lateDeductions: Number(lateDeductions.toFixed(2))
         },
         paidLeaveDays,
         unpaidLeaveDays,

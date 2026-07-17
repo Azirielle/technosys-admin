@@ -412,7 +412,9 @@ export default function PayrollClient({
                 const otStr = otOverrides[emp.id] !== undefined ? otOverrides[emp.id] : String(initialOt)
                 const otHours = parseFloat(otStr) || 0
                 const additionalOtHours = otHours - initialOt
-                const additionalOtPay = additionalOtHours * (p.hourlyRate * 1.25)
+                
+                const otMultiplier = p.breakdown?.lateDeductions !== undefined ? 1.0 : 1.25
+                const additionalOtPay = additionalOtHours * (p.hourlyRate * otMultiplier)
                 const grossPay = p.calculation.grossPay + additionalOtPay
                 
                 const netPay = Math.max(0, grossPay - p.calculation.sssDeduction - p.calculation.philhealthDeduction - p.calculation.pagibigDeduction + allowances)
@@ -426,7 +428,7 @@ export default function PayrollClient({
                 const regHours = p.breakdown?.regularHours || p.totalHours
                 const basicPay = regHours * p.hourlyRate
                 const holidayPay = p.breakdown?.holidayHours ? p.breakdown.holidayHours * p.hourlyRate : 0
-                const totalOtPay = (initialOt * p.hourlyRate * 1.25) + additionalOtPay
+                const totalOtPay = (initialOt * p.hourlyRate * otMultiplier) + additionalOtPay
                 const sundayPay = (p.breakdown?.sundayHours || 0) * p.hourlyRate * 1.3
                 const totalEarnings = grossPay
 
@@ -562,9 +564,17 @@ export default function PayrollClient({
                                   </div>
                                 )}
                                 <div className="flex justify-between items-center py-1.5 border-b border-zinc-100">
-                                  <span className="text-zinc-500 font-medium">Overtime Pay ({otHours} hrs @ 125% rate)</span>
+                                  <span className="text-zinc-500 font-medium">
+                                    Overtime Pay ({otHours} hrs @ {p.breakdown?.lateDeductions !== undefined ? '100%' : '125%'} rate)
+                                  </span>
                                   <span className="font-semibold text-zinc-800 font-tabular">{formatPhp(totalOtPay)}</span>
                                 </div>
+                                {p.breakdown?.lateDeductions > 0 && (
+                                  <div className="flex justify-between items-center py-1.5 border-b border-zinc-100 text-rose-600 font-medium">
+                                    <span>Late Clock-in Penalty (₱1.00/min)</span>
+                                    <span className="font-tabular">-{formatPhp(p.breakdown.lateDeductions)}</span>
+                                  </div>
+                                )}
                                 <div className="flex justify-between items-center pt-2 font-bold text-sm text-zinc-900">
                                   <span>Total Gross Earnings</span>
                                   <span className="font-tabular">{formatPhp(totalEarnings)}</span>
