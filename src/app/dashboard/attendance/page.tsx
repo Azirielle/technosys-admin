@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { getRecentSelfies, getAttendanceHistory } from '@/app/actions/attendance'
+import { getOtRequests } from '@/app/actions/overtime'
 import AttendanceTabs from './AttendanceTabs'
 import { Clock } from 'lucide-react'
 import { verifyRoleAccess } from '@/lib/permissions'
@@ -26,6 +27,7 @@ export default async function AttendancePage() {
 
   const pendingSelfies = await getRecentSelfies();
   const history = await getAttendanceHistory();
+  const otRequests = await getOtRequests();
   const { authorized: canApprove } = await verifyRoleAccess('attendance', true)
 
   return (
@@ -42,7 +44,13 @@ export default async function AttendancePage() {
         </div>
       </div>
 
-      <AttendanceTabs pendingSelfies={pendingSelfies} history={history} canApprove={canApprove} />
+      <AttendanceTabs 
+        pendingSelfies={pendingSelfies} 
+        history={history} 
+        otRequests={otRequests}
+        adminId={user.id}
+        canApprove={canApprove} 
+      />
     </div>
   )
 }

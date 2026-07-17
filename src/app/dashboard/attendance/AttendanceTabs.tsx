@@ -2,10 +2,25 @@
 import { useState } from "react"
 import SelfieAuditWidget from "../SelfieAuditWidget"
 import AttendanceHistoryTable from "./AttendanceHistoryTable"
-import { Clock, History } from "lucide-react"
+import OvertimeRequestsTable from "./OvertimeRequestsTable"
+import { Clock, History, Timer } from "lucide-react"
 
-export default function AttendanceTabs({ pendingSelfies, history, canApprove }: { pendingSelfies: any[], history: any[], canApprove: boolean }) {
-  const [activeTab, setActiveTab] = useState<'pending' | 'history'>('pending')
+export default function AttendanceTabs({ 
+  pendingSelfies, 
+  history, 
+  otRequests,
+  adminId,
+  canApprove 
+}: { 
+  pendingSelfies: any[]
+  history: any[]
+  otRequests: any[]
+  adminId: string
+  canApprove: boolean 
+}) {
+  const [activeTab, setActiveTab] = useState<'pending' | 'history' | 'overtime'>('pending')
+
+  const pendingOtCount = otRequests.filter(r => r.status === 'pending').length
 
   return (
     <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden min-h-[500px] flex flex-col">
@@ -26,6 +41,24 @@ export default function AttendanceTabs({ pendingSelfies, history, canApprove }: 
             </span>
           )}
         </button>
+
+        <button
+          onClick={() => setActiveTab('overtime')}
+          className={`flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold transition-colors ${
+            activeTab === 'overtime'
+              ? 'bg-white text-indigo-600 shadow-sm border border-slate-200'
+              : 'text-slate-500 hover:text-slate-700 hover:bg-slate-100'
+          }`}
+        >
+          <Timer className="w-4 h-4" />
+          Overtime Requests
+          {pendingOtCount > 0 && (
+            <span className="bg-amber-100 text-amber-700 py-0.5 px-2 rounded-full text-xs font-bold">
+              {pendingOtCount}
+            </span>
+          )}
+        </button>
+
         <button
           onClick={() => setActiveTab('history')}
           className={`flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold transition-colors ${
@@ -38,7 +71,7 @@ export default function AttendanceTabs({ pendingSelfies, history, canApprove }: 
           Recent History
         </button>
       </div>
-
+ 
       <div className="p-6 flex-grow bg-slate-50/20">
         {activeTab === 'pending' && (
           pendingSelfies.length > 0 ? (
@@ -54,6 +87,10 @@ export default function AttendanceTabs({ pendingSelfies, history, canApprove }: 
           )
         )}
 
+        {activeTab === 'overtime' && (
+          <OvertimeRequestsTable requests={otRequests} adminId={adminId} canApprove={canApprove} />
+        )}
+ 
         {activeTab === 'history' && (
           <AttendanceHistoryTable history={history} canEdit={canApprove} />
         )}
