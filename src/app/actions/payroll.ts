@@ -206,7 +206,7 @@ export async function getDraftPayroll(startDateStr?: string, endDateStr?: string
             regHours += workedHours
           }
 
-          // e. Retrieve approved overtime request hours for this date and apply daily multipliers & 1.25x premium
+          // e. Retrieve approved overtime request hours for this date and apply daily multipliers & DOLE overtime premium
           const dayOt = empOtReqs.find(r => r.request_date === dateStr)
           if (dayOt) {
             const otHrs = Number(dayOt.requested_hours || 0)
@@ -214,14 +214,16 @@ export async function getDraftPayroll(startDateStr?: string, endDateStr?: string
 
             const isSunday = manilaIn.getDay() === 0
             const holidayMult = holidayMap.get(dateStr)
-            const OT_PREMIUM = 1.25
 
             if (holidayMult) {
-              approvedOtHoursHol += otHrs * holidayMult * OT_PREMIUM
+              // Regular/Special Holiday overtime: paid at Holiday_Multiplier * 1.30
+              approvedOtHoursHol += otHrs * holidayMult * 1.30
             } else if (isSunday) {
-              approvedOtHoursSun += otHrs * SUNDAY_MULTIPLIER * OT_PREMIUM
+              // Sunday Rest Day overtime: paid at Sunday_Multiplier * 1.30 = 1.30 * 1.30 = 1.69
+              approvedOtHoursSun += otHrs * SUNDAY_MULTIPLIER * 1.30
             } else {
-              approvedOtHoursReg += otHrs * OT_PREMIUM
+              // Ordinary workday overtime: paid at 1.25 (25% premium)
+              approvedOtHoursReg += otHrs * 1.25
             }
           }
         }
