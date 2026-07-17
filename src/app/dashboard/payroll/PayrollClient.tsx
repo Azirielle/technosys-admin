@@ -413,7 +413,7 @@ export default function PayrollClient({
                 const otHours = parseFloat(otStr) || 0
                 const additionalOtHours = otHours - initialOt
                 
-                const otMultiplier = p.breakdown?.lateDeductions !== undefined ? 1.0 : 1.25
+                const otMultiplier = 1.25
                 const additionalOtPay = additionalOtHours * (p.hourlyRate * otMultiplier)
                 const grossPay = p.calculation.grossPay + additionalOtPay
                 
