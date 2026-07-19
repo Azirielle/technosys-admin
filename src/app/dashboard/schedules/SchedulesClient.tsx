@@ -23,6 +23,7 @@ import {
 } from "lucide-react"
 import { createSchedule, bulkCreateSchedules, toggleVipHook, updateSchedule, deleteSchedule } from "@/app/actions/schedules"
 import { useRouter } from "next/navigation"
+import { useAlertConfirm } from "@/components/ui/AlertConfirmProvider"
 
 const getLeaveRangeMs = (startDate: string, endDate: string) => {
   const start = startDate.includes('T') ? new Date(startDate).getTime() : new Date(`${startDate}T00:00:00.000Z`).getTime()
@@ -54,6 +55,7 @@ export default function SchedulesClient({
   isWriteAllowed?: boolean
 }) {
   const router = useRouter()
+  const { alert, confirm } = useAlertConfirm()
   const [showModal, setShowModal] = useState(false)
   const [isPending, startTransition] = useTransition()
   
@@ -340,7 +342,8 @@ export default function SchedulesClient({
   }
 
   const handleDeleteSchedule = async (schedId: string) => {
-    if (!confirm("Are you sure you want to delete this schedule?")) return
+    const ok = await confirm("Are you sure you want to delete this schedule?", "Confirm Deletion", "destructive")
+    if (!ok) return
     setSelectedSchedule(null)
     const res = await deleteSchedule(schedId)
     if (res?.error) setErrorMsg(res.error)
