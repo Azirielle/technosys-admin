@@ -145,7 +145,9 @@ export default function PayrollClient({
         philhealth_deduction: p.calculation.philhealthDeduction,
         pagibig_deduction: p.calculation.pagibigDeduction,
         allowances: allowances,
-        net_pay: netPay
+        net_pay: netPay,
+        period_start: startDate,
+        period_end: endDate
       })
       if (res && res.error) {
         await alert(res.error, "Publish Failed", "destructive")
@@ -180,7 +182,9 @@ export default function PayrollClient({
           philhealth_deduction: p.calculation.philhealthDeduction,
           pagibig_deduction: p.calculation.pagibigDeduction,
           allowances: allowances,
-          net_pay: netPay
+          net_pay: netPay,
+          period_start: startDate,
+          period_end: endDate
         })
       })
 
