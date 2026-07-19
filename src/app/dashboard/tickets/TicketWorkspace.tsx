@@ -72,6 +72,7 @@ export default function TicketWorkspace({
   const [searchQuery, setSearchQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState("active") // active, open, assigned, in_progress, resolved, closed, all
   const [categoryFilter, setCategoryFilter] = useState("all")
+  const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({})
   
   const [isPending, startTransition] = useTransition()
   const [commentPending, setCommentPending] = useState(false)
@@ -124,6 +125,11 @@ export default function TicketWorkspace({
         data = data.map(c => c.author_id !== currentUserId ? { ...c, read_at: new Date().toISOString() } : c);
       }
 
+      setUnreadCounts(prev => ({
+        ...prev,
+        [ticketId]: 0
+      }))
+
       setComments(data as any[])
     } catch (e) {
       console.error(e)
@@ -132,53 +138,122 @@ export default function TicketWorkspace({
     }
   }
 
+  // Fetch initial unread comment counts on mount
   useEffect(() => {
-    if (!selectedTicket) return
+    const fetchInitialUnreadCounts = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('ticket_comments')
+          .select('ticket_id')
+          .neq('author_id', currentUserId)
+          .is('read_at', null)
+          
+        if (!error && data) {
+          const counts: Record<string, number> = {}
+          data.forEach((c: any) => {
+            counts[c.ticket_id] = (counts[c.ticket_id] || 0) + 1
+          })
+          setUnreadCounts(counts)
+        }
+      } catch (err) {
+        console.error("Failed to fetch initial unread counts:", err)
+      }
+    }
+    fetchInitialUnreadCounts()
+  }, [currentUserId])
 
-    // Load initial comments
-    loadComments(selectedTicket.id)
+  useEffect(() => {
+    if (selectedTicket) {
+      // Load initial comments
+      loadComments(selectedTicket.id)
+    }
 
-    // Subscribe to realtime comments changes
+    // Subscribe to global realtime comments updates to sync unread status and new messages instantly
     const channel = supabase
-      .channel(`ticket-comments-${selectedTicket.id}`)
+      .channel('global-ticket-comments')
       .on(
         'postgres_changes',
         {
           event: '*', // Listen to INSERT, UPDATE, DELETE
           schema: 'public',
-          table: 'ticket_comments',
-          filter: `ticket_id=eq.${selectedTicket.id}`
+          table: 'ticket_comments'
         },
         async (payload) => {
-          console.log("Realtime comment payload received:", payload)
+          console.log("Realtime global comment payload received:", payload)
           
           if (payload.eventType === 'INSERT') {
             const newComment = payload.new as Comment
             
-            // If comment is from technician, mark it as read immediately if this workspace is active
-            if (newComment.author_id !== currentUserId && !newComment.read_at) {
-              try {
-                await markCommentsAsRead(selectedTicket.id, currentUserId)
-                newComment.read_at = new Date().toISOString()
-              } catch (err) {
-                console.warn("Failed to mark comment as read in realtime:", err)
+            // Resolve author profile immediately so it doesn't render as "System"
+            let authorProfile = null
+            if (newComment.author_id === currentUserId) {
+              authorProfile = { full_name: "You", role: "admin" }
+            } else {
+              const staff = staffList.find(s => s.id === newComment.author_id)
+              if (staff) {
+                authorProfile = { full_name: staff.full_name, role: staff.role }
+              } else if (selectedTicket && selectedTicket.employee_id === newComment.author_id) {
+                authorProfile = selectedTicket.employee
+              } else {
+                // Fetch profile dynamically from database
+                const { data: prof } = await supabase
+                  .from('profiles')
+                  .select('full_name, role')
+                  .eq('id', newComment.author_id)
+                  .single()
+                if (prof) {
+                  authorProfile = prof
+                }
+              }
+            }
+            newComment.author = authorProfile || { full_name: "Staff", role: "technician" }
+
+            // If comment is for the active ticket, append it to comments state
+            if (selectedTicket && newComment.ticket_id === selectedTicket.id) {
+              // If comment is from technician, mark it as read immediately if workspace is active
+              if (newComment.author_id !== currentUserId && !newComment.read_at) {
+                try {
+                  await markCommentsAsRead(selectedTicket.id, currentUserId)
+                  newComment.read_at = new Date().toISOString()
+                } catch (err) {
+                  console.warn("Failed to mark comment as read in realtime:", err)
+                }
+              }
+
+              // Append comment to state if not already present
+              setComments(prev => {
+                const tempId = `temp-${newComment.created_at}`
+                const exists = prev.some(c => c.id === newComment.id || c.id === tempId || (c.status === 'sending' && c.content === newComment.content))
+                if (exists) {
+                  return prev.map(c => (c.id === newComment.id || c.id.startsWith('temp-') || (c.status === 'sending' && c.content === newComment.content)) ? newComment : c)
+                }
+                return [...prev, newComment]
+              })
+            } else {
+              // Increment unread counts for background tickets
+              if (newComment.author_id !== currentUserId) {
+                setUnreadCounts(prev => ({
+                  ...prev,
+                  [newComment.ticket_id]: (prev[newComment.ticket_id] || 0) + 1
+                }))
               }
             }
 
-            // Append comment to state if not already present
-            setComments(prev => {
-              const tempId = `temp-${newComment.created_at}`
-              const exists = prev.some(c => c.id === newComment.id || c.id === tempId || (c.status === 'sending' && c.content === newComment.content))
-              if (exists) {
-                // Replace temporary sending comment or update existing
-                return prev.map(c => (c.id === newComment.id || c.id.startsWith('temp-') || (c.status === 'sending' && c.content === newComment.content)) ? newComment : c)
-              }
-              return [...prev, newComment]
-            })
+            // Bring the updated ticket to the top in the sidebar by updating its timestamp
+            setTickets(prev => 
+              prev.map(t => 
+                t.id === newComment.ticket_id 
+                  ? { ...t, updated_at: newComment.created_at } 
+                  : t
+              )
+            )
           } 
           else if (payload.eventType === 'UPDATE') {
             const updatedComment = payload.new as Comment
-            setComments(prev => prev.map(c => c.id === updatedComment.id ? updatedComment : c))
+            // Sync read receipt state changes
+            if (selectedTicket && updatedComment.ticket_id === selectedTicket.id) {
+              setComments(prev => prev.map(c => c.id === updatedComment.id ? { ...c, read_at: updatedComment.read_at } : c))
+            }
           }
         }
       )
@@ -187,7 +262,7 @@ export default function TicketWorkspace({
     return () => {
       supabase.removeChannel(channel)
     }
-  }, [selectedTicket?.id])
+  }, [selectedTicket?.id, staffList, currentUserId])
 
   // Scroll to bottom of chat thread when comments update
   useEffect(() => {
@@ -681,9 +756,16 @@ export default function TicketWorkspace({
                   <span className="font-bold text-zinc-900 text-sm line-clamp-1 flex-1 leading-tight">
                     {ticket.title}
                   </span>
-                  <span className={`text-[10px] px-2 py-0.5 rounded-full border shrink-0 font-semibold ${getStatusClass(ticket.status)}`}>
-                    {ticket.status}
-                  </span>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    {unreadCounts[ticket.id] > 0 && (
+                      <span className="bg-rose-500 text-white text-[9px] font-extrabold px-1.5 py-0.5 rounded-full animate-bounce">
+                        {unreadCounts[ticket.id]}
+                      </span>
+                    )}
+                    <span className={`text-[10px] px-2 py-0.5 rounded-full border shrink-0 font-semibold ${getStatusClass(ticket.status)}`}>
+                      {ticket.status}
+                    </span>
+                  </div>
                 </div>
 
                 <p className="text-xs text-zinc-550 line-clamp-2 leading-relaxed">
