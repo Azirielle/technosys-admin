@@ -1419,6 +1419,77 @@ export default function SchedulesClient({
                   <input type="checkbox" id="isVip" checked={isVip} onChange={(e) => setIsVip(e.target.checked)} className="w-4.5 h-4.5 rounded border-indigo-300 text-indigo-650 focus:ring-indigo-500 cursor-pointer" />
                   <label htmlFor="isVip" className="text-xs font-bold text-indigo-950 cursor-pointer select-none">Flag as VIP Hook (High Priority Dispatch)</label>
                 </div>
+
+                {/* Geofence Verification Configuration */}
+                <div className="bg-zinc-50 border border-zinc-200/80 rounded-2xl p-4 space-y-4 shadow-3xs">
+                  <div className="flex items-center justify-between border-b border-zinc-150 pb-2">
+                    <span className="text-xs font-extrabold text-zinc-900 flex items-center gap-1.5 uppercase tracking-wider">
+                      📍 Geofence Verification (Optional)
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-[10px] font-extrabold uppercase tracking-wider text-zinc-400 mb-1.5">Latitude</label>
+                      <input 
+                        type="number" 
+                        step="any"
+                        placeholder="e.g. 14.5995"
+                        value={destinations[0]?.geofenceLat ?? ""} 
+                        onChange={(e) => {
+                          const val = e.target.value ? parseFloat(e.target.value) : null;
+                          setDestinations(prev => {
+                            const newD = [...prev];
+                            newD[0].geofenceLat = val;
+                            return newD;
+                          });
+                        }} 
+                        className="w-full px-3.5 py-2 border border-zinc-200 rounded-xl bg-white text-zinc-900 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-zinc-950/5 focus:border-zinc-900 transition-all"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-extrabold uppercase tracking-wider text-zinc-400 mb-1.5">Longitude</label>
+                      <input 
+                        type="number" 
+                        step="any"
+                        placeholder="e.g. 120.9842"
+                        value={destinations[0]?.geofenceLng ?? ""} 
+                        onChange={(e) => {
+                          const val = e.target.value ? parseFloat(e.target.value) : null;
+                          setDestinations(prev => {
+                            const newD = [...prev];
+                            newD[0].geofenceLng = val;
+                            return newD;
+                          });
+                        }} 
+                        className="w-full px-3.5 py-2 border border-zinc-200 rounded-xl bg-white text-zinc-900 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-zinc-950/5 focus:border-zinc-900 transition-all"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-extrabold uppercase tracking-wider text-zinc-400 mb-1.5">Geofence Radius</label>
+                    <select 
+                      value={destinations[0]?.geofenceRadius ?? 100} 
+                      onChange={(e) => {
+                        const val = parseInt(e.target.value);
+                        setDestinations(prev => {
+                          const newD = [...prev];
+                          newD[0].geofenceRadius = val;
+                          return newD;
+                        });
+                      }} 
+                      className="w-full px-3.5 py-2 border border-zinc-200 rounded-xl bg-white text-zinc-900 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-zinc-950/5 focus:border-zinc-900 transition-all cursor-pointer"
+                    >
+                      <option value={50}>50 meters</option>
+                      <option value={100}>100 meters (Recommended)</option>
+                      <option value={250}>250 meters</option>
+                      <option value={500}>500 meters</option>
+                      <option value={1000}>1000 meters</option>
+                    </select>
+                    <p className="text-[10px] text-zinc-450 mt-2 leading-normal font-semibold">
+                      ℹ️ How to get coordinates: Right-click any location on Google Maps, then click the latitude/longitude numbers to copy them.
+                    </p>
+                  </div>
+                </div>
               </div>
 
               {scheduleType === 'single' && (
