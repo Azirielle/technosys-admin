@@ -14,6 +14,7 @@ import {
 import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
 import InventoryEditModal from "./InventoryEditModal"
+import { useAlertConfirm } from "@/components/ui/AlertConfirmProvider"
 
 interface ToolItem {
   id: string
@@ -68,6 +69,7 @@ export default function InventoryWorkspace({
   initialTab
 }: InventoryWorkspaceProps) {
   const router = useRouter()
+  const { alert, confirm } = useAlertConfirm()
   const [activeTab, setActiveTab] = useState<"handover" | "catalog">(initialTab)
   const [isPending, startTransition] = useTransition()
 
@@ -253,7 +255,8 @@ export default function InventoryWorkspace({
 
   // Handle tool delete
   const handleDeleteTool = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this tool from the catalog?")) return
+    const ok = await confirm("Are you sure you want to delete this tool from the catalog?", "Confirm Deletion", "destructive")
+    if (!ok) return
     setActionError(null)
     setActionSuccess(null)
 
