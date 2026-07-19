@@ -4,6 +4,7 @@ import { DollarSign, CheckCircle2, AlertCircle, Loader2, Copy, FileSpreadsheet, 
 import { useRouter } from "next/navigation"
 import { publishPayslip } from "@/app/actions/payroll"
 import Pagination from "@/components/ui/Pagination"
+import { useAlertConfirm } from "@/components/ui/AlertConfirmProvider"
 
 export default function PayrollClient({ 
   technicians, 
@@ -21,6 +22,7 @@ export default function PayrollClient({
   defaultEndDate?: string
 }) {
   const router = useRouter()
+  const { alert, confirm } = useAlertConfirm()
   const [isPending, startTransition] = useTransition()
   const [startDate, setStartDate] = useState(defaultStartDate || "")
   const [endDate, setEndDate] = useState(defaultEndDate || "")
@@ -100,7 +102,7 @@ export default function PayrollClient({
   }
 
   // Copy TSV (Tab Separated Values) for direct Excel paste
-  const handleCopyTSV = () => {
+  const handleCopyTSV = async () => {
     const headers = ["Employee", "Base Salary", "Worked Hours", "OT Hours", "Gross Pay", "SSS", "PhilHealth", "Pag-IBIG", "Allowances", "Net Pay"]
     const rows = payrolls.map(p => {
       const emp = p.technician
@@ -130,7 +132,7 @@ export default function PayrollClient({
 
     const tsvContent = [headers.join("\t"), ...rows.map(e => e.join("\t"))].join("\n")
     navigator.clipboard.writeText(tsvContent)
-    alert("Payroll table copied to clipboard! You can paste (Ctrl+V) directly into Excel.")
+    await alert("Payroll table copied to clipboard! You can paste (Ctrl+V) directly into Excel.", "Copied", "success")
   }
 
   const handlePublish = (p: any, allowances: number, otHours: number, netPay: number, grossPay: number) => {
@@ -143,19 +145,22 @@ export default function PayrollClient({
         philhealth_deduction: p.calculation.philhealthDeduction,
         pagibig_deduction: p.calculation.pagibigDeduction,
         allowances: allowances,
-        net_pay: netPay
+        net_pay: netPay,
+        period_start: startDate,
+        period_end: endDate
       })
       if (res && res.error) {
-        alert(res.error)
+        await alert(res.error, "Publish Failed", "destructive")
       }
     })
   }
 
-  const handleBulkPublish = () => {
+  const handleBulkPublish = async () => {
     const drafts = payrolls.filter(p => !publishedPayslips.some(ps => ps.technician_id === p.technician.id))
     if (drafts.length === 0) return
 
-    if (!confirm(`Are you sure you want to publish all ${drafts.length} draft payslips?`)) return
+    const ok = await confirm(`Are you sure you want to publish all ${drafts.length} draft payslips?`, "Confirm Bulk Publish")
+    if (!ok) return
 
     startTransition(async () => {
       const promises = drafts.map(async p => {
@@ -177,16 +182,18 @@ export default function PayrollClient({
           philhealth_deduction: p.calculation.philhealthDeduction,
           pagibig_deduction: p.calculation.pagibigDeduction,
           allowances: allowances,
-          net_pay: netPay
+          net_pay: netPay,
+          period_start: startDate,
+          period_end: endDate
         })
       })
 
       const results = await Promise.all(promises)
       const failed = results.filter(r => r && r.error)
       if (failed.length > 0) {
-        alert(`Failed to publish ${failed.length} payslips: ${failed.map(f => f.error).join(', ')}`)
+        await alert(`Failed to publish ${failed.length} payslips: ${failed.map(f => f.error).join(', ')}`, "Publish Failed", "destructive")
       } else {
-        alert(`Successfully published all ${drafts.length} payslips.`)
+        await alert(`Successfully published all ${drafts.length} payslips.`, "Bulk Publish Success", "success")
       }
     })
   }
@@ -471,8 +478,8 @@ export default function PayrollClient({
                         <p className="font-semibold text-zinc-600 font-tabular">{p.totalHours} hrs</p>
                         {(p.paidLeaveDays > 0 || p.unpaidLeaveDays > 0) && (
                           <p className="text-[10px] text-zinc-400 font-medium mt-0.5 font-tabular">
-                            ({p.workedHours}h work
-                            {p.paidLeaveDays > 0 ? ` + ${p.paidLeaveHours}h paid` : ''})
+                            ({(p.breakdown?.regularHours + p.breakdown?.sundayHours + p.breakdown?.holidayHours).toFixed(2)}h work
+                            {p.paidLeaveDays > 0 ? ` + ${p.breakdown?.paidLeaveHours}h paid` : ''})
                           </p>
                         )}
                         {p.hasOpenLogs && (

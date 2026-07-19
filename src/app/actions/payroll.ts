@@ -22,8 +22,8 @@ export async function publishPayslip(data: any) {
     
     const { error } = await supabaseAdmin.from('payslips').insert({
       technician_id: data.technician_id,
-      period_start: today,
-      period_end: today,
+      period_start: data.period_start || today,
+      period_end: data.period_end || today,
       gross_pay: data.gross_pay,
       sss_deduction: data.sss_deduction,
       philhealth_deduction: data.philhealth_deduction,
@@ -38,8 +38,8 @@ export async function publishPayslip(data: any) {
         console.warn("Staging DB missing 'allowances' column. Retrying insert without it...");
         const { error: retryError } = await supabaseAdmin.from('payslips').insert({
           technician_id: data.technician_id,
-          period_start: today,
-          period_end: today,
+          period_start: data.period_start || today,
+          period_end: data.period_end || today,
           gross_pay: data.gross_pay,
           sss_deduction: data.sss_deduction,
           philhealth_deduction: data.philhealth_deduction,
