@@ -9,6 +9,7 @@ alter publication supabase_realtime add table ticket_comments;
 alter publication supabase_realtime add table leaves;
 alter publication supabase_realtime add table physical_biometric_scans;
 alter publication supabase_realtime add table overtime_requests;
+alter publication supabase_realtime add table schedules;
 
 -- 2. Create Storage Buckets and set public access properties
 insert into storage.buckets (id, name, public) 
