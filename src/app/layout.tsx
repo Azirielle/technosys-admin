@@ -8,6 +8,8 @@ const plusJakartaSans = Plus_Jakarta_Sans({
   weight: ["400", "500", "600", "700"],
 });
 
+import { MobileHardwareListener } from "@/components/mobile-hardware-listener";
+
 export const metadata: Metadata = {
   title: "TechnoSys — Access Portal",
   description: "TechnoSys Cross-Platform Geofenced IMS",
@@ -23,7 +25,10 @@ export default function RootLayout({
       lang="en"
       className={`${plusJakartaSans.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        <MobileHardwareListener />
+        {children}
+      </body>
     </html>
   );
 }

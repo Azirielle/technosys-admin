@@ -11,6 +11,7 @@ export default function AppUploader() {
   const [externalUrl, setExternalUrl] = useState("")
   const [versionName, setVersionName] = useState("")
   const [releaseNotes, setReleaseNotes] = useState("")
+  const [sendSms, setSendSms] = useState(true)
   const [uploading, setUploading] = useState(false)
   const [progress, setProgress] = useState(0)
   const [status, setStatus] = useState<"idle" | "success" | "error">("idle")
@@ -59,7 +60,7 @@ export default function AppUploader() {
 
       setProgress(100)
 
-      const res = await registerAppVersion(versionName, finalPath, releaseNotes)
+      const res = await registerAppVersion(versionName, finalPath, releaseNotes, sendSms)
       
       if (res.error) throw new Error(res.error)
 
@@ -158,6 +159,20 @@ export default function AppUploader() {
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
             placeholder="What's new in this version?"
           />
+        </div>
+
+        <div className="flex items-center">
+          <input
+            id="send-sms"
+            type="checkbox"
+            checked={sendSms}
+            onChange={e => setSendSms(e.target.checked)}
+            disabled={uploading}
+            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+          />
+          <label htmlFor="send-sms" className="ml-2 block text-sm text-gray-900">
+            Send SMS notification to all technicians
+          </label>
         </div>
 
         {status === 'error' && (

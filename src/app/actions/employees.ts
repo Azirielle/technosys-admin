@@ -642,7 +642,7 @@ export async function simulateBiometricScan(employeeId: string) {
 // Zod validation schema for bulk import
 const employeeImportSchema = z.object({
   fullName: z.string().min(2, "Full Name must be at least 2 characters"),
-  email: z.string().email("Invalid email address"),
+  phone: z.string().regex(/^\d{10}$/, "Phone must be exactly 10 digits without prefix"),
   role: z.enum(['technician', 'helper']),
   baseSalary: z.number().min(0, "Base Salary must be at least 0"),
   branchName: z.string().optional().nullable()
@@ -698,8 +698,11 @@ export async function bulkRegisterEmployees(employeesRaw: any[]) {
         let authUser = null
         let createdNewAuth = false
 
-        // Check if user already exists in auth list locally
-        const existingUser = allAuthUsers.find(u => u.email?.toLowerCase() === emp.email.toLowerCase())
+        // Format phone to E.164
+        const formattedPhone = `+63${emp.phone}`
+
+        // Check if user already exists in auth list locally by phone
+        const existingUser = allAuthUsers.find(u => u.phone === formattedPhone)
 
         if (existingUser) {
           authUser = existingUser
@@ -710,11 +713,11 @@ export async function bulkRegisterEmployees(employeesRaw: any[]) {
           })
           if (updateError) throw updateError
         } else {
-          // Create new user
+          // Create new user with phone
           const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
-            email: emp.email,
+            phone: formattedPhone,
             password: 'Password123!',
-            email_confirm: true,
+            phone_confirm: true,
             user_metadata: { full_name: emp.fullName }
           })
           if (authError) throw authError
@@ -729,7 +732,8 @@ export async function bulkRegisterEmployees(employeesRaw: any[]) {
           role: emp.role,
           base_salary: emp.baseSalary,
           branch_id: branchId || null,
-          lifecycle_status: 'active'
+          lifecycle_status: 'active',
+          phone_number: formattedPhone
         })
 
         if (profileError) {
@@ -737,6 +741,18 @@ export async function bulkRegisterEmployees(employeesRaw: any[]) {
             await supabaseAdmin.auth.admin.deleteUser(authUser.id)
           }
           throw profileError
+        }
+        
+        // Send Welcome SMS (fire and forget)
+        if (createdNewAuth) {
+          const smsMessage = `Welcome to TechnoSys, ${emp.fullName}! Download your app here: https://hris-admin-ten.vercel.app/download and log in with your phone number.`
+          supabase.functions.invoke('send-sms', {
+            body: { 
+              phone: formattedPhone, 
+              message: smsMessage,
+              type: 'ONBOARDING' 
+            }
+          }).catch(err => console.error("Failed to send welcome SMS:", err))
         }
 
         // Log individual activity

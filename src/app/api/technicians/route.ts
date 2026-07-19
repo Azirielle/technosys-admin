@@ -9,16 +9,15 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: 'Unauthorized. Employee management write permissions required.' }, { status: 403 });
     }
 
-    const { email, password, fullName, baseSalary, role, branchId, lifecycleStatus } = await request.json();
+    const { phoneNumber, password, fullName, baseSalary, role, branchId, lifecycleStatus } = await request.json();
 
     let authUser = null;
     let createdNewAuth = false;
 
-    // 1. Create the user in Auth
+    // 1. Create the user in Auth using phone instead of email
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
-      email,
+      phone: phoneNumber,
       password,
-      email_confirm: true,
       user_metadata: { full_name: fullName }
     });
 
@@ -29,7 +28,7 @@ export async function POST(request: Request) {
         const { data: listData, error: listError } = await supabaseAdmin.auth.admin.listUsers();
         if (listError) throw listError;
 
-        const existingUser = listData.users.find(u => u.email?.toLowerCase() === email.toLowerCase());
+        const existingUser = listData.users.find(u => u.phone === phoneNumber);
         if (!existingUser) {
           throw authError;
         }
@@ -56,7 +55,8 @@ export async function POST(request: Request) {
       role: role || 'technician',
       base_salary: baseSalary,
       branch_id: branchId || null,
-      lifecycle_status: lifecycleStatus || 'active'
+      lifecycle_status: lifecycleStatus || 'active',
+      phone_number: phoneNumber
     });
 
     if (profileError) {
@@ -65,6 +65,23 @@ export async function POST(request: Request) {
         await supabaseAdmin.auth.admin.deleteUser(authUser.id);
       }
       throw profileError;
+    }
+
+    // 3. Send Welcome SMS if new
+    if (createdNewAuth) {
+      const message = `Welcome to TechnoSys! Download the Technician App to view your schedule. Login using your phone number and password.`;
+      
+      try {
+        await supabaseAdmin.functions.invoke('send-sms', {
+          body: {
+            phoneNumbers: [phoneNumber],
+            message
+          }
+        });
+      } catch (smsErr) {
+        console.error("Failed to send welcome SMS:", smsErr);
+        // Do not throw, user was created successfully
+      }
     }
 
     return NextResponse.json({ success: true, user: authUser });

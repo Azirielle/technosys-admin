@@ -5,7 +5,9 @@ import { verifyRoleAccess } from "@/lib/permissions"
 import { revalidatePath } from "next/cache"
 import { logActivity } from "./activity"
 
-export async function registerAppVersion(version_name: string, apk_file_url: string, release_notes: string) {
+import { createClient } from "@/lib/supabase/server"
+
+export async function registerAppVersion(version_name: string, apk_file_url: string, release_notes: string, send_sms: boolean = false) {
   try {
     // 1. Verify caller is Admin
     const { authorized, userId } = await verifyRoleAccess('app_management', true)
@@ -36,6 +38,34 @@ export async function registerAppVersion(version_name: string, apk_file_url: str
 
     // 4. Log the activity
     await logActivity(userId, 'app_version_released', `Released new APK version: ${version_name}`)
+
+    // 5. Send SMS notification if requested
+    if (send_sms) {
+      try {
+        const { data: technicians, error: techError } = await supabaseAdmin
+          .from('profiles')
+          .select('phone_number')
+          .not('phone_number', 'is', null)
+          .in('role', ['technician', 'helper'])
+
+        if (!techError && technicians && technicians.length > 0) {
+          const smsMessage = `TECHNOSYS UPDATE: A new app version (v${version_name}) is now available. Please download and install it from the portal.`
+          const supabase = await createClient()
+          
+          await Promise.all(technicians.map(tech => 
+            supabase.functions.invoke('send-sms', {
+              body: { 
+                phone: tech.phone_number, 
+                message: smsMessage,
+                type: 'SYSTEM_UPDATE' 
+              }
+            })
+          ))
+        }
+      } catch (smsErr: any) {
+        console.warn("Failed to send update SMS notifications:", smsErr.message || smsErr)
+      }
+    }
 
     revalidatePath('/dashboard/app-management')
     return { success: true, data }

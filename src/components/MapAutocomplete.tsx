@@ -56,7 +56,7 @@ export default function MapAutocomplete({ location, setLocation, lat, setLat, ln
     }
     setLoading(true);
     try {
-      const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=5`, {
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=5&countrycodes=ph`, {
         headers: { 'User-Agent': 'TechnoSys HRIS Admin/1.0' }
       });
       const data = await res.json();

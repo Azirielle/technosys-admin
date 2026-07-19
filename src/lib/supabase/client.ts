@@ -8,6 +8,10 @@ export function createClient() {
       cookieOptions: {
         sameSite: 'lax',
         secure: process.env.NODE_ENV === 'production',
+        maxAge: 30 * 24 * 60 * 60, // 30 days
+      },
+      auth: {
+        persistSession: true,
       }
     }
   )

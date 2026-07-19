@@ -1,5 +1,6 @@
 "use client"
 import { useState, useTransition } from "react"
+import MapAutocomplete from "@/components/MapAutocomplete"
 import { 
   Calendar as CalendarIcon, 
   Clock, 
@@ -1369,10 +1370,16 @@ export default function SchedulesClient({
                   <label className="block text-[10px] font-extrabold uppercase tracking-wider text-zinc-400 mb-1.5">Client Name / Job Title</label>
                   <input required type="text" value={clientName} onChange={(e) => setDestinations(prev => { const newD = [...prev]; newD[0].clientName = e.target.value; return newD; })} className="w-full px-3.5 py-2 border border-zinc-200 rounded-xl bg-zinc-50/50 hover:bg-zinc-50/20 text-zinc-900 text-xs font-semibold focus:outline-none focus:bg-white focus:ring-2 focus:ring-zinc-950/5 focus:border-zinc-900 transition-all placeholder:text-zinc-400 placeholder:font-medium" placeholder="e.g. Pacita Mall Aircon Cleaning" />
                 </div>
-                <div>
-                  <label className="block text-[10px] font-extrabold uppercase tracking-wider text-zinc-400 mb-1.5">Location / Site Address</label>
-                  <input required type="text" value={location} onChange={(e) => setDestinations(prev => { const newD = [...prev]; newD[0].location = e.target.value; return newD; })} className="w-full px-3.5 py-2 border border-zinc-200 rounded-xl bg-zinc-50/50 hover:bg-zinc-50/20 text-zinc-900 text-xs font-semibold focus:outline-none focus:bg-white focus:ring-2 focus:ring-zinc-950/5 focus:border-zinc-900 transition-all placeholder:text-zinc-400 placeholder:font-medium" placeholder="e.g. San Pedro, Laguna" />
-                </div>
+                <MapAutocomplete
+                  location={destinations[0]?.location || ""}
+                  setLocation={(loc) => setDestinations(prev => { const n = [...prev]; n[0].location = loc; return n; })}
+                  lat={destinations[0]?.geofenceLat || null}
+                  setLat={(lat) => setDestinations(prev => { const n = [...prev]; n[0].geofenceLat = lat; return n; })}
+                  lng={destinations[0]?.geofenceLng || null}
+                  setLng={(lng) => setDestinations(prev => { const n = [...prev]; n[0].geofenceLng = lng; return n; })}
+                  radius={destinations[0]?.geofenceRadius || 500}
+                  setRadius={(radius) => setDestinations(prev => { const n = [...prev]; n[0].geofenceRadius = radius; return n; })}
+                />
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-[10px] font-extrabold uppercase tracking-wider text-zinc-400 mb-1.5">Start Time</label>

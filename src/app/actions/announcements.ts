@@ -69,6 +69,44 @@ export async function createAnnouncement(formData: FormData) {
       console.warn("Failed to log announcement activity:", logErr.message || logErr)
     }
 
+    // [NEW] Fetch target technicians and trigger SMS Broadcast via Edge Function
+    try {
+      let query = supabaseAdmin
+        .from('profiles')
+        .select('phone_number')
+        .not('phone_number', 'is', null)
+        .in('role', ['technician', 'helper'])
+
+      if (targetBranchId) {
+        query = query.eq('branch_id', targetBranchId)
+      }
+
+      const { data: technicians, error: techError } = await query
+
+      if (!techError && technicians && technicians.length > 0) {
+        const smsMessage = `TECHNOSYS ANNOUNCEMENT: ${title}\n\n${content}`
+        
+        // Broadcast SMS to all retrieved numbers
+        // In a real production environment, you'd send this to a queue or edge function 
+        // that handles bulk messaging to avoid timeout.
+        const promises = technicians.map(tech => 
+          supabase.functions.invoke('send-sms', {
+            body: { 
+              phone: tech.phone_number, 
+              message: smsMessage,
+              type: 'ANNOUNCEMENT' 
+            }
+          })
+        )
+        
+        // Do not await if we want it to run in background, but Next.js Server Actions 
+        // might terminate if we don't await. We will await all.
+        await Promise.allSettled(promises)
+      }
+    } catch (smsErr) {
+      console.warn("Failed to broadcast SMS:", smsErr)
+    }
+
     revalidatePath('/dashboard/settings')
     revalidatePath('/dashboard')
     return { success: true }

@@ -168,14 +168,15 @@ export default function EmployeesClient({
       document.body.style.overflow = ''
     }
   }, [selectedEmployee, isBulkDrawerOpen, editingEmployee])
+
   const [bulkRows, setBulkRows] = useState<Array<{
     fullName: string
-    email: string
+    phone: string
     role: 'technician' | 'helper'
     baseSalary: number
     branchName: string
   }>>([
-    { fullName: "", email: "", role: "technician", baseSalary: 20000, branchName: "" }
+    { fullName: "", phone: "", role: "technician", baseSalary: 20000, branchName: "" }
   ])
   const [bulkLoading, setBulkLoading] = useState(false)
   const [bulkResults, setBulkResults] = useState<{
@@ -229,7 +230,7 @@ export default function EmployeesClient({
   }
 
   const addBulkRow = () => {
-    setBulkRows(prev => [...prev, { fullName: "", email: "", role: "technician", baseSalary: 20000, branchName: "" }])
+    setBulkRows(prev => [...prev, { fullName: "", phone: "", role: "technician", baseSalary: 20000, branchName: "" }])
   }
 
   const removeBulkRow = (index: number) => {
@@ -249,8 +250,8 @@ export default function EmployeesClient({
         if (!row.fullName.trim()) {
           throw new Error(`Row ${i + 1}: Full Name is required`)
         }
-        if (!row.email.trim() || !row.email.includes("@")) {
-          throw new Error(`Row ${i + 1}: Valid Email is required`)
+        if (!row.phone.trim()) {
+          throw new Error(`Row ${i + 1}: Valid Phone is required`)
         }
         if (row.baseSalary < 0) {
           throw new Error(`Row ${i + 1}: Base Salary must be at least 0`)
@@ -272,7 +273,7 @@ export default function EmployeesClient({
           failureCount: res.failureCount || 0,
           results: res.results || []
         })
-        setBulkRows([{ fullName: "", email: "", role: "technician", baseSalary: 20000, branchName: "" }])
+        setBulkRows([{ fullName: "", phone: "", role: "technician", baseSalary: 20000, branchName: "" }])
         router.refresh()
       }
     } catch (err: any) {
@@ -315,9 +316,13 @@ export default function EmployeesClient({
 
     const form = e.currentTarget
     const formData = new FormData(form)
+    
+    const rawPhone = formData.get("phoneNumber")?.toString() || ""
+    const formattedPhone = rawPhone.startsWith("+63") ? rawPhone : `+63${rawPhone.replace(/^0/, '')}`
+    
     const data = {
       fullName: formData.get("fullName"),
-      email: formData.get("email"),
+      phoneNumber: formattedPhone,
       password: formData.get("password"),
       baseSalary: Number(formData.get("baseSalary")),
       role: formData.get("role") || "technician",
@@ -848,10 +853,13 @@ export default function EmployeesClient({
               </div>
 
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-zinc-500 mb-1.5">Email Address</label>
+                <label className="block text-xs font-bold uppercase tracking-wider text-zinc-500 mb-1.5">Phone Number</label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-zinc-400" />
-                  <input name="email" required type="email" className="w-full pl-10 pr-4 py-2.5 border border-zinc-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all text-zinc-800 text-sm" placeholder="juan@gmail.com" />
+                  <div className="absolute left-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
+                    <span className="text-sm font-medium text-zinc-500">+63</span>
+                    <div className="w-px h-4 bg-zinc-200" />
+                  </div>
+                  <input name="phoneNumber" required type="tel" className="w-full pl-14 pr-4 py-2.5 border border-zinc-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all text-zinc-800 text-sm" placeholder="917 123 4567" />
                 </div>
               </div>
 
@@ -1546,15 +1554,23 @@ export default function EmployeesClient({
                           />
                         </div>
                         <div>
-                          <label className="block text-3xs font-bold uppercase tracking-wider text-zinc-450 mb-1">Email Address</label>
-                          <input
-                            type="email"
-                            required
-                            placeholder="juan.delacruz@gmail.com"
-                            value={row.email}
-                            onChange={(e) => updateBulkRow(idx, 'email', e.target.value)}
-                            className="w-full px-3 py-2 border border-zinc-200 rounded-xl bg-white text-zinc-800 text-xs focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all"
-                          />
+                          <label className="block text-3xs font-bold uppercase tracking-wider text-zinc-450 mb-1">Phone Number</label>
+                          <div className="flex border border-zinc-200 rounded-xl bg-white focus-within:ring-2 focus-within:ring-emerald-500 focus-within:border-transparent transition-all overflow-hidden">
+                            <span className="flex items-center px-3 bg-zinc-50 border-r border-zinc-200 text-zinc-500 text-xs font-bold">
+                              +63
+                            </span>
+                            <input
+                              type="tel"
+                              required
+                              placeholder="9171234567"
+                              maxLength={10}
+                              pattern="[0-9]{10}"
+                              title="10 digit mobile number without 0 prefix"
+                              value={row.phone}
+                              onChange={(e) => updateBulkRow(idx, 'phone', e.target.value.replace(/\D/g, ''))}
+                              className="w-full px-3 py-2 bg-transparent text-zinc-800 text-xs outline-none font-mono"
+                            />
+                          </div>
                         </div>
                       </div>
 
