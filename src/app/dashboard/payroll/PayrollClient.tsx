@@ -478,8 +478,8 @@ export default function PayrollClient({
                         <p className="font-semibold text-zinc-600 font-tabular">{p.totalHours} hrs</p>
                         {(p.paidLeaveDays > 0 || p.unpaidLeaveDays > 0) && (
                           <p className="text-[10px] text-zinc-400 font-medium mt-0.5 font-tabular">
-                            ({p.workedHours}h work
-                            {p.paidLeaveDays > 0 ? ` + ${p.paidLeaveHours}h paid` : ''})
+                            ({(p.breakdown?.regularHours + p.breakdown?.sundayHours + p.breakdown?.holidayHours).toFixed(2)}h work
+                            {p.paidLeaveDays > 0 ? ` + ${p.breakdown?.paidLeaveHours}h paid` : ''})
                           </p>
                         )}
                         {p.hasOpenLogs && (
