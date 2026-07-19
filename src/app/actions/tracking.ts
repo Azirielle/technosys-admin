@@ -18,15 +18,11 @@ export async function getActiveTechniciansLocations(): Promise<ActiveTechnician[
     const { authorized } = await verifyRoleAccess('overview', false)
     if (!authorized) return []
 
-    // Get today's start and end in local time roughly (or just last 24 hours)
-    const last24Hours = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-
-    // Fetch active time logs (clocked in, but not clocked out) within last 24 hours
+    // Fetch active time logs (clocked in, but not clocked out)
     const { data: logs, error: logsError } = await supabaseAdmin
       .from('time_logs')
       .select('technician_id, app_time_in, technician:profiles!technician_id(full_name, avatar_url)')
       .is('app_time_out', null)
-      .gte('app_time_in', last24Hours)
 
     if (logsError || !logs || logs.length === 0) return []
 
