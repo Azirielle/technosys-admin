@@ -7,6 +7,8 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 const TELEGRAM_BOT_TOKEN = Deno.env.get("TELEGRAM_BOT_TOKEN");
 const TELEGRAM_CHAT_ID = "-5315218812"; // User's requested group chat ID
 
+const DASHBOARD_URL = "https://hris-admin-ten.vercel.app";
+
 serve(async (req) => {
   try {
     const payload = await req.json();
@@ -35,7 +37,7 @@ serve(async (req) => {
         
       if (profile) fullName = profile.full_name;
 
-      message = `📅 *NEW LEAVE REQUEST*\n\n*Employee:* ${fullName}\n*Reason:* ${record.reason || "Not specified."}\n\n📌 *Reply to this message with "Claimed" to assign this to yourself.*`;
+      message = `📅 *NEW LEAVE REQUEST*\n\n*Employee:* ${fullName}\n*Reason:* ${record.reason || "Not specified."}\n\n🔗 *Review and claim here:*\n${DASHBOARD_URL}/dashboard/leaves`;
     } else if (table === "tickets") {
       // Fetch employee name
       const { data: profile } = await supabase
@@ -46,7 +48,7 @@ serve(async (req) => {
         
       if (profile) fullName = profile.full_name;
 
-      message = `🚨 *URGENT TICKET FILED*\n\n*Employee:* ${fullName}\n*Issue:* ${record.description || "No description provided."}\n*Priority:* High\n\n📌 *Reply to this message with "Claimed" to assign this to yourself.*`;
+      message = `🚨 *URGENT TICKET FILED*\n\n*Employee:* ${fullName}\n*Issue:* ${record.description || "No description provided."}\n*Priority:* High\n\n🔗 *Review and claim here:*\n${DASHBOARD_URL}/dashboard/tickets`;
     } else {
       return new Response("No action taken for this table.", { status: 200 });
     }
