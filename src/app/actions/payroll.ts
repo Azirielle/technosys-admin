@@ -53,6 +53,17 @@ export async function publishPayslip(data: any) {
       }
     }
 
+    if (data.leave_ids && data.leave_ids.length > 0) {
+      const { error: leaveErr } = await supabaseAdmin
+        .from('leaves')
+        .update({ payroll_processed_at: new Date().toISOString() })
+        .in('id', data.leave_ids)
+      
+      if (leaveErr) {
+        console.error("Failed to mark leaves as processed:", leaveErr)
+      }
+    }
+
     const { data: techProfile } = await supabaseAdmin.from('profiles').select('full_name').eq('id', data.technician_id).single()
     const techName = techProfile?.full_name || data.technician_id
     await logActivity({
@@ -76,9 +87,14 @@ export async function getDraftPayroll(startDateStr?: string, endDateStr?: string
 
     // Parse dates (defaulting to current cutoff)
     const now = new Date()
-    const start = startDateStr ? new Date(startDateStr) : new Date(now.getFullYear(), now.getMonth(), now.getDate() <= 15 ? 1 : 16)
+    const isFirstHalf = now.getDate() <= 15
+    const start = startDateStr ? new Date(startDateStr) : new Date(now.getFullYear(), now.getMonth(), isFirstHalf ? 1 : 16)
     start.setHours(0,0,0,0)
-    const end = endDateStr ? new Date(endDateStr) : new Date(now.getFullYear(), now.getMonth(), now.getDate() <= 15 ? 10 : 25)
+    
+    // For the second half, end is the last day of the month (which correctly handles Feb 28/29)
+    const end = endDateStr 
+      ? new Date(endDateStr) 
+      : new Date(now.getFullYear(), isFirstHalf ? now.getMonth() : now.getMonth() + 1, isFirstHalf ? 15 : 0)
     end.setHours(23,59,59,999)
 
     // Standard Multipliers (PH Labor Code)
@@ -95,12 +111,16 @@ export async function getDraftPayroll(startDateStr?: string, endDateStr?: string
     // Fetch logs, schedules, leaves, holidays, and approved overtime requests
     const { data: logs } = await supabaseAdmin.from('time_logs').select('*').gte('created_at', start.toISOString()).lte('created_at', end.toISOString())
     const { data: scheds } = await supabaseAdmin.from('schedules').select('*')
+    
+    // Fetch APPROVED leaves that have NOT yet been processed in payroll.
+    // This allows a leave filed late (e.g. July 18 for July 10) to roll over into the active payroll run.
     const { data: leaves } = await supabaseAdmin
       .from('leaves')
       .select('*')
       .eq('status', 'approved')
-      .lte('start_date', end.toISOString().split('T')[0])
-      .gte('end_date', start.toISOString().split('T')[0])
+      .is('payroll_processed_at', null)
+      .lte('approved_at', end.toISOString())
+
     const { data: holidays } = await supabaseAdmin.from('holidays').select('*').eq('is_active', true)
     
     const { data: otReqs } = await supabaseAdmin
@@ -229,20 +249,20 @@ export async function getDraftPayroll(startDateStr?: string, endDateStr?: string
         }
       })
 
-      // 2. Fetch approved paid/unpaid leaves in the cutoff range
+      // 2. Fetch approved paid/unpaid leaves that are pending processing
       let paidLeaveDays = 0
       let unpaidLeaveDays = 0
       const empLeaves = (leaves || []).filter(l => l.technician_id === emp.id)
+      const leaveIds: string[] = []
 
       empLeaves.forEach(leave => {
+        leaveIds.push(leave.id)
         const lStart = new Date(leave.start_date)
         const lEnd = new Date(leave.end_date)
         const curr = new Date(lStart)
         while (curr <= lEnd) {
-          if (curr >= start && curr <= end) {
-            if (leave.leave_type === 'unpaid') unpaidLeaveDays++
-            else paidLeaveDays++
-          }
+          if (leave.leave_type === 'unpaid') unpaidLeaveDays++
+          else paidLeaveDays++
           curr.setDate(curr.getDate() + 1)
         }
       })
@@ -328,7 +348,8 @@ export async function getDraftPayroll(startDateStr?: string, endDateStr?: string
         hasOpenLogs,
         defaultAllowances,
         hourlyRate,
-        calculation: calc
+        calculation: calc,
+        leaveIds
       }
     }))
 

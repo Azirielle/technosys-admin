@@ -184,7 +184,8 @@ export default function PayrollClient({
           allowances: allowances,
           net_pay: netPay,
           period_start: startDate,
-          period_end: endDate
+          period_end: endDate,
+          leave_ids: p.leaveIds
         })
       })
 

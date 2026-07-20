@@ -1,10 +1,13 @@
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 // Edge Function to handle notifications for Admins
 // Triggered by Database Webhooks on `leaves` and `tickets`
 
 const TELEGRAM_BOT_TOKEN = Deno.env.get("TELEGRAM_BOT_TOKEN");
-const TELEGRAM_CHAT_ID = Deno.env.get("TELEGRAM_CHAT_ID");
+const TELEGRAM_CHAT_ID = "-5315218812"; // User's requested group chat ID
+
+const DASHBOARD_URL = "https://hris-admin-ten.vercel.app";
 
 serve(async (req) => {
   try {
@@ -12,16 +15,42 @@ serve(async (req) => {
     const table = payload.table; // 'leaves' or 'tickets'
     const record = payload.record; // The new row inserted
     
-    if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID) {
-      throw new Error("Telegram keys are not set.");
+    if (!TELEGRAM_BOT_TOKEN) {
+      throw new Error("Telegram bot token is not set.");
     }
 
+    // Initialize Supabase Client to fetch names
+    const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
+    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
     let message = "";
+    let fullName = "Unknown Employee";
 
     if (table === "leaves") {
-      message = `📅 *NEW LEAVE REQUEST*\n\nTechnician ID: ${record.technician_id}\nReason: ${record.reason || "Not specified."}\n\nPlease review it in the Admin Dashboard.`;
+      // Fetch employee name
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('full_name')
+        .eq('id', record.technician_id)
+        .single();
+        
+      if (profile) fullName = profile.full_name;
+
+      message = `🌴 *Leave Request Received*\n\n👤 *Employee:* ${fullName}\n📝 *Reason:* ${record.reason || "Not specified."}\n⏳ *Status:* Pending Approval\n\n🔗 [Open Admin Dashboard](${DASHBOARD_URL}/dashboard/leaves)`;
     } else if (table === "tickets") {
-      message = `🚨 *URGENT TICKET FILED*\n\nEmployee ID: ${record.employee_id}\nIssue: ${record.description || "No description provided."}\nPriority: High\n\nPlease check the dashboard immediately.`;
+      // Fetch employee name
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('full_name')
+        .eq('id', record.employee_id)
+        .single();
+        
+      if (profile) fullName = profile.full_name;
+
+      const priorityEmoji = record.priority === 'high' ? '🔴' : (record.priority === 'medium' ? '🟡' : '🟢');
+
+      message = `🚨 *New Support Ticket*\n\n👤 *Employee:* ${fullName}\n⚠️ *Issue:* ${record.description || "No description provided."}\n${priorityEmoji} *Priority:* ${record.priority ? record.priority.charAt(0).toUpperCase() + record.priority.slice(1) : "High"}\n\n🔗 [Review & Claim Ticket](${DASHBOARD_URL}/dashboard/tickets)`;
     } else {
       return new Response("No action taken for this table.", { status: 200 });
     }
@@ -33,6 +62,7 @@ serve(async (req) => {
         chat_id: TELEGRAM_CHAT_ID,
         text: message,
         parse_mode: "Markdown",
+        disable_web_page_preview: true
       }),
     });
 
