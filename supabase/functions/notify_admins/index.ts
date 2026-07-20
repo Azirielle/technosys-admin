@@ -37,7 +37,7 @@ serve(async (req) => {
         
       if (profile) fullName = profile.full_name;
 
-      message = `📅 *NEW LEAVE REQUEST*\n\n*Employee:* ${fullName}\n*Reason:* ${record.reason || "Not specified."}\n\n🔗 *Review and claim here:*\n${DASHBOARD_URL}/dashboard/leaves`;
+      message = `🌴 *Leave Request Received*\n\n👤 *Employee:* ${fullName}\n📝 *Reason:* ${record.reason || "Not specified."}\n⏳ *Status:* Pending Approval\n\n🔗 [Open Admin Dashboard](${DASHBOARD_URL}/dashboard/leaves)`;
     } else if (table === "tickets") {
       // Fetch employee name
       const { data: profile } = await supabase
@@ -48,7 +48,9 @@ serve(async (req) => {
         
       if (profile) fullName = profile.full_name;
 
-      message = `🚨 *URGENT TICKET FILED*\n\n*Employee:* ${fullName}\n*Issue:* ${record.description || "No description provided."}\n*Priority:* High\n\n🔗 *Review and claim here:*\n${DASHBOARD_URL}/dashboard/tickets`;
+      const priorityEmoji = record.priority === 'high' ? '🔴' : (record.priority === 'medium' ? '🟡' : '🟢');
+
+      message = `🚨 *New Support Ticket*\n\n👤 *Employee:* ${fullName}\n⚠️ *Issue:* ${record.description || "No description provided."}\n${priorityEmoji} *Priority:* ${record.priority ? record.priority.charAt(0).toUpperCase() + record.priority.slice(1) : "High"}\n\n🔗 [Review & Claim Ticket](${DASHBOARD_URL}/dashboard/tickets)`;
     } else {
       return new Response("No action taken for this table.", { status: 200 });
     }
@@ -60,6 +62,7 @@ serve(async (req) => {
         chat_id: TELEGRAM_CHAT_ID,
         text: message,
         parse_mode: "Markdown",
+        disable_web_page_preview: true
       }),
     });
 
