@@ -1,0 +1,1 @@
+ALTER TABLE leaves ADD COLUMN IF NOT EXISTS payroll_processed_at TIMESTAMPTZ;
