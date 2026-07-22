@@ -24,6 +24,7 @@ export default function LoginForm() {
   const [phone, setPhone] = useState('')
   const [otp, setOtp] = useState('')
   const [otpSent, setOtpSent] = useState(false)
+  const [loginMethod, setLoginMethod] = useState<'phone' | 'email'>('email')
   const [localError, setLocalError] = useState('')
   const [cooldown, setCooldown] = useState(0)
 
@@ -75,7 +76,7 @@ export default function LoginForm() {
       <form action={async (formData) => {
         setIsLoading(true)
         setLocalError('')
-        if (isTechnicianPortal) {
+        if (isTechnicianPortal && loginMethod === 'phone') {
           if (!otpSent) {
             const res = await sendOtp(formData)
             if (res?.error) setLocalError(res.error)
@@ -106,7 +107,7 @@ export default function LoginForm() {
             )}
           </AnimatePresence>
 
-          {!isTechnicianPortal ? (
+          {!isTechnicianPortal || loginMethod === 'email' ? (
             <>
               <div className="space-y-2">
                 <Label htmlFor="email" className="text-slate-500 text-[10px] font-extrabold uppercase tracking-widest ml-1">
@@ -150,7 +151,7 @@ export default function LoginForm() {
                 </div>
               </div>
             </>
-          ) : (
+          ) : (isTechnicianPortal && loginMethod === 'phone') ? (
             <>
               <div className="space-y-2">
                 <Label htmlFor="phone" className="text-slate-500 text-[10px] font-extrabold uppercase tracking-widest ml-1">
@@ -222,11 +223,23 @@ export default function LoginForm() {
                 </motion.div>
               )}
             </>
+          ) : null}
+
+          {isTechnicianPortal && (
+            <div className="flex justify-center mt-2 mb-2">
+              <button
+                type="button"
+                onClick={() => setLoginMethod(prev => prev === 'phone' ? 'email' : 'phone')}
+                className="text-[11px] font-bold text-blue-600 hover:text-blue-700 uppercase tracking-widest cursor-pointer"
+              >
+                {loginMethod === 'phone' ? 'Login with Email instead' : 'Login with Phone OTP instead'}
+              </button>
+            </div>
           )}
 
           {/* Test Credentials Helper */}
-          {!isTechnicianPortal && (
-            <div className="pt-4 mt-2">
+          {(!isTechnicianPortal || loginMethod === 'email') && (
+            <div className="pt-2 mt-2">
               <button
                 type="button"
                 onClick={() => setShowCredentialsHelp(!showCredentialsHelp)}
@@ -281,7 +294,7 @@ export default function LoginForm() {
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Authenticating...
                 </>
-              ) : isTechnicianPortal ? (
+              ) : isTechnicianPortal && loginMethod === 'phone' ? (
                 otpSent ? 'Verify OTP' : 'Send OTP'
               ) : (
                 'Secure Login'
