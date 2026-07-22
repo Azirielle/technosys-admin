@@ -175,14 +175,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   
   // Guard logic: if not loading and user is logged in, check permission
   const isAuthorized = loading || !profile || !activeModule || 
-    (profile.activeRoles.some(r => MODULE_ROLES[activeModule]?.includes(r as UserRole)))
+    (profile.activeRoles.some(r => MODULE_ROLES[activeModule]?.includes(r as UserRole) || r === activeModule))
 
   const allowedNavItems = navItems.map((item) => {
     const moduleName = getActiveModule(item.href) || 'overview'
     if (loading || !profile) return { ...item, isBorrowed: false }
     
     const baseAccess = MODULE_ROLES[moduleName]?.includes(profile.role as UserRole)
-    const overrideAccess = profile.activeRoles.some(r => MODULE_ROLES[moduleName]?.includes(r as UserRole))
+    const overrideAccess = profile.activeRoles.some(r => MODULE_ROLES[moduleName]?.includes(r as UserRole) || r === moduleName)
     
     if (!overrideAccess) return null
     

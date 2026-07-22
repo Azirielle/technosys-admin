@@ -1,23 +1,50 @@
 "use client"
 
 import { useState } from "react"
-import { Shield, Clock, Search, User, CheckCircle2, AlertCircle, X, Trash2 } from "lucide-react"
+import { Shield, Clock, Search, User, CheckCircle2, AlertCircle, X, Trash2, KeyRound } from "lucide-react"
 import { grantTemporaryOverride, revokeOverride } from "@/app/actions/overrides"
 import { useAlertConfirm } from "@/components/ui/AlertConfirmProvider"
 
 export default function CeoOverrides({ adminsList, activeOverrides }: { adminsList: any[], activeOverrides: any[] }) {
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedUser, setSelectedUser] = useState<any>(null)
-  const [selectedRole, setSelectedRole] = useState<string>("")
+  const [selectedFeature, setSelectedFeature] = useState<string>("")
   const [durationDays, setDurationDays] = useState<number>(1)
   const [loading, setLoading] = useState(false)
   const [errorMsg, setErrorMsg] = useState("")
 
   const { alert, confirm } = useAlertConfirm()
 
+  const menuFeatures = [
+    { value: 'payroll', label: '💵 Payroll', desc: 'Access Payroll calculations, disputes & salary logs' },
+    { value: 'attendance', label: '🕒 Attendance & Biometrics', desc: 'Access Live Attendance & Location verification' },
+    { value: 'broadcaster', label: '📣 Broadcaster', desc: 'Create broadcasts & emergency push notifications' },
+    { value: 'schedules', label: '🗓️ Schedules & DTR', desc: 'Manage technician work schedules & DTR logs' },
+    { value: 'leaves', label: '🌴 Leave Requests', desc: 'Review & approve employee leave applications' },
+    { value: 'employees', label: '👥 Employees Directory', desc: 'Access staff directory & profile management' },
+    { value: 'tickets', label: '🎫 Support Tickets', desc: 'Access Service Desk & HR support tickets' },
+    { value: 'inventory', label: '📦 Inventory & Tools', desc: 'Manage equipment, tools & stock levels' },
+    { value: 'warnings', label: '⚠️ Warnings & Infractions', desc: 'Issue & review disciplinary notices' },
+    { value: 'app_management', label: '📱 App Distribution', desc: 'Manage mobile APK updates & releases' },
+    { value: 'settings', label: '⚙️ System Settings', desc: 'Manage office locations, forms & settings' },
+    { value: 'admin', label: '🛡️ Full Administrator (All Modules)', desc: 'Grant complete administrative access across all menus' },
+  ]
+
+  const durations = [
+    { value: 1, label: '1 Day' },
+    { value: 3, label: '3 Days' },
+    { value: 7, label: '1 Week' },
+    { value: 14, label: '2 Weeks' },
+    { value: 30, label: '1 Month' },
+  ]
+
+  const getFeatureObj = (val: string) => {
+    return menuFeatures.find(f => f.value === val) || { label: val.toUpperCase(), desc: '' }
+  }
+
   const handleGrant = async () => {
-    if (!selectedUser || !selectedRole) {
-      setErrorMsg("Please select a user and a role.")
+    if (!selectedUser || !selectedFeature) {
+      setErrorMsg("Please select an employee and a menu feature to grant.")
       return
     }
 
@@ -25,15 +52,16 @@ export default function CeoOverrides({ adminsList, activeOverrides }: { adminsLi
     setErrorMsg("")
     
     try {
-      const result = await grantTemporaryOverride(selectedUser.id, selectedRole, durationDays)
+      const featObj = getFeatureObj(selectedFeature)
+      const result = await grantTemporaryOverride(selectedUser.id, selectedFeature, durationDays)
       if (result?.error) {
         setErrorMsg(result.error)
       } else {
         setSelectedUser(null)
-        setSelectedRole("")
+        setSelectedFeature("")
         alert(
-          `${selectedUser.full_name} has been temporarily granted the ${selectedRole.toUpperCase()} role for ${durationDays} days.`,
-          "Override Granted",
+          `${selectedUser.full_name} has been granted temporary access to [${featObj.label}] for ${durationDays} days.`,
+          "Menu Power Granted",
           "success"
         )
       }
@@ -44,10 +72,11 @@ export default function CeoOverrides({ adminsList, activeOverrides }: { adminsLi
     }
   }
 
-  const handleRevoke = async (overrideId: string, fullName: string) => {
+  const handleRevoke = async (overrideId: string, fullName: string, featureVal: string) => {
+    const featObj = getFeatureObj(featureVal)
     const isConfirmed = await confirm(
-      `Are you sure you want to revoke the temporary powers for ${fullName}? They will instantly lose access to these menus.`,
-      "Revoke Override",
+      `Are you sure you want to revoke temporary access to [${featObj.label}] for ${fullName}? They will instantly lose access to this feature menu.`,
+      "Revoke Menu Access",
       "destructive"
     )
     
@@ -56,7 +85,7 @@ export default function CeoOverrides({ adminsList, activeOverrides }: { adminsLi
       if (result?.error) {
         alert(result.error, "Error", "destructive")
       } else {
-        alert("The override has been successfully revoked.", "Revoked", "success")
+        alert("The feature override has been successfully revoked.", "Revoked", "success")
       }
     }
   }
@@ -65,22 +94,6 @@ export default function CeoOverrides({ adminsList, activeOverrides }: { adminsLi
     admin.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     admin.email?.toLowerCase().includes(searchTerm.toLowerCase())
   )
-
-  const roles = [
-    { value: 'accountant', label: 'Accountant' },
-    { value: 'hr', label: 'Human Resources' },
-    { value: 'coordinator', label: 'Coordinator' },
-    { value: 'branch_manager', label: 'Branch Manager' },
-    { value: 'supervisor', label: 'Supervisor' },
-    { value: 'admin', label: 'Administrator' },
-  ]
-
-  const durations = [
-    { value: 1, label: '1 Day' },
-    { value: 3, label: '3 Days' },
-    { value: 7, label: '1 Week' },
-    { value: 14, label: '2 Weeks' },
-  ]
 
   return (
     <div className="space-y-6">
@@ -92,11 +105,11 @@ export default function CeoOverrides({ adminsList, activeOverrides }: { adminsLi
         <div className="relative z-10">
           <div className="flex items-center gap-3 mb-2">
             <div className="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center text-amber-600">
-              <Shield className="w-5 h-5" />
+              <KeyRound className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-zinc-900">CEO Override Controls</h2>
-              <p className="text-sm text-zinc-500">Temporarily transfer administrative powers to other employees.</p>
+              <h2 className="text-xl font-bold text-zinc-900">CEO Feature Access Overrides</h2>
+              <p className="text-sm text-zinc-500">Temporarily delegate specific menu feature access (e.g. Payroll, Attendance, Broadcaster) to employees.</p>
             </div>
           </div>
 
@@ -104,17 +117,17 @@ export default function CeoOverrides({ adminsList, activeOverrides }: { adminsLi
             {/* Grant Form */}
             <div className="space-y-5 bg-zinc-50/50 p-5 rounded-xl border border-zinc-100">
               <h3 className="font-semibold text-zinc-800 text-sm flex items-center gap-2">
-                <User className="w-4 h-4 text-zinc-400" /> Grant Temporary Power
+                <User className="w-4 h-4 text-zinc-400" /> Grant Feature Menu Power
               </h3>
               
               <div className="space-y-4">
                 <div>
-                  <label className="block text-xs font-medium text-zinc-700 mb-1">Search Employee</label>
+                  <label className="block text-xs font-medium text-zinc-700 mb-1">Select Employee</label>
                   <div className="relative">
                     <Search className="absolute left-3 top-2.5 h-4 w-4 text-zinc-400" />
                     <input
                       type="text"
-                      placeholder="Search by name..."
+                      placeholder="Search employee by name..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                       className="w-full pl-9 pr-4 py-2 border border-zinc-200 rounded-lg text-sm focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-colors"
@@ -142,43 +155,47 @@ export default function CeoOverrides({ adminsList, activeOverrides }: { adminsLi
                 </div>
 
                 {selectedUser && (
-                  <div className="bg-white p-3 border border-amber-200 rounded-lg flex items-center justify-between">
+                  <div className="bg-white p-3 border border-amber-200 rounded-lg flex items-center justify-between shadow-xs">
                     <div>
                       <div className="text-sm font-bold text-zinc-900">{selectedUser.full_name}</div>
-                      <div className="text-xs text-zinc-500">Current Role: <span className="capitalize">{selectedUser.role?.replace('_', ' ')}</span></div>
+                      <div className="text-xs text-zinc-500">Current Role: <span className="capitalize font-semibold text-zinc-700">{selectedUser.role?.replace('_', ' ')}</span></div>
                     </div>
-                    <button onClick={() => setSelectedUser(null)} className="text-zinc-400 hover:text-rose-500">
+                    <button onClick={() => setSelectedUser(null)} className="text-zinc-400 hover:text-rose-500 p-1">
                       <X className="w-4 h-4" />
                     </button>
                   </div>
                 )}
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-medium text-zinc-700 mb-1">Power to Grant</label>
-                    <select
-                      value={selectedRole}
-                      onChange={(e) => setSelectedRole(e.target.value)}
-                      className="w-full p-2 border border-zinc-200 rounded-lg text-sm bg-white focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
-                    >
-                      <option value="">Select role...</option>
-                      {roles.map(r => (
-                        <option key={r.value} value={r.value}>{r.label}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-zinc-700 mb-1">Duration</label>
-                    <select
-                      value={durationDays}
-                      onChange={(e) => setDurationDays(Number(e.target.value))}
-                      className="w-full p-2 border border-zinc-200 rounded-lg text-sm bg-white focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
-                    >
-                      {durations.map(d => (
-                        <option key={d.value} value={d.value}>{d.label}</option>
-                      ))}
-                    </select>
-                  </div>
+                <div>
+                  <label className="block text-xs font-medium text-zinc-700 mb-1">Menu Feature to Grant</label>
+                  <select
+                    value={selectedFeature}
+                    onChange={(e) => setSelectedFeature(e.target.value)}
+                    className="w-full p-2.5 border border-zinc-200 rounded-lg text-sm bg-white focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 font-medium"
+                  >
+                    <option value="">Select menu feature...</option>
+                    {menuFeatures.map(f => (
+                      <option key={f.value} value={f.value}>{f.label}</option>
+                    ))}
+                  </select>
+                  {selectedFeature && (
+                    <p className="text-[11px] text-zinc-500 mt-1 italic">
+                      {getFeatureObj(selectedFeature).desc}
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-zinc-700 mb-1">Duration</label>
+                  <select
+                    value={durationDays}
+                    onChange={(e) => setDurationDays(Number(e.target.value))}
+                    className="w-full p-2 border border-zinc-200 rounded-lg text-sm bg-white focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
+                  >
+                    {durations.map(d => (
+                      <option key={d.value} value={d.value}>{d.label}</option>
+                    ))}
+                  </select>
                 </div>
 
                 {errorMsg && (
@@ -190,11 +207,11 @@ export default function CeoOverrides({ adminsList, activeOverrides }: { adminsLi
 
                 <button
                   onClick={handleGrant}
-                  disabled={loading || !selectedUser || !selectedRole}
-                  className="w-full py-2.5 bg-amber-600 hover:bg-amber-700 disabled:bg-amber-300 text-white rounded-lg text-sm font-semibold transition-colors flex items-center justify-center gap-2 shadow-sm"
+                  disabled={loading || !selectedUser || !selectedFeature}
+                  className="w-full py-2.5 bg-amber-600 hover:bg-amber-700 disabled:bg-amber-300 text-white rounded-lg text-sm font-semibold transition-colors flex items-center justify-center gap-2 shadow-sm cursor-pointer"
                 >
                   <Shield className="w-4 h-4" />
-                  {loading ? "Granting..." : "Grant Temporary Override"}
+                  {loading ? "Granting..." : "Grant Temporary Feature Access"}
                 </button>
               </div>
             </div>
@@ -202,25 +219,26 @@ export default function CeoOverrides({ adminsList, activeOverrides }: { adminsLi
             {/* Active Overrides List */}
             <div>
               <h3 className="font-semibold text-zinc-800 text-sm flex items-center gap-2 mb-4">
-                <Clock className="w-4 h-4 text-zinc-400" /> Active Overrides
+                <Clock className="w-4 h-4 text-zinc-400" /> Active Feature Overrides
               </h3>
               
               <div className="space-y-3">
                 {activeOverrides.length === 0 ? (
                   <div className="text-center p-8 border border-dashed border-zinc-200 rounded-xl bg-zinc-50/50">
                     <Shield className="w-8 h-8 text-zinc-300 mx-auto mb-2" />
-                    <p className="text-sm text-zinc-500">No active overrides.</p>
+                    <p className="text-sm text-zinc-500">No active feature overrides.</p>
                   </div>
                 ) : (
                   activeOverrides.map((override) => {
                     const expires = new Date(override.expires_at)
+                    const featObj = getFeatureObj(override.granted_role)
                     return (
-                      <div key={override.id} className="p-4 border border-amber-200 bg-amber-50/30 rounded-xl flex items-start justify-between group transition-all hover:bg-amber-50/50">
+                      <div key={override.id} className="p-4 border border-amber-200 bg-amber-50/30 rounded-xl flex items-start justify-between group transition-all hover:bg-amber-50/50 shadow-xs">
                         <div>
                           <div className="font-bold text-zinc-900 text-sm">{override.target?.full_name}</div>
-                          <div className="flex items-center gap-2 mt-1">
-                            <span className="bg-amber-100 text-amber-700 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full">
-                              {override.granted_role}
+                          <div className="flex items-center gap-2 mt-1.5">
+                            <span className="bg-amber-100 text-amber-800 text-xs font-bold px-2.5 py-0.5 rounded-md border border-amber-200/60">
+                              {featObj.label}
                             </span>
                             <span className="text-xs text-zinc-500">
                               Expires: {expires.toLocaleDateString()} {expires.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
@@ -232,9 +250,9 @@ export default function CeoOverrides({ adminsList, activeOverrides }: { adminsLi
                         </div>
                         
                         <button
-                          onClick={() => handleRevoke(override.id, override.target?.full_name)}
-                          className="p-2 text-zinc-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"
-                          title="Revoke Override"
+                          onClick={() => handleRevoke(override.id, override.target?.full_name, override.granted_role)}
+                          className="p-2 text-zinc-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors opacity-80 group-hover:opacity-100 focus:opacity-100 cursor-pointer"
+                          title="Revoke Feature Access"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
