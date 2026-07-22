@@ -261,6 +261,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 <Link
                   key={item.href}
                   href={item.href}
+                  prefetch={true}
                   className={`flex items-center justify-between px-3 py-2 rounded-md transition-all duration-200 group ${
                     active
                       ? 'bg-emerald-50 text-emerald-700 font-medium'
@@ -304,6 +305,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               
               <Link
                 href="/dashboard/settings"
+                prefetch={true}
                 className={`flex items-center gap-3 px-3 py-2 rounded-md transition-all duration-200 group ${
                   settingsActive
                     ? 'bg-emerald-50 text-emerald-700 font-medium'
