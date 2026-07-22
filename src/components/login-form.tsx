@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { login, sendOtp, verifyOtpAction } from "@/app/login/actions"
-import { Loader2, Eye, EyeOff, ShieldCheck, Key, User } from "lucide-react"
+import { Loader2, Eye, EyeOff, ShieldCheck, User } from "lucide-react"
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from "framer-motion"
 
@@ -16,7 +16,6 @@ export default function LoginForm() {
   const isTechnicianPortal = searchParams?.get('next') === '/technician'
   const [isLoading, setIsLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
-  const [showCredentialsHelp, setShowCredentialsHelp] = useState(false)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   
@@ -24,7 +23,6 @@ export default function LoginForm() {
   const [phone, setPhone] = useState('')
   const [otp, setOtp] = useState('')
   const [otpSent, setOtpSent] = useState(false)
-  const [loginMethod, setLoginMethod] = useState<'phone' | 'email'>('email')
   const [localError, setLocalError] = useState('')
   const [cooldown, setCooldown] = useState(0)
 
@@ -35,22 +33,6 @@ export default function LoginForm() {
     }
     return () => clearTimeout(timer)
   }, [cooldown])
-
-  const testAccounts = [
-    { role: 'Super Admin', email: 'technosis@admin.com', pass: 'password123', color: 'bg-indigo-50 border-indigo-100 text-indigo-700 hover:bg-indigo-100/50' },
-    { role: 'CEO', email: 'carlos.ceo@technocycle.com', pass: 'password123', color: 'bg-purple-50 border-purple-100 text-purple-700 hover:bg-purple-100/50' },
-    { role: 'COO', email: 'corazon.coo@technocycle.com', pass: 'password123', color: 'bg-violet-50 border-violet-100 text-violet-700 hover:bg-violet-100/50' },
-    { role: 'HR Manager', email: 'helena.hr@technocycle.com', pass: 'password123', color: 'bg-teal-50 border-teal-100 text-teal-700 hover:bg-teal-100/50' },
-    { role: 'Coordinator (Aileen)', email: 'aileen.admin@technocycle.com', pass: 'password123', color: 'bg-amber-50 border-amber-100 text-amber-700 hover:bg-amber-100/50' },
-    { role: 'Accountant', email: 'alicia.accountant@technocycle.com', pass: 'password123', color: 'bg-rose-50 border-rose-100 text-rose-700 hover:bg-rose-100/50' },
-    { role: 'Branch Manager', email: 'benjamin.manager@technocycle.com', pass: 'password123', color: 'bg-blue-50 border-blue-100 text-blue-700 hover:bg-blue-100/50' },
-    { role: 'Supervisor', email: 'santiago.supervisor@technocycle.com', pass: 'password123', color: 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100' },
-  ]
-
-  const handleFillCredentials = (testEmail: string, testPass: string) => {
-    setEmail(testEmail)
-    setPassword(testPass)
-  }
 
   return (
     <motion.div 
@@ -76,7 +58,7 @@ export default function LoginForm() {
       <form action={async (formData) => {
         setIsLoading(true)
         setLocalError('')
-        if (isTechnicianPortal && loginMethod === 'phone') {
+        if (isTechnicianPortal) {
           if (!otpSent) {
             const res = await sendOtp(formData)
             if (res?.error) setLocalError(res.error)
@@ -107,7 +89,7 @@ export default function LoginForm() {
             )}
           </AnimatePresence>
 
-          {!isTechnicianPortal || loginMethod === 'email' ? (
+          {!isTechnicianPortal ? (
             <>
               <div className="space-y-2">
                 <Label htmlFor="email" className="text-slate-500 text-[10px] font-extrabold uppercase tracking-widest ml-1">
@@ -151,7 +133,7 @@ export default function LoginForm() {
                 </div>
               </div>
             </>
-          ) : (isTechnicianPortal && loginMethod === 'phone') ? (
+          ) : (
             <>
               <div className="space-y-2">
                 <Label htmlFor="phone" className="text-slate-500 text-[10px] font-extrabold uppercase tracking-widest ml-1">
@@ -223,62 +205,6 @@ export default function LoginForm() {
                 </motion.div>
               )}
             </>
-          ) : null}
-
-          {isTechnicianPortal && (
-            <div className="flex justify-center mt-2 mb-2">
-              <button
-                type="button"
-                onClick={() => setLoginMethod(prev => prev === 'phone' ? 'email' : 'phone')}
-                className="text-[11px] font-bold text-blue-600 hover:text-blue-700 uppercase tracking-widest cursor-pointer"
-              >
-                {loginMethod === 'phone' ? 'Login with Email instead' : 'Login with Phone OTP instead'}
-              </button>
-            </div>
-          )}
-
-          {/* Test Credentials Helper */}
-          {(!isTechnicianPortal || loginMethod === 'email') && (
-            <div className="pt-2 mt-2">
-              <button
-                type="button"
-                onClick={() => setShowCredentialsHelp(!showCredentialsHelp)}
-                className="text-[10px] text-emerald-600 hover:text-emerald-700 font-extrabold uppercase tracking-widest cursor-pointer flex items-center gap-1.5 transition-colors duration-150 ml-1"
-              >
-                <Key className="w-3 h-3" />
-                {showCredentialsHelp ? "Hide Dev Accounts" : "Show Dev Accounts"}
-              </button>
-              
-              <AnimatePresence>
-                {showCredentialsHelp && (
-                  <motion.div 
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: "auto" }}
-                    exit={{ opacity: 0, height: 0 }}
-                    className="overflow-hidden"
-                  >
-                    <div className="mt-4 p-5 bg-white/40 backdrop-blur-md rounded-3xl border border-white/50 flex flex-col gap-3 shadow-[0_4px_20px_rgb(0,0,0,0.03)]">
-                      <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest ml-1">Select an identity:</p>
-                      <div className="grid grid-cols-2 gap-2">
-                        {testAccounts.map((acc) => (
-                          <motion.button
-                            whileHover={{ scale: 1.02 }}
-                            whileTap={{ scale: 0.98 }}
-                            key={acc.role}
-                            type="button"
-                            onClick={() => handleFillCredentials(acc.email, acc.pass)}
-                            className={`px-3 py-3 rounded-2xl border text-[11px] font-bold text-left transition-all duration-150 cursor-pointer flex flex-col justify-center gap-0.5 ${acc.color}`}
-                          >
-                            <span>{acc.role}</span>
-                            <span className="text-[9px] opacity-75 font-normal truncate block w-full">{acc.email}</span>
-                          </motion.button>
-                        ))}
-                      </div>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
           )}
         </CardContent>
         
@@ -294,7 +220,7 @@ export default function LoginForm() {
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Authenticating...
                 </>
-              ) : isTechnicianPortal && loginMethod === 'phone' ? (
+              ) : isTechnicianPortal ? (
                 otpSent ? 'Verify OTP' : 'Send OTP'
               ) : (
                 'Secure Login'
