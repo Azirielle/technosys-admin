@@ -40,7 +40,7 @@ export async function verifyRoleAccess(moduleName: string, requiresWrite: boolea
 
       if (overrides) {
         for (const override of overrides) {
-          if (allowedRoles.includes(override.granted_role as UserRole)) {
+          if (override.granted_role === moduleName || allowedRoles.includes(override.granted_role as UserRole)) {
             isAuthorized = true
             authorizedRole = override.granted_role as UserRole
             break

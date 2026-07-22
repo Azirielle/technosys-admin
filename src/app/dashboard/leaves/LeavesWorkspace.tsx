@@ -128,12 +128,7 @@ export default function LeavesWorkspace({ initialLeaves, currentUserId, isWriteA
 
       {/* Real-time Leaves Status Dashboard */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-        <div 
-          onClick={() => { setFilter('pending'); setCurrentPage(1); }}
-          className={`p-5 rounded-2xl border shadow-xs cursor-pointer transition-all hover:scale-[1.01] ${
-            filter === 'pending' ? 'bg-white border-zinc-450 ring-2 ring-zinc-100 font-bold' : 'bg-white border-zinc-200 opacity-80'
-          }`}
-        >
+        <div className="p-5 rounded-2xl border border-zinc-200 bg-white shadow-xs">
           <p className="text-2xs font-extrabold uppercase tracking-wider text-zinc-400">Pending Approval</p>
           <p className="text-3xl font-extrabold text-zinc-900 mt-2">{pendingCount}</p>
           <div className="flex items-center gap-1.5 mt-2">
@@ -142,12 +137,7 @@ export default function LeavesWorkspace({ initialLeaves, currentUserId, isWriteA
           </div>
         </div>
 
-        <div 
-          onClick={() => { setFilter('approved'); setCurrentPage(1); }}
-          className={`p-5 rounded-2xl border shadow-xs cursor-pointer transition-all hover:scale-[1.01] ${
-            filter === 'approved' ? 'bg-white border-zinc-450 ring-2 ring-zinc-100 font-bold' : 'bg-white border-zinc-200 opacity-80'
-          }`}
-        >
+        <div className="p-5 rounded-2xl border border-zinc-200 bg-white shadow-xs">
           <p className="text-2xs font-extrabold uppercase tracking-wider text-zinc-400">Active Leaves Today</p>
           <p className="text-3xl font-extrabold text-zinc-900 mt-2">{activeLeavesToday}</p>
           <div className="flex items-center gap-1.5 mt-2">
@@ -156,12 +146,7 @@ export default function LeavesWorkspace({ initialLeaves, currentUserId, isWriteA
           </div>
         </div>
 
-        <div 
-          onClick={() => { setFilter('approved'); setCurrentPage(1); }}
-          className={`p-5 rounded-2xl border shadow-xs cursor-pointer transition-all hover:scale-[1.01] ${
-            filter === 'approved' ? 'bg-white border-zinc-450 ring-2 ring-zinc-100 font-bold' : 'bg-white border-zinc-200 opacity-80'
-          }`}
-        >
+        <div className="p-5 rounded-2xl border border-zinc-200 bg-white shadow-xs">
           <p className="text-2xs font-extrabold uppercase tracking-wider text-zinc-400">Approved This Month</p>
           <p className="text-3xl font-extrabold text-zinc-900 mt-2">{approvedThisMonth}</p>
           <div className="flex items-center gap-1.5 mt-2">
@@ -170,10 +155,7 @@ export default function LeavesWorkspace({ initialLeaves, currentUserId, isWriteA
           </div>
         </div>
 
-        <div 
-          onClick={() => { setFilter('all'); setCurrentPage(1); }}
-          className="p-5 rounded-2xl border border-zinc-200 bg-white shadow-xs cursor-pointer transition-all hover:scale-[1.01] opacity-80"
-        >
+        <div className="p-5 rounded-2xl border border-zinc-200 bg-white shadow-xs">
           <p className="text-2xs font-extrabold uppercase tracking-wider text-zinc-400">Common Reason</p>
           <p className="text-lg font-extrabold text-zinc-850 mt-3 truncate">{mostCommonTypeStr}</p>
           <div className="flex items-center gap-1.5 mt-2">

@@ -1089,7 +1089,14 @@ export default function TicketWorkspace({
                   className="hidden"
                   onChange={e => {
                     const file = e.target.files?.[0]
-                    if (file) setAttachmentFile(file)
+                    if (file) {
+                      if (file.size > 10 * 1024 * 1024) {
+                        alert("Upload blocked: File size exceeds the maximum allowed limit of 10 MB.")
+                        e.target.value = ''
+                        return
+                      }
+                      setAttachmentFile(file)
+                    }
                   }}
                 />
 
@@ -1112,7 +1119,7 @@ export default function TicketWorkspace({
                   disabled={uploadingAttachment || commentPending}
                   onClick={() => fileInputRef.current?.click()}
                   className="p-3 border border-zinc-200 hover:bg-zinc-50 text-zinc-600 rounded-xl transition-all cursor-pointer flex items-center justify-center shrink-0 h-[46px] w-[46px]"
-                  title="Attach File"
+                  title="Attach File (Max 10 MB)"
                 >
                   <Paperclip className="w-5 h-5" />
                 </button>
