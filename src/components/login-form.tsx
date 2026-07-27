@@ -231,17 +231,25 @@ export default function LoginForm() {
             </Button>
           </motion.div>
           {isTechnicianPortal && (
-             <div 
-               className="mt-6 text-[9px] text-slate-300 hover:text-slate-400 font-mono tracking-widest cursor-pointer select-none transition-colors duration-300"
-               onClick={() => {
-                 const url = new URL(window.location.href);
-                 url.searchParams.delete('next');
-                 window.location.href = url.pathname + url.search;
-               }}
-               title="v0.1.0-build"
-             >
-               v0.1.0-build
-             </div>
+            <>
+              <button
+                type="button"
+                onClick={() => {
+                  const url = new URL(window.location.href);
+                  url.searchParams.delete('next');
+                  window.location.href = url.pathname + url.search;
+                }}
+                className="mt-4 text-[11px] font-extrabold text-blue-500 hover:text-blue-600 uppercase tracking-wider transition-colors cursor-pointer"
+              >
+                Login with Email Instead
+              </button>
+              <div 
+                className="mt-4 text-[9px] text-slate-300 hover:text-slate-400 font-mono tracking-widest select-none transition-colors duration-300"
+                title="v0.1.0-build"
+              >
+                v0.1.0-build
+              </div>
+            </>
           )}
         </CardFooter>
       </form>
