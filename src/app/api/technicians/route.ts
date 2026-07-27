@@ -9,7 +9,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: 'Unauthorized. Employee management write permissions required.' }, { status: 403 });
     }
 
-    const { phoneNumber, password, fullName, baseSalary, role, branchId, lifecycleStatus } = await request.json();
+    const { phoneNumber, password, fullName, baseSalary, role, branchId, lifecycleStatus, isDriver } = await request.json();
 
     let authUser = null;
     let createdNewAuth = false;
@@ -56,7 +56,8 @@ export async function POST(request: Request) {
       base_salary: baseSalary,
       branch_id: branchId || null,
       lifecycle_status: lifecycleStatus || 'active',
-      phone_number: phoneNumber
+      phone_number: phoneNumber,
+      is_driver: isDriver || false
     });
 
     if (profileError) {

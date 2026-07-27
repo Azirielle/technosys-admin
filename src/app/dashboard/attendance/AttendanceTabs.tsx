@@ -2,6 +2,7 @@
 import { useState, useTransition } from "react"
 import SelfieAuditWidget from "../SelfieAuditWidget"
 import AttendanceHistoryTable from "./AttendanceHistoryTable"
+import AttendanceWeeklyBoard from "./AttendanceWeeklyBoard"
 import OvertimeRequestsTable from "./OvertimeRequestsTable"
 import { Clock, History, Timer, UserCheck, Camera, MapPin, AlertCircle } from "lucide-react"
 import { clockOutTechnician } from "@/app/actions/attendance"
@@ -9,6 +10,7 @@ import { useAlertConfirm } from "@/components/ui/AlertConfirmProvider"
 
 export default function AttendanceTabs({ 
   activeShifts = [],
+  weekSchedules = [],
   pendingSelfies, 
   history, 
   otRequests,
@@ -16,6 +18,7 @@ export default function AttendanceTabs({
   canApprove 
 }: { 
   activeShifts?: any[]
+  weekSchedules?: any[]
   pendingSelfies: any[]
   history: any[]
   otRequests: any[]
@@ -122,87 +125,13 @@ export default function AttendanceTabs({
           </div>
         )}
 
+        
         {activeTab === 'active' && (
-          activeShifts.length > 0 ? (
-            <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-sm whitespace-nowrap">
-                  <thead className="bg-slate-50 border-b border-slate-200 text-slate-500">
-                    <tr>
-                      <th className="px-6 py-4 font-semibold">Technician</th>
-                      <th className="px-6 py-4 font-semibold">Clocked In At</th>
-                      <th className="px-6 py-4 font-semibold">Geofence Status</th>
-                      <th className="px-6 py-4 font-semibold text-center">Selfie</th>
-                      {canApprove && <th className="px-6 py-4 font-semibold text-right">Actions</th>}
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {activeShifts.map((shift) => {
-                      const techName = shift.technician?.full_name || 'Unknown';
-                      const isOutside = shift.geofence_status === 'outside';
-                      return (
-                        <tr key={shift.id} className="hover:bg-slate-50 transition-colors">
-                          <td className="px-6 py-4">
-                            <div className="font-semibold text-slate-900">{techName}</div>
-                            <div className="text-xs text-slate-500 capitalize">{shift.technician?.role || 'Technician'}</div>
-                          </td>
-                          <td className="px-6 py-4 text-slate-600 font-medium">
-                            {new Date(shift.app_time_in).toLocaleString()}
-                          </td>
-                          <td className="px-6 py-4">
-                            <span className={`inline-flex items-center gap-1 py-1 px-2.5 rounded-full text-xs font-semibold ${
-                              isOutside 
-                                ? 'bg-amber-100 text-amber-800' 
-                                : 'bg-emerald-100 text-emerald-800'
-                            }`}>
-                              <MapPin className="w-3 h-3" />
-                              {isOutside ? 'Outside Geofence' : 'Inside Geofence'}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4">
-                            <div className="flex justify-center">
-                              {shift.photo_url ? (
-                                <a 
-                                  href={shift.photo_url} 
-                                  target="_blank" 
-                                  rel="noopener noreferrer"
-                                  className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
-                                  title="View Selfie"
-                                >
-                                  <Camera className="w-5 h-5" />
-                                </a>
-                              ) : (
-                                <span className="text-slate-300 text-xs font-medium">No photo</span>
-                              )}
-                            </div>
-                          </td>
-                          {canApprove && (
-                            <td className="px-6 py-4 text-right">
-                              <button
-                                onClick={() => handleForceClockOut(shift.id, techName)}
-                                disabled={isPending}
-                                className="py-1.5 px-4 bg-rose-50 hover:bg-rose-100 text-rose-700 hover:text-rose-800 rounded-xl text-xs font-bold border border-rose-150 transition-all disabled:opacity-50"
-                              >
-                                Clock Out
-                              </button>
-                            </td>
-                          )}
-                        </tr>
-                      )
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          ) : (
-            <div className="flex flex-col items-center justify-center h-full py-20 text-slate-400">
-              <UserCheck className="w-16 h-16 mb-4 opacity-50 text-slate-300" />
-              <h3 className="text-xl font-bold text-slate-700">No Active Shifts</h3>
-              <p className="mt-2 text-center max-w-md">
-                There are no clocked-in technicians in the field right now.
-              </p>
-            </div>
-          )
+          <AttendanceWeeklyBoard 
+            activeShifts={activeShifts} 
+            weekSchedules={weekSchedules} 
+            canApprove={canApprove} 
+          />
         )}
 
         {activeTab === 'pending' && (

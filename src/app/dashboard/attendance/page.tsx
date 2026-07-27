@@ -4,6 +4,7 @@ import { getRecentSelfies, getAttendanceHistory, getActiveShifts } from '@/app/a
 import { getOtRequests } from '@/app/actions/overtime'
 import AttendanceTabs from './AttendanceTabs'
 import { Clock } from 'lucide-react'
+import { supabaseAdmin } from "@/lib/supabase/admin"
 import { verifyRoleAccess } from '@/lib/permissions'
 
 export const revalidate = 0;
@@ -29,6 +30,20 @@ export default async function AttendancePage() {
   const history = await getAttendanceHistory();
   const otRequests = await getOtRequests();
   const activeShifts = await getActiveShifts();
+
+  // Fetch current week's schedules
+  const now = new Date()
+  const startOfWeek = new Date(now)
+  startOfWeek.setDate(now.getDate() - now.getDay())
+  const endOfWeek = new Date(startOfWeek)
+  endOfWeek.setDate(startOfWeek.getDate() + 6)
+
+  const { data: weekSchedules } = await supabaseAdmin
+    .from('schedules')
+    .select('*, technician:profiles!technician_id(full_name), senior_partner:profiles!senior_partner_id(full_name)')
+    .gte('start_time', startOfWeek.toISOString())
+    .lte('start_time', endOfWeek.toISOString())
+
   const { authorized: canApprove } = await verifyRoleAccess('attendance', true)
 
   return (
@@ -47,6 +62,7 @@ export default async function AttendancePage() {
 
       <AttendanceTabs 
         activeShifts={activeShifts}
+        weekSchedules={weekSchedules || []}
         pendingSelfies={pendingSelfies} 
         history={history} 
         otRequests={otRequests}

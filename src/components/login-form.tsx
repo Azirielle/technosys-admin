@@ -56,6 +56,9 @@ export default function LoginForm() {
         </CardHeader>
       
       <form action={async (formData) => {
+        setIsLoading(true);
+        setLocalError('');
+        // The loading state will remain true because the server action will redirect
         setIsLoading(true)
         setLocalError('')
         if (isTechnicianPortal) {
@@ -72,7 +75,7 @@ export default function LoginForm() {
         } else {
           await login(formData)
         }
-        setIsLoading(false)
+        // Intentionally omitted setIsLoading(false) here because if login fails, it redirects to /login?message=error and unmounts/remounts. If it succeeds, it redirects to /dashboard. We want the loader to persist during the route transition.
       }}>
         <CardContent className="space-y-5 px-8">
           <input type="hidden" name="next" value={searchParams?.get('next') || ''} />

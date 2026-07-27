@@ -26,6 +26,7 @@ export interface TechnicianInfo {
   hasMedicalClearance?: boolean
   branchId?: string | null
   lifecycleStatus?: string
+  isDriver?: boolean
 }
 
 // 1. Fetch all technicians (combining Auth and Profile tables)
@@ -47,7 +48,7 @@ export async function getTechnicians(): Promise<TechnicianInfo[]> {
     if (profileError) throw profileError
 
     // Filter roles in memory to be resilient if the database migration is not yet run
-    const targetRoles = ['technician', 'helper']
+    const targetRoles = ['technician', 'helper', 'field technician', 'field helper', 'senior technician']
     const filteredProfiles = (profiles || []).filter(p => targetRoles.includes(p.role))
 
     // Fetch auth users to match emails
@@ -318,6 +319,7 @@ export interface ChecklistData {
   hireDate: string | null
   branchId?: string | null
   lifecycleStatus?: string
+  isDriver?: boolean
 }
 
 export async function getPotentialManagers() {

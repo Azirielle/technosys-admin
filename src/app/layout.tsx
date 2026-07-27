@@ -10,6 +10,7 @@ const plusJakartaSans = Plus_Jakarta_Sans({
 
 import { MobileHardwareListener } from "@/components/mobile-hardware-listener";
 import NextTopLoader from 'nextjs-toploader';
+import { Toaster } from 'react-hot-toast';
 
 export const metadata: Metadata = {
   title: "TechnoSys — Access Portal",
@@ -28,6 +29,7 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col">
         <NextTopLoader color="#2563eb" showSpinner={false} />
+        <Toaster position="top-center" />
         <MobileHardwareListener />
         {children}
       </body>
