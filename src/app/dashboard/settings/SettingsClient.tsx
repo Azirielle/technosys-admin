@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { MapPin, Scale, Calendar, Shield, AlertCircle } from "lucide-react"
+import { MapPin, Scale, Calendar, Shield, AlertCircle, Database } from "lucide-react"
 
 import LocationSettings from "./LocationSettings"
 import PhilHealthRuleEditor from "./PhilHealthRuleEditor"
@@ -13,6 +13,7 @@ import DocumentsEditor from "./DocumentsEditor"
 import AdminAccounts from "./AdminAccounts"
 import CeoOverrides from "./CeoOverrides"
 import DeletionQueue from "./DeletionQueue"
+import DatabaseStorageManager from "./DatabaseStorageManager"
 
 interface SettingsClientProps {
   locations: any[]
@@ -72,11 +73,12 @@ export default function SettingsClient({
       : []),
     ...(isSuperAdmin || isCeo
       ? [
+          
           {
-            id: "overrides",
-            label: "CEO Overrides",
-            icon: Shield,
-            description: "Temporary role transfers"
+            id: "database",
+            label: "Database Health",
+            icon: Database,
+            description: "Storage limits & archiving"
           },
           {
             id: "deletions",
@@ -228,13 +230,15 @@ export default function SettingsClient({
               </div>
             )}
 
-            {activeTab === "overrides" && (isSuperAdmin || isCeo) && (
+            
+
+            
+            {activeTab === "database" && (isSuperAdmin || isCeo) && (
               <div className="animate-in fade-in slide-in-from-right-4 duration-500 fill-mode-forwards">
-                <CeoOverrides adminsList={adminsList} activeOverrides={activeOverrides} />
+                <DatabaseStorageManager />
               </div>
             )}
-
-            {activeTab === "deletions" && (isSuperAdmin || isCeo) && (
+\n            {activeTab === "deletions" && (isSuperAdmin || isCeo) && (
               <div className="animate-in fade-in slide-in-from-right-4 duration-500 fill-mode-forwards">
                 <DeletionQueue deletionRequests={deletionRequests} />
               </div>
@@ -245,3 +249,4 @@ export default function SettingsClient({
     </div>
   )
 }
+

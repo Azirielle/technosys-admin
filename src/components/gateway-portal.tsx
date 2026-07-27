@@ -2,12 +2,15 @@
 
 import { motion } from 'framer-motion'
 import { useRouter } from 'next/navigation'
+import { useState } from 'react'
+import { Loader2 } from 'lucide-react'
 import Image from 'next/image'
 
 const ease = [0.32, 0.72, 0, 1] as const
 
 export default function GatewayPortal() {
   const router = useRouter()
+  const [isNavigating, setIsNavigating] = useState<string | null>(null)
 
   return (
     <div className="min-h-[100dvh] flex flex-col md:flex-row">
@@ -133,7 +136,7 @@ export default function GatewayPortal() {
 
           {/* ── PRIMARY: Technician ──────────────────── */}
           <motion.button
-            onClick={() => router.push('/login?next=/technician')}
+            onClick={() => { setIsNavigating('tech'); router.push('/login?next=/technician'); }}
             className="group w-full flex items-center justify-between gap-3 rounded-xl px-5 py-4 font-medium text-[0.9375rem] transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 cursor-pointer"
             style={{
               background: 'oklch(0.45 0.16 160)',
@@ -204,7 +207,7 @@ export default function GatewayPortal() {
 
           {/* ── SECONDARY: Admin ──────────────────────── */}
           <motion.button
-            onClick={() => router.push('/login')}
+            onClick={() => { setIsNavigating('admin'); router.push('/login'); }}
             className="group w-full flex items-center justify-between gap-3 rounded-xl px-5 py-4 font-medium text-[0.9375rem] transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 cursor-pointer"
             style={{
               background: 'transparent',

@@ -128,6 +128,8 @@ export default function EmployeeEditModal({ employee, onClose }: EmployeeEditMod
               >
                 <option value="helper">Helper</option>
                 <option value="technician">Technician</option>
+                <option value="senior_technician">Senior Technician</option>
+                <option value="technician">Technician</option>
                 <option value="admin">Admin</option>
                 <option value="coordinator">Coordinator</option>
                 <option value="super_admin">Super Admin</option>

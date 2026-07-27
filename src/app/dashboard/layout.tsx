@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { AlertConfirmProvider } from '@/components/ui/AlertConfirmProvider'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, Users, Calendar, Clock, DollarSign, Settings, LogOut, MessageSquare, Package, ClipboardList, ShieldAlert, Map, Megaphone, Smartphone } from 'lucide-react'
+import { LayoutDashboard, Users, Calendar, Clock, DollarSign, Settings, LogOut, MessageSquare, Package, ClipboardList, ShieldAlert, Shield, Map, Megaphone, Smartphone } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { MODULE_ROLES, type UserRole } from '@/lib/permissions-client'
 import GlobalRealtimeSync from '@/components/GlobalRealtimeSync'
@@ -152,6 +152,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     { href: '/dashboard/broadcaster', label: 'Broadcaster', icon: Megaphone },
       { href: '/dashboard/warnings', label: 'Warnings', icon: ShieldAlert },
       { href: '/dashboard/app-management', label: 'App Distribution', icon: Smartphone },
+    { href: '/dashboard/ceo-overrides', label: 'CEO Overrides', icon: Shield },
   ]
 
   const getActiveModule = (path: string) => {
@@ -165,6 +166,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     if (path.startsWith('/dashboard/tickets')) return 'tickets'
     if (path.startsWith('/dashboard/inventory')) return 'inventory'
       if (path.startsWith('/dashboard/broadcaster')) return 'broadcaster'
+    if (path.startsWith('/dashboard/ceo-overrides')) return 'ceo_overrides'
       if (path.startsWith('/dashboard/warnings')) return 'warnings'
       if (path.startsWith('/dashboard/app-management')) return 'app_management'
     if (path.startsWith('/dashboard/settings')) return 'settings'

@@ -64,6 +64,7 @@ export default function SchedulesClient({
   
   const [techId, setTechId] = useState("")
   const [seniorPartnerId, setSeniorPartnerId] = useState("")
+  const [driverId, setDriverId] = useState("")
   const [startTime, setStartTime] = useState("")
   const [destinations, setDestinations] = useState<any[]>([{ clientName: "", location: "", geofenceLat: null, geofenceLng: null, geofenceRadius: 500 }])
   const [attendanceMode, setAttendanceMode] = useState("direct_dispatch")
@@ -74,6 +75,7 @@ export default function SchedulesClient({
   const [editingScheduleId, setEditingScheduleId] = useState<string | null>(null)
   
   const [selectedStaffIds, setSelectedStaffIds] = useState<string[]>([])
+  const [selectedDriverId, setSelectedDriverId] = useState<string>("")
   const [bulkSeniorPartnerMap, setBulkSeniorPartnerMap] = useState<Record<string, string>>({})
   
   const [errorMsg, setErrorMsg] = useState("")
@@ -151,6 +153,7 @@ export default function SchedulesClient({
       setAllowanceRate(0)
       setIsVip(false)
       setSelectedStaffIds([])
+    setSelectedDriverId("")
       setBulkSeniorPartnerMap({})
       setErrorMsg("")
       setSuccessMsg("")
@@ -400,6 +403,7 @@ export default function SchedulesClient({
     formData.append("location", destinations[0].location)
     formData.append("startTime", startTime)
     formData.append("attendanceMode", attendanceMode)
+    if (driverId) formData.append("driverId", driverId)
     formData.append("allowanceRate", allowanceRate.toString())
     if (isHelper && seniorPartnerId) {
       formData.append("seniorPartnerId", seniorPartnerId)
@@ -1877,7 +1881,35 @@ export default function SchedulesClient({
                     </div>
                   )}
 
-                  <button type="submit" disabled={isPending || selectedStaffIds.length === 0 || destinations.some(d => !d.clientName.trim() || !d.location.trim()) || !startTime} className="w-full bg-zinc-900 hover:bg-zinc-800 disabled:opacity-50 disabled:hover:bg-zinc-900 text-white py-2.5 rounded-xl text-xs font-extrabold tracking-wide transition-all shadow-sm flex items-center justify-center gap-2 cursor-pointer active:scale-98">
+                  
+                  {selectedStaffIds.length > 1 && (
+                    <div className="space-y-3 bg-indigo-50/50 p-4 rounded-xl border border-indigo-100">
+                      <h4 className="text-[11px] font-bold uppercase tracking-wider text-indigo-900 mb-2">Assign Driver</h4>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        {initialStaff.filter(t => selectedStaffIds.includes(t.id)).map(staff => (
+                          <label key={staff.id} className={`flex items-center gap-2 p-2 rounded-lg cursor-pointer border transition-colors ${selectedDriverId === staff.id ? 'bg-indigo-600 border-indigo-600 text-white' : 'bg-white border-zinc-200 text-zinc-700 hover:border-indigo-300'}`}>
+                            <input 
+                              type="radio"
+                              name="driver_assignment"
+                              value={staff.id}
+                              checked={selectedDriverId === staff.id}
+                              onChange={() => setSelectedDriverId(staff.id)}
+                              className="sr-only"
+                            />
+                            <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${selectedDriverId === staff.id ? 'border-white' : 'border-zinc-300'}`}>
+                              {selectedDriverId === staff.id && <div className="w-2 h-2 rounded-full bg-white" />}
+                            </div>
+                            <span className="text-xs font-bold truncate">
+                              {staff.full_name} 
+                              {staff.is_driver && <span className="ml-1 text-[10px] bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded-md font-semibold">Driver</span>}
+                            </span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  <button type="submit" disabled={isPending || selectedStaffIds.length === 0 || destinations.some(d => !d.clientName.trim() || !d.location.trim()) || !startTime || (selectedStaffIds.length > 1 && !selectedDriverId)} className="w-full bg-zinc-900 hover:bg-zinc-800 disabled:opacity-50 disabled:hover:bg-zinc-900 text-white py-2.5 rounded-xl text-xs font-extrabold tracking-wide transition-all shadow-sm flex items-center justify-center gap-2 cursor-pointer active:scale-98">
                     {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : `Dispatch Selected Team (${selectedStaffIds.length})`}
                   </button>
                 </form>

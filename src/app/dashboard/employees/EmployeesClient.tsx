@@ -97,6 +97,8 @@ export default function EmployeesClient({
   const [medical, setMedical] = useState(false)
   const [drawerLifecycleStatus, setDrawerLifecycleStatus] = useState('active')
   const [drawerBranchId, setDrawerBranchId] = useState<string>('')
+  const [drawerRole, setDrawerRole] = useState<string>('field technician')
+  const [drawerIsDriver, setDrawerIsDriver] = useState<boolean>(false)
 
   // Attendance states
   const [timeLogs, setTimeLogs] = useState<any[]>([])
@@ -107,8 +109,8 @@ export default function EmployeesClient({
   // Filter and registration states
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'off_duty' | 'on_leave'>('all')
   const [searchQuery, setSearchQuery] = useState('')
-  const [roleFilter, setRoleFilter] = useState<'all' | 'technician' | 'helper' | 'admin'>('all')
-  const [roleInput, setRoleInput] = useState("technician")
+  const [roleFilter, setRoleFilter] = useState<'all' | 'field technician' | 'field helper' | 'senior technician' | 'admin'>('all')
+  const [roleInput, setRoleInput] = useState("field technician")
   const [baseSalaryInput, setBaseSalaryInput] = useState("20000")
 
   // Pagination State
@@ -204,8 +206,8 @@ export default function EmployeesClient({
 
   const filteredEmployees = baseForRoleCounts.filter(tech => {
     if (roleFilter === 'all') return true
-    if (roleFilter === 'technician') return tech.role === 'technician'
-    if (roleFilter === 'helper') return tech.role === 'helper'
+    if (roleFilter === 'field technician') return tech.role === 'technician'
+    if (roleFilter === 'field helper') return tech.role === 'helper'
     if (roleFilter === 'admin') return tech.role !== 'technician' && tech.role !== 'helper'
     return true
   })
@@ -344,7 +346,7 @@ export default function EmployeesClient({
 
       setSuccess(true)
       form.reset()
-      setRoleInput("technician")
+      setRoleInput("field technician")
       setBaseSalaryInput("20000")
       router.refresh()
     } catch (err: any) {
@@ -392,6 +394,8 @@ export default function EmployeesClient({
     setResume(!!employee.hasResume)
     setDrawerLifecycleStatus(employee.lifecycleStatus || 'active')
     setDrawerBranchId(employee.branchId || '')
+    setDrawerRole(employee.role || 'field technician')
+    setDrawerIsDriver(!!employee.isDriver)
     
     // Reset manual DTR states
     setManualClockIn('')
@@ -666,9 +670,9 @@ export default function EmployeesClient({
                 </button>
                 <button
                   type="button"
-                  onClick={() => setRoleFilter('technician')}
+                  onClick={() => setRoleFilter('field technician')}
                   className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                    roleFilter === 'technician'
+                    roleFilter === 'field technician'
                       ? 'bg-indigo-600 text-white shadow-xs'
                       : 'bg-white hover:bg-zinc-50 text-zinc-650 border border-zinc-200'
                   }`}
@@ -677,9 +681,9 @@ export default function EmployeesClient({
                 </button>
                 <button
                   type="button"
-                  onClick={() => setRoleFilter('helper')}
+                  onClick={() => setRoleFilter('field helper')}
                   className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                    roleFilter === 'helper'
+                    roleFilter === 'field helper'
                       ? 'bg-teal-600 text-white shadow-xs'
                       : 'bg-white hover:bg-zinc-50 text-zinc-650 border border-zinc-200'
                   }`}
