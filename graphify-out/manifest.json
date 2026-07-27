@@ -1,0 +1,587 @@
+{
+  "C:\\Users\\ANDREW\\.gemini\\antigravity\\scratch\\hris-admin\\add_tasks_jira.js": {
+    "mtime": 1781854433.0506673,
+    "ast_hash": "ae582203e237b2122ee3ba898a48fa85",
+    "semantic_hash": "ae582203e237b2122ee3ba898a48fa85"
+  },
+  "C:\\Users\\ANDREW\\.gemini\\antigravity\\scratch\\hris-admin\\components.json": {
+    "mtime": 1779532457.5216286,
+    "ast_hash": "fc5c9e9a7b93eeb2f7b4e1ce0959e4a6",
+    "semantic_hash": "fc5c9e9a7b93eeb2f7b4e1ce0959e4a6"
+  },
+  "C:\\Users\\ANDREW\\.gemini\\antigravity\\scratch\\hris-admin\\eslint.config.mjs": {
+    "mtime": 1779532336.3073413,
+    "ast_hash": "dfa1f5f6a7037bf39dc510f30b180002",
+    "semantic_hash": "dfa1f5f6a7037bf39dc510f30b180002"
+  },
+  "C:\\Users\\ANDREW\\.gemini\\antigravity\\scratch\\hris-admin\\next.config.ts": {
+    "mtime": 1781873468.5498931,
+    "ast_hash": "a2a7d8959e457417c657ab124c8e5382",
+    "semantic_hash": "a2a7d8959e457417c657ab124c8e5382"
+  },
+  "C:\\Users\\ANDREW\\.gemini\\antigravity\\scratch\\hris-admin\\package.json": {
+    "mtime": 1780805709.1243868,
+    "ast_hash": "8e90f18ea09636beeaf198332c9b8060",
+    "semantic_hash": "8e90f18ea09636beeaf198332c9b8060"
+  },
+  "C:\\Users\\ANDREW\\.gemini\\antigravity\\scratch\\hris-admin\\postcss.config.mjs": {
+    "mtime": 1779532336.3334544,
+    "ast_hash": "239f3ebf717465dc636818a1a619398d",
+    "semantic_hash": "239f3ebf717465dc636818a1a619398d"
+  },
+  "C:\\Users\\ANDREW\\.gemini\\antigravity\\scratch\\hris-admin\\print_jira_issues.js": {
+    "mtime": 1780805897.0046191,
+    "ast_hash": "fb018429bb6a7d7b7153ad5fda2b8381",
+    "semantic_hash": "fb018429bb6a7d7b7153ad5fda2b8381"
+  },
+  "C:\\Users\\ANDREW\\.gemini\\antigravity\\scratch\\hris-admin\\read_mcp_config.js": {
+    "mtime": 1780805936.7314246,
+    "ast_hash": "f0e37512ab7ce3e35a8c18fb41cfab11",
+    "semantic_hash": "f0e37512ab7ce3e35a8c18fb41cfab11"
+  },
+  "C:\\Users\\ANDREW\\.gemini\\antigravity\\scratch\\hris-admin\\scripts\\ai-review.js": {
+    "mtime": 1780807825.6043222,
+    "ast_hash": "94a0910d39992ac3143f1c31a33da709",
+    "semantic_hash": "94a0910d39992ac3143f1c31a33da709"
+  },
+  "C:\\Users\\ANDREW\\.gemini\\antigravity\\scratch\\hris-admin\\seed.js": {
+    "mtime": 1779622823.4172091,
+    "ast_hash": "fc75a6c2fbbb7c53f1754c2349ff75f4",
+    "semantic_hash": "fc75a6c2fbbb7c53f1754c2349ff75f4"
+  },
+  "C:\\Users\\ANDREW\\.gemini\\antigravity\\scratch\\hris-admin\\src\\app\\actions\\activity.ts": {
+    "mtime": 1781857168.8070223,
+    "ast_hash": "821a0f60a5de5055d8a9c04f68e38fd0",
+    "semantic_hash": "821a0f60a5de5055d8a9c04f68e38fd0"
+  },
+  "C:\\Users\\ANDREW\\.gemini\\antigravity\\scratch\\hris-admin\\src\\app\\actions\\announcements.ts": {
+    "mtime": 1780422136.3844552,
+    "ast_hash": "046f3ec5e65e6d0f200a453112925058",
+    "semantic_hash": "046f3ec5e65e6d0f200a453112925058"
+  },
+  "C:\\Users\\ANDREW\\.gemini\\antigravity\\scratch\\hris-admin\\src\\app\\actions\\compliance.ts": {
+    "mtime": 1780297143.537356,
+    "ast_hash": "b4ed368500c16344c48b6fa7ed93c2dc",
+    "semantic_hash": "b4ed368500c16344c48b6fa7ed93c2dc"
+  },
+  "C:\\Users\\ANDREW\\.gemini\\antigravity\\scratch\\hris-admin\\src\\app\\actions\\documents.ts": {
+    "mtime": 1781857168.8070223,
+    "ast_hash": "9df5eb2089d24bc29729c38f8a9dfa09",
+    "semantic_hash": "9df5eb2089d24bc29729c38f8a9dfa09"
+  },
+  "C:\\Users\\ANDREW\\.gemini\\antigravity\\scratch\\hris-admin\\src\\app\\actions\\employees.ts": {
+    "mtime": 1782150129.1038692,
+    "ast_hash": "e3bee52f304ef05f27c3a34288cd3a97",
+    "semantic_hash": "e3bee52f304ef05f27c3a34288cd3a97"
+  },
+  "C:\\Users\\ANDREW\\.gemini\\antigravity\\scratch\\hris-admin\\src\\app\\actions\\geofence.ts": {
+    "mtime": 1781857168.8090274,
+    "ast_hash": "434d6277ef9c905cf23a6a0c282408f9",
+    "semantic_hash": "434d6277ef9c905cf23a6a0c282408f9"
+  },
+  "C:\\Users\\ANDREW\\.gemini\\antigravity\\scratch\\hris-admin\\src\\app\\actions\\inventory.ts": {
+    "mtime": 1781868107.402921,
+    "ast_hash": "62d3c85b9183a16c0d1513447d22c829",
+    "semantic_hash": "62d3c85b9183a16c0d1513447d22c829"
+  },
+  "C:\\Users\\ANDREW\\.gemini\\antigravity\\scratch\\hris-admin\\src\\app\\actions\\leaves.ts": {
+    "mtime": 1782150137.3554251,
+    "ast_hash": "4cd1d98bccbd4402fd58569100c4d9f9",
+    "semantic_hash": "4cd1d98bccbd4402fd58569100c4d9f9"
+  },
+  "C:\\Users\\ANDREW\\.gemini\\antigravity\\scratch\\hris-admin\\src\\app\\actions\\payroll.ts": {
+    "mtime": 1781857168.8111749,
+    "ast_hash": "c1912b8bd84e93fa4d37f638b759f54d",
+    "semantic_hash": "c1912b8bd84e93fa4d37f638b759f54d"
+  },
+  "C:\\Users\\ANDREW\\.gemini\\antigravity\\scratch\\hris-admin\\src\\app\\actions\\schedules.ts": {
+    "mtime": 1781861384.946847,
+    "ast_hash": "6815aab8a3ca16fa5ac0ea408203ef6a",
+    "semantic_hash": "6815aab8a3ca16fa5ac0ea408203ef6a"
+  },
+  "C:\\Users\\ANDREW\\.gemini\\antigravity\\scratch\\hris-admin\\src\\app\\actions\\tickets.ts": {
+    "mtime": 1782150141.7085073,
+    "ast_hash": "4d938c525dcefaf624f9f0d7924ee349",
+    "semantic_hash": "4d938c525dcefaf624f9f0d7924ee349"
+  },
+  "C:\\Users\\ANDREW\\.gemini\\antigravity\\scratch\\hris-admin\\src\\app\\api\\technicians\\route.ts": {
+    "mtime": 1780422136.3885095,
+    "ast_hash": "f742dc2574005f67e586e3d184eb1537",
+    "semantic_hash": "f742dc2574005f67e586e3d184eb1537"
+  },
+  "C:\\Users\\ANDREW\\.gemini\\antigravity\\scratch\\hris-admin\\src\\app\\auth\\signout\\route.ts": {
+    "mtime": 1781873744.9345417,
+    "ast_hash": "b9766fcdf8f4b2720f02b6a731cbda94",
+    "semantic_hash": "b9766fcdf8f4b2720f02b6a731cbda94"
+  },
+  "C:\\Users\\ANDREW\\.gemini\\antigravity\\scratch\\hris-admin\\src\\app\\dashboard\\DashboardCharts.tsx": {
+    "mtime": 1782150915.9584062,
+    "ast_hash": "c51623419a8eda8ef933b5df35ce0b42",
+    "semantic_hash": "c51623419a8eda8ef933b5df35ce0b42"
+  },
+  "C:\\Users\\ANDREW\\.gemini\\antigravity\\scratch\\hris-admin\\src\\app\\dashboard\\activity\\ActivityClient.tsx": {
+    "mtime": 1780737648.59087,
+    "ast_hash": "93b9158fa934549b0b356e3125a160e7",
+    "semantic_hash": "93b9158fa934549b0b356e3125a160e7"
+  },
+  "C:\\Users\\ANDREW\\.gemini\\antigravity\\scratch\\hris-admin\\src\\app\\dashboard\\activity\\ActivityWorkspace.tsx": {
+    "mtime": 1781857168.8141904,
+    "ast_hash": "e86e004373be9c36d4efe0e550bab0bf",
+    "semantic_hash": "e86e004373be9c36d4efe0e550bab0bf"
+  },
+  "C:\\Users\\ANDREW\\.gemini\\antigravity\\scratch\\hris-admin\\src\\app\\dashboard\\activity\\page.tsx": {
+    "mtime": 1780737652.65768,
+    "ast_hash": "c7ca77ea99a3ad4e1e798cff533c5f81",
+    "semantic_hash": "c7ca77ea99a3ad4e1e798cff533c5f81"
+  },
+  "C:\\Users\\ANDREW\\.gemini\\antigravity\\scratch\\hris-admin\\src\\app\\dashboard\\employees\\EmployeesClient.tsx": {
+    "mtime": 1781868107.404924,
+    "ast_hash": "1d7cfcb574a5b7f1087ee50563ddfcc6",
+    "semantic_hash": "1d7cfcb574a5b7f1087ee50563ddfcc6"
+  },
+  "C:\\Users\\ANDREW\\.gemini\\antigravity\\scratch\\hris-admin\\src\\app\\dashboard\\employees\\page.tsx": {
+    "mtime": 1781868107.4059272,
+    "ast_hash": "390b9ea20057cff3cacac48f0fa484ba",
+    "semantic_hash": "390b9ea20057cff3cacac48f0fa484ba"
+  },
+  "C:\\Users\\ANDREW\\.gemini\\antigravity\\scratch\\hris-admin\\src\\app\\dashboard\\inventory\\InventoryWorkspace.tsx": {
+    "mtime": 1781857168.816933,
+    "ast_hash": "3d9ff61aadf532bc2c313e12f7b0707d",
+    "semantic_hash": "3d9ff61aadf532bc2c313e12f7b0707d"
+  },
+  "C:\\Users\\ANDREW\\.gemini\\antigravity\\scratch\\hris-admin\\src\\app\\dashboard\\inventory\\page.tsx": {
+    "mtime": 1780295619.9196467,
+    "ast_hash": "dce1bb052409c35fe61b8c006af35c63",
+    "semantic_hash": "dce1bb052409c35fe61b8c006af35c63"
+  },
+  "C:\\Users\\ANDREW\\.gemini\\antigravity\\scratch\\hris-admin\\src\\app\\dashboard\\layout.tsx": {
+    "mtime": 1782150913.2633588,
+    "ast_hash": "541f3183fde712930d94893f147a630b",
+    "semantic_hash": "541f3183fde712930d94893f147a630b"
+  },
+  "C:\\Users\\ANDREW\\.gemini\\antigravity\\scratch\\hris-admin\\src\\app\\dashboard\\leaves\\LeavesWorkspace.tsx": {
+    "mtime": 1780422078.5155277,
+    "ast_hash": "6c10e34c9116a60a845ebee52ac3d2f2",
+    "semantic_hash": "6c10e34c9116a60a845ebee52ac3d2f2"
+  },
+  "C:\\Users\\ANDREW\\.gemini\\antigravity\\scratch\\hris-admin\\src\\app\\dashboard\\leaves\\page.tsx": {
+    "mtime": 1780323685.6628828,
+    "ast_hash": "50bae5917f3246471ada55894ffd3aa2",
+    "semantic_hash": "50bae5917f3246471ada55894ffd3aa2"
+  },
+  "C:\\Users\\ANDREW\\.gemini\\antigravity\\scratch\\hris-admin\\src\\app\\dashboard\\page.tsx": {
+    "mtime": 1782150149.2436342,
+    "ast_hash": "d2de17040cedbe67c727d92ceabd6e02",
+    "semantic_hash": "d2de17040cedbe67c727d92ceabd6e02"
+  },
+  "C:\\Users\\ANDREW\\.gemini\\antigravity\\scratch\\hris-admin\\src\\app\\dashboard\\payroll\\PayrollClient.tsx": {
+    "mtime": 1781950469.1141794,
+    "ast_hash": "429fe3c989567f84ac04f6f54232da1d",
+    "semantic_hash": "429fe3c989567f84ac04f6f54232da1d"
+  },
+  "C:\\Users\\ANDREW\\.gemini\\antigravity\\scratch\\hris-admin\\src\\app\\dashboard\\payroll\\page.tsx": {
+    "mtime": 1781950463.4598544,
+    "ast_hash": "a42df5ea37013a6597dfb243e65b9010",
+    "semantic_hash": "a42df5ea37013a6597dfb243e65b9010"
+  },
+  "C:\\Users\\ANDREW\\.gemini\\antigravity\\scratch\\hris-admin\\src\\app\\dashboard\\schedules\\SchedulesClient.tsx": {
+    "mtime": 1781951687.611832,
+    "ast_hash": "1cf76934d0ec42ddd6bd1a1fda1217b5",
+    "semantic_hash": "1cf76934d0ec42ddd6bd1a1fda1217b5"
+  },
+  "C:\\Users\\ANDREW\\.gemini\\antigravity\\scratch\\hris-admin\\src\\app\\dashboard\\schedules\\page.tsx": {
+    "mtime": 1782150133.5335455,
+    "ast_hash": "d0f81840a3575da39729c4c349ca3e7b",
+    "semantic_hash": "d0f81840a3575da39729c4c349ca3e7b"
+  },
+  "C:\\Users\\ANDREW\\.gemini\\antigravity\\scratch\\hris-admin\\src\\app\\dashboard\\settings\\AdminAccounts.tsx": {
+    "mtime": 1781857168.8203778,
+    "ast_hash": "ab19fb51b44509842aca4c7d592e9b17",
+    "semantic_hash": "ab19fb51b44509842aca4c7d592e9b17"
+  },
+  "C:\\Users\\ANDREW\\.gemini\\antigravity\\scratch\\hris-admin\\src\\app\\dashboard\\settings\\AnnouncementsEditor.tsx": {
+    "mtime": 1780422136.3999245,
+    "ast_hash": "b9ee05b47b0899c227f794ed3d54ce98",
+    "semantic_hash": "b9ee05b47b0899c227f794ed3d54ce98"
+  },
+  "C:\\Users\\ANDREW\\.gemini\\antigravity\\scratch\\hris-admin\\src\\app\\dashboard\\settings\\DocumentsEditor.tsx": {
+    "mtime": 1781857168.8213837,
+    "ast_hash": "2786aabbe1661264594f16b066050b13",
+    "semantic_hash": "2786aabbe1661264594f16b066050b13"
+  },
+  "C:\\Users\\ANDREW\\.gemini\\antigravity\\scratch\\hris-admin\\src\\app\\dashboard\\settings\\GeofenceMap.tsx": {
+    "mtime": 1780422078.5160332,
+    "ast_hash": "e1fd7315a71120970250294e699a863d",
+    "semantic_hash": "e1fd7315a71120970250294e699a863d"
+  },
+  "C:\\Users\\ANDREW\\.gemini\\antigravity\\scratch\\hris-admin\\src\\app\\dashboard\\settings\\HolidaysEditor.tsx": {
+    "mtime": 1780422136.4009645,
+    "ast_hash": "d5309a394c997b3893a36f69fb04c227",
+    "semantic_hash": "d5309a394c997b3893a36f69fb04c227"
+  },
+  "C:\\Users\\ANDREW\\.gemini\\antigravity\\scratch\\hris-admin\\src\\app\\dashboard\\settings\\LocationSettings.tsx": {
+    "mtime": 1780737673.5409603,
+    "ast_hash": "d270211c366b5da7706534b301bca4ef",
+    "semantic_hash": "d270211c366b5da7706534b301bca4ef"
+  },
+  "C:\\Users\\ANDREW\\.gemini\\antigravity\\scratch\\hris-admin\\src\\app\\dashboard\\settings\\PagibigRuleEditor.tsx": {
+    "mtime": 1780297181.684343,
+    "ast_hash": "654c4f92a7917984466cf01a85168378",
+    "semantic_hash": "654c4f92a7917984466cf01a85168378"
+  },
+  "C:\\Users\\ANDREW\\.gemini\\antigravity\\scratch\\hris-admin\\src\\app\\dashboard\\settings\\PhilHealthRuleEditor.tsx": {
+    "mtime": 1780297175.3797023,
+    "ast_hash": "fd90e0564633ca363232ee9caed85f4a",
+    "semantic_hash": "fd90e0564633ca363232ee9caed85f4a"
+  },
+  "C:\\Users\\ANDREW\\.gemini\\antigravity\\scratch\\hris-admin\\src\\app\\dashboard\\settings\\SssDataTable.tsx": {
+    "mtime": 1780297188.346653,
+    "ast_hash": "f18ba070feba775c560d03af530a4609",
+    "semantic_hash": "f18ba070feba775c560d03af530a4609"
+  },
+  "C:\\Users\\ANDREW\\.gemini\\antigravity\\scratch\\hris-admin\\src\\app\\dashboard\\settings\\page.tsx": {
+    "mtime": 1781857168.8213837,
+    "ast_hash": "1dbd9c6ab857422e020e44bd8934c865",
+    "semantic_hash": "1dbd9c6ab857422e020e44bd8934c865"
+  },
+  "C:\\Users\\ANDREW\\.gemini\\antigravity\\scratch\\hris-admin\\src\\app\\dashboard\\template.tsx": {
+    "mtime": 1779617207.640843,
+    "ast_hash": "8ed7889d7e14eeadadc551e77c5694bc",
+    "semantic_hash": "8ed7889d7e14eeadadc551e77c5694bc"
+  },
+  "C:\\Users\\ANDREW\\.gemini\\antigravity\\scratch\\hris-admin\\src\\app\\dashboard\\tickets\\TicketWorkspace.tsx": {
+    "mtime": 1780399311.0383365,
+    "ast_hash": "9eb21db6a639f958a832d7293f688076",
+    "semantic_hash": "9eb21db6a639f958a832d7293f688076"
+  },
+  "C:\\Users\\ANDREW\\.gemini\\antigravity\\scratch\\hris-admin\\src\\app\\dashboard\\tickets\\page.tsx": {
+    "mtime": 1780289060.6992078,
+    "ast_hash": "31fa76083b17dd75e9284a9cef9db72a",
+    "semantic_hash": "31fa76083b17dd75e9284a9cef9db72a"
+  },
+  "C:\\Users\\ANDREW\\.gemini\\antigravity\\scratch\\hris-admin\\src\\app\\layout.tsx": {
+    "mtime": 1780604889.4052517,
+    "ast_hash": "29aebb4c9c96f5cd0f017425fb0ce2bf",
+    "semantic_hash": "29aebb4c9c96f5cd0f017425fb0ce2bf"
+  },
+  "C:\\Users\\ANDREW\\.gemini\\antigravity\\scratch\\hris-admin\\src\\app\\login\\actions.ts": {
+    "mtime": 1779533039.481012,
+    "ast_hash": "890993df567f3fa6e7ccd3788b360e70",
+    "semantic_hash": "890993df567f3fa6e7ccd3788b360e70"
+  },
+  "C:\\Users\\ANDREW\\.gemini\\antigravity\\scratch\\hris-admin\\src\\app\\login\\page.tsx": {
+    "mtime": 1780604889.3995626,
+    "ast_hash": "b9cfe710a4355be6eaf59eb91902084d",
+    "semantic_hash": "b9cfe710a4355be6eaf59eb91902084d"
+  },
+  "C:\\Users\\ANDREW\\.gemini\\antigravity\\scratch\\hris-admin\\src\\app\\page.tsx": {
+    "mtime": 1779533045.9558675,
+    "ast_hash": "9530e2e231f7cbbe7b38fa726e0c8f4a",
+    "semantic_hash": "9530e2e231f7cbbe7b38fa726e0c8f4a"
+  },
+  "C:\\Users\\ANDREW\\.gemini\\antigravity\\scratch\\hris-admin\\src\\components\\login-form.tsx": {
+    "mtime": 1780604889.3967881,
+    "ast_hash": "d8af6c22e83afa3a410bd0f9aa729694",
+    "semantic_hash": "d8af6c22e83afa3a410bd0f9aa729694"
+  },
+  "C:\\Users\\ANDREW\\.gemini\\antigravity\\scratch\\hris-admin\\src\\components\\ui\\button.tsx": {
+    "mtime": 1779532482.6640792,
+    "ast_hash": "705bf3552a39e0c722665ccbecb30654",
+    "semantic_hash": "705bf3552a39e0c722665ccbecb30654"
+  },
+  "C:\\Users\\ANDREW\\.gemini\\antigravity\\scratch\\hris-admin\\src\\components\\ui\\card.tsx": {
+    "mtime": 1779533000.1973686,
+    "ast_hash": "77a10bd948ca424972a28e704a3df604",
+    "semantic_hash": "77a10bd948ca424972a28e704a3df604"
+  },
+  "C:\\Users\\ANDREW\\.gemini\\antigravity\\scratch\\hris-admin\\src\\components\\ui\\input.tsx": {
+    "mtime": 1779532999.364654,
+    "ast_hash": "0607b02d99a2e92f9509223f36ccc6ec",
+    "semantic_hash": "0607b02d99a2e92f9509223f36ccc6ec"
+  },
+  "C:\\Users\\ANDREW\\.gemini\\antigravity\\scratch\\hris-admin\\src\\components\\ui\\label.tsx": {
+    "mtime": 1779532999.7199304,
+    "ast_hash": "a70440da86bfc6a07f15197cca48cb08",
+    "semantic_hash": "a70440da86bfc6a07f15197cca48cb08"
+  },
+  "C:\\Users\\ANDREW\\.gemini\\antigravity\\scratch\\hris-admin\\src\\lib\\branch-filter.ts": {
+    "mtime": 1782150122.1623821,
+    "ast_hash": "e04bb94a36143152d4ed5e2f67c846b2",
+    "semantic_hash": "e04bb94a36143152d4ed5e2f67c846b2"
+  },
+  "C:\\Users\\ANDREW\\.gemini\\antigravity\\scratch\\hris-admin\\src\\lib\\ph-taxes.ts": {
+    "mtime": 1781951188.5872116,
+    "ast_hash": "bc8b4eeb1b498400f45ee050c3fe5019",
+    "semantic_hash": "bc8b4eeb1b498400f45ee050c3fe5019"
+  },
+  "C:\\Users\\ANDREW\\.gemini\\antigravity\\scratch\\hris-admin\\src\\lib\\push.ts": {
+    "mtime": 1780810170.2195442,
+    "ast_hash": "aa45d0eab0efd4589cb81bbd63dc4a7e",
+    "semantic_hash": "aa45d0eab0efd4589cb81bbd63dc4a7e"
+  },
+  "C:\\Users\\ANDREW\\.gemini\\antigravity\\scratch\\hris-admin\\src\\lib\\supabase\\admin.ts": {
+    "mtime": 1779537678.4387763,
+    "ast_hash": "dad88653dadf84c4a167a01a4a7a6b0d",
+    "semantic_hash": "dad88653dadf84c4a167a01a4a7a6b0d"
+  },
+  "C:\\Users\\ANDREW\\.gemini\\antigravity\\scratch\\hris-admin\\src\\lib\\supabase\\client.ts": {
+    "mtime": 1781873411.1047738,
+    "ast_hash": "205bf70a3003904d6d7f6e3a0b3e5696",
+    "semantic_hash": "205bf70a3003904d6d7f6e3a0b3e5696"
+  },
+  "C:\\Users\\ANDREW\\.gemini\\antigravity\\scratch\\hris-admin\\src\\lib\\supabase\\server.ts": {
+    "mtime": 1782150910.525988,
+    "ast_hash": "ec14835c2a5f6ad131a53cc483104235",
+    "semantic_hash": "ec14835c2a5f6ad131a53cc483104235"
+  },
+  "C:\\Users\\ANDREW\\.gemini\\antigravity\\scratch\\hris-admin\\src\\lib\\utils.ts": {
+    "mtime": 1781857168.8225968,
+    "ast_hash": "992b6c809523618ea92a460532c5c071",
+    "semantic_hash": "992b6c809523618ea92a460532c5c071"
+  },
+  "C:\\Users\\ANDREW\\.gemini\\antigravity\\scratch\\hris-admin\\src\\lib\\validations\\compliance.ts": {
+    "mtime": 1779623704.4609745,
+    "ast_hash": "b1ea9b691648587d41a3cb31cc6f6962",
+    "semantic_hash": "b1ea9b691648587d41a3cb31cc6f6962"
+  },
+  "C:\\Users\\ANDREW\\.gemini\\antigravity\\scratch\\hris-admin\\src\\proxy.ts": {
+    "mtime": 1781873651.9300363,
+    "ast_hash": "57bcef22ee7b900c2996eb0d8069e869",
+    "semantic_hash": "57bcef22ee7b900c2996eb0d8069e869"
+  },
+  "C:\\Users\\ANDREW\\.gemini\\antigravity\\scratch\\hris-admin\\supabase\\migrations\\20260609100154_remote_schema.sql": {
+    "mtime": 1780999314.6686785,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "C:\\Users\\ANDREW\\.gemini\\antigravity\\scratch\\hris-admin\\supabase_migration_activity_logs.sql": {
+    "mtime": 1781857168.8236015,
+    "ast_hash": "83ed755543a6602b13ae183819a4a8fd",
+    "semantic_hash": "83ed755543a6602b13ae183819a4a8fd"
+  },
+  "C:\\Users\\ANDREW\\.gemini\\antigravity\\scratch\\hris-admin\\supabase_migration_attendance_tracking_mode.sql": {
+    "mtime": 1781857168.8236015,
+    "ast_hash": "1069f625c26b62f5dd42112bc0bacc5b",
+    "semantic_hash": "1069f625c26b62f5dd42112bc0bacc5b"
+  },
+  "C:\\Users\\ANDREW\\.gemini\\antigravity\\scratch\\hris-admin\\supabase_migration_complete.sql": {
+    "mtime": 1780291658.2683578,
+    "ast_hash": "929f8b8543113a604039c0785df1dd00",
+    "semantic_hash": "929f8b8543113a604039c0785df1dd00"
+  },
+  "C:\\Users\\ANDREW\\.gemini\\antigravity\\scratch\\hris-admin\\supabase_migration_documents.sql": {
+    "mtime": 1781857168.8246021,
+    "ast_hash": "a4701cd19e99fb2445f9ee0e09e9fcc1",
+    "semantic_hash": "a4701cd19e99fb2445f9ee0e09e9fcc1"
+  },
+  "C:\\Users\\ANDREW\\.gemini\\antigravity\\scratch\\hris-admin\\supabase_migration_geofence.sql": {
+    "mtime": 1780284919.8751183,
+    "ast_hash": "e3b56bb95c2a5466c23f3b8785e6257b",
+    "semantic_hash": "e3b56bb95c2a5466c23f3b8785e6257b"
+  },
+  "C:\\Users\\ANDREW\\.gemini\\antigravity\\scratch\\hris-admin\\supabase_migration_inventory_alerts.sql": {
+    "mtime": 1781868107.4103057,
+    "ast_hash": "b78339ad5c5865d4be8635099fab51d3",
+    "semantic_hash": "b78339ad5c5865d4be8635099fab51d3"
+  },
+  "C:\\Users\\ANDREW\\.gemini\\antigravity\\scratch\\hris-admin\\supabase_migration_inventory_photos.sql": {
+    "mtime": 1781857168.8259337,
+    "ast_hash": "ca241948d64eb029a8b20281ab3d9103",
+    "semantic_hash": "ca241948d64eb029a8b20281ab3d9103"
+  },
+  "C:\\Users\\ANDREW\\.gemini\\antigravity\\scratch\\hris-admin\\supabase_migration_leaves.sql": {
+    "mtime": 1781857168.8269396,
+    "ast_hash": "a0fc4f33576866e85f58585c94912a2d",
+    "semantic_hash": "a0fc4f33576866e85f58585c94912a2d"
+  },
+  "C:\\Users\\ANDREW\\.gemini\\antigravity\\scratch\\hris-admin\\supabase_migration_phase7.sql": {
+    "mtime": 1780422078.5196607,
+    "ast_hash": "8813ae4784a9f468a55f0f2c134c5623",
+    "semantic_hash": "8813ae4784a9f468a55f0f2c134c5623"
+  },
+  "C:\\Users\\ANDREW\\.gemini\\antigravity\\scratch\\hris-admin\\supabase_migration_phase8.sql": {
+    "mtime": 1780422136.403606,
+    "ast_hash": "7eea2dc033844ddf6d785bc4a7e9a7e3",
+    "semantic_hash": "7eea2dc033844ddf6d785bc4a7e9a7e3"
+  },
+  "C:\\Users\\ANDREW\\.gemini\\antigravity\\scratch\\hris-admin\\supabase_migration_phase9.sql": {
+    "mtime": 1780738838.7246325,
+    "ast_hash": "e8bf6f6056232ebd7547951b6b1578e5",
+    "semantic_hash": "e8bf6f6056232ebd7547951b6b1578e5"
+  },
+  "C:\\Users\\ANDREW\\.gemini\\antigravity\\scratch\\hris-admin\\supabase_migration_phase9_push.sql": {
+    "mtime": 1780810100.7265558,
+    "ast_hash": "ceda3f565691cc8b93c837648f0d6b82",
+    "semantic_hash": "ceda3f565691cc8b93c837648f0d6b82"
+  },
+  "C:\\Users\\ANDREW\\.gemini\\antigravity\\scratch\\hris-admin\\supabase_migration_super_admin.sql": {
+    "mtime": 1780297370.328978,
+    "ast_hash": "057f51527b22df6f958139da4a3bae77",
+    "semantic_hash": "057f51527b22df6f958139da4a3bae77"
+  },
+  "C:\\Users\\ANDREW\\.gemini\\antigravity\\scratch\\hris-admin\\supabase_migration_ticketing.sql": {
+    "mtime": 1780291670.4638546,
+    "ast_hash": "f9c47440b67f849e3cb049e261af69fe",
+    "semantic_hash": "f9c47440b67f849e3cb049e261af69fe"
+  },
+  "C:\\Users\\ANDREW\\.gemini\\antigravity\\scratch\\hris-admin\\supabase_migration_unified_v3.sql": {
+    "mtime": 1780291664.492856,
+    "ast_hash": "51488ee613391dd33b42681b1372b26a",
+    "semantic_hash": "51488ee613391dd33b42681b1372b26a"
+  },
+  "C:\\Users\\ANDREW\\.gemini\\antigravity\\scratch\\hris-admin\\supabase_migration_unified_v4.sql": {
+    "mtime": 1780295354.07202,
+    "ast_hash": "2791b0d62f157b8eb83b49e379f5de4e",
+    "semantic_hash": "2791b0d62f157b8eb83b49e379f5de4e"
+  },
+  "C:\\Users\\ANDREW\\.gemini\\antigravity\\scratch\\hris-admin\\tsconfig.json": {
+    "mtime": 1779532337.0121794,
+    "ast_hash": "ee17fd1c97c735e9f3564e3f5251f125",
+    "semantic_hash": "ee17fd1c97c735e9f3564e3f5251f125"
+  },
+  "C:\\Users\\ANDREW\\.gemini\\antigravity\\scratch\\hris-admin\\verify_jira.js": {
+    "mtime": 1780805720.192098,
+    "ast_hash": "bf36d7daf47f17ffdb9381efdab87bac",
+    "semantic_hash": "bf36d7daf47f17ffdb9381efdab87bac"
+  },
+  "C:\\Users\\ANDREW\\.gemini\\antigravity\\scratch\\hris-admin\\.github\\workflows\\ai-reviewer.yml": {
+    "mtime": 1780808696.3339844,
+    "ast_hash": "4fc175a60ae42224ce39d2d535cddd2d",
+    "semantic_hash": "4fc175a60ae42224ce39d2d535cddd2d"
+  },
+  "C:\\Users\\ANDREW\\.gemini\\antigravity\\scratch\\hris-admin\\.playwright-cli\\page-2026-06-02T12-38-00-065Z.yml": {
+    "mtime": 1781857168.8001516,
+    "ast_hash": "05026c56b7e50dcdd7d5863a57d884c5",
+    "semantic_hash": "05026c56b7e50dcdd7d5863a57d884c5"
+  },
+  "C:\\Users\\ANDREW\\.gemini\\antigravity\\scratch\\hris-admin\\.playwright-cli\\page-2026-06-02T12-38-12-102Z.yml": {
+    "mtime": 1781857168.801555,
+    "ast_hash": "6845e59c92ab718da1c887313f1fbbbd",
+    "semantic_hash": "6845e59c92ab718da1c887313f1fbbbd"
+  },
+  "C:\\Users\\ANDREW\\.gemini\\antigravity\\scratch\\hris-admin\\.playwright-cli\\page-2026-06-04T20-50-24-143Z.yml": {
+    "mtime": 1780606224.1440372,
+    "ast_hash": "1489c9e9c72009c0f1b00346b9a5e4fa",
+    "semantic_hash": "1489c9e9c72009c0f1b00346b9a5e4fa"
+  },
+  "C:\\Users\\ANDREW\\.gemini\\antigravity\\scratch\\hris-admin\\.playwright-cli\\page-2026-06-04T20-56-24-331Z.yml": {
+    "mtime": 1780606584.333739,
+    "ast_hash": "0bcefe9aa3df1d9bfcd5f97148d24b8d",
+    "semantic_hash": "0bcefe9aa3df1d9bfcd5f97148d24b8d"
+  },
+  "C:\\Users\\ANDREW\\.gemini\\antigravity\\scratch\\hris-admin\\.playwright-cli\\page-2026-06-07T04-14-58-966Z.yml": {
+    "mtime": 1780805698.968116,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "C:\\Users\\ANDREW\\.gemini\\antigravity\\scratch\\hris-admin\\.playwright-cli\\page-2026-06-08T18-25-49-508Z.yml": {
+    "mtime": 1780943149.5128145,
+    "ast_hash": "b72e93680c955b1c7fe7faaf38dd68d5",
+    "semantic_hash": "b72e93680c955b1c7fe7faaf38dd68d5"
+  },
+  "C:\\Users\\ANDREW\\.gemini\\antigravity\\scratch\\hris-admin\\.playwright-cli\\page-2026-06-08T18-26-02-230Z.yml": {
+    "mtime": 1780943162.2345133,
+    "ast_hash": "b72e93680c955b1c7fe7faaf38dd68d5",
+    "semantic_hash": "b72e93680c955b1c7fe7faaf38dd68d5"
+  },
+  "C:\\Users\\ANDREW\\.gemini\\antigravity\\scratch\\hris-admin\\.playwright-cli\\page-2026-06-09T10-45-45-510Z.yml": {
+    "mtime": 1781001945.5116832,
+    "ast_hash": "296ff5aafc3454ade9867f690344b347",
+    "semantic_hash": "296ff5aafc3454ade9867f690344b347"
+  },
+  "C:\\Users\\ANDREW\\.gemini\\antigravity\\scratch\\hris-admin\\.playwright-cli\\page-2026-06-09T10-47-46-556Z.yml": {
+    "mtime": 1781002066.5584357,
+    "ast_hash": "e9a6a7353449df4c46270df6718d4207",
+    "semantic_hash": "e9a6a7353449df4c46270df6718d4207"
+  },
+  "C:\\Users\\ANDREW\\.gemini\\antigravity\\scratch\\hris-admin\\.playwright-cli\\page-2026-06-09T10-47-56-821Z.yml": {
+    "mtime": 1781002076.8233628,
+    "ast_hash": "66a790b182c8740476fb00c74fb9171d",
+    "semantic_hash": "66a790b182c8740476fb00c74fb9171d"
+  },
+  "C:\\Users\\ANDREW\\.gemini\\antigravity\\scratch\\hris-admin\\.playwright-cli\\page-2026-06-09T10-48-04-582Z.yml": {
+    "mtime": 1781002084.5834088,
+    "ast_hash": "6b52ab6fd11b94f5af370ce3d1eaaddf",
+    "semantic_hash": "6b52ab6fd11b94f5af370ce3d1eaaddf"
+  },
+  "C:\\Users\\ANDREW\\.gemini\\antigravity\\scratch\\hris-admin\\AGENTS.md": {
+    "mtime": 1779532408.8071387,
+    "ast_hash": "9e09241799026ac05be315a2f0b50055",
+    "semantic_hash": "9e09241799026ac05be315a2f0b50055"
+  },
+  "C:\\Users\\ANDREW\\.gemini\\antigravity\\scratch\\hris-admin\\CLAUDE.md": {
+    "mtime": 1780807182.2940226,
+    "ast_hash": "132ef8c835b116485b9101db2769c479",
+    "semantic_hash": "132ef8c835b116485b9101db2769c479"
+  },
+  "C:\\Users\\ANDREW\\.gemini\\antigravity\\scratch\\hris-admin\\README.md": {
+    "mtime": 1780316721.076034,
+    "ast_hash": "45d7d0a29ec640e927c80d1b4120e7ff",
+    "semantic_hash": "45d7d0a29ec640e927c80d1b4120e7ff"
+  },
+  "C:\\Users\\ANDREW\\.gemini\\antigravity\\scratch\\hris-admin\\graphify-out\\converted\\TECHNOCYCLE CORPORATION_TECHNOSYS_CHP1-3_0c7c8765.md": {
+    "mtime": 1782152030.3912833,
+    "ast_hash": "d9f0e86ed44c976935c6cabea8cb7f94",
+    "semantic_hash": "d9f0e86ed44c976935c6cabea8cb7f94"
+  },
+  "C:\\Users\\ANDREW\\.gemini\\antigravity\\scratch\\hris-admin\\research\\prompt.txt": {
+    "mtime": 1780209774.6551673,
+    "ast_hash": "72dce5b83bc98043c5326280a7185f57",
+    "semantic_hash": "72dce5b83bc98043c5326280a7185f57"
+  },
+  "C:\\Users\\ANDREW\\.gemini\\antigravity\\scratch\\hris-admin\\research\\promptfooconfig.yaml": {
+    "mtime": 1780211548.9468117,
+    "ast_hash": "8567062a52664479e4a60882965e3c08",
+    "semantic_hash": "8567062a52664479e4a60882965e3c08"
+  },
+  "C:\\Users\\ANDREW\\.gemini\\antigravity\\scratch\\hris-admin\\sandbox_setup_guide.md": {
+    "mtime": 1781947840.9680326,
+    "ast_hash": "b7563322f276dbf6789767d0ad5630dd",
+    "semantic_hash": "b7563322f276dbf6789767d0ad5630dd"
+  },
+  "C:\\Users\\ANDREW\\.gemini\\antigravity\\scratch\\hris-admin\\task.md": {
+    "mtime": 1781855899.8616953,
+    "ast_hash": "27ec6ec9df01a94d784ef4a590c69ad4",
+    "semantic_hash": "27ec6ec9df01a94d784ef4a590c69ad4"
+  },
+  "C:\\Users\\ANDREW\\.gemini\\antigravity\\scratch\\hris-admin\\research\\TECHNOCYCLE CORPORATION_TECHNOSYS_CHP1-3.pdf": {
+    "mtime": 1780943518.2348638,
+    "ast_hash": "babe6774cce5b9998b8c33a22dd96893",
+    "semantic_hash": "babe6774cce5b9998b8c33a22dd96893"
+  },
+  "C:\\Users\\ANDREW\\.gemini\\antigravity\\scratch\\hris-admin\\research\\TECHNOCYCLE CORPORATION_TECHNOSYS_CHP1-3_doc.pdf": {
+    "mtime": 1780943524.4056442,
+    "ast_hash": "38c219eea6aa8c0a90a6e74b2328cf55",
+    "semantic_hash": "38c219eea6aa8c0a90a6e74b2328cf55"
+  },
+  "C:\\Users\\ANDREW\\.gemini\\antigravity\\scratch\\hris-admin\\research\\TECHNOCYCLE CORPORATION_TECHNOSYS_QUESTIONNAIRE.pdf": {
+    "mtime": 1780943520.1421444,
+    "ast_hash": "948e7c51a20feb524beb53d02e6d9065",
+    "semantic_hash": "948e7c51a20feb524beb53d02e6d9065"
+  },
+  "C:\\Users\\ANDREW\\.gemini\\antigravity\\scratch\\hris-admin\\public\\file.svg": {
+    "mtime": 1779532336.3421361,
+    "ast_hash": "d09f95206c3fa0bb9bd9fefabfd0ea71",
+    "semantic_hash": "d09f95206c3fa0bb9bd9fefabfd0ea71"
+  },
+  "C:\\Users\\ANDREW\\.gemini\\antigravity\\scratch\\hris-admin\\public\\globe.svg": {
+    "mtime": 1779532336.3591154,
+    "ast_hash": "2aaafa6a49b6563925fe440891e32717",
+    "semantic_hash": "2aaafa6a49b6563925fe440891e32717"
+  },
+  "C:\\Users\\ANDREW\\.gemini\\antigravity\\scratch\\hris-admin\\public\\next.svg": {
+    "mtime": 1779532336.3747146,
+    "ast_hash": "8e061864f388b47f33a1c3780831193e",
+    "semantic_hash": "8e061864f388b47f33a1c3780831193e"
+  },
+  "C:\\Users\\ANDREW\\.gemini\\antigravity\\scratch\\hris-admin\\public\\vercel.svg": {
+    "mtime": 1779532336.391392,
+    "ast_hash": "c0af2f507b369b085b35ef4bbe3bcf1e",
+    "semantic_hash": "c0af2f507b369b085b35ef4bbe3bcf1e"
+  },
+  "C:\\Users\\ANDREW\\.gemini\\antigravity\\scratch\\hris-admin\\public\\window.svg": {
+    "mtime": 1779532336.3975298,
+    "ast_hash": "a2760511c65806022ad20adf74370ff3",
+    "semantic_hash": "a2760511c65806022ad20adf74370ff3"
+  }
+}
