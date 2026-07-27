@@ -236,7 +236,7 @@ export default function LoginForm() {
                 type="button"
                 onClick={() => {
                   const url = new URL(window.location.href);
-                  url.searchParams.delete('next');
+                  url.searchParams.set('next', '/technician');
                   window.location.href = url.pathname + url.search;
                 }}
                 className="mt-4 text-[11px] font-extrabold text-blue-500 hover:text-blue-600 uppercase tracking-wider transition-colors cursor-pointer"
