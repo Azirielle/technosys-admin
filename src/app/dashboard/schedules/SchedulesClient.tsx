@@ -401,7 +401,7 @@ export default function SchedulesClient({
     formData.append("destinations", JSON.stringify(destinations))
     formData.append("clientName", destinations[0].clientName)
     formData.append("location", destinations[0].location)
-    formData.append("startTime", startTime)
+    formData.append("startTime", new Date(startTime).toISOString())
     formData.append("attendanceMode", attendanceMode)
     if (driverId) formData.append("driverId", driverId)
     formData.append("allowanceRate", allowanceRate.toString())
@@ -453,8 +453,8 @@ export default function SchedulesClient({
         staffIds: selectedStaffIds,
         clientName,
         location,
-        startTime,
-        attendanceMode,
+          startTime: new Date(startTime).toISOString(),
+          attendanceMode,
         seniorPartnerMap: bulkSeniorPartnerMap,
         isVip,
         allowanceRate
@@ -1921,3 +1921,4 @@ export default function SchedulesClient({
     </div>
   )
 }
+
