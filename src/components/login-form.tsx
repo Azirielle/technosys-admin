@@ -14,6 +14,7 @@ export default function LoginForm() {
   const searchParams = useSearchParams()
   const message = searchParams?.get('message')
   const isTechnicianPortal = searchParams?.get('next') === '/technician'
+  const [useEmailFallback, setUseEmailFallback] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [email, setEmail] = useState('')
@@ -61,7 +62,7 @@ export default function LoginForm() {
         // The loading state will remain true because the server action will redirect
         setIsLoading(true)
         setLocalError('')
-        if (isTechnicianPortal) {
+        if (isTechnicianPortal && !useEmailFallback) {
           if (!otpSent) {
             const res = await sendOtp(formData)
             if (res?.error) setLocalError(res.error)
@@ -92,7 +93,7 @@ export default function LoginForm() {
             )}
           </AnimatePresence>
 
-          {!isTechnicianPortal ? (
+          {(!isTechnicianPortal || useEmailFallback) ? (
             <>
               <div className="space-y-2">
                 <Label htmlFor="email" className="text-slate-500 text-[10px] font-extrabold uppercase tracking-widest ml-1">
@@ -223,7 +224,7 @@ export default function LoginForm() {
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Authenticating...
                 </>
-              ) : isTechnicianPortal ? (
+              ) : (isTechnicianPortal && !useEmailFallback) ? (
                 otpSent ? 'Verify OTP' : 'Send OTP'
               ) : (
                 'Secure Login'
@@ -234,14 +235,10 @@ export default function LoginForm() {
             <>
               <button
                 type="button"
-                onClick={() => {
-                  const url = new URL(window.location.href);
-                  url.searchParams.set('next', '/technician');
-                  window.location.href = url.pathname + url.search;
-                }}
+                onClick={() => setUseEmailFallback(!useEmailFallback)}
                 className="mt-4 text-[11px] font-extrabold text-blue-500 hover:text-blue-600 uppercase tracking-wider transition-colors cursor-pointer"
               >
-                Login with Email Instead
+                {useEmailFallback ? 'Login with OTP Instead' : 'Login with Email Instead'}
               </button>
               <div 
                 className="mt-4 text-[9px] text-slate-300 hover:text-slate-400 font-mono tracking-widest select-none transition-colors duration-300"
