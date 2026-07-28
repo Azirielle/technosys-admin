@@ -198,3 +198,47 @@ export async function clockOutTechnician(logId: string) {
   }
 }
 
+export async function batchClockOut(logIds: string[]) {
+  try {
+    const { authorized, userId: adminId } = await verifyRoleAccess('attendance', true)
+    if (!authorized || !adminId) {
+      return { error: "Unauthorized. You do not have permissions to clock out technicians." }
+    }
+
+    const timeOut = new Date().toISOString()
+    const { data: logs, error: fetchErr } = await supabaseAdmin
+      .from('time_logs')
+      .select('id, app_time_in')
+      .in('id', logIds)
+
+    if (fetchErr || !logs) throw new Error('Time logs not found')
+
+    for (const log of logs) {
+      const elapsedMs = new Date(timeOut).getTime() - new Date(log.app_time_in).getTime()
+      const hours = Math.max(0, elapsedMs / (1000 * 60 * 60))
+
+      await supabaseAdmin
+        .from('time_logs')
+        .update({
+          app_time_out: timeOut,
+          total_hours: Number(hours.toFixed(2)),
+          status: 'closed',
+          clocked_out_by: adminId
+        })
+        .eq('id', log.id)
+    }
+
+    await logActivity({
+      category: 'attendance',
+      action: 'batch_clocked_out',
+      description: `Batch clocked out ${logIds.length} technicians`
+    })
+
+    revalidatePath('/dashboard/attendance')
+    return { success: true }
+  } catch (err: any) {
+    console.error("Batch clock out failed:", err.message)
+    return { error: err.message || "Batch clock out failed" }
+  }
+}
+
