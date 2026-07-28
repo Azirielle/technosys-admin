@@ -20,8 +20,8 @@ interface ToolItem {
   id: string
   name: string
   description?: string | null
-  total_qty: number
-  available_qty: number
+  total_stock: number
+  available_stock: number
   image_url?: string | null
   created_at: string
   updated_at: string
@@ -32,9 +32,9 @@ interface ToolAssignment {
   technician_id: string
   tool_id: string
   quantity: number
-  borrowed_at: string
+  handed_over_at: string
   returned_at?: string | null
-  status: 'borrowed' | 'returned' | 'lost' | 'damaged'
+  status: 'checked_out' | 'returned' | 'lost' | 'damaged'
   notes?: string | null
   tool?: {
     name: string
@@ -134,8 +134,8 @@ export default function InventoryWorkspace({
 
   const selectedTech = technicians.find(t => t.id === selectedTechId)
   const techAssignments = assignments.filter(a => a.technician_id === selectedTechId)
-  const activeTechAssignments = techAssignments.filter(a => a.status === 'borrowed')
-  const historicalTechAssignments = techAssignments.filter(a => a.status !== 'borrowed')
+  const activeTechAssignments = techAssignments.filter(a => a.status === 'checked_out')
+  const historicalTechAssignments = techAssignments.filter(a => a.status !== 'checked_out')
 
   // Utility to calculate duration
   const formatDuration = (borrowedAtStr: string, returnedAtStr?: string | null) => {
@@ -170,16 +170,16 @@ export default function InventoryWorkspace({
       .order('full_name', { ascending: true })
 
     const { data: assignData } = await supabase
-      .from('tool_assignments')
+      .from('tool_handovers')
       .select(`
         *,
-        tool:inventory_items!tool_id(name, image_url),
+        tool:tool_catalog!tool_id(name, image_url),
         technician:profiles!technician_id(full_name, role)
       `)
-      .order('borrowed_at', { ascending: false })
+      .order('handed_over_at', { ascending: false })
 
     const { data: itemData } = await supabase
-      .from('inventory_items')
+      .from('tool_catalog')
       .select('*')
       .order('name', { ascending: true })
 
@@ -362,7 +362,7 @@ export default function InventoryWorkspace({
                 </div>
               ) : (
                 filteredTechnicians.map(tech => {
-                  const activeBorrows = assignments.filter(a => a.technician_id === tech.id && a.status === 'borrowed')
+                  const activeBorrows = assignments.filter(a => a.technician_id === tech.id && a.status === 'checked_out')
                   const isSelected = selectedTechId === tech.id
                   return (
                     <div
@@ -498,7 +498,7 @@ export default function InventoryWorkspace({
                       </thead>
                       <tbody className="divide-y divide-zinc-200/60 bg-white">
                         {techAssignments.map(assign => {
-                          const isCurrentlyHeld = assign.status === 'borrowed'
+                          const isCurrentlyHeld = assign.status === 'checked_out'
                           return (
                             <tr key={assign.id} className="hover:bg-zinc-50/50 transition-colors">
                               <td className="p-3 pl-4 font-semibold text-zinc-800">
@@ -519,15 +519,15 @@ export default function InventoryWorkspace({
                                 </div>
                               </td>
                               <td className="p-3 text-zinc-500">
-                                {new Date(assign.borrowed_at).toLocaleDateString()} at{" "}
-                                {new Date(assign.borrowed_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                {new Date(assign.handed_over_at).toLocaleDateString()} at{" "}
+                                {new Date(assign.handed_over_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                               </td>
                               <td className="p-3 text-zinc-600 font-medium">
-                                {formatDuration(assign.borrowed_at, assign.returned_at)}
+                                {formatDuration(assign.handed_over_at, assign.returned_at)}
                               </td>
                               <td className="p-3">
                                 <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                                  assign.status === 'borrowed' ? "bg-amber-100 text-amber-800 border border-amber-200" :
+                                  assign.status === 'checked_out' ? "bg-amber-100 text-amber-800 border border-amber-200" :
                                   assign.status === 'returned' ? "bg-emerald-100 text-emerald-800 border border-emerald-200" :
                                   assign.status === 'lost' ? "bg-rose-100 text-rose-800 border border-rose-200" :
                                   "bg-red-100 text-red-800 border border-red-200"
@@ -653,8 +653,8 @@ export default function InventoryWorkspace({
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredTools.map(tool => {
-                const availabilityPercent = tool.total_qty > 0 
-                  ? Math.round((tool.available_qty / tool.total_qty) * 100) 
+                const availabilityPercent = tool.total_stock > 0 
+                  ? Math.round((tool.available_stock / tool.total_stock) * 100) 
                   : 0
 
                 return (
@@ -681,8 +681,8 @@ export default function InventoryWorkspace({
                     <div className="mt-4 pt-4 border-t border-zinc-100 space-y-2">
                       <div className="flex items-center justify-between text-xs font-semibold">
                         <span className="text-zinc-500">Warehouse Stock</span>
-                        <span className={`${tool.available_qty === 0 ? "text-rose-600" : "text-emerald-700"}`}>
-                          {tool.available_qty} / {tool.total_qty} Available
+                        <span className={`${tool.available_stock === 0 ? "text-rose-600" : "text-emerald-700"}`}>
+                          {tool.available_stock} / {tool.total_stock} Available
                         </span>
                       </div>
                       
@@ -765,9 +765,9 @@ export default function InventoryWorkspace({
                   className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white"
                 >
                   <option value="">-- Choose an Available Tool --</option>
-                  {tools.filter(t => t.available_qty > 0).map(t => (
+                  {tools.filter(t => t.available_stock > 0).map(t => (
                     <option key={t.id} value={t.id}>
-                      {t.name} ({t.available_qty} available)
+                      {t.name} ({t.available_stock} available)
                     </option>
                   ))}
                 </select>
@@ -776,7 +776,7 @@ export default function InventoryWorkspace({
               {/* Quantity */}
               {assignToolId && (() => {
                 const selectedItem = tools.find(t => t.id === assignToolId)
-                const maxAvailable = selectedItem ? selectedItem.available_qty : 1
+                const maxAvailable = selectedItem ? selectedItem.available_stock : 1
                 return (
                   <div>
                     <label className="text-xs font-bold text-zinc-400 uppercase tracking-wider block mb-1">Quantity</label>
@@ -871,10 +871,10 @@ export default function InventoryWorkspace({
                   <label className="text-xs font-bold text-zinc-400 uppercase tracking-wider block mb-1">Total Owned</label>
                   <input
                     type="number"
-                    name="total_qty"
+                    name="total_stock"
                     required
                     min={0}
-                    defaultValue={editingTool ? editingTool.total_qty : 1}
+                    defaultValue={editingTool ? editingTool.total_stock : 1}
                     className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white"
                   />
                 </div>
@@ -882,10 +882,10 @@ export default function InventoryWorkspace({
                   <label className="text-xs font-bold text-zinc-400 uppercase tracking-wider block mb-1">Available Warehouse</label>
                   <input
                     type="number"
-                    name="available_qty"
+                    name="available_stock"
                     required
                     min={0}
-                    defaultValue={editingTool ? editingTool.available_qty : 1}
+                    defaultValue={editingTool ? editingTool.available_stock : 1}
                     className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white"
                   />
                 </div>
