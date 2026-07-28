@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion"
 import { ReactNode } from "react"
+import Image from "next/image"
 
 export default function LoginClientWrapper({ 
   children, 
@@ -45,7 +46,7 @@ export default function LoginClientWrapper({
             whileTap={{ scale: 0.95 }}
             className="mb-6 bg-white/60 backdrop-blur-xl p-5 rounded-3xl shadow-sm border border-white/50 flex items-center justify-center"
           >
-            <img src="/logo.png" alt="Technocycle" className="h-16 w-auto object-contain drop-shadow-sm" />
+            <Image src="/logo.png" alt="Technocycle" width={200} height={64} priority className="h-16 w-auto object-contain drop-shadow-sm" />
           </motion.div>
           
           <h1 className="text-4xl font-black tracking-tight text-slate-900 flex items-center gap-1.5 mb-2">

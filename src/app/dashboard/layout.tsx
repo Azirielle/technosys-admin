@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { AlertConfirmProvider } from '@/components/ui/AlertConfirmProvider'
 import { usePathname } from 'next/navigation'
 import { LayoutDashboard, Users, Calendar, Clock, DollarSign, Settings, LogOut, MessageSquare, Package, ClipboardList, ShieldAlert, Map, Megaphone, Smartphone } from 'lucide-react'
@@ -237,7 +238,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {/* Premium Light Sidebar */}
       <aside className="w-64 bg-white text-slate-900 border-r border-slate-200 flex flex-col z-20">
         <div className="py-4 flex items-center px-6 border-b border-slate-100 justify-center">
-          <img src="/logo.png" alt="Technocycle" className="h-16 w-auto object-contain" />
+          <Image src="/logo.png" alt="Technocycle" width={200} height={64} priority className="h-16 w-auto object-contain" />
         </div>
         
         <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
