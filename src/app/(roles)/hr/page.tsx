@@ -9,9 +9,9 @@ export default function TicketsAndLeavesPage() {
   const [activeTab, setActiveTab] = useState<'tickets' | 'leaves'>('tickets')
 
   return (
-    <div className="flex flex-col h-full w-full max-w-full">
+    <div className="flex flex-col h-full w-full max-w-full overflow-hidden p-6">
       {/* Compressed Header & Button Navigation */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 bg-white p-4 rounded-xl border border-gray-200 shadow-sm gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 bg-white p-4 rounded-xl border border-gray-200 shadow-sm gap-4 shrink-0">
         <div>
           <h1 className="text-xl font-bold tracking-tight text-gray-900 leading-none mb-1">Tickets & Leaves</h1>
           <p className="text-xs text-gray-500">Manage employee requests and leaves.</p>
@@ -44,7 +44,7 @@ export default function TicketsAndLeavesPage() {
       </div>
 
       {/* Tab Content */}
-      <div className="flex-1 w-full pb-6">
+      <div className="flex-1 w-full overflow-hidden flex flex-col">
         {activeTab === 'tickets' && <TicketingTab />}
         {activeTab === 'leaves' && <LeavesTab />}
       </div>

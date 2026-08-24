@@ -65,9 +65,9 @@ export function LeavesTab() {
   if (loading) return <div className="p-12 text-center text-gray-500 font-medium">Loading leave requests...</div>
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-300 overflow-hidden flex flex-col">
+    <div className="bg-white rounded-xl shadow-sm border border-gray-300 overflow-hidden flex-1 flex flex-col h-full">
       {/* Toolbar - Search and Filter next to each other */}
-      <div className="p-4 border-b border-gray-300 bg-gray-50 flex flex-wrap gap-4 items-center justify-start">
+      <div className="p-4 border-b border-gray-300 bg-gray-50 flex flex-wrap gap-4 items-center justify-start shrink-0">
         <div className="relative w-full sm:w-80">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
             <Search className="h-4 w-4 text-gray-400" />
@@ -96,15 +96,15 @@ export function LeavesTab() {
       </div>
       
       {/* Data Table with strict grid borders */}
-      <div className="overflow-x-auto flex-1">
+      <div className="overflow-auto flex-1">
         <table className="min-w-full border-collapse border border-gray-300">
-          <thead className="bg-gray-100">
+          <thead className="bg-gray-100 sticky top-0 z-10">
             <tr>
-              <th className="border border-gray-300 px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Issuer & Reason</th>
-              <th className="border border-gray-300 px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Leave Type</th>
-              <th className="border border-gray-300 px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Duration</th>
-              <th className="border border-gray-300 px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Status</th>
-              <th className="border border-gray-300 px-4 py-3 text-center text-xs font-bold text-gray-700 uppercase tracking-wider">Action</th>
+              <th className="border border-gray-300 px-4 py-2.5 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Issuer & Reason</th>
+              <th className="border border-gray-300 px-4 py-2.5 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Leave Type</th>
+              <th className="border border-gray-300 px-4 py-2.5 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Duration</th>
+              <th className="border border-gray-300 px-4 py-2.5 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Status</th>
+              <th className="border border-gray-300 px-4 py-2.5 text-center text-xs font-bold text-gray-700 uppercase tracking-wider">Action</th>
             </tr>
           </thead>
           <tbody className="bg-white">
@@ -119,27 +119,27 @@ export function LeavesTab() {
                   onClick={() => setSelectedLeave(leave)}
                   className="hover:bg-indigo-50/50 transition-colors cursor-pointer"
                 >
-                  <td className="border border-gray-300 px-4 py-4">
+                  <td className="border border-gray-300 px-4 py-2.5">
                     <div className="flex flex-col">
                       <span className="text-sm font-bold text-gray-900 flex items-center gap-2">
                         <User className="h-3.5 w-3.5 text-gray-400" />
                         {leave.profiles?.full_name || 'Unknown User'}
                       </span>
-                      <span className="text-xs text-gray-500 truncate max-w-xs mt-1">{leave.reason}</span>
+                      <span className="text-xs text-gray-500 truncate max-w-xs mt-0.5">{leave.reason}</span>
                     </div>
                   </td>
-                  <td className="border border-gray-300 px-4 py-4 whitespace-nowrap">
+                  <td className="border border-gray-300 px-4 py-2.5 whitespace-nowrap">
                     <span className="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-bold bg-blue-100 text-blue-800 border border-blue-200">
                       {leave.leave_type.toUpperCase()}
                     </span>
                   </td>
-                  <td className="border border-gray-300 px-4 py-4 whitespace-nowrap">
+                  <td className="border border-gray-300 px-4 py-2.5 whitespace-nowrap">
                     <div className="flex flex-col text-sm text-gray-900 font-medium">
                       <span>{new Date(leave.start_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span>
                       <span className="text-xs text-gray-500">to {new Date(leave.end_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span>
                     </div>
                   </td>
-                  <td className="border border-gray-300 px-4 py-4 whitespace-nowrap">
+                  <td className="border border-gray-300 px-4 py-2.5 whitespace-nowrap">
                     <span className={`inline-flex items-center px-2.5 py-1 rounded border text-xs font-bold ${
                       leave.status === 'approved' ? 'bg-green-100 text-green-800 border-green-200' :
                       leave.status === 'rejected' ? 'bg-red-100 text-red-800 border-red-200' :
@@ -148,7 +148,7 @@ export function LeavesTab() {
                       {leave.status.toUpperCase()}
                     </span>
                   </td>
-                  <td className="border border-gray-300 px-4 py-4 whitespace-nowrap text-center">
+                  <td className="border border-gray-300 px-4 py-2.5 whitespace-nowrap text-center">
                     {leave.status === 'pending' ? (
                       <div className="flex items-center justify-center gap-2">
                         <button 
@@ -176,7 +176,7 @@ export function LeavesTab() {
       </div>
 
       {/* Pagination */}
-      <div className="bg-gray-50 px-4 py-3 border-t border-gray-300 flex items-center justify-between">
+      <div className="bg-gray-50 px-4 py-3 border-t border-gray-300 flex items-center justify-between shrink-0">
         <p className="text-sm text-gray-700">
           Showing <span className="font-semibold">{Math.min((currentPage - 1) * itemsPerPage + 1, filteredLeaves.length)}</span> to <span className="font-semibold">{Math.min(currentPage * itemsPerPage, filteredLeaves.length)}</span> of <span className="font-semibold">{filteredLeaves.length}</span> results
         </p>

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { CheckCircle, Search, Filter, ChevronLeft, ChevronRight, X, User } from 'lucide-react'
+import { Check, CheckCircle, Search, Filter, ChevronLeft, ChevronRight, X, User } from 'lucide-react'
 
 type Ticket = {
   id: string
@@ -82,9 +82,9 @@ export function TicketingTab() {
   if (loading) return <div className="p-12 text-center text-gray-500 font-medium">Loading tickets...</div>
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-300 overflow-hidden flex flex-col">
+    <div className="bg-white rounded-xl shadow-sm border border-gray-300 overflow-hidden flex-1 flex flex-col h-full">
       {/* Toolbar - Search and Filter next to each other */}
-      <div className="p-4 border-b border-gray-300 bg-gray-50 flex flex-wrap gap-4 items-center justify-start">
+      <div className="p-4 border-b border-gray-300 bg-gray-50 flex flex-wrap gap-4 items-center justify-start shrink-0">
         <div className="relative w-full sm:w-80">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
             <Search className="h-4 w-4 text-gray-400" />
@@ -112,15 +112,15 @@ export function TicketingTab() {
       </div>
       
       {/* Data Table with strict grid borders */}
-      <div className="overflow-x-auto flex-1">
+      <div className="overflow-auto flex-1">
         <table className="min-w-full border-collapse border border-gray-300">
-          <thead className="bg-gray-100">
+          <thead className="bg-gray-100 sticky top-0 z-10">
             <tr>
-              <th className="border border-gray-300 px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Ticket ID & Title</th>
-              <th className="border border-gray-300 px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Issuer</th>
-              <th className="border border-gray-300 px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Category</th>
-              <th className="border border-gray-300 px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Status</th>
-              <th className="border border-gray-300 px-4 py-3 text-center text-xs font-bold text-gray-700 uppercase tracking-wider">Action</th>
+              <th className="border border-gray-300 px-4 py-2.5 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Ticket ID & Title</th>
+              <th className="border border-gray-300 px-4 py-2.5 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Issuer</th>
+              <th className="border border-gray-300 px-4 py-2.5 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Category</th>
+              <th className="border border-gray-300 px-4 py-2.5 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Status</th>
+              <th className="border border-gray-300 px-4 py-2.5 text-center text-xs font-bold text-gray-700 uppercase tracking-wider">Action</th>
             </tr>
           </thead>
           <tbody className="bg-white">
@@ -135,53 +135,40 @@ export function TicketingTab() {
                   onClick={() => setSelectedTicket(ticket)}
                   className="hover:bg-indigo-50/50 transition-colors cursor-pointer"
                 >
-                  <td className="border border-gray-300 px-4 py-4">
+                  <td className="border border-gray-300 px-4 py-2.5">
                     <div className="flex flex-col">
-                      <span className="text-xs font-mono text-gray-500 mb-1">#{ticket.id.split('-')[0].toUpperCase()}</span>
+                      <span className="text-xs font-mono text-gray-500 mb-0.5">#{ticket.id.split('-')[0].toUpperCase()}</span>
                       <span className="text-sm font-bold text-gray-900">{ticket.title}</span>
-                      <span className="text-xs text-gray-500 truncate max-w-xs">{ticket.description}</span>
                     </div>
                   </td>
-                  <td className="border border-gray-300 px-4 py-4 whitespace-nowrap">
-                    <div className="flex items-center gap-2">
-                      <div className="h-6 w-6 rounded-full bg-indigo-100 flex items-center justify-center">
-                        <User className="h-3 w-3 text-indigo-700" />
-                      </div>
-                      <span className="text-sm font-medium text-gray-900">{ticket.profiles?.full_name || 'Unknown User'}</span>
-                    </div>
+                  <td className="border border-gray-300 px-4 py-2.5 whitespace-nowrap">
+                    <span className="text-sm font-bold text-gray-900 flex items-center gap-2">
+                      <User className="h-3.5 w-3.5 text-gray-400" />
+                      {ticket.profiles?.full_name || 'Unknown User'}
+                    </span>
                   </td>
-                  <td className="border border-gray-300 px-4 py-4 whitespace-nowrap">
-                    <div className="flex flex-col gap-2 items-start">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded text-xs font-bold ${getCategoryColor(ticket.category)}`}>
-                        {ticket.category.toUpperCase()}
-                      </span>
-                      <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold border ${getPriorityColor(ticket.priority)}`}>
-                        {ticket.priority.toUpperCase()} PRIORITY
-                      </span>
-                    </div>
+                  <td className="border border-gray-300 px-4 py-2.5 whitespace-nowrap">
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded text-xs font-bold ${getCategoryColor(ticket.category)}`}>
+                      {ticket.category.toUpperCase()}
+                    </span>
                   </td>
-                  <td className="border border-gray-300 px-4 py-4 whitespace-nowrap">
-                     {ticket.status === 'resolved' ? (
-                       <span className="inline-flex items-center px-2.5 py-1 rounded bg-green-100 text-green-800 border border-green-200 text-xs font-bold">
-                         RESOLVED
-                       </span>
-                     ) : (
-                       <span className="inline-flex items-center px-2.5 py-1 rounded bg-yellow-100 text-yellow-800 border border-yellow-200 text-xs font-bold">
-                         OPEN
-                       </span>
-                     )}
+                  <td className="border border-gray-300 px-4 py-2.5 whitespace-nowrap">
+                    <span className={`inline-flex items-center px-2.5 py-1 rounded border text-xs font-bold ${
+                      ticket.status === 'resolved' ? 'bg-green-100 text-green-800 border-green-200' : 'bg-amber-100 text-amber-800 border-amber-200'
+                    }`}>
+                      {ticket.status.toUpperCase()}
+                    </span>
                   </td>
-                  <td className="border border-gray-300 px-4 py-4 whitespace-nowrap text-center">
-                    {ticket.status !== 'resolved' ? (
+                  <td className="border border-gray-300 px-4 py-2.5 whitespace-nowrap text-center">
+                    {ticket.status === 'open' ? (
                       <button 
                         onClick={(e) => resolveTicket(ticket.id, e)}
-                        className="inline-flex items-center gap-1.5 bg-indigo-600 text-white hover:bg-indigo-700 px-4 py-2 rounded-md transition-colors text-sm font-semibold shadow-sm"
+                        className="inline-flex items-center gap-1 bg-emerald-600 text-white hover:bg-emerald-700 px-3 py-1.5 rounded font-medium transition-colors shadow-sm text-xs"
                       >
-                        <CheckCircle className="w-4 h-4" />
-                        Mark Resolved
+                        <Check className="w-3.5 h-3.5" /> Resolve
                       </button>
                     ) : (
-                      <span className="text-gray-400 text-sm font-medium">Closed</span>
+                      <span className="text-gray-400 text-sm font-medium">Completed</span>
                     )}
                   </td>
                 </tr>
@@ -192,7 +179,7 @@ export function TicketingTab() {
       </div>
 
       {/* Pagination */}
-      <div className="bg-gray-50 px-4 py-3 border-t border-gray-300 flex items-center justify-between">
+      <div className="bg-gray-50 px-4 py-3 border-t border-gray-300 flex items-center justify-between shrink-0">
         <p className="text-sm text-gray-700">
           Showing <span className="font-semibold">{Math.min((currentPage - 1) * itemsPerPage + 1, filteredTickets.length)}</span> to <span className="font-semibold">{Math.min(currentPage * itemsPerPage, filteredTickets.length)}</span> of <span className="font-semibold">{filteredTickets.length}</span> results
         </p>
