@@ -95,16 +95,16 @@ export function LeavesTab() {
         </div>
       </div>
       
-      {/* Data Table with strict grid borders */}
+      {/* Data Table with strict grid borders and unified column widths */}
       <div className="overflow-auto flex-1">
-        <table className="min-w-full border-collapse border border-gray-300">
+        <table className="min-w-full border-collapse border border-gray-300 table-fixed">
           <thead className="bg-gray-100 sticky top-0 z-10">
             <tr>
-              <th className="border border-gray-300 px-4 py-2.5 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Issuer & Reason</th>
-              <th className="border border-gray-300 px-4 py-2.5 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Leave Type</th>
-              <th className="border border-gray-300 px-4 py-2.5 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Duration</th>
-              <th className="border border-gray-300 px-4 py-2.5 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Status</th>
-              <th className="border border-gray-300 px-4 py-2.5 text-center text-xs font-bold text-gray-700 uppercase tracking-wider">Action</th>
+              <th className="border border-gray-300 px-4 py-2.5 text-left text-xs font-bold text-gray-700 uppercase tracking-wider w-[32%]">Issuer & Reason</th>
+              <th className="border border-gray-300 px-4 py-2.5 text-left text-xs font-bold text-gray-700 uppercase tracking-wider w-[18%]">Leave Type</th>
+              <th className="border border-gray-300 px-4 py-2.5 text-left text-xs font-bold text-gray-700 uppercase tracking-wider w-[22%]">Duration</th>
+              <th className="border border-gray-300 px-4 py-2.5 text-left text-xs font-bold text-gray-700 uppercase tracking-wider w-[14%]">Status</th>
+              <th className="border border-gray-300 px-4 py-2.5 text-center text-xs font-bold text-gray-700 uppercase tracking-wider w-[14%]">Action</th>
             </tr>
           </thead>
           <tbody className="bg-white">
