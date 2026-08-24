@@ -2,7 +2,7 @@ import { Sidebar, NavItem } from '@/components/dashboard/Sidebar'
 import { Home, Settings } from 'lucide-react'
 
 const navItems: NavItem[] = [
-  { title: 'System Overrides', href: '/ceo', icon: Settings },
+  { title: 'System Overrides', href: '/ceo', iconName: 'Settings' },
 ]
 
 export default function CEOLayout({ children }: { children: React.ReactNode }) {

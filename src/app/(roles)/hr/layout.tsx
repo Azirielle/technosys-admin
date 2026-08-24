@@ -2,8 +2,8 @@ import { Sidebar, NavItem } from '@/components/dashboard/Sidebar'
 import { Home, Users, MessageSquare, AlertTriangle } from 'lucide-react'
 
 const navItems: NavItem[] = [
-  { title: 'Tickets & Leaves', href: '/hr', icon: MessageSquare },
-  { title: '201 Files', href: '/hr/files', icon: Users },
+  { title: 'Tickets & Leaves', href: '/hr', iconName: 'Ticket' },
+  { title: '201 Files', href: '/hr/files', iconName: 'FolderOpen' },
 ]
 
 export default function HRLayout({ children }: { children: React.ReactNode }) {

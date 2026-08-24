@@ -2,7 +2,7 @@ import { Sidebar, NavItem } from '@/components/dashboard/Sidebar'
 import { Home, FileSpreadsheet } from 'lucide-react'
 
 const navItems: NavItem[] = [
-  { title: 'Audit Logs', href: '/accountant', icon: FileSpreadsheet },
+  { title: 'Audit Logs', href: '/accountant', iconName: 'FileSpreadsheet' },
 ]
 
 export default function AccountantLayout({ children }: { children: React.ReactNode }) {

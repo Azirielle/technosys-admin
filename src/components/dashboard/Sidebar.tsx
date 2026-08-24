@@ -2,14 +2,29 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { LucideIcon, UserCircle, LogOut, Ticket, FolderOpen, FileSpreadsheet, MapPin, Calendar, Box, ShieldAlert } from 'lucide-react'
+import {
+  LucideIcon,
+  UserCircle,
+  LogOut,
+  Ticket,
+  FolderOpen,
+  FileSpreadsheet,
+  MapPin,
+  Calendar,
+  Box,
+  Settings,
+  Home,
+  MessageSquare,
+  ShieldAlert,
+} from 'lucide-react'
 import { logout } from '@/app/actions'
 import { getSystemOverrides, SYSTEM_MODULES, RoleKey } from '@/lib/overrides'
 
 export type NavItem = {
   title: string
   href: string
-  icon: LucideIcon
+  icon?: LucideIcon
+  iconName?: string
   isOverride?: boolean
 }
 
@@ -26,6 +41,9 @@ const ICON_MAP: Record<string, LucideIcon> = {
   MapPin,
   Calendar,
   Box,
+  Settings,
+  Home,
+  MessageSquare,
 }
 
 export function Sidebar({ navItems, title, role }: SidebarProps) {
@@ -57,7 +75,7 @@ export function Sidebar({ navItems, title, role }: SidebarProps) {
             overrideNavItems.push({
               title: mod.name,
               href: mod.href,
-              icon: ICON_MAP[mod.iconName] || ShieldAlert,
+              iconName: mod.iconName,
               isOverride: true
             })
           }
@@ -87,7 +105,7 @@ export function Sidebar({ navItems, title, role }: SidebarProps) {
       </div>
       <nav className="flex-1 px-4 space-y-2 mt-4 overflow-y-auto">
         {effectiveItems.map((item) => {
-          const Icon = item.icon
+          const Icon = item.icon || (item.iconName ? ICON_MAP[item.iconName] : undefined) || ShieldAlert
           return (
             <Link
               key={item.href}
