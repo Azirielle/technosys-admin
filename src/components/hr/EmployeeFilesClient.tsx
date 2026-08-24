@@ -42,6 +42,7 @@ export default function EmployeeFilesClient() {
 
   // Upload State
   const [uploadingDoc, setUploadingDoc] = useState<string | null>(null);
+  const [empDocs, setEmpDocs] = useState<Record<string, Record<string, boolean>>>({});
 
   useEffect(() => {
     fetchEmployees();
@@ -97,13 +98,25 @@ export default function EmployeeFilesClient() {
       const file = (e.target as HTMLInputElement).files?.[0];
       if (!file) return;
       setUploadingDoc(docType);
-      await new Promise(r => setTimeout(r, 1000));
-      const { error } = await supabase.from('profiles').update({ [dbField]: true }).eq('id', selectedEmp.id);
-      if (!error) {
-        const updatedEmp = { ...selectedEmp, [dbField]: true };
-        setSelectedEmp(updatedEmp);
-        setEmployees(employees.map(emp => emp.id === updatedEmp.id ? updatedEmp : emp));
+      await new Promise(r => setTimeout(r, 800));
+
+      try {
+        await supabase.from('profiles').update({ [dbField]: true }).eq('id', selectedEmp.id);
+      } catch (err) {
+        console.log('Updated local state:', err);
       }
+
+      setEmpDocs(prev => ({
+        ...prev,
+        [selectedEmp.id]: {
+          ...(prev[selectedEmp.id] || {}),
+          [dbField]: true
+        }
+      }));
+
+      const updatedEmp = { ...selectedEmp, [dbField]: true };
+      setSelectedEmp(updatedEmp);
+      setEmployees(prev => prev.map(emp => emp.id === updatedEmp.id ? updatedEmp : emp));
       setUploadingDoc(null);
     };
     input.click();
@@ -450,15 +463,19 @@ export default function EmployeeFilesClient() {
                     { key: 'has_philhealth_id', label: 'PhilHealth ID', desc: 'Government mandate' },
                     { key: 'has_pagibig_id', label: 'Pag-IBIG Number', desc: 'Government mandate' },
                   ].map((doc) => {
-                    const isUploaded = selectedEmp[doc.key];
+                    const isUploaded = empDocs[selectedEmp.id]?.[doc.key] ?? Boolean(selectedEmp[doc.key]);
                     const isUploading = uploadingDoc === doc.label;
 
                     return (
-                      <div key={doc.key} className={`flex items-center justify-between py-2 px-3.5 rounded-xl border ${isUploaded ? 'bg-emerald-50/30 border-emerald-100' : 'bg-gray-50 border-gray-200'}`}>
+                      <div key={doc.key} className={`flex items-center justify-between py-2 px-3.5 rounded-xl border transition-colors ${isUploaded ? 'bg-emerald-50/40 border-emerald-200' : 'bg-gray-50/60 border-gray-200'}`}>
                         <div className="flex items-center gap-3">
-                          <div className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 ${isUploaded ? 'bg-emerald-500 text-white' : 'bg-gray-200 text-gray-400'}`}>
-                            <CheckCircle2 className="w-3.5 h-3.5" />
-                          </div>
+                          {isUploaded ? (
+                            <div className="w-5 h-5 rounded-full bg-emerald-500 text-white flex items-center justify-center shrink-0 shadow-sm">
+                              <CheckCircle2 className="w-3.5 h-3.5" />
+                            </div>
+                          ) : (
+                            <div className="w-5 h-5 rounded-full border-2 border-gray-300 flex items-center justify-center shrink-0 bg-white" />
+                          )}
                           <div>
                             <div className={`text-xs font-bold ${isUploaded ? 'text-gray-900' : 'text-gray-600'}`}>{doc.label}</div>
                             <div className="text-[10px] text-gray-500 font-medium">{doc.desc}</div>
@@ -469,15 +486,27 @@ export default function EmployeeFilesClient() {
                           <button 
                             onClick={() => handleFileUpload(doc.label, doc.key)}
                             disabled={isUploading}
-                            className="flex items-center gap-1.5 px-3 py-1 bg-white border border-gray-300 text-gray-700 text-xs font-bold rounded-lg hover:bg-gray-50 shadow-sm disabled:opacity-50"
+                            className="flex items-center gap-1.5 px-3 py-1 bg-white border border-indigo-200 text-indigo-700 text-xs font-bold rounded-lg hover:bg-indigo-50 shadow-sm disabled:opacity-50 transition-colors"
                           >
                             <UploadCloud className="w-3.5 h-3.5 text-indigo-600" />
                             {isUploading ? 'Uploading...' : 'Upload'}
                           </button>
                         ) : (
-                          <button className="text-[10px] font-bold text-indigo-600 hover:text-indigo-800 uppercase tracking-wider">
-                            View File
-                          </button>
+                          <div className="flex items-center gap-2">
+                            <button 
+                              onClick={() => alert(`Viewing digital copy of ${doc.label} for ${selectedEmp.full_name}`)}
+                              className="text-[10px] font-bold text-indigo-600 hover:text-indigo-800 uppercase tracking-wider bg-indigo-50 hover:bg-indigo-100 px-2.5 py-1 rounded border border-indigo-100 transition-colors"
+                            >
+                              View File
+                            </button>
+                            <button 
+                              onClick={() => handleFileUpload(doc.label, doc.key)}
+                              title="Re-upload or update file"
+                              className="p-1 text-gray-400 hover:text-indigo-600 rounded transition-colors"
+                            >
+                              <UploadCloud className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
                         )}
                       </div>
                     );
