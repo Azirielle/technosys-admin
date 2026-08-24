@@ -297,22 +297,6 @@ export default function AdminActivitiesClient() {
             Pinnacle Chief Executive Officer oversight. Track and verify admin activities executed under standard scope vs. CEO-granted overrides.
           </p>
         </div>
-
-        {/* Stat Summary Cards */}
-        <div className="flex items-center gap-3">
-          <div className="bg-purple-50 border border-purple-200 rounded-xl px-4 py-2 text-center shadow-2xs">
-            <div className="text-xs font-bold text-purple-700 uppercase tracking-wider flex items-center gap-1">
-              <Unlock className="w-3.5 h-3.5 text-purple-600" /> CEO Overrides
-            </div>
-            <div className="text-lg font-black text-purple-900 mt-0.5">{overrideCount} Actions</div>
-          </div>
-          <div className="bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-2 text-center shadow-2xs">
-            <div className="text-xs font-bold text-emerald-700 uppercase tracking-wider flex items-center gap-1">
-              <Lock className="w-3.5 h-3.5 text-emerald-600" /> Standard Scope
-            </div>
-            <div className="text-lg font-black text-emerald-900 mt-0.5">{standardCount} Actions</div>
-          </div>
-        </div>
       </div>
 
       {/* Main Filter & Navigation Tabs */}
@@ -459,7 +443,7 @@ export default function AdminActivitiesClient() {
                     {/* Action & Feature */}
                     <td className="border border-gray-300 px-4 py-2.5 overflow-hidden">
                       <div className="flex flex-col min-w-0">
-                        <div className="flex items-center gap-2 truncate">
+                        <div className="flex items-center gap-2 min-w-0">
                           <span className="text-sm font-bold text-gray-900 truncate">{log.action}</span>
                           <span className="text-[10px] font-mono text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded border border-gray-200 shrink-0">
                             {log.moduleName}
