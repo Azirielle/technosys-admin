@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { ShieldCheck, ShieldAlert, Check, RefreshCw, Zap, ExternalLink, Info, CheckCircle2, Lock, Unlock } from 'lucide-react'
+import { ShieldCheck, ShieldAlert, Check, RefreshCw, Zap, Info, CheckCircle2, Lock, Unlock } from 'lucide-react'
 import { SYSTEM_MODULES, getSystemOverrides, saveSystemOverrides, OverrideMap, RoleKey } from '@/lib/overrides'
 
 const ROLES: { key: RoleKey; label: string; sub: string; badgeColor: string }[] = [
@@ -192,22 +192,14 @@ export default function SystemOverridesClient() {
         </div>
 
         {/* Footer info bar */}
-        <div className="p-4 bg-gray-50 border-t border-gray-300 flex flex-wrap items-center justify-between gap-4 text-xs text-gray-600 shrink-0">
-          <div className="flex items-center gap-2">
-            <span className="font-bold text-gray-800">Quick Test:</span>
-            <span>Switch to any role view below to verify your dynamic sidebar links in real-time.</span>
-          </div>
-          <div className="flex items-center gap-3">
-            <a href="/accountant" target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 font-bold text-indigo-600 hover:text-indigo-800 bg-white px-2.5 py-1 rounded border border-gray-300 shadow-2xs">
-              Accountant View <ExternalLink className="w-3 h-3" />
-            </a>
-            <a href="/coordinator" target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 font-bold text-indigo-600 hover:text-indigo-800 bg-white px-2.5 py-1 rounded border border-gray-300 shadow-2xs">
-              Field Operations <ExternalLink className="w-3 h-3" />
-            </a>
-            <a href="/hr" target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 font-bold text-indigo-600 hover:text-indigo-800 bg-white px-2.5 py-1 rounded border border-gray-300 shadow-2xs">
-              HR Department <ExternalLink className="w-3 h-3" />
-            </a>
-          </div>
+        <div className="p-3.5 bg-gray-50 border-t border-gray-300 flex items-center justify-between text-xs text-gray-500 shrink-0">
+          <span className="flex items-center gap-1.5 font-medium">
+            <ShieldCheck className="w-4 h-4 text-indigo-600" />
+            System overrides take effect immediately for users logging into their respective roles.
+          </span>
+          <span className="font-mono text-[10px] text-gray-400 uppercase tracking-wider">
+            CEO Master Access Control
+          </span>
         </div>
       </div>
     </div>
