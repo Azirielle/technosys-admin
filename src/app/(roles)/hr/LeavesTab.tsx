@@ -97,14 +97,14 @@ export function LeavesTab() {
       
       {/* Data Table with strict grid borders and unified column widths */}
       <div className="overflow-auto flex-1">
-        <table className="min-w-full border-collapse border border-gray-300 table-fixed">
+        <table className="w-full border-collapse border border-gray-300 table-fixed">
           <thead className="bg-gray-100 sticky top-0 z-10">
             <tr>
               <th className="border border-gray-300 px-4 py-2.5 text-left text-xs font-bold text-gray-700 uppercase tracking-wider w-[32%]">Issuer & Reason</th>
-              <th className="border border-gray-300 px-4 py-2.5 text-left text-xs font-bold text-gray-700 uppercase tracking-wider w-[18%]">Leave Type</th>
-              <th className="border border-gray-300 px-4 py-2.5 text-left text-xs font-bold text-gray-700 uppercase tracking-wider w-[22%]">Duration</th>
-              <th className="border border-gray-300 px-4 py-2.5 text-left text-xs font-bold text-gray-700 uppercase tracking-wider w-[14%]">Status</th>
-              <th className="border border-gray-300 px-4 py-2.5 text-center text-xs font-bold text-gray-700 uppercase tracking-wider w-[14%]">Action</th>
+              <th className="border border-gray-300 px-4 py-2.5 text-left text-xs font-bold text-gray-700 uppercase tracking-wider w-[22%]">Leave Type</th>
+              <th className="border border-gray-300 px-4 py-2.5 text-left text-xs font-bold text-gray-700 uppercase tracking-wider w-[20%]">Duration</th>
+              <th className="border border-gray-300 px-4 py-2.5 text-left text-xs font-bold text-gray-700 uppercase tracking-wider w-[13%]">Status</th>
+              <th className="border border-gray-300 px-4 py-2.5 text-center text-xs font-bold text-gray-700 uppercase tracking-wider w-[13%]">Action</th>
             </tr>
           </thead>
           <tbody className="bg-white">
@@ -119,13 +119,13 @@ export function LeavesTab() {
                   onClick={() => setSelectedLeave(leave)}
                   className="hover:bg-indigo-50/50 transition-colors cursor-pointer"
                 >
-                  <td className="border border-gray-300 px-4 py-2.5">
-                    <div className="flex flex-col">
-                      <span className="text-sm font-bold text-gray-900 flex items-center gap-2">
-                        <User className="h-3.5 w-3.5 text-gray-400" />
-                        {leave.profiles?.full_name || 'Unknown User'}
+                  <td className="border border-gray-300 px-4 py-2.5 overflow-hidden">
+                    <div className="flex flex-col min-w-0">
+                      <span className="text-sm font-bold text-gray-900 flex items-center gap-2 truncate">
+                        <User className="h-3.5 w-3.5 text-gray-400 shrink-0" />
+                        <span className="truncate">{leave.profiles?.full_name || 'Unknown User'}</span>
                       </span>
-                      <span className="text-xs text-gray-500 truncate max-w-xs mt-0.5">{leave.reason}</span>
+                      <span className="text-xs text-gray-500 truncate mt-0.5">{leave.reason}</span>
                     </div>
                   </td>
                   <td className="border border-gray-300 px-4 py-2.5 whitespace-nowrap">

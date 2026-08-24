@@ -135,10 +135,10 @@ export function TicketingTab() {
                   onClick={() => setSelectedTicket(ticket)}
                   className="hover:bg-indigo-50/50 transition-colors cursor-pointer"
                 >
-                  <td className="border border-gray-300 px-4 py-2.5">
-                    <div className="flex flex-col">
+                  <td className="border border-gray-300 px-4 py-2.5 overflow-hidden">
+                    <div className="flex flex-col min-w-0">
                       <span className="text-xs font-mono text-gray-500 mb-0.5">#{ticket.id.split('-')[0].toUpperCase()}</span>
-                      <span className="text-sm font-bold text-gray-900">{ticket.title}</span>
+                      <span className="text-sm font-bold text-gray-900 truncate">{ticket.title}</span>
                     </div>
                   </td>
                   <td className="border border-gray-300 px-4 py-2.5 whitespace-nowrap">
