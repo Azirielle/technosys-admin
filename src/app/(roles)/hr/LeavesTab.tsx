@@ -96,7 +96,7 @@ export function LeavesTab() {
       </div>
       
       {/* Data Table with strict grid borders and unified column widths */}
-      <div className="overflow-auto flex-1">
+      <div className="overflow-y-scroll flex-1 [scrollbar-gutter:stable]">
         <table className="w-full border-collapse border border-gray-300 table-fixed">
           <thead className="bg-gray-100 sticky top-0 z-10">
             <tr>

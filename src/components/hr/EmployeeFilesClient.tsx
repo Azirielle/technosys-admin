@@ -360,7 +360,7 @@ export default function EmployeeFilesClient() {
           </div>
 
           {/* Table */}
-          <div className="bg-white border border-gray-200 rounded-b-xl overflow-auto flex-1 shadow-sm">
+          <div className="bg-white border border-gray-200 rounded-b-xl overflow-y-scroll flex-1 shadow-sm [scrollbar-gutter:stable]">
             <table className="w-full text-left border-collapse table-fixed">
               <thead>
                 <tr className="bg-gray-50 border-b border-gray-200 sticky top-0 z-10">
