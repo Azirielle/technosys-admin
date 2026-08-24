@@ -9,10 +9,10 @@ const navItems: NavItem[] = [
 
 export default function CoordinatorLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      <Sidebar navItems={navItems} title="Field Operations" />
-      <div className="flex-1 flex flex-col">
-        <main className="flex-1 p-8">{children}</main>
+    <div className="flex h-screen bg-gray-50 overflow-hidden">
+      <Sidebar navItems={navItems} title="Field Operations" role="coordinator" />
+      <div className="flex-1 flex flex-col h-screen overflow-hidden">
+        <main className="flex-1 flex flex-col overflow-hidden">{children}</main>
       </div>
     </div>
   )
