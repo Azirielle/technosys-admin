@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { Search, FolderOpen, UploadCloud, AlertTriangle, FileText, CheckCircle2, X, Send, Phone, Settings, Filter, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, FolderOpen, UploadCloud, AlertTriangle, FileText, CheckCircle2, X, Send, Phone, Settings, Filter, ChevronLeft, ChevronRight, Trash2 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 
 export default function EmployeeFilesClient() {
@@ -129,6 +129,30 @@ export default function EmployeeFilesClient() {
       setUploadingDoc(null);
     };
     input.click();
+  };
+
+  const handleRemoveFile = async (docType: string, dbField: string) => {
+    if (!selectedEmp) return;
+    const confirmRemove = window.confirm(`Are you sure you want to remove ${docType} for ${selectedEmp.full_name}?`);
+    if (!confirmRemove) return;
+
+    try {
+      await supabase.from('profiles').update({ [dbField]: false }).eq('id', selectedEmp.id);
+    } catch (err) {
+      console.log('Removed from state:', err);
+    }
+
+    setUploadedFiles(prev => {
+      const empFiles = { ...(prev[selectedEmp.id] || {}) };
+      delete empFiles[dbField];
+      return {
+        ...prev,
+        [selectedEmp.id]: empFiles
+      };
+    });
+
+    setUploadNotification(`Removed ${docType} from ${selectedEmp.full_name}'s 201 file.`);
+    setTimeout(() => setUploadNotification(null), 3000);
   };
 
   const submitWarning = async (e: React.FormEvent) => {
@@ -518,7 +542,7 @@ export default function EmployeeFilesClient() {
                             {isUploading ? 'Uploading...' : 'Upload'}
                           </button>
                         ) : (
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-1.5">
                             <button 
                               onClick={() => {
                                 if (uploadedInfo?.fileUrl) {
@@ -533,10 +557,17 @@ export default function EmployeeFilesClient() {
                             </button>
                             <button 
                               onClick={() => handleFileUpload(doc.label, doc.key)}
-                              title="Re-upload or update file"
+                              title="Re-upload or replace file"
                               className="p-1 text-gray-400 hover:text-indigo-600 rounded transition-colors"
                             >
                               <UploadCloud className="w-3.5 h-3.5" />
+                            </button>
+                            <button 
+                              onClick={() => handleRemoveFile(doc.label, doc.key)}
+                              title="Remove file from 201 record"
+                              className="p-1 text-gray-400 hover:text-red-600 rounded transition-colors"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
                             </button>
                           </div>
                         )}
