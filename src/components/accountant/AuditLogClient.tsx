@@ -285,13 +285,6 @@ export default function AuditLogClient() {
               </table>
             </div>
           </div>
-          
-          <div className="mt-4 flex items-start gap-3 bg-blue-50 border border-blue-100 rounded-xl p-4">
-            <AlertCircle className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />
-            <p className="text-sm text-blue-800 font-medium leading-relaxed">
-              <strong>Accountant Notice:</strong> This table aggregates the exact clock-in/out timestamps captured by the technicians' GPS mobile app. It isolates overtime, lates, and night differentials without executing any financial math. Export this data using the green button above and import it into your external payroll software.
-            </p>
-          </div>
 
         </div>
       </div>
