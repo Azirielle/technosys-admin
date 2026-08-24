@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import { Calendar, Search, Download, AlertCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 
+import * as XLSX from 'xlsx';
+
 export default function AuditLogClient() {
   const supabase = createClient();
   const [records, setRecords] = useState<any[]>([]);
@@ -108,37 +110,160 @@ export default function AuditLogClient() {
     setCurrentPage(1); // Reset page on filter/search change
   }, [search]);
 
-  const exportToCSV = () => {
-    // Generate CSV string
-    const headers = ["Name", "Level", "Status", "Base Salary", "Days Worked", "Absences", "Lates", "Reg OT (Hrs)", "Sun/Hol OT (Hrs)", "Night Diff (Hrs)"];
+  const exportToExcel = () => {
+    const periodLabel = period === 'aug_1_15' ? 'August 1 - 15, 2026' : 'July 16 - 31, 2026';
     
-    // Use proper CSV escaping (wrapping in quotes) to prevent commas in names from breaking columns
-    const escapeCSV = (val: any) => `"${String(val).replace(/"/g, '""')}"`;
+    // Header & metadata block
+    const data: any[][] = [
+      ['TECHNOSYS ADMIN - ACCOUNTANT AUDIT LOG'],
+      ['Pay Period:', periodLabel],
+      ['Generated On:', new Date().toLocaleString()],
+      [],
+      [
+        'Employee Name',
+        'Level & Status',
+        'Base Salary',
+        'Days Worked',
+        'Lates',
+        'Reg OT (Hrs)',
+        'Sun/Hol OT (Hrs)',
+        'Night Diff (Hrs)',
+        'Absences'
+      ]
+    ];
 
-    const rows = filteredRecords.map(r => [
-      escapeCSV(r.name), 
-      escapeCSV(r.level), 
-      escapeCSV(r.status), 
-      r.base_salary, 
-      r.daysWorked, 
-      r.absences, 
-      r.lates, 
-      r.regOtHours, 
-      r.sunHolidayOtHours, 
-      r.nightDiffHours
+    let totDays = 0, totLates = 0, totRegOt = 0, totSunOt = 0, totNightDiff = 0, totAbsences = 0;
+
+    filteredRecords.forEach(r => {
+      const regOt = parseFloat(r.regOtHours) || 0;
+      const sunOt = parseFloat(r.sunHolidayOtHours) || 0;
+      const nd = parseFloat(r.nightDiffHours) || 0;
+
+      totDays += (r.daysWorked || 0);
+      totLates += (r.lates || 0);
+      totRegOt += regOt;
+      totSunOt += sunOt;
+      totNightDiff += nd;
+      totAbsences += (r.absences || 0);
+
+      data.push([
+        r.name,
+        `${(r.level || 'TECHNICIAN').toUpperCase()} • ${(r.status || 'REGULAR').toUpperCase()}`,
+        `₱${(r.base_salary || 0).toLocaleString()}/day`,
+        r.daysWorked || 0,
+        r.lates || 0,
+        regOt,
+        sunOt,
+        nd,
+        r.absences || 0
+      ]);
+    });
+
+    data.push([]);
+    data.push([
+      'TOTALS',
+      '',
+      '',
+      totDays,
+      totLates,
+      parseFloat(totRegOt.toFixed(1)),
+      parseFloat(totSunOt.toFixed(1)),
+      parseFloat(totNightDiff.toFixed(1)),
+      totAbsences
     ]);
-    
-    const csvContent = "data:text/csv;charset=utf-8," 
-      + headers.join(",") + "\n"
-      + rows.map(e => e.join(",")).join("\n");
-      
-    const encodedUri = encodeURI(csvContent);
+
+    const worksheet = XLSX.utils.aoa_to_sheet(data);
+    worksheet['!cols'] = [
+      { wch: 28 },
+      { wch: 26 },
+      { wch: 18 },
+      { wch: 15 },
+      { wch: 12 },
+      { wch: 16 },
+      { wch: 18 },
+      { wch: 18 },
+      { wch: 14 }
+    ];
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Audit Log');
+    XLSX.writeFile(workbook, `technosys_audit_log_${period}.xlsx`);
+  };
+
+  const exportToCSV = () => {
+    const periodLabel = period === 'aug_1_15' ? 'August 1 - 15, 2026' : 'July 16 - 31, 2026';
+    const BOM = "\uFEFF"; // UTF-8 Byte Order Mark for Excel compatibility
+    const escapeCSV = (val: any) => `"${String(val ?? '').replace(/"/g, '""')}"`;
+
+    const headers = [
+      "Employee Name",
+      "Level & Status",
+      "Base Salary",
+      "Days Worked",
+      "Lates",
+      "Reg OT (Hrs)",
+      "Sun/Hol OT (Hrs)",
+      "Night Diff (Hrs)",
+      "Absences"
+    ];
+
+    let totDays = 0, totLates = 0, totRegOt = 0, totSunOt = 0, totNightDiff = 0, totAbsences = 0;
+
+    const rows = filteredRecords.map(r => {
+      const regOt = parseFloat(r.regOtHours) || 0;
+      const sunOt = parseFloat(r.sunHolidayOtHours) || 0;
+      const nd = parseFloat(r.nightDiffHours) || 0;
+
+      totDays += (r.daysWorked || 0);
+      totLates += (r.lates || 0);
+      totRegOt += regOt;
+      totSunOt += sunOt;
+      totNightDiff += nd;
+      totAbsences += (r.absences || 0);
+
+      return [
+        escapeCSV(r.name),
+        escapeCSV(`${(r.level || 'TECHNICIAN').toUpperCase()} • ${(r.status || 'REGULAR').toUpperCase()}`),
+        escapeCSV(`₱${(r.base_salary || 0).toLocaleString()}/day`),
+        r.daysWorked || 0,
+        r.lates || 0,
+        regOt.toFixed(1),
+        sunOt.toFixed(1),
+        nd.toFixed(1),
+        r.absences || 0
+      ].join(",");
+    });
+
+    const metadataRows = [
+      escapeCSV("TECHNOSYS ADMIN - ACCOUNTANT AUDIT LOG"),
+      `${escapeCSV("Pay Period:")},${escapeCSV(periodLabel)}`,
+      `${escapeCSV("Generated On:")},${escapeCSV(new Date().toLocaleString())}`,
+      ""
+    ];
+
+    const totalsRow = [
+      escapeCSV("TOTALS"),
+      '""',
+      '""',
+      totDays,
+      totLates,
+      totRegOt.toFixed(1),
+      totSunOt.toFixed(1),
+      totNightDiff.toFixed(1),
+      totAbsences
+    ].join(",");
+
+    const csvContent = BOM + metadataRows.join("\n") + headers.map(escapeCSV).join(",") + "\n" + rows.join("\n") + "\n\n" + totalsRow;
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
+    link.setAttribute("href", url);
     link.setAttribute("download", `technosys_audit_log_${period}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   return (
@@ -156,12 +281,22 @@ export default function AuditLogClient() {
             </p>
           </div>
           
-          <button 
-            onClick={exportToCSV}
-            className="flex items-center gap-2 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg transition-colors shadow-sm"
-          >
-            <Download className="w-4 h-4" /> Export to Excel / CSV
-          </button>
+          <div className="flex items-center gap-2">
+            <button 
+              onClick={exportToExcel}
+              className="flex items-center gap-2 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg transition-colors shadow-sm"
+              title="Export formatted Excel spreadsheet (.xlsx)"
+            >
+              <Download className="w-4 h-4" /> Export to Excel (.xlsx)
+            </button>
+            <button 
+              onClick={exportToCSV}
+              className="flex items-center gap-2 px-3.5 py-2 bg-slate-700 hover:bg-slate-800 text-white text-xs font-bold rounded-lg transition-colors shadow-sm"
+              title="Export formatted CSV file (.csv)"
+            >
+              <Download className="w-4 h-4" /> Export CSV
+            </button>
+          </div>
         </div>
       </div>
 
