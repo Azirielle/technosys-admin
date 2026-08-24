@@ -439,8 +439,8 @@ export default function EmployeeFilesClient() {
             <div className="flex-1 overflow-y-auto p-6 bg-white">
               
               {activeTab === 'docs' && (
-                <div className="space-y-4">
-                  <p className="text-sm text-gray-500 font-medium mb-4">Click "Upload" to attach a digital file. Checkmarks appear automatically upon successful upload.</p>
+                <div className="space-y-2">
+                  <p className="text-xs text-gray-500 font-medium mb-2">Click "Upload" to attach a digital file. Checkmarks appear automatically upon successful upload.</p>
                   
                   {[
                     { key: 'has_nbi_clearance', label: 'NBI Clearance', desc: 'Valid background check' },
@@ -454,14 +454,14 @@ export default function EmployeeFilesClient() {
                     const isUploading = uploadingDoc === doc.label;
 
                     return (
-                      <div key={doc.key} className={`flex items-center justify-between p-4 rounded-xl border ${isUploaded ? 'bg-emerald-50/30 border-emerald-100' : 'bg-gray-50 border-gray-200'}`}>
-                        <div className="flex items-center gap-4">
-                          <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 ${isUploaded ? 'bg-emerald-500 text-white' : 'bg-gray-200 text-gray-400'}`}>
-                            <CheckCircle2 className="w-4 h-4" />
+                      <div key={doc.key} className={`flex items-center justify-between py-2 px-3.5 rounded-xl border ${isUploaded ? 'bg-emerald-50/30 border-emerald-100' : 'bg-gray-50 border-gray-200'}`}>
+                        <div className="flex items-center gap-3">
+                          <div className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 ${isUploaded ? 'bg-emerald-500 text-white' : 'bg-gray-200 text-gray-400'}`}>
+                            <CheckCircle2 className="w-3.5 h-3.5" />
                           </div>
                           <div>
-                            <div className={`text-sm font-bold ${isUploaded ? 'text-gray-900' : 'text-gray-600'}`}>{doc.label}</div>
-                            <div className="text-xs text-gray-500 font-medium">{doc.desc}</div>
+                            <div className={`text-xs font-bold ${isUploaded ? 'text-gray-900' : 'text-gray-600'}`}>{doc.label}</div>
+                            <div className="text-[10px] text-gray-500 font-medium">{doc.desc}</div>
                           </div>
                         </div>
                         
@@ -469,13 +469,13 @@ export default function EmployeeFilesClient() {
                           <button 
                             onClick={() => handleFileUpload(doc.label, doc.key)}
                             disabled={isUploading}
-                            className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 text-gray-700 text-sm font-bold rounded-lg hover:bg-gray-50 shadow-sm disabled:opacity-50"
+                            className="flex items-center gap-1.5 px-3 py-1 bg-white border border-gray-300 text-gray-700 text-xs font-bold rounded-lg hover:bg-gray-50 shadow-sm disabled:opacity-50"
                           >
-                            <UploadCloud className="w-4 h-4 text-indigo-600" />
-                            {isUploading ? 'Uploading...' : 'Upload PDF'}
+                            <UploadCloud className="w-3.5 h-3.5 text-indigo-600" />
+                            {isUploading ? 'Uploading...' : 'Upload'}
                           </button>
                         ) : (
-                          <button className="text-xs font-bold text-indigo-600 hover:text-indigo-800 uppercase tracking-wider">
+                          <button className="text-[10px] font-bold text-indigo-600 hover:text-indigo-800 uppercase tracking-wider">
                             View File
                           </button>
                         )}
@@ -486,47 +486,47 @@ export default function EmployeeFilesClient() {
               )}
 
               {activeTab === 'warnings' && (
-                <form onSubmit={submitWarning} className="max-w-xl mx-auto space-y-5 py-4">
-                  <div className="bg-red-50 border border-red-100 p-4 rounded-xl flex gap-3">
-                    <AlertTriangle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
+                <form onSubmit={submitWarning} className="max-w-xl mx-auto space-y-3 py-1">
+                  <div className="bg-red-50 border border-red-100 p-3 rounded-xl flex gap-3">
+                    <AlertTriangle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
                     <div>
-                      <h4 className="text-sm font-bold text-red-900">Disciplinary Action Notice</h4>
-                      <p className="text-xs text-red-700 mt-1 font-medium">This warning will be permanently recorded in the employee's 201 file. It can optionally trigger an immediate SMS and App Push Notification to the employee's device.</p>
+                      <h4 className="text-xs font-bold text-red-900">Disciplinary Action Notice</h4>
+                      <p className="text-[11px] text-red-700 mt-0.5 font-medium leading-tight">This warning will be recorded in the employee's 201 file with optional SMS and App Push Notification.</p>
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Warning Subject</label>
+                    <label className="block text-[10px] font-bold text-gray-700 uppercase tracking-wider mb-1">Warning Subject</label>
                     <input 
                       required type="text" 
                       placeholder="e.g. Tardiness, Safety Violation, No-show"
                       value={warningSubject}
                       onChange={e => setWarningSubject(e.target.value)}
-                      className="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-red-500 outline-none font-medium text-gray-900"
+                      className="w-full border border-gray-300 rounded-lg py-2 px-3 text-xs focus:ring-2 focus:ring-red-500 outline-none font-medium text-gray-900"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Incident Details & Action Plan</label>
+                    <label className="block text-[10px] font-bold text-gray-700 uppercase tracking-wider mb-1">Incident Details & Action Plan</label>
                     <textarea 
-                      required rows={4}
+                      required rows={2}
                       placeholder="Describe what happened and the required corrective action..."
                       value={warningDetails}
                       onChange={e => setWarningDetails(e.target.value)}
-                      className="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-red-500 outline-none font-medium text-gray-900 resize-none"
+                      className="w-full border border-gray-300 rounded-lg p-2.5 text-xs focus:ring-2 focus:ring-red-500 outline-none font-medium text-gray-900 resize-none"
                     />
                   </div>
 
-                  <div className="pt-2 border-t border-gray-100 flex gap-6">
+                  <div className="pt-1 flex gap-6">
                     <label className="flex items-center gap-2 cursor-pointer group">
                       <input 
                         type="checkbox" 
                         checked={sendPush}
                         onChange={e => setSendPush(e.target.checked)}
-                        className="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600 focus:ring-offset-0 cursor-pointer"
+                        className="w-3.5 h-3.5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600 focus:ring-offset-0 cursor-pointer"
                       />
-                      <span className="flex items-center gap-1.5 text-sm font-bold text-gray-700 group-hover:text-gray-900">
-                        <Send className="w-4 h-4 text-indigo-500" /> Send App Push
+                      <span className="flex items-center gap-1.5 text-xs font-bold text-gray-700 group-hover:text-gray-900">
+                        <Send className="w-3.5 h-3.5 text-indigo-500" /> Send App Push
                       </span>
                     </label>
                     
@@ -535,19 +535,19 @@ export default function EmployeeFilesClient() {
                         type="checkbox" 
                         checked={sendSms}
                         onChange={e => setSendSms(e.target.checked)}
-                        className="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600 focus:ring-offset-0 cursor-pointer"
+                        className="w-3.5 h-3.5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600 focus:ring-offset-0 cursor-pointer"
                       />
-                      <span className="flex items-center gap-1.5 text-sm font-bold text-gray-700 group-hover:text-gray-900">
-                        <Phone className="w-4 h-4 text-indigo-500" /> Send SMS Alert
+                      <span className="flex items-center gap-1.5 text-xs font-bold text-gray-700 group-hover:text-gray-900">
+                        <Phone className="w-3.5 h-3.5 text-indigo-500" /> Send SMS Alert
                       </span>
                     </label>
                   </div>
 
-                  <div className="pt-6">
+                  <div className="pt-2">
                     <button 
                       type="submit"
                       disabled={isSubmittingWarning}
-                      className="w-full py-3 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      className="w-full py-2.5 bg-red-600 text-white text-xs rounded-xl font-bold hover:bg-red-700 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                     >
                       {isSubmittingWarning ? 'Recording Warning...' : 'Issue Official Warning'}
                     </button>
