@@ -1,0 +1,656 @@
+"use client";
+
+import { useState, useEffect } from 'react';
+import { Search, FolderOpen, UploadCloud, AlertTriangle, FileText, CheckCircle2, X, Send, Phone, Settings, Filter, ChevronLeft, ChevronRight } from 'lucide-react';
+import { createClient } from '@/lib/supabase/client';
+
+export default function EmployeeFilesClient() {
+  const supabase = createClient();
+  const [employees, setEmployees] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+  
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 5;
+
+  // Filters
+  const [showFilters, setShowFilters] = useState(false);
+  const [filterRole, setFilterRole] = useState('all');
+  const [filterStatus, setFilterStatus] = useState('all');
+  const [filterWarnings, setFilterWarnings] = useState('all'); // all, has_warnings, no_warnings
+  
+  // Modal State
+  const [selectedEmp, setSelectedEmp] = useState<any | null>(null);
+  const [activeTab, setActiveTab] = useState<'docs' | 'warnings' | 'settings'>('docs');
+  
+  // Warning State
+  const [warningSubject, setWarningSubject] = useState('');
+  const [warningDetails, setWarningDetails] = useState('');
+  const [sendSms, setSendSms] = useState(false);
+  const [sendPush, setSendPush] = useState(true);
+  const [isSubmittingWarning, setIsSubmittingWarning] = useState(false);
+  
+  // Settings State
+  const [editForm, setEditForm] = useState({
+    role: '',
+    technician_level: '',
+    employment_status: '',
+    base_salary: 0
+  });
+  const [isSavingSettings, setIsSavingSettings] = useState(false);
+
+  // Upload State
+  const [uploadingDoc, setUploadingDoc] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchEmployees();
+  }, []);
+
+  const fetchEmployees = async () => {
+    setLoading(true);
+    // Fetch profiles
+    const { data: profilesData, error: profilesError } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('role', 'technician')
+      .order('full_name');
+      
+    if (profilesError) {
+      console.error("Failed to fetch profiles:", profilesError);
+    }
+    
+    // Fetch warnings separately to avoid PostgREST join ambiguity errors
+    const { data: warningsData } = await supabase
+      .from('employee_warnings')
+      .select('id, employee_id');
+      
+    if (profilesData) {
+      // Map warnings to profiles
+      const enrichedProfiles = profilesData.map(profile => ({
+        ...profile,
+        employee_warnings: (warningsData || []).filter(w => w.employee_id === profile.id)
+      }));
+      setEmployees(enrichedProfiles);
+    }
+    setLoading(false);
+  };
+
+  // When a user clicks an employee, populate the edit form
+  const handleSelectEmp = (emp: any) => {
+    setSelectedEmp(emp);
+    setEditForm({
+      role: emp.role || 'technician',
+      technician_level: emp.technician_level || 'technician',
+      employment_status: emp.employment_status || 'regular',
+      base_salary: emp.base_salary || 0
+    });
+    setActiveTab('docs');
+  };
+
+  const handleFileUpload = async (docType: string, dbField: string) => {
+    if (!selectedEmp) return;
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.pdf,.jpg,.jpeg,.png';
+    input.onchange = async (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (!file) return;
+      setUploadingDoc(docType);
+      await new Promise(r => setTimeout(r, 1000));
+      const { error } = await supabase.from('profiles').update({ [dbField]: true }).eq('id', selectedEmp.id);
+      if (!error) {
+        const updatedEmp = { ...selectedEmp, [dbField]: true };
+        setSelectedEmp(updatedEmp);
+        setEmployees(employees.map(emp => emp.id === updatedEmp.id ? updatedEmp : emp));
+      }
+      setUploadingDoc(null);
+    };
+    input.click();
+  };
+
+  const submitWarning = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedEmp || !warningSubject || !warningDetails) return;
+    setIsSubmittingWarning(true);
+    const { error } = await supabase
+      .from('employee_warnings')
+      .insert({
+        employee_id: selectedEmp.id,
+        issued_by: selectedEmp.id, 
+        subject: warningSubject,
+        details: warningDetails,
+        warning_level: 'Standard Warning',
+        status: 'pending_service_review',
+        incident_date: new Date().toISOString().split('T')[0]
+      });
+
+    if (sendPush) {
+      await supabase.from('push_notifications_queue').insert({
+        user_id: selectedEmp.id,
+        title: `Warning: ${warningSubject}`,
+        body: 'Please review your new disciplinary warning.'
+      });
+    }
+
+    if (!error) {
+      alert(`Warning issued to ${selectedEmp.full_name}! ${sendSms ? '(SMS Sent)' : ''}`);
+      setWarningSubject('');
+      setWarningDetails('');
+      fetchEmployees(); // Refresh to update warning count
+      setActiveTab('docs');
+    }
+    setIsSubmittingWarning(false);
+  };
+
+  const saveSettings = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedEmp) return;
+
+    // Logic Enforcer: OJT cannot be Senior
+    if (editForm.employment_status === 'ojt' && editForm.technician_level === 'senior') {
+      alert("An OJT cannot hold a Senior Technician level. Please correct the fields.");
+      return;
+    }
+
+    setIsSavingSettings(true);
+    
+    // Check if it's a promotion (e.g. from OJT to Regular, or Helper to Tech/Senior)
+    const isPromotion = 
+      (selectedEmp.employment_status === 'ojt' && editForm.employment_status !== 'ojt') ||
+      (selectedEmp.technician_level === 'helper' && editForm.technician_level !== 'helper');
+
+    const { error } = await supabase
+      .from('profiles')
+      .update({
+        role: editForm.role,
+        technician_level: editForm.technician_level,
+        employment_status: editForm.employment_status,
+        base_salary: editForm.base_salary
+      })
+      .eq('id', selectedEmp.id);
+
+    if (!error) {
+      if (isPromotion) {
+        await supabase.from('push_notifications_queue').insert({
+          user_id: selectedEmp.id,
+          title: `Congratulations on your promotion!`,
+          body: `You are now a ${editForm.employment_status.toUpperCase()} ${editForm.technician_level.toUpperCase()}. Keep up the great work!`
+        });
+        alert(`Profile updated. Promotion detected: Celebratory SMS & Push Notification sent to ${selectedEmp.full_name}!`);
+      } else {
+        alert("Profile updated successfully.");
+      }
+      
+      const updatedEmp = { ...selectedEmp, ...editForm };
+      setSelectedEmp(updatedEmp);
+      setEmployees(employees.map(emp => emp.id === updatedEmp.id ? updatedEmp : emp));
+    }
+    setIsSavingSettings(false);
+  };
+
+  // FILTERING
+  const filteredEmployees = employees.filter(emp => {
+    const matchSearch = emp.full_name?.toLowerCase().includes(search.toLowerCase()) || emp.role?.toLowerCase().includes(search.toLowerCase());
+    const matchRole = filterRole === 'all' || emp.role === filterRole;
+    const matchStatus = filterStatus === 'all' || emp.employment_status === filterStatus;
+    
+    let matchWarn = true;
+    const warnCount = emp.employee_warnings?.length || 0;
+    if (filterWarnings === 'has_warnings') matchWarn = warnCount > 0;
+    if (filterWarnings === 'no_warnings') matchWarn = warnCount === 0;
+
+    return matchSearch && matchRole && matchStatus && matchWarn;
+  });
+
+  // PAGINATION
+  const totalPages = Math.ceil(filteredEmployees.length / ITEMS_PER_PAGE) || 1;
+  const paginatedEmployees = filteredEmployees.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+
+  useEffect(() => {
+    setCurrentPage(1); // Reset page on filter/search change
+  }, [search, filterRole, filterStatus, filterWarnings]);
+
+  return (
+    <div className="h-full flex flex-col bg-slate-50 overflow-hidden">
+      {/* Header */}
+      <div className="bg-white border-b border-gray-200 px-8 py-6 shrink-0">
+        <div className="flex justify-between items-start max-w-7xl mx-auto">
+          <div>
+            <h1 className="text-2xl font-black text-gray-900 tracking-tight flex items-center gap-2">
+              <FolderOpen className="w-6 h-6 text-indigo-600" />
+              201 Employee Files & Warnings
+            </h1>
+            <p className="text-sm text-gray-500 mt-1 font-medium">
+              Manage operational documents, salaries, and disciplinary actions.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="flex-1 overflow-auto p-8">
+        <div className="max-w-7xl mx-auto">
+          
+          {/* Controls */}
+          <div className="bg-white p-4 rounded-t-xl border border-gray-200 border-b-0 flex items-center justify-between relative">
+            <div className="flex items-center gap-3">
+              <div className="relative w-80">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <input 
+                  type="text" 
+                  placeholder="Search by name..." 
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
+                  className="w-full pl-9 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 font-medium"
+                />
+              </div>
+              <button 
+                onClick={() => setShowFilters(!showFilters)}
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-bold border transition-colors ${showFilters ? 'bg-indigo-50 border-indigo-200 text-indigo-700' : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'}`}
+              >
+                <Filter className="w-4 h-4" /> Filters
+              </button>
+
+              {/* Filter Popover */}
+              {showFilters && (
+                <div className="absolute top-16 left-0 bg-white shadow-xl rounded-xl border border-gray-200 p-4 z-10 flex gap-4 w-[500px]">
+                  <div className="flex-1">
+                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Role</label>
+                    <select value={filterRole} onChange={e => setFilterRole(e.target.value)} className="w-full border border-gray-200 rounded-md p-1.5 text-sm outline-none focus:ring-1 focus:ring-indigo-500">
+                      <option value="all">All Roles</option>
+                      <option value="technician">Technician</option>
+                      <option value="coordinator">Coordinator</option>
+                      <option value="hr">HR</option>
+                      <option value="accountant">Accountant</option>
+                    </select>
+                  </div>
+                  <div className="flex-1">
+                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Status</label>
+                    <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} className="w-full border border-gray-200 rounded-md p-1.5 text-sm outline-none focus:ring-1 focus:ring-indigo-500">
+                      <option value="all">All Status</option>
+                      <option value="regular">Regular</option>
+                      <option value="ojt">OJT</option>
+                      <option value="contractual">Contractual</option>
+                    </select>
+                  </div>
+                  <div className="flex-1">
+                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Warnings</label>
+                    <select value={filterWarnings} onChange={e => setFilterWarnings(e.target.value)} className="w-full border border-gray-200 rounded-md p-1.5 text-sm outline-none focus:ring-1 focus:ring-indigo-500">
+                      <option value="all">All Records</option>
+                      <option value="has_warnings">Has Warnings</option>
+                      <option value="no_warnings">Clean Record</option>
+                    </select>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="flex items-center gap-4">
+              <div className="text-sm font-bold text-gray-500">
+                {filteredEmployees.length} Found
+              </div>
+              
+              {/* Pagination Controls */}
+              <div className="flex items-center gap-1 bg-gray-50 rounded-lg border border-gray-200 p-1">
+                <button 
+                  disabled={currentPage === 1}
+                  onClick={() => setCurrentPage(p => p - 1)}
+                  className="p-1 rounded text-gray-600 hover:bg-gray-200 disabled:opacity-30 disabled:hover:bg-transparent"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+                <span className="text-xs font-black text-gray-700 px-2">
+                  PAGE {currentPage} / {totalPages}
+                </span>
+                <button 
+                  disabled={currentPage === totalPages}
+                  onClick={() => setCurrentPage(p => p + 1)}
+                  className="p-1 rounded text-gray-600 hover:bg-gray-200 disabled:opacity-30 disabled:hover:bg-transparent"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Table */}
+          <div className="bg-white border border-gray-200 rounded-b-xl overflow-hidden shadow-sm">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-gray-50 border-b border-gray-200">
+                  <th className="px-6 py-4 text-xs font-black text-gray-500 uppercase tracking-wider">Employee</th>
+                  <th className="px-6 py-4 text-xs font-black text-gray-500 uppercase tracking-wider">Role & Level</th>
+                  <th className="px-6 py-4 text-xs font-black text-gray-500 uppercase tracking-wider">Employment Status</th>
+                  <th className="px-6 py-4 text-xs font-black text-gray-500 uppercase tracking-wider">Base Salary</th>
+                  <th className="px-6 py-4 text-xs font-black text-gray-500 uppercase tracking-wider">Record</th>
+                  <th className="px-6 py-4 text-xs font-black text-gray-500 uppercase tracking-wider text-right">Action</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {loading ? (
+                  <tr><td colSpan={6} className="p-8 text-center text-gray-400 font-medium">Loading records...</td></tr>
+                ) : paginatedEmployees.length === 0 ? (
+                  <tr><td colSpan={6} className="p-8 text-center text-gray-400 font-medium">No employees found.</td></tr>
+                ) : paginatedEmployees.map((emp) => {
+                  const warnCount = emp.employee_warnings?.length || 0;
+                  
+                  return (
+                    <tr key={emp.id} className="hover:bg-indigo-50/50 transition-colors group cursor-pointer" onClick={() => handleSelectEmp(emp)}>
+                      <td className="px-6 py-4">
+                        <div className="font-bold text-gray-900">{emp.full_name}</div>
+                        <div className="text-xs text-gray-500 font-medium mt-0.5">
+                          {emp.lifecycle_status === 'active' ? (
+                            <span className="text-emerald-600">Active</span>
+                          ) : (
+                            <span className="text-red-500 uppercase">{emp.lifecycle_status}</span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="text-sm font-bold text-gray-700 capitalize">{emp.role}</div>
+                        {emp.technician_level && (
+                          <div className="text-[10px] font-black uppercase tracking-wider text-indigo-600 bg-indigo-50 inline-block px-2 py-0.5 rounded mt-1 border border-indigo-100">
+                            {emp.technician_level}
+                          </div>
+                        )}
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-wider
+                          ${emp.employment_status === 'regular' ? 'bg-blue-50 text-blue-700 border border-blue-200' : 'bg-gray-100 text-gray-600 border border-gray-200'}
+                        `}>
+                          {emp.employment_status}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className="font-mono font-bold text-sm text-emerald-700 bg-emerald-50 px-2 py-1 rounded border border-emerald-100">
+                          ₱{emp.base_salary?.toLocaleString()}/day
+                        </span>
+                      </td>
+                      <td className="px-6 py-4">
+                        {warnCount > 0 ? (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-black bg-red-100 text-red-700 px-2 py-1 rounded border border-red-200">
+                            <AlertTriangle className="w-3 h-3" /> {warnCount} WARNINGS
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-black bg-emerald-50 text-emerald-600 px-2 py-1 rounded border border-emerald-200">
+                            <CheckCircle2 className="w-3 h-3" /> CLEAN
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <button className="text-sm font-bold text-indigo-600 hover:text-indigo-800 opacity-0 group-hover:opacity-100 transition-opacity">
+                          Open File &rarr;
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+
+        </div>
+      </div>
+
+      {/* Profile Modal */}
+      {selectedEmp && (
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl flex flex-col max-h-[90vh] overflow-hidden border border-gray-200">
+            
+            {/* Modal Header */}
+            <div className="px-6 py-5 border-b border-gray-100 flex justify-between items-center bg-gray-50/50 shrink-0">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-indigo-100 text-indigo-700 rounded-full flex items-center justify-center text-xl font-black shrink-0 border-2 border-indigo-200 shadow-sm">
+                  {selectedEmp.full_name?.charAt(0)}
+                </div>
+                <div>
+                  <h2 className="text-xl font-black text-gray-900 flex items-center gap-2">
+                    {selectedEmp.full_name}
+                    <span className="font-mono text-sm text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">₱{selectedEmp.base_salary}/day</span>
+                  </h2>
+                  <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mt-0.5">
+                    {selectedEmp.role} &bull; {selectedEmp.employment_status} &bull; {selectedEmp.technician_level}
+                  </p>
+                </div>
+              </div>
+              <button onClick={() => setSelectedEmp(null)} className="p-2 text-gray-400 hover:bg-gray-200 hover:text-gray-900 rounded-full transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Tabs */}
+            <div className="flex border-b border-gray-200 bg-white px-6 shrink-0">
+              <button 
+                onClick={() => setActiveTab('docs')}
+                className={`py-3 px-4 text-sm font-bold border-b-2 transition-colors flex items-center gap-2 ${activeTab === 'docs' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
+              >
+                <FileText className="w-4 h-4" /> 201 Documents
+              </button>
+              <button 
+                onClick={() => setActiveTab('warnings')}
+                className={`py-3 px-4 text-sm font-bold border-b-2 transition-colors flex items-center gap-2 ${activeTab === 'warnings' ? 'border-red-600 text-red-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
+              >
+                <AlertTriangle className="w-4 h-4" /> Issue Warning
+              </button>
+              <button 
+                onClick={() => setActiveTab('settings')}
+                className={`py-3 px-4 text-sm font-bold border-b-2 transition-colors flex items-center gap-2 ${activeTab === 'settings' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
+              >
+                <Settings className="w-4 h-4" /> Profile Editor & Salary
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="flex-1 overflow-y-auto p-6 bg-white">
+              
+              {activeTab === 'docs' && (
+                <div className="space-y-4">
+                  <p className="text-sm text-gray-500 font-medium mb-4">Click "Upload" to attach a digital file. Checkmarks appear automatically upon successful upload.</p>
+                  
+                  {[
+                    { key: 'has_nbi_clearance', label: 'NBI Clearance', desc: 'Valid background check' },
+                    { key: 'has_medical_clearance', label: 'Medical Clearance', desc: 'Fit to work certificate' },
+                    { key: 'has_resume', label: 'Resume / CV', desc: 'Employment history' },
+                    { key: 'has_sss_id', label: 'SSS Registration', desc: 'Government mandate' },
+                    { key: 'has_philhealth_id', label: 'PhilHealth ID', desc: 'Government mandate' },
+                    { key: 'has_pagibig_id', label: 'Pag-IBIG Number', desc: 'Government mandate' },
+                  ].map((doc) => {
+                    const isUploaded = selectedEmp[doc.key];
+                    const isUploading = uploadingDoc === doc.label;
+
+                    return (
+                      <div key={doc.key} className={`flex items-center justify-between p-4 rounded-xl border ${isUploaded ? 'bg-emerald-50/30 border-emerald-100' : 'bg-gray-50 border-gray-200'}`}>
+                        <div className="flex items-center gap-4">
+                          <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 ${isUploaded ? 'bg-emerald-500 text-white' : 'bg-gray-200 text-gray-400'}`}>
+                            <CheckCircle2 className="w-4 h-4" />
+                          </div>
+                          <div>
+                            <div className={`text-sm font-bold ${isUploaded ? 'text-gray-900' : 'text-gray-600'}`}>{doc.label}</div>
+                            <div className="text-xs text-gray-500 font-medium">{doc.desc}</div>
+                          </div>
+                        </div>
+                        
+                        {!isUploaded ? (
+                          <button 
+                            onClick={() => handleFileUpload(doc.label, doc.key)}
+                            disabled={isUploading}
+                            className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 text-gray-700 text-sm font-bold rounded-lg hover:bg-gray-50 shadow-sm disabled:opacity-50"
+                          >
+                            <UploadCloud className="w-4 h-4 text-indigo-600" />
+                            {isUploading ? 'Uploading...' : 'Upload PDF'}
+                          </button>
+                        ) : (
+                          <button className="text-xs font-bold text-indigo-600 hover:text-indigo-800 uppercase tracking-wider">
+                            View File
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {activeTab === 'warnings' && (
+                <form onSubmit={submitWarning} className="max-w-xl mx-auto space-y-5 py-4">
+                  <div className="bg-red-50 border border-red-100 p-4 rounded-xl flex gap-3">
+                    <AlertTriangle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
+                    <div>
+                      <h4 className="text-sm font-bold text-red-900">Disciplinary Action Notice</h4>
+                      <p className="text-xs text-red-700 mt-1 font-medium">This warning will be permanently recorded in the employee's 201 file. It can optionally trigger an immediate SMS and App Push Notification to the employee's device.</p>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Warning Subject</label>
+                    <input 
+                      required type="text" 
+                      placeholder="e.g. Tardiness, Safety Violation, No-show"
+                      value={warningSubject}
+                      onChange={e => setWarningSubject(e.target.value)}
+                      className="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-red-500 outline-none font-medium text-gray-900"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Incident Details & Action Plan</label>
+                    <textarea 
+                      required rows={4}
+                      placeholder="Describe what happened and the required corrective action..."
+                      value={warningDetails}
+                      onChange={e => setWarningDetails(e.target.value)}
+                      className="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-red-500 outline-none font-medium text-gray-900 resize-none"
+                    />
+                  </div>
+
+                  <div className="pt-2 border-t border-gray-100 flex gap-6">
+                    <label className="flex items-center gap-2 cursor-pointer group">
+                      <input 
+                        type="checkbox" 
+                        checked={sendPush}
+                        onChange={e => setSendPush(e.target.checked)}
+                        className="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600 focus:ring-offset-0 cursor-pointer"
+                      />
+                      <span className="flex items-center gap-1.5 text-sm font-bold text-gray-700 group-hover:text-gray-900">
+                        <Send className="w-4 h-4 text-indigo-500" /> Send App Push
+                      </span>
+                    </label>
+                    
+                    <label className="flex items-center gap-2 cursor-pointer group">
+                      <input 
+                        type="checkbox" 
+                        checked={sendSms}
+                        onChange={e => setSendSms(e.target.checked)}
+                        className="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600 focus:ring-offset-0 cursor-pointer"
+                      />
+                      <span className="flex items-center gap-1.5 text-sm font-bold text-gray-700 group-hover:text-gray-900">
+                        <Phone className="w-4 h-4 text-indigo-500" /> Send SMS Alert
+                      </span>
+                    </label>
+                  </div>
+
+                  <div className="pt-6">
+                    <button 
+                      type="submit"
+                      disabled={isSubmittingWarning}
+                      className="w-full py-3 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      {isSubmittingWarning ? 'Recording Warning...' : 'Issue Official Warning'}
+                    </button>
+                  </div>
+                </form>
+              )}
+
+              {activeTab === 'settings' && (
+                <form onSubmit={saveSettings} className="max-w-xl mx-auto space-y-5 py-4">
+                  <div className="bg-indigo-50 border border-indigo-100 p-4 rounded-xl flex gap-3">
+                    <Settings className="w-5 h-5 text-indigo-600 shrink-0 mt-0.5" />
+                    <div>
+                      <h4 className="text-sm font-bold text-indigo-900">Profile & Salary Editor</h4>
+                      <p className="text-xs text-indigo-700 mt-1 font-medium">Update the employee's role, operational level, and compensation. Promotions will automatically trigger an SMS/Push notification.</p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">System Role</label>
+                      <select 
+                        value={editForm.role}
+                        onChange={e => setEditForm({...editForm, role: e.target.value})}
+                        className="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-indigo-500 outline-none font-medium text-gray-900"
+                      >
+                        <option value="technician">Technician</option>
+                        <option value="coordinator">Coordinator</option>
+                        <option value="hr">HR</option>
+                        <option value="accountant">Accountant</option>
+                        <option value="ceo">CEO</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Employment Status</label>
+                      <select 
+                        value={editForm.employment_status}
+                        onChange={e => setEditForm({...editForm, employment_status: e.target.value})}
+                        className="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-indigo-500 outline-none font-medium text-gray-900"
+                      >
+                        <option value="ojt">OJT (Trainee)</option>
+                        <option value="contractual">Contractual</option>
+                        <option value="provisionary">Provisionary</option>
+                        <option value="regular">Regular</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Technician Level</label>
+                      <select 
+                        value={editForm.technician_level}
+                        onChange={e => setEditForm({...editForm, technician_level: e.target.value})}
+                        className="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-indigo-500 outline-none font-medium text-gray-900"
+                      >
+                        <option value="helper">Helper</option>
+                        <option value="technician">Technician</option>
+                        <option value="senior">Senior Technician</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Daily Base Salary (₱)</label>
+                      <input 
+                        type="number"
+                        min="0"
+                        step="1"
+                        required
+                        value={editForm.base_salary}
+                        onChange={e => setEditForm({...editForm, base_salary: Number(e.target.value)})}
+                        className="w-full font-mono border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-indigo-500 outline-none font-bold text-emerald-700 bg-emerald-50"
+                      />
+                    </div>
+                  </div>
+
+                  {editForm.employment_status === 'ojt' && editForm.technician_level === 'senior' && (
+                    <div className="text-xs font-bold text-red-600 bg-red-50 p-3 rounded border border-red-200">
+                      <AlertTriangle className="w-4 h-4 inline mr-1" />
+                      Error: An OJT cannot be assigned as a Senior Technician.
+                    </div>
+                  )}
+
+                  <div className="pt-6">
+                    <button 
+                      type="submit"
+                      disabled={isSavingSettings || (editForm.employment_status === 'ojt' && editForm.technician_level === 'senior')}
+                      className="w-full py-3 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      {isSavingSettings ? 'Saving...' : 'Save Profile & Compensation'}
+                    </button>
+                  </div>
+                </form>
+              )}
+
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

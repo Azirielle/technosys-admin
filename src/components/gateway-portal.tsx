@@ -210,7 +210,7 @@ export default function GatewayPortal() {
             onClick={() => { setIsNavigating('admin'); router.push('/login'); }}
             className="group w-full flex items-center justify-between gap-3 rounded-xl px-5 py-4 font-medium text-[0.9375rem] transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 cursor-pointer"
             style={{
-              background: 'transparent',
+              background: 'rgba(0,0,0,0)',
               color: 'oklch(0.30 0 0)',
               boxShadow: '0 0 0 1px oklch(0.82 0 0)',
             }}

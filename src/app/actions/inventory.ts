@@ -7,7 +7,7 @@ import { logActivity } from "./activity"
 export async function getInventoryItems() {
   try {
     const { data, error } = await supabaseAdmin
-      .from('inventory_items')
+      .from('tool_catalog')
       .select('*')
       .order('name', { ascending: true })
 
@@ -25,8 +25,8 @@ export async function createOrUpdateInventoryItem(formData: FormData) {
     const id = formData.get("id")?.toString()
     const name = formData.get("name")?.toString().trim()
     const description = formData.get("description")?.toString().trim() || ""
-    const total_qty = Number(formData.get("total_qty"))
-    const available_qty = Number(formData.get("available_qty"))
+    const total_stock = Number(formData.get("total_stock"))
+    const available_stock = Number(formData.get("available_stock"))
     const image_url = formData.get("image_url")?.toString() || null
     const imageFile = formData.get("image") as File | null
 
@@ -34,11 +34,11 @@ export async function createOrUpdateInventoryItem(formData: FormData) {
       return { error: "Tool Name is required." }
     }
 
-    if (isNaN(total_qty) || isNaN(available_qty) || total_qty < 0 || available_qty < 0) {
+    if (isNaN(total_stock) || isNaN(available_stock) || total_stock < 0 || available_stock < 0) {
       return { error: "Quantities must be non-negative numbers." }
     }
 
-    if (available_qty > total_qty) {
+    if (available_stock > total_stock) {
       return { error: "Available quantity cannot exceed total quantity in inventory." }
     }
 
@@ -49,7 +49,7 @@ export async function createOrUpdateInventoryItem(formData: FormData) {
     if (id) {
       // Fetch existing tool
       const { data } = await supabaseAdmin
-        .from('inventory_items')
+        .from('tool_catalog')
         .select('*')
         .eq('id', id)
         .single()
@@ -91,12 +91,12 @@ export async function createOrUpdateInventoryItem(formData: FormData) {
 
       // Update item parameters
       const { error } = await supabaseAdmin
-        .from('inventory_items')
+        .from('tool_catalog')
         .update({
           name,
           description,
-          total_qty,
-          available_qty,
+          total_stock,
+          available_stock,
           image_url: finalImageUrl,
           updated_at: new Date().toISOString()
         })
@@ -124,12 +124,12 @@ export async function createOrUpdateInventoryItem(formData: FormData) {
 
       // Insert new tool
       const { error } = await supabaseAdmin
-        .from('inventory_items')
+        .from('tool_catalog')
         .insert({
           name,
           description,
-          total_qty,
-          available_qty,
+          total_stock,
+          available_stock,
           image_url: finalImageUrl
         })
       
@@ -141,7 +141,7 @@ export async function createOrUpdateInventoryItem(formData: FormData) {
     await logActivity({
       category: 'inventory',
       action: id ? 'updated' : 'created',
-      description: `${id ? 'Updated' : 'Created'} inventory tool "${name}" (Total: ${total_qty}, Available: ${available_qty})`
+      description: `${id ? 'Updated' : 'Created'} inventory tool "${name}" (Total: ${total_stock}, Available: ${available_stock})`
     })
 
     revalidatePath('/dashboard/inventory')
@@ -157,10 +157,10 @@ export async function deleteInventoryItem(id: string) {
   try {
     // Check if there are active borrows for this tool
     const { count, error: countErr } = await supabaseAdmin
-      .from('tool_assignments')
+      .from('tool_handovers')
       .select('*', { count: 'exact', head: true })
       .eq('tool_id', id)
-      .eq('status', 'borrowed')
+      .eq('status', 'checked_out')
 
     if (countErr) throw countErr
     if (count && count > 0) {
@@ -168,7 +168,7 @@ export async function deleteInventoryItem(id: string) {
     }
 
     const { error } = await supabaseAdmin
-      .from('inventory_items')
+      .from('tool_catalog')
       .delete()
       .eq('id', id)
 
@@ -209,13 +209,13 @@ export async function getTechnicians() {
 export async function getToolAssignments(technicianId?: string) {
   try {
     let query = supabaseAdmin
-      .from('tool_assignments')
+      .from('tool_handovers')
       .select(`
         *,
-        tool:inventory_items!tool_id(name, image_url),
+        tool:tool_catalog!tool_id(name, image_url),
         technician:profiles!technician_id(full_name, role)
       `)
-      .order('borrowed_at', { ascending: false })
+      .order('handed_over_at', { ascending: false })
 
     if (technicianId) {
       query = query.eq('technician_id', technicianId)
@@ -239,8 +239,8 @@ export async function assignTool(technicianId: string, toolId: string, quantity:
 
     // Fetch tool to verify available stock level
     const { data: tool, error: toolErr } = await supabaseAdmin
-      .from('inventory_items')
-      .select('name, available_qty')
+      .from('tool_catalog')
+      .select('name, available_stock')
       .eq('id', toolId)
       .single()
 
@@ -248,18 +248,18 @@ export async function assignTool(technicianId: string, toolId: string, quantity:
       return { error: "Tool not found in inventory catalog." }
     }
 
-    if (tool.available_qty < quantity) {
-      return { error: `Insufficient stock. Only ${tool.available_qty} available in warehouse.` }
+    if (tool.available_stock < quantity) {
+      return { error: `Insufficient stock. Only ${tool.available_stock} available in warehouse.` }
     }
 
     // Insert borrow checkout assignment
     const { error: insertErr } = await supabaseAdmin
-      .from('tool_assignments')
+      .from('tool_handovers')
       .insert({
         technician_id: technicianId,
         tool_id: toolId,
         quantity,
-        status: 'borrowed',
+        status: 'checked_out',
         notes: notes?.trim() || null
       })
 
@@ -267,9 +267,9 @@ export async function assignTool(technicianId: string, toolId: string, quantity:
 
     // Decrement available quantity in catalog
     const { error: updateErr } = await supabaseAdmin
-      .from('inventory_items')
+      .from('tool_catalog')
       .update({
-        available_qty: tool.available_qty - quantity,
+        available_stock: tool.available_stock - quantity,
         updated_at: new Date().toISOString()
       })
       .eq('id', toolId)
@@ -303,8 +303,8 @@ export async function returnTool(assignmentId: string, status: 'returned' | 'los
   try {
     // Fetch active assignment record
     const { data: assign, error: assignErr } = await supabaseAdmin
-      .from('tool_assignments')
-      .select('*, tool:inventory_items!tool_id(name, total_qty, available_qty)')
+      .from('tool_handovers')
+      .select('*, tool:tool_catalog!tool_id(name, total_stock, available_stock)')
       .eq('id', assignmentId)
       .single()
 
@@ -312,13 +312,13 @@ export async function returnTool(assignmentId: string, status: 'returned' | 'los
       return { error: "Handover assignment record not found." }
     }
 
-    if (assign.status !== 'borrowed') {
+    if (assign.status !== 'checked_out') {
       return { error: "This tool assignment has already been processed/returned." }
     }
 
     // Update assignment status
     const { error: updateAssignErr } = await supabaseAdmin
-      .from('tool_assignments')
+      .from('tool_handovers')
       .update({
         returned_at: new Date().toISOString(),
         status,
@@ -329,24 +329,24 @@ export async function returnTool(assignmentId: string, status: 'returned' | 'los
     if (updateAssignErr) throw updateAssignErr
 
     const tool = assign.tool
-    let nextAvailable = tool.available_qty
-    let nextTotal = tool.total_qty
+    let nextAvailable = tool.available_stock
+    let nextTotal = tool.total_stock
 
     if (status === 'returned') {
       // Put back in warehouse stock
-      nextAvailable = tool.available_qty + assign.quantity
+      nextAvailable = tool.available_stock + assign.quantity
     } else {
       // Lost or damaged beyond repair:
       // It does not return to available stock, and it decreases total inventory assets
-      nextTotal = Math.max(0, tool.total_qty - assign.quantity)
+      nextTotal = Math.max(0, tool.total_stock - assign.quantity)
     }
 
     // Update quantities in catalog
     const { error: updateToolErr } = await supabaseAdmin
-      .from('inventory_items')
+      .from('tool_catalog')
       .update({
-        total_qty: nextTotal,
-        available_qty: nextAvailable,
+        total_stock: nextTotal,
+        available_stock: nextAvailable,
         updated_at: new Date().toISOString()
       })
       .eq('id', assign.tool_id)
