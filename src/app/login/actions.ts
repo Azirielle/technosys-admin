@@ -42,3 +42,36 @@ export async function login(formData: FormData) {
 
   return redirect('/')
 }
+export async function sendOtp(formData: FormData) {
+  const phone = formData.get('phone') as string
+  const supabase = await createClient()
+
+  const { error } = await supabase.auth.signInWithOtp({
+    phone: +63 + phone,
+  })
+
+  if (error) {
+    return { error: error.message }
+  }
+
+  return { success: true }
+}
+
+export async function verifyOtpAction(formData: FormData) {
+  const phone = formData.get('phone') as string
+  const otp = formData.get('otp') as string
+  const next = formData.get('next') as string
+  const supabase = await createClient()
+
+  const { data, error } = await supabase.auth.verifyOtp({
+    phone: +63 + phone,
+    token: otp,
+    type: 'sms',
+  })
+
+  if (error || !data.user) {
+    return redirect('/login?message=Invalid OTP Code&next=' + next)
+  }
+
+  return redirect(next || '/technician')
+}
