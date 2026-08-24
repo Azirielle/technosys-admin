@@ -45,6 +45,7 @@ export default function EmployeeFilesClient() {
   const [uploadedFiles, setUploadedFiles] = useState<Record<string, Record<string, { fileName: string; fileUrl: string; uploadedAt: string }>>>({});
   const [uploadNotification, setUploadNotification] = useState<string | null>(null);
   const [previewingDoc, setPreviewingDoc] = useState<{ title: string; fileName: string; fileUrl: string } | null>(null);
+  const [deletingDoc, setDeletingDoc] = useState<{ docType: string; dbField: string } | null>(null);
 
   useEffect(() => {
     fetchEmployees();
@@ -131,10 +132,8 @@ export default function EmployeeFilesClient() {
     input.click();
   };
 
-  const handleRemoveFile = async (docType: string, dbField: string) => {
+  const confirmRemoveFile = async (docType: string, dbField: string) => {
     if (!selectedEmp) return;
-    const confirmRemove = window.confirm(`Are you sure you want to remove ${docType} for ${selectedEmp.full_name}?`);
-    if (!confirmRemove) return;
 
     try {
       await supabase.from('profiles').update({ [dbField]: false }).eq('id', selectedEmp.id);
@@ -563,7 +562,7 @@ export default function EmployeeFilesClient() {
                               <UploadCloud className="w-3.5 h-3.5" />
                             </button>
                             <button 
-                              onClick={() => handleRemoveFile(doc.label, doc.key)}
+                              onClick={() => setDeletingDoc({ docType: doc.label, dbField: doc.key })}
                               title="Remove file from 201 record"
                               className="p-1 text-gray-400 hover:text-red-600 rounded transition-colors"
                             >
@@ -780,6 +779,42 @@ export default function EmployeeFilesClient() {
                   className="px-4 py-2.5 bg-gray-100 text-gray-700 rounded-xl font-bold text-xs hover:bg-gray-200 transition-colors"
                 >
                   Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Remove File Confirmation Modal */}
+      {deletingDoc && selectedEmp && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[70] flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden border border-gray-200 animate-scale-in">
+            <div className="p-6 text-center space-y-4">
+              <div className="w-14 h-14 bg-red-50 text-red-600 rounded-full flex items-center justify-center mx-auto border border-red-100 shadow-sm">
+                <AlertTriangle className="w-7 h-7 text-red-600" />
+              </div>
+              <div>
+                <h3 className="font-black text-gray-900 text-base">Remove Document?</h3>
+                <p className="text-xs text-gray-500 mt-1.5 font-medium leading-relaxed">
+                  Are you sure you want to remove <span className="font-bold text-gray-800">{deletingDoc.docType}</span> from <span className="font-bold text-gray-800">{selectedEmp.full_name}</span>'s 201 file?
+                </p>
+              </div>
+              <div className="pt-2 flex gap-3">
+                <button 
+                  onClick={() => setDeletingDoc(null)}
+                  className="flex-1 py-2.5 bg-gray-100 text-gray-700 rounded-xl font-bold text-xs hover:bg-gray-200 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button 
+                  onClick={() => {
+                    confirmRemoveFile(deletingDoc.docType, deletingDoc.dbField);
+                    setDeletingDoc(null);
+                  }}
+                  className="flex-1 py-2.5 bg-red-600 text-white rounded-xl font-bold text-xs hover:bg-red-700 shadow-sm transition-colors"
+                >
+                  Yes, Remove
                 </button>
               </div>
             </div>
