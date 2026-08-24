@@ -227,14 +227,14 @@ export default function AuditLogClient() {
               <table className="w-full text-left border-collapse whitespace-nowrap">
                 <thead>
                   <tr className="bg-gray-50 border-b border-gray-200">
-                    <th className="px-6 py-4 text-xs font-black text-gray-500 uppercase tracking-wider sticky left-0 bg-gray-50 border-r border-gray-200">Employee</th>
-                    <th className="px-6 py-4 text-xs font-black text-gray-500 uppercase tracking-wider">Base Salary</th>
-                    <th className="px-6 py-4 text-xs font-black text-indigo-600 uppercase tracking-wider border-l border-gray-200 bg-indigo-50/30">Days Worked</th>
-                    <th className="px-6 py-4 text-xs font-black text-amber-600 uppercase tracking-wider">Lates</th>
-                    <th className="px-6 py-4 text-xs font-black text-emerald-600 uppercase tracking-wider border-l border-gray-200 bg-emerald-50/30">Reg OT (Hrs)</th>
-                    <th className="px-6 py-4 text-xs font-black text-emerald-600 uppercase tracking-wider bg-emerald-50/30">Sun/Hol OT (Hrs)</th>
-                    <th className="px-6 py-4 text-xs font-black text-emerald-600 uppercase tracking-wider bg-emerald-50/30 border-r border-gray-200">Night Diff (Hrs)</th>
-                    <th className="px-6 py-4 text-xs font-black text-red-600 uppercase tracking-wider">Absences</th>
+                    <th className="px-5 py-3.5 text-xs font-black text-gray-500 uppercase tracking-wider sticky left-0 bg-gray-50 border-r border-gray-200 min-w-[240px]">Employee</th>
+                    <th className="px-3 py-3.5 text-xs font-black text-gray-500 uppercase tracking-wider">Base Salary</th>
+                    <th className="px-3 py-3.5 text-xs font-black text-indigo-600 uppercase tracking-wider border-l border-gray-200 bg-indigo-50/30 text-center">Days Worked</th>
+                    <th className="px-3 py-3.5 text-xs font-black text-amber-600 uppercase tracking-wider text-center">Lates</th>
+                    <th className="px-3 py-3.5 text-xs font-black text-emerald-600 uppercase tracking-wider border-l border-gray-200 bg-emerald-50/30 text-center">Reg OT (Hrs)</th>
+                    <th className="px-3 py-3.5 text-xs font-black text-emerald-600 uppercase tracking-wider bg-emerald-50/30 text-center">Sun/Hol OT (Hrs)</th>
+                    <th className="px-3 py-3.5 text-xs font-black text-emerald-600 uppercase tracking-wider bg-emerald-50/30 border-r border-gray-200 text-center">Night Diff (Hrs)</th>
+                    <th className="px-3 py-3.5 text-xs font-black text-red-600 uppercase tracking-wider text-center">Absences</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
@@ -244,35 +244,35 @@ export default function AuditLogClient() {
                     <tr><td colSpan={8} className="p-8 text-center text-gray-400 font-medium">No records found.</td></tr>
                   ) : paginatedRecords.map((r) => (
                     <tr key={r.id} className="hover:bg-indigo-50/30 transition-colors">
-                      <td className="px-6 py-4 sticky left-0 bg-white border-r border-gray-100 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)]">
+                      <td className="px-5 py-3.5 sticky left-0 bg-white border-r border-gray-100 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)]">
                         <div className="font-bold text-gray-900">{r.name}</div>
                         <div className="text-[10px] font-black uppercase text-gray-500 mt-0.5">{r.level} &bull; {r.status}</div>
                       </td>
-                      <td className="px-6 py-4">
+                      <td className="px-3 py-3.5">
                         <span className="font-mono font-bold text-sm text-gray-600">
                           ₱{r.base_salary?.toLocaleString()}/day
                         </span>
                       </td>
-                      <td className="px-6 py-4 border-l border-gray-100 bg-indigo-50/10">
+                      <td className="px-3 py-3.5 border-l border-gray-100 bg-indigo-50/10 text-center">
                         <span className="font-bold text-gray-900">{r.daysWorked}</span>
                       </td>
-                      <td className="px-6 py-4">
+                      <td className="px-3 py-3.5 text-center">
                         {r.lates > 0 ? (
                           <span className="font-bold text-amber-600 bg-amber-50 px-2 py-1 rounded">{r.lates}</span>
                         ) : (
                           <span className="font-bold text-gray-300">0</span>
                         )}
                       </td>
-                      <td className="px-6 py-4 border-l border-gray-100 bg-emerald-50/10">
+                      <td className="px-3 py-3.5 border-l border-gray-100 bg-emerald-50/10 text-center">
                         <span className="font-mono font-bold text-gray-700">{r.regOtHours}</span>
                       </td>
-                      <td className="px-6 py-4 bg-emerald-50/10">
+                      <td className="px-3 py-3.5 bg-emerald-50/10 text-center">
                         <span className="font-mono font-bold text-gray-700">{r.sunHolidayOtHours}</span>
                       </td>
-                      <td className="px-6 py-4 border-r border-gray-100 bg-emerald-50/10">
+                      <td className="px-3 py-3.5 border-r border-gray-100 bg-emerald-50/10 text-center">
                         <span className="font-mono font-bold text-gray-700">{r.nightDiffHours}</span>
                       </td>
-                      <td className="px-6 py-4">
+                      <td className="px-3 py-3.5 text-center">
                         {r.absences > 0 ? (
                           <span className="font-bold text-red-600 bg-red-50 px-2 py-1 rounded">{r.absences}</span>
                         ) : (

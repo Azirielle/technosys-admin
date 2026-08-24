@@ -8,7 +8,7 @@ const navItems: NavItem[] = [
 export default function AccountantLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-screen bg-gray-50">
-      <Sidebar navItems={navItems} title="Accountant View" />
+      <Sidebar navItems={navItems} title="Accountant" />
       <div className="flex-1 flex flex-col">
         <main className="flex-1 p-8">{children}</main>
       </div>
