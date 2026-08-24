@@ -49,6 +49,18 @@ const ICON_MAP: Record<string, LucideIcon> = {
 export function Sidebar({ navItems, title, role }: SidebarProps) {
   const [effectiveItems, setEffectiveItems] = useState<NavItem[]>(navItems)
 
+  const handleClientLogout = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const { createClient } = await import('@/lib/supabase/client');
+      const supabase = createClient();
+      await supabase.auth.signOut();
+    } catch (err) {
+      console.log('Client signout fallback:', err);
+    }
+    window.location.href = '/login';
+  };
+
   useEffect(() => {
     const updateNavWithOverrides = () => {
       if (!role) {
@@ -140,7 +152,7 @@ export function Sidebar({ navItems, title, role }: SidebarProps) {
             <span className="text-xs text-gray-400">Online</span>
           </div>
         </div>
-        <form action={logout} className="w-full">
+        <form action={logout} onSubmit={handleClientLogout} className="w-full">
           <button type="submit" className="flex items-center w-full gap-3 px-2 py-2 text-sm font-medium text-red-400 hover:text-red-300 hover:bg-gray-800 rounded-md transition-colors">
             <LogOut className="w-5 h-5 shrink-0" />
             Logout
