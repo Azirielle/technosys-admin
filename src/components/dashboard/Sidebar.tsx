@@ -18,7 +18,7 @@ import {
   ShieldAlert,
 } from 'lucide-react'
 import { logout } from '@/app/actions'
-import { getSystemOverrides, SYSTEM_MODULES, RoleKey } from '@/lib/overrides'
+import { getSystemOverrides, getModuleHref, SYSTEM_MODULES, RoleKey } from '@/lib/overrides'
 
 export type NavItem = {
   title: string
@@ -69,12 +69,13 @@ export function Sidebar({ navItems, title, role }: SidebarProps) {
       grantedModuleIds.forEach(modId => {
         const mod = SYSTEM_MODULES.find(m => m.id === modId)
         if (mod) {
+          const targetHref = getModuleHref(mod.id, role)
           // Avoid duplicate if it's already in base navItems
-          const exists = navItems.some(item => item.href === mod.href || item.title === mod.name)
+          const exists = navItems.some(item => item.href === targetHref || item.title === mod.name)
           if (!exists) {
             overrideNavItems.push({
               title: mod.name,
-              href: mod.href,
+              href: targetHref,
               iconName: mod.iconName,
               isOverride: true
             })

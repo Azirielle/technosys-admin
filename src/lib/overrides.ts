@@ -99,3 +99,22 @@ export function saveSystemOverrides(overrides: OverrideMap): void {
     console.error('Failed to save system overrides:', e);
   }
 }
+
+export function getModuleHref(modId: string, role: RoleKey): string {
+  switch (modId) {
+    case 'hr_files':
+      return role === 'hr' ? '/hr/files' : `/${role}/files`;
+    case 'hr_tickets':
+      return role === 'hr' ? '/hr' : `/${role}/tickets`;
+    case 'accountant_audit':
+      return role === 'accountant' ? '/accountant' : `/${role}/audit`;
+    case 'coordinator_tracking':
+      return role === 'coordinator' ? '/coordinator/tracking' : `/${role}/tracking`;
+    case 'coordinator_dispatch':
+      return role === 'coordinator' ? '/coordinator' : `/${role}/dispatch`;
+    case 'coordinator_inventory':
+      return role === 'coordinator' ? '/coordinator/inventory' : `/${role}/inventory`;
+    default:
+      return '/';
+  }
+}
