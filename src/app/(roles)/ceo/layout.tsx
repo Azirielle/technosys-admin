@@ -3,6 +3,7 @@ import { Home, Settings } from 'lucide-react'
 
 const navItems: NavItem[] = [
   { title: 'System Overrides', href: '/ceo', iconName: 'Settings' },
+  { title: 'Admin Activities', href: '/ceo/activities', iconName: 'FileSpreadsheet' },
 ]
 
 export default function CEOLayout({ children }: { children: React.ReactNode }) {
