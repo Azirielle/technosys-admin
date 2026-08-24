@@ -42,7 +42,9 @@ export default function EmployeeFilesClient() {
 
   // Upload State
   const [uploadingDoc, setUploadingDoc] = useState<string | null>(null);
-  const [empDocs, setEmpDocs] = useState<Record<string, Record<string, boolean>>>({});
+  const [uploadedFiles, setUploadedFiles] = useState<Record<string, Record<string, { fileName: string; fileUrl: string; uploadedAt: string }>>>({});
+  const [uploadNotification, setUploadNotification] = useState<string | null>(null);
+  const [previewingDoc, setPreviewingDoc] = useState<{ title: string; fileName: string; fileUrl: string } | null>(null);
 
   useEffect(() => {
     fetchEmployees();
@@ -98,25 +100,32 @@ export default function EmployeeFilesClient() {
       const file = (e.target as HTMLInputElement).files?.[0];
       if (!file) return;
       setUploadingDoc(docType);
-      await new Promise(r => setTimeout(r, 800));
+      
+      // Create browser blob URL for file viewing
+      const objectUrl = URL.createObjectURL(file);
+      const uploadedAt = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      await new Promise(r => setTimeout(r, 600));
 
       try {
         await supabase.from('profiles').update({ [dbField]: true }).eq('id', selectedEmp.id);
       } catch (err) {
-        console.log('Updated local state:', err);
+        console.log('Saved to state:', err);
       }
 
-      setEmpDocs(prev => ({
+      setUploadedFiles(prev => ({
         ...prev,
         [selectedEmp.id]: {
           ...(prev[selectedEmp.id] || {}),
-          [dbField]: true
+          [dbField]: {
+            fileName: file.name,
+            fileUrl: objectUrl,
+            uploadedAt
+          }
         }
       }));
 
-      const updatedEmp = { ...selectedEmp, [dbField]: true };
-      setSelectedEmp(updatedEmp);
-      setEmployees(prev => prev.map(emp => emp.id === updatedEmp.id ? updatedEmp : emp));
+      setUploadNotification(`"${file.name}" successfully attached to ${selectedEmp.full_name}'s 201 file!`);
+      setTimeout(() => setUploadNotification(null), 4000);
       setUploadingDoc(null);
     };
     input.click();
@@ -455,6 +464,15 @@ export default function EmployeeFilesClient() {
                 <div className="space-y-2">
                   <p className="text-xs text-gray-500 font-medium mb-2">Click "Upload" to attach a digital file. Checkmarks appear automatically upon successful upload.</p>
                   
+                  {uploadNotification && (
+                    <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs px-3.5 py-2 rounded-xl flex items-center justify-between font-bold shadow-sm animate-fade-in">
+                      <span className="flex items-center gap-2">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                        {uploadNotification}
+                      </span>
+                    </div>
+                  )}
+
                   {[
                     { key: 'has_nbi_clearance', label: 'NBI Clearance', desc: 'Valid background check' },
                     { key: 'has_medical_clearance', label: 'Medical Clearance', desc: 'Fit to work certificate' },
@@ -463,7 +481,8 @@ export default function EmployeeFilesClient() {
                     { key: 'has_philhealth_id', label: 'PhilHealth ID', desc: 'Government mandate' },
                     { key: 'has_pagibig_id', label: 'Pag-IBIG Number', desc: 'Government mandate' },
                   ].map((doc) => {
-                    const isUploaded = empDocs[selectedEmp.id]?.[doc.key] ?? Boolean(selectedEmp[doc.key]);
+                    const uploadedInfo = uploadedFiles[selectedEmp.id]?.[doc.key];
+                    const isUploaded = Boolean(uploadedInfo);
                     const isUploading = uploadingDoc === doc.label;
 
                     return (
@@ -477,7 +496,14 @@ export default function EmployeeFilesClient() {
                             <div className="w-5 h-5 rounded-full border-2 border-gray-300 flex items-center justify-center shrink-0 bg-white" />
                           )}
                           <div>
-                            <div className={`text-xs font-bold ${isUploaded ? 'text-gray-900' : 'text-gray-600'}`}>{doc.label}</div>
+                            <div className="flex items-center gap-2">
+                              <span className={`text-xs font-bold ${isUploaded ? 'text-gray-900' : 'text-gray-600'}`}>{doc.label}</span>
+                              {uploadedInfo && (
+                                <span className="text-[10px] font-mono text-emerald-700 bg-emerald-100 px-1.5 py-0.2 rounded max-w-[140px] truncate">
+                                  {uploadedInfo.fileName}
+                                </span>
+                              )}
+                            </div>
                             <div className="text-[10px] text-gray-500 font-medium">{doc.desc}</div>
                           </div>
                         </div>
@@ -494,7 +520,13 @@ export default function EmployeeFilesClient() {
                         ) : (
                           <div className="flex items-center gap-2">
                             <button 
-                              onClick={() => alert(`Viewing digital copy of ${doc.label} for ${selectedEmp.full_name}`)}
+                              onClick={() => {
+                                if (uploadedInfo?.fileUrl) {
+                                  window.open(uploadedInfo.fileUrl, '_blank');
+                                } else {
+                                  setPreviewingDoc({ title: doc.label, fileName: uploadedInfo?.fileName || `${doc.label}.pdf`, fileUrl: '' });
+                                }
+                              }}
                               className="text-[10px] font-bold text-indigo-600 hover:text-indigo-800 uppercase tracking-wider bg-indigo-50 hover:bg-indigo-100 px-2.5 py-1 rounded border border-indigo-100 transition-colors"
                             >
                               View File
@@ -670,6 +702,55 @@ export default function EmployeeFilesClient() {
                 </form>
               )}
 
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Document Viewer Modal */}
+      {previewingDoc && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden border border-gray-200 animate-scale-in">
+            <div className="px-6 py-4 bg-indigo-600 text-white flex justify-between items-center">
+              <div className="flex items-center gap-2">
+                <FileText className="w-5 h-5" />
+                <h3 className="font-bold text-base">{previewingDoc.title}</h3>
+              </div>
+              <button onClick={() => setPreviewingDoc(null)} className="text-white/80 hover:text-white p-1 rounded-full hover:bg-white/10">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-6 text-center space-y-4">
+              <div className="w-16 h-16 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center mx-auto border border-indigo-100 shadow-sm">
+                <FileText className="w-8 h-8" />
+              </div>
+              <div>
+                <h4 className="font-bold text-gray-900 text-sm">{previewingDoc.fileName}</h4>
+                <p className="text-xs text-gray-500 mt-1 font-medium">Digital copy attached to 201 Employee File</p>
+              </div>
+              <div className="pt-2 flex gap-3">
+                {previewingDoc.fileUrl ? (
+                  <button 
+                    onClick={() => window.open(previewingDoc.fileUrl, '_blank')}
+                    className="flex-1 py-2.5 bg-indigo-600 text-white rounded-xl font-bold text-xs hover:bg-indigo-700 shadow-sm transition-colors"
+                  >
+                    Open Document
+                  </button>
+                ) : (
+                  <button 
+                    onClick={() => alert(`Downloading copy of ${previewingDoc.fileName}...`)}
+                    className="flex-1 py-2.5 bg-indigo-600 text-white rounded-xl font-bold text-xs hover:bg-indigo-700 shadow-sm transition-colors"
+                  >
+                    Download File
+                  </button>
+                )}
+                <button 
+                  onClick={() => setPreviewingDoc(null)}
+                  className="px-4 py-2.5 bg-gray-100 text-gray-700 rounded-xl font-bold text-xs hover:bg-gray-200 transition-colors"
+                >
+                  Close
+                </button>
+              </div>
             </div>
           </div>
         </div>
