@@ -214,14 +214,14 @@ export default function EmployeeFilesClient() {
   return (
     <div className="h-full flex flex-col bg-slate-50 overflow-hidden">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200 px-8 py-6 shrink-0">
-        <div className="flex justify-between items-start max-w-7xl mx-auto">
+      <div className="bg-white border-b border-gray-200 px-6 py-4 shrink-0">
+        <div className="flex justify-between items-center max-w-7xl mx-auto">
           <div>
-            <h1 className="text-2xl font-black text-gray-900 tracking-tight flex items-center gap-2">
-              <FolderOpen className="w-6 h-6 text-indigo-600" />
+            <h1 className="text-xl font-black text-gray-900 tracking-tight flex items-center gap-2">
+              <FolderOpen className="w-5 h-5 text-indigo-600" />
               201 Employee Files & Warnings
             </h1>
-            <p className="text-sm text-gray-500 mt-1 font-medium">
+            <p className="text-xs text-gray-500 mt-0.5 font-medium">
               Manage operational documents, salaries, and disciplinary actions.
             </p>
           </div>
@@ -229,8 +229,8 @@ export default function EmployeeFilesClient() {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 overflow-auto p-8">
-        <div className="max-w-7xl mx-auto">
+      <div className="flex-1 p-6 overflow-hidden flex flex-col">
+        <div className="max-w-7xl mx-auto w-full flex-1 flex flex-col overflow-hidden">
           
           {/* Controls */}
           <div className="bg-white p-4 rounded-t-xl border border-gray-200 border-b-0 flex items-center justify-between relative">
@@ -315,29 +315,28 @@ export default function EmployeeFilesClient() {
           </div>
 
           {/* Table */}
-          <div className="bg-white border border-gray-200 rounded-b-xl overflow-hidden shadow-sm">
-            <table className="w-full text-left border-collapse">
+          <div className="bg-white border border-gray-200 rounded-b-xl overflow-auto flex-1 shadow-sm">
+            <table className="w-full text-left border-collapse table-fixed">
               <thead>
-                <tr className="bg-gray-50 border-b border-gray-200">
-                  <th className="px-6 py-4 text-xs font-black text-gray-500 uppercase tracking-wider">Employee</th>
-                  <th className="px-6 py-4 text-xs font-black text-gray-500 uppercase tracking-wider">Role & Level</th>
-                  <th className="px-6 py-4 text-xs font-black text-gray-500 uppercase tracking-wider">Employment Status</th>
-                  <th className="px-6 py-4 text-xs font-black text-gray-500 uppercase tracking-wider">Base Salary</th>
-                  <th className="px-6 py-4 text-xs font-black text-gray-500 uppercase tracking-wider">Record</th>
-                  <th className="px-6 py-4 text-xs font-black text-gray-500 uppercase tracking-wider text-right">Action</th>
+                <tr className="bg-gray-50 border-b border-gray-200 sticky top-0 z-10">
+                  <th className="px-5 py-3 text-xs font-black text-gray-500 uppercase tracking-wider w-[28%]">Employee</th>
+                  <th className="px-5 py-3 text-xs font-black text-gray-500 uppercase tracking-wider w-[22%]">Role & Level</th>
+                  <th className="px-5 py-3 text-xs font-black text-gray-500 uppercase tracking-wider w-[20%]">Employment Status</th>
+                  <th className="px-5 py-3 text-xs font-black text-gray-500 uppercase tracking-wider w-[16%]">Base Salary</th>
+                  <th className="px-5 py-3 text-xs font-black text-gray-500 uppercase tracking-wider w-[14%]">Record</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {loading ? (
-                  <tr><td colSpan={6} className="p-8 text-center text-gray-400 font-medium">Loading records...</td></tr>
+                  <tr><td colSpan={5} className="p-8 text-center text-gray-400 font-medium">Loading records...</td></tr>
                 ) : paginatedEmployees.length === 0 ? (
-                  <tr><td colSpan={6} className="p-8 text-center text-gray-400 font-medium">No employees found.</td></tr>
+                  <tr><td colSpan={5} className="p-8 text-center text-gray-400 font-medium">No employees found.</td></tr>
                 ) : paginatedEmployees.map((emp) => {
                   const warnCount = emp.employee_warnings?.length || 0;
                   
                   return (
                     <tr key={emp.id} className="hover:bg-indigo-50/50 transition-colors group cursor-pointer" onClick={() => handleSelectEmp(emp)}>
-                      <td className="px-6 py-4">
+                      <td className="px-5 py-3">
                         <div className="font-bold text-gray-900">{emp.full_name}</div>
                         <div className="text-xs text-gray-500 font-medium mt-0.5">
                           {emp.lifecycle_status === 'active' ? (
@@ -347,27 +346,27 @@ export default function EmployeeFilesClient() {
                           )}
                         </div>
                       </td>
-                      <td className="px-6 py-4">
+                      <td className="px-5 py-3">
                         <div className="text-sm font-bold text-gray-700 capitalize">{emp.role}</div>
                         {emp.technician_level && (
-                          <div className="text-[10px] font-black uppercase tracking-wider text-indigo-600 bg-indigo-50 inline-block px-2 py-0.5 rounded mt-1 border border-indigo-100">
+                          <div className="text-[10px] font-black uppercase tracking-wider text-indigo-600 bg-indigo-50 inline-block px-2 py-0.5 rounded mt-0.5 border border-indigo-100">
                             {emp.technician_level}
                           </div>
                         )}
                       </td>
-                      <td className="px-6 py-4">
+                      <td className="px-5 py-3">
                         <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-wider
                           ${emp.employment_status === 'regular' ? 'bg-blue-50 text-blue-700 border border-blue-200' : 'bg-gray-100 text-gray-600 border border-gray-200'}
                         `}>
                           {emp.employment_status}
                         </span>
                       </td>
-                      <td className="px-6 py-4">
+                      <td className="px-5 py-3">
                         <span className="font-mono font-bold text-sm text-emerald-700 bg-emerald-50 px-2 py-1 rounded border border-emerald-100">
                           ₱{emp.base_salary?.toLocaleString()}/day
                         </span>
                       </td>
-                      <td className="px-6 py-4">
+                      <td className="px-5 py-3">
                         {warnCount > 0 ? (
                           <span className="inline-flex items-center gap-1 text-[10px] font-black bg-red-100 text-red-700 px-2 py-1 rounded border border-red-200">
                             <AlertTriangle className="w-3 h-3" /> {warnCount} WARNINGS
@@ -377,11 +376,6 @@ export default function EmployeeFilesClient() {
                             <CheckCircle2 className="w-3 h-3" /> CLEAN
                           </span>
                         )}
-                      </td>
-                      <td className="px-6 py-4 text-right">
-                        <button className="text-sm font-bold text-indigo-600 hover:text-indigo-800 opacity-0 group-hover:opacity-100 transition-opacity">
-                          Open File &rarr;
-                        </button>
                       </td>
                     </tr>
                   );
