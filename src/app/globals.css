@@ -177,3 +177,32 @@
   animation: smooth-slide-in 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   will-change: transform;
 }
+
+/* react-big-calendar Grid Overrides */
+.rbc-time-content .rbc-time-column,
+.rbc-time-header-content {
+  border-left: 1px solid theme('colors.border') !important;
+}
+.rbc-day-slot .rbc-time-slot {
+  border-top: 1px solid theme('colors.border') !important;
+}
+.rbc-time-view {
+  border: 1px solid theme('colors.border') !important;
+  border-radius: 0.5rem;
+  overflow: hidden;
+}
+.rbc-current-time-indicator {
+  background-color: theme('colors.red.500') !important;
+  height: 2px !important;
+  z-index: 50 !important;
+}
+.rbc-current-time-indicator::before {
+  content: '';
+  position: absolute;
+  left: -4px;
+  top: -4px;
+  width: 10px;
+  height: 10px;
+  background-color: theme('colors.red.500');
+  border-radius: 50%;
+}

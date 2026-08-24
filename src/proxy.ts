@@ -1,34 +1,75 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { createServerClient } from '@supabase/ssr';
 
-export function proxy(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const origin = request.headers.get('origin');
   const host = request.headers.get('host');
   
   const pathname = request.nextUrl.pathname;
 
-  // 1. Root path rendering is handled by GatewayPortal in app/page.tsx
+  let response = NextResponse.next({
+    request: {
+      headers: request.headers,
+    },
+  });
 
-  // 2. Intercept unauthenticated /dashboard access and redirect to /login with 0-byte body
-  const hasAuthCookie = request.cookies.getAll().some(c => c.name.startsWith('sb-') && c.name.includes('-auth-token'));
-  if (pathname.startsWith('/dashboard') && !hasAuthCookie) {
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll()
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value, options }) => request.cookies.set(name, value))
+          response = NextResponse.next({
+            request,
+          })
+          cookiesToSet.forEach(({ name, value, options }) =>
+            response.cookies.set(name, value, options)
+          )
+        },
+      },
+    }
+  )
+
+  const { data: { user } } = await supabase.auth.getUser()
+
+  // Static assets and public routes skip auth checks
+  if (
+    pathname.startsWith('/_next') || 
+    pathname.startsWith('/favicon.ico') || 
+    pathname.startsWith('/api') || 
+    pathname.startsWith('/assets') ||
+    pathname.startsWith('/icons')
+  ) {
+    // just apply security headers below
+  } else if (!user && !pathname.startsWith('/login')) {
+    // Redirect unauthenticated users to login
     const loginUrl = new URL('/login', request.url);
-    return new NextResponse(null, {
-      status: 302,
-      headers: {
-        'Location': loginUrl.toString(),
-        'X-Frame-Options': 'DENY',
-        'X-Content-Type-Options': 'nosniff',
-        'Referrer-Policy': 'strict-origin-when-cross-origin',
-        'Content-Security-Policy': "frame-ancestors 'none';",
-        'Server': 'Webserver',
-        'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload'
+    response = NextResponse.redirect(loginUrl);
+  } else if (user) {
+    // Handle authenticated routing logic
+    if (pathname === '/' || pathname.startsWith('/login')) {
+      const defaultRoute = user.user_metadata?.default_dashboard_route || '/coordinator';
+      const url = request.nextUrl.clone();
+      url.pathname = defaultRoute;
+      response = NextResponse.redirect(url);
+    } else {
+      // Role-based Path Protection
+      const currentRoutePrefix = `/${pathname.split('/')[1]}`;
+      const allowedRoute = user.user_metadata?.default_dashboard_route || '/coordinator';
+
+      // Ensure they don't manually navigate outside their route (ignore api/assets)
+      if (currentRoutePrefix !== allowedRoute && currentRoutePrefix !== '') {
+        const url = request.nextUrl.clone();
+        url.pathname = allowedRoute;
+        response = NextResponse.redirect(url);
       }
-    });
+    }
   }
-
-  const response = NextResponse.next();
-
 
   // Set security and anti-clickjacking headers on ALL responses
   response.headers.set('X-Frame-Options', 'DENY');

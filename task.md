@@ -4,8 +4,36 @@
 
 ### 🔴 TO DO
 
-### 🟢 DONE
-- [x] **Implement Automated Inventory Stock Alert Notifications** (KAN-51)
+#### 1. Implement a Robust Scheduling Library
+- [x] Discard custom grid and integrate `shadcn-big-calendar`.
+- [x] Implement dynamic import wrapper for `ssr: false` to allow pure Server Component page rendering.
+- [x] Apply semantic CSS overrides to ensure vertical grid lines are rendered (supporting Dark Mode via `theme('colors.border')`).
+
+#### 2. Drag-and-Drop Workflow (Resource Timeline)
+- [x] Utilize `withDragAndDrop` HOC from `react-big-calendar/lib/addons/dragAndDrop`.
+- [x] Lock the default view to `Views.DAY` (Vertical Timeline).
+- [x] Wire up `onDropFromOutside` so the Unassigned Queue updates the local calendar state array and removes from the queue array.
+- [x] Condense the Unassigned Queue sidebar (small font, minimal padding, `GripVertical` icon).
+
+#### 3. UX Polish for Operations Context
+- [x] Implement the "Current Time Indicator" (vertical red line) via CSS injection overriding `rbc-current-time-indicator`.
+- [x] Create custom `DispatchEventCard` rendering to apply color-coded left borders and dense truncating text.
+
+#### 4. Matrix & Smart Modal Pivot (UI/UX)
+- `[x]` Rip out `react-big-calendar` and `shadcn-big-calendar`.
+- `[x]` Implement `DispatchBoardClient.tsx` using a bespoke Tailwind CSS grid (`grid-cols-[250px_repeat(7,_minmax(120px,_1fr))]`).
+- `[x]` Implement Two-Column `CreateDispatchModal` using Radix UI.
+- `[x]` Build Searchable Combobox for multi-select using `cmdk`.
+- `[x]` Isolate `DynamicLeafletMap` with `ssr: false` to prevent build crashes.
+- `[x]` Ensure Matrix layout uses `overflow-x-auto` for mobile compatibility.
+
+#### 5. Field Ops UI/UX Polish
+- `[x]` Fix matrix grid alignment with `min-h-[6rem]`.
+- `[x]` Upgrade `+ Create Dispatch` button prominence.
+- `[x]` Implement Debounced Nominatim API for Smart Modal Location Search.
+- `[x]` Add `MapUpdater` to dynamically `flyTo()` coordinates.
+- `[x]` Enhance Time Pickers to use native `date` + custom 15-minute `select` dropdowns.
+- `[x]` Upgrade "Deploy to Pacita HQ" toggle and add conditional form logic.
   - [x] Add inventory alerts check in stock transitions.
   - [x] Configure push notification alerts when stock falls below minimum thresholds.
 - [x] **Build Announcements Broadcasting Feature** (KAN-52)
