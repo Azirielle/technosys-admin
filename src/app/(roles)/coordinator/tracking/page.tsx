@@ -25,6 +25,7 @@ export default function TrackingPage() {
   const [locations, setLocations] = useState<TechLocation[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
+  const [selectedTechId, setSelectedTechId] = useState<string | null>(null)
   const supabase = createClient()
 
   useEffect(() => {
@@ -65,7 +66,7 @@ export default function TrackingPage() {
     // We use negative margins (-m-8) to break out of the layout padding and make the map truly full screen
     <div className="flex flex-col h-[calc(100vh-2rem)] w-[calc(100%+4rem)] -m-8 relative overflow-hidden bg-gray-100">
       <div className="absolute inset-0 z-0">
-        <LiveMapWrapper locations={filtered} />
+        <LiveMapWrapper locations={filtered} selectedTechId={selectedTechId} />
       </div>
 
       {/* Floating Control Panel (5-Second Rule: Easy access without changing pages) */}
@@ -94,28 +95,47 @@ export default function TrackingPage() {
           ) : filtered.length === 0 ? (
             <p className="text-sm text-center text-gray-500 py-6 font-medium">No technicians active.</p>
           ) : (
-            filtered.map(tech => (
-              <div key={tech.id} className="p-3 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors flex items-center gap-4 group">
-                <div className="relative">
-                  <div className={`w-11 h-11 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-sm border-2 border-white ${tech.isOnline ? 'bg-emerald-500 group-hover:bg-emerald-600' : 'bg-gray-400 group-hover:bg-gray-500'} transition-colors`}>
-                    {tech.name.charAt(0).toUpperCase()}
+            filtered.map(tech => {
+              const isSelected = tech.id === selectedTechId
+              return (
+                <div 
+                  key={tech.id} 
+                  onClick={() => setSelectedTechId(isSelected ? null : tech.id)}
+                  className={`p-3 rounded-lg cursor-pointer transition-all flex items-center gap-4 group mb-1 ${
+                    isSelected 
+                      ? 'bg-indigo-50/90 border-2 border-indigo-500 shadow-md ring-2 ring-indigo-500/20' 
+                      : 'hover:bg-gray-50 border border-transparent'
+                  }`}
+                >
+                  <div className="relative">
+                    <div className={`w-11 h-11 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-sm border-2 border-white ${
+                      tech.isOnline ? 'bg-emerald-500 group-hover:bg-emerald-600' : 'bg-gray-400 group-hover:bg-gray-500'
+                    } transition-colors`}>
+                      {tech.name.charAt(0).toUpperCase()}
+                    </div>
+                    <div className={`absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full border-2 border-white ${tech.isOnline ? 'bg-emerald-500' : 'bg-gray-400'}`} />
                   </div>
-                  <div className={`absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full border-2 border-white ${tech.isOnline ? 'bg-emerald-500' : 'bg-gray-400'}`} />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-bold text-gray-900 truncate mb-0.5">{tech.name}</p>
-                  <div className="flex items-center gap-2">
-                    <span className="inline-flex items-center text-[10px] font-bold text-gray-500">
-                      <Clock className="w-3 h-3 mr-1" />
-                      {tech.time}
-                    </span>
-                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${tech.isOnline ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-gray-50 text-gray-600 border-gray-200'}`}>
-                      {tech.status.toUpperCase()}
-                    </span>
+                  <div className="flex-1 min-w-0">
+                    <p className={`text-sm font-bold truncate mb-0.5 ${isSelected ? 'text-indigo-900 font-extrabold' : 'text-gray-900'}`}>{tech.name}</p>
+                    <div className="flex items-center gap-2">
+                      <span className="inline-flex items-center text-[10px] font-bold text-gray-500">
+                        <Clock className="w-3 h-3 mr-1" />
+                        {tech.time}
+                      </span>
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${
+                        isSelected 
+                          ? 'bg-indigo-600 text-white border-indigo-700' 
+                          : tech.isOnline 
+                            ? 'bg-emerald-50 text-emerald-700 border-emerald-200' 
+                            : 'bg-gray-50 text-gray-600 border-gray-200'
+                      }`}>
+                        {tech.status.toUpperCase()}
+                      </span>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))
+              )
+            })
           )}
         </div>
       </div>

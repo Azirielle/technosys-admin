@@ -9,9 +9,10 @@ import { renderToStaticMarkup } from 'react-dom/server';
 
 interface LiveMapWrapperProps {
   locations: any[];
+  selectedTechId?: string | null;
 }
 
-// Helper component to auto-fit bounds when markers load
+// Helper component to auto-fit bounds when markers initial load
 function BoundsFitter({ bounds }: { bounds: L.LatLngBounds }) {
   const map = useMap();
   useEffect(() => {
@@ -22,7 +23,20 @@ function BoundsFitter({ bounds }: { bounds: L.LatLngBounds }) {
   return null;
 }
 
-export default function LiveMapWrapper({ locations }: LiveMapWrapperProps) {
+// Helper component to fly & spotlight a selected technician when clicked
+function MapSpotlighter({ selectedTech }: { selectedTech: any }) {
+  const map = useMap();
+  useEffect(() => {
+    if (selectedTech && typeof selectedTech.lat === 'number' && typeof selectedTech.lon === 'number') {
+      map.flyTo([selectedTech.lat, selectedTech.lon], 16, {
+        duration: 1.5
+      });
+    }
+  }, [map, selectedTech]);
+  return null;
+}
+
+export default function LiveMapWrapper({ locations, selectedTechId }: LiveMapWrapperProps) {
   useEffect(() => {
     // Fix default marker icon issues with webpack/leaflet
     delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -33,20 +47,24 @@ export default function LiveMapWrapper({ locations }: LiveMapWrapperProps) {
     });
   }, []);
 
+  const selectedTech = locations.find(l => l.id === selectedTechId);
+
   const createCustomIcon = (tech: any) => {
     const isOnline = tech.isOnline;
+    const isSelected = tech.id === selectedTechId;
     const initial = tech.name.charAt(0).toUpperCase();
     const colorClass = isOnline ? 'bg-emerald-500' : 'bg-slate-400';
+    const borderClass = isSelected ? 'border-4 border-indigo-600 shadow-2xl scale-125 z-30 ring-4 ring-indigo-300' : 'border-2 border-white shadow-lg';
     
     const html = renderToStaticMarkup(
-      <div className="relative group flex flex-col items-center">
-        <div className={`w-10 h-10 rounded-full flex items-center justify-center shadow-lg border-2 border-white ${colorClass} text-white font-black text-lg z-10`}>
+      <div className={`relative group flex flex-col items-center transition-all duration-300 ${isSelected ? 'scale-110 z-30' : ''}`}>
+        <div className={`w-10 h-10 rounded-full flex items-center justify-center ${colorClass} text-white font-black text-lg transition-transform ${borderClass}`}>
           {initial}
         </div>
-        {isOnline && (
-          <div className="absolute top-0 w-10 h-10 bg-emerald-500 rounded-full animate-ping opacity-50 z-0" />
+        {(isOnline || isSelected) && (
+          <div className={`absolute top-0 w-10 h-10 ${isSelected ? 'bg-indigo-500' : 'bg-emerald-500'} rounded-full animate-ping opacity-60 z-0`} />
         )}
-        <div className="mt-1 bg-white/90 backdrop-blur-sm text-slate-900 text-[10px] font-bold px-2 py-0.5 rounded shadow-sm border border-slate-200 whitespace-nowrap z-10">
+        <div className={`mt-1 ${isSelected ? 'bg-indigo-900 text-white border-indigo-700 font-black scale-110 shadow-md' : 'bg-white/90 text-slate-900 font-bold border-slate-200'} text-[10px] px-2 py-0.5 rounded backdrop-blur-sm border whitespace-nowrap z-10 transition-all`}>
           {tech.name}
         </div>
       </div>
@@ -65,7 +83,7 @@ export default function LiveMapWrapper({ locations }: LiveMapWrapperProps) {
   const defaultCenter: [number, number] = [14.5995, 120.9842]; // Manila
   
   // Calculate bounds to fit all markers if locations exist
-  const bounds = locations.length > 0 
+  const bounds = locations.length > 0 && !selectedTechId
     ? L.latLngBounds(locations.map(loc => [loc.lat, loc.lon]))
     : null;
 
@@ -76,9 +94,10 @@ export default function LiveMapWrapper({ locations }: LiveMapWrapperProps) {
         zoom={12} 
         scrollWheelZoom={true} 
         style={{ height: '100%', width: '100%', zIndex: 0 }}
-        zoomControl={false} // Disable default to move it later if needed
+        zoomControl={false}
       >
         {bounds && <BoundsFitter bounds={bounds} />}
+        {selectedTech && <MapSpotlighter selectedTech={selectedTech} />}
         
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
