@@ -390,20 +390,20 @@ export default function EmployeeFilesClient() {
       {/* Profile Modal */}
       {selectedEmp && (
         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl flex flex-col max-h-[90vh] overflow-hidden border border-gray-200">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl h-[560px] flex flex-col overflow-hidden border border-gray-200">
             
             {/* Modal Header */}
-            <div className="px-6 py-5 border-b border-gray-100 flex justify-between items-center bg-gray-50/50 shrink-0">
+            <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50 shrink-0">
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-indigo-100 text-indigo-700 rounded-full flex items-center justify-center text-xl font-black shrink-0 border-2 border-indigo-200 shadow-sm">
+                <div className="w-11 h-11 bg-indigo-100 text-indigo-700 rounded-full flex items-center justify-center text-lg font-black shrink-0 border-2 border-indigo-200 shadow-sm">
                   {selectedEmp.full_name?.charAt(0)}
                 </div>
                 <div>
-                  <h2 className="text-xl font-black text-gray-900 flex items-center gap-2">
+                  <h2 className="text-lg font-black text-gray-900 flex items-center gap-2 leading-none">
                     {selectedEmp.full_name}
-                    <span className="font-mono text-sm text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">₱{selectedEmp.base_salary}/day</span>
+                    <span className="font-mono text-xs text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full font-bold">₱{selectedEmp.base_salary}/day</span>
                   </h2>
-                  <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mt-0.5">
+                  <p className="text-[11px] font-bold text-gray-500 uppercase tracking-wider mt-1">
                     {selectedEmp.role} &bull; {selectedEmp.employment_status} &bull; {selectedEmp.technician_level}
                   </p>
                 </div>
@@ -436,7 +436,7 @@ export default function EmployeeFilesClient() {
             </div>
 
             {/* Modal Body */}
-            <div className="flex-1 overflow-y-auto p-6 bg-white">
+            <div className="flex-1 overflow-hidden p-6 bg-white flex flex-col justify-between">
               
               {activeTab === 'docs' && (
                 <div className="space-y-2">
