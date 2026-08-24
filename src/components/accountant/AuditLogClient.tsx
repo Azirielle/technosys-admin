@@ -144,21 +144,21 @@ export default function AuditLogClient() {
   return (
     <div className="h-full flex flex-col bg-slate-50 overflow-hidden">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200 px-8 py-6 shrink-0">
-        <div className="flex justify-between items-start max-w-7xl mx-auto">
+      <div className="bg-white border-b border-gray-200 px-6 py-4 shrink-0">
+        <div className="flex justify-between items-center max-w-7xl mx-auto">
           <div>
-            <h1 className="text-2xl font-black text-gray-900 tracking-tight flex items-center gap-2">
-              <Calendar className="w-6 h-6 text-indigo-600" />
+            <h1 className="text-xl font-black text-gray-900 tracking-tight flex items-center gap-2">
+              <Calendar className="w-5 h-5 text-indigo-600" />
               Accountant Audit Log
             </h1>
-            <p className="text-sm text-gray-500 mt-1 font-medium">
+            <p className="text-xs text-gray-500 mt-0.5 font-medium">
               Review 15-day (Kinsenas) raw attendance records for payroll exporting. No financial calculations are performed here.
             </p>
           </div>
           
           <button 
             onClick={exportToCSV}
-            className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg transition-colors shadow-sm"
+            className="flex items-center gap-2 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg transition-colors shadow-sm"
           >
             <Download className="w-4 h-4" /> Export to Excel / CSV
           </button>
@@ -166,8 +166,8 @@ export default function AuditLogClient() {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 overflow-auto p-8">
-        <div className="max-w-7xl mx-auto">
+      <div className="flex-1 p-6 overflow-hidden flex flex-col">
+        <div className="max-w-7xl mx-auto w-full flex-1 flex flex-col overflow-hidden">
           
           {/* Controls */}
           <div className="bg-white p-4 rounded-t-xl border border-gray-200 border-b-0 flex items-center justify-between">
