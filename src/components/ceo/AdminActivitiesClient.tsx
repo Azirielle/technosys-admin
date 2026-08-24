@@ -302,7 +302,7 @@ export default function AdminActivitiesClient() {
       {/* Main Filter & Navigation Tabs */}
       <div className="bg-white border border-gray-300 rounded-xl overflow-hidden shadow-sm flex-1 flex flex-col">
         {/* Category Tabs Header */}
-        <div className="border-b border-gray-200 bg-gray-50/80 px-4 pt-3 flex items-center justify-between flex-wrap gap-3 shrink-0">
+        <div className="border-b border-gray-200 bg-gray-50/80 px-4 pt-3 flex flex-col shrink-0">
           <div className="flex items-center gap-2">
             <button
               onClick={() => { setActiveTab('override'); setCurrentPage(1); }}
@@ -335,12 +335,14 @@ export default function AdminActivitiesClient() {
             </button>
           </div>
 
-          {/* Quick Category Explainer */}
-          <div className="text-[11px] font-medium text-gray-500 hidden lg:flex items-center gap-1.5 pb-2">
-            <Info className="w-3.5 h-3.5 text-indigo-600" />
-            {activeTab === 'override' 
-              ? 'Showing actions performed by administrators using features granted by CEO system overrides.'
-              : 'Showing actions performed by administrators within their standard job role boundaries.'}
+          {/* Category Explainer Row Directly Under Tabs */}
+          <div className="py-2.5 flex items-center gap-1.5 text-[11px] font-medium text-gray-500 border-t border-gray-200/60 mt-1">
+            <Info className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+            <span>
+              {activeTab === 'override' 
+                ? 'Showing actions performed by administrators using features granted by CEO system overrides.'
+                : 'Showing actions performed by administrators within their standard job role boundaries.'}
+            </span>
           </div>
         </div>
 
