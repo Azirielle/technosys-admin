@@ -38,8 +38,21 @@ export default function SystemOverridesClient() {
     saveSystemOverrides(newOverrides)
 
     const roleLabel = ROLES.find(r => r.key === role)?.label || role
-    const actionText = isGranted ? 'revoked from' : 'granted to'
-    showNotification(`Overridden: "${moduleName}" access ${actionText} ${roleLabel}!`)
+    const actionText = isGranted ? 'Revoked Override' : 'Granted Override'
+    showNotification(`Overridden: "${moduleName}" access ${isGranted ? 'revoked from' : 'granted to'} ${roleLabel}!`)
+
+    try {
+      const { logAdminActivity } = require('@/lib/auditLogger');
+      logAdminActivity({
+        adminName: 'Carlos CEO',
+        adminRole: 'Chief Executive Officer',
+        adminRoleKey: 'ceo',
+        moduleKey: 'system_overrides',
+        moduleName: 'System Overrides',
+        action: actionText,
+        targetEntity: `${actionText}: "${moduleName}" for ${roleLabel}`
+      });
+    } catch (e) {}
   }
 
   const handleGrantAll = () => {
