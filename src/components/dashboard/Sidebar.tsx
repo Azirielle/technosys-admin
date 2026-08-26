@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 import Link from 'next/link'
 import {
   LucideIcon,
@@ -50,6 +51,11 @@ export function Sidebar({ navItems, title, role }: SidebarProps) {
   const [effectiveItems, setEffectiveItems] = useState<NavItem[]>(navItems)
   const [showLogoutModal, setShowLogoutModal] = useState(false)
   const [isLoggingOut, setIsLoggingOut] = useState(false)
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   const executeLogout = async () => {
     setIsLoggingOut(true)
@@ -164,9 +170,9 @@ export function Sidebar({ navItems, title, role }: SidebarProps) {
         </button>
       </div>
 
-      {/* Logout Confirmation Modal */}
-      {showLogoutModal && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+      {/* Logout Confirmation Modal rendered at document.body via Portal */}
+      {showLogoutModal && mounted && createPortal(
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[9999] flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden border border-gray-200 animate-scale-in">
             <div className="p-6 text-center space-y-4">
               <div className="w-14 h-14 bg-red-50 text-red-600 rounded-full flex items-center justify-center mx-auto border border-red-100 shadow-sm">
@@ -198,7 +204,8 @@ export function Sidebar({ navItems, title, role }: SidebarProps) {
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </aside>
   )
