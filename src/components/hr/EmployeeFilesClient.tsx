@@ -126,6 +126,20 @@ export default function EmployeeFilesClient() {
       }));
 
       setUploadNotification(`"${file.name}" successfully attached to ${selectedEmp.full_name}'s 201 file!`);
+      
+      try {
+        const { logAdminActivity } = await import('@/lib/auditLogger');
+        logAdminActivity({
+          adminName: 'Sasha P. Usa',
+          adminRole: 'HR Department',
+          adminRoleKey: 'hr',
+          moduleKey: 'hr_files',
+          moduleName: '201 Files',
+          action: 'Uploaded Document Attachment',
+          targetEntity: `${file.name} (${selectedEmp.full_name})`
+        });
+      } catch (e) {}
+
       setTimeout(() => setUploadNotification(null), 4000);
       setUploadingDoc(null);
     };
@@ -151,6 +165,20 @@ export default function EmployeeFilesClient() {
     });
 
     setUploadNotification(`Removed ${docType} from ${selectedEmp.full_name}'s 201 file.`);
+
+    try {
+      const { logAdminActivity } = await import('@/lib/auditLogger');
+      logAdminActivity({
+        adminName: 'Sasha P. Usa',
+        adminRole: 'HR Department',
+        adminRoleKey: 'hr',
+        moduleKey: 'hr_files',
+        moduleName: '201 Files',
+        action: 'Removed Document Attachment',
+        targetEntity: `${docType} (${selectedEmp.full_name})`
+      });
+    } catch (e) {}
+
     setTimeout(() => setUploadNotification(null), 3000);
   };
 

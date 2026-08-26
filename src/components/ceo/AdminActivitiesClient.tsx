@@ -1,9 +1,8 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import {
   ShieldAlert,
-  ShieldCheck,
   Search,
   Filter,
   User,
@@ -11,236 +10,43 @@ import {
   Lock,
   Clock,
   Info,
-  Calendar,
-  FileText,
-  FileSpreadsheet,
-  Ticket,
-  FolderOpen,
-  MapPin,
-  Box,
   ChevronLeft,
   ChevronRight,
-  X,
-  Laptop
+  X
 } from 'lucide-react'
-
-export type ActivityLog = {
-  id: string
-  adminName: string
-  adminRole: 'Accountant' | 'Field Operations' | 'HR Department'
-  adminRoleKey: 'accountant' | 'coordinator' | 'hr'
-  moduleName: string
-  moduleKey: string
-  department: string
-  action: string
-  targetEntity: string
-  isOverride: boolean
-  timestamp: string
-  date: string
-  ipAddress: string
-  device: string
-  details: string
-}
-
-const MOCK_ACTIVITIES: ActivityLog[] = [
-  // --- GRANTED OVERRIDE ACTIVITIES (Category 2) ---
-  {
-    id: 'LOG-1001',
-    adminName: 'Nherie Anne Ferreras',
-    adminRole: 'Accountant',
-    adminRoleKey: 'accountant',
-    moduleName: '201 Files',
-    moduleKey: 'hr_files',
-    department: 'HR Department',
-    action: 'Removed File Attachment',
-    targetEntity: 'Medical_Certificate.pdf (Albert Flores)',
-    isOverride: true,
-    timestamp: '10 minutes ago',
-    date: '2026-08-24 18:45:12',
-    ipAddress: '192.168.1.104',
-    device: 'Chrome on Windows 11',
-    details: 'User deleted uploaded 201 NBI Clearance file attachment for Albert Flores using CEO System Override access.'
-  },
-  {
-    id: 'LOG-1002',
-    adminName: 'Andrew Adarayan',
-    adminRole: 'Field Operations',
-    adminRoleKey: 'coordinator',
-    moduleName: 'Audit Logs',
-    moduleKey: 'accountant_audit',
-    department: 'Accountant',
-    action: 'Exported Payroll Audit Data',
-    targetEntity: 'Kinsenas_August_Payroll.xlsx',
-    isOverride: true,
-    timestamp: '25 minutes ago',
-    date: '2026-08-24 18:30:00',
-    ipAddress: '192.168.1.112',
-    device: 'Edge on Windows 11',
-    details: 'User generated and downloaded Excel payroll audit report for Kinsenas Aug 1-15 via CEO granted Audit Logs override.'
-  },
-  {
-    id: 'LOG-1003',
-    adminName: 'Sasha P. Usa',
-    adminRole: 'HR Department',
-    adminRoleKey: 'hr',
-    moduleName: 'Dispatch & Scheduling',
-    moduleKey: 'coordinator_dispatch',
-    department: 'Field Operations',
-    action: 'Created Technician Dispatch',
-    targetEntity: 'Ayala Center Makati (Juan Dela Cruz)',
-    isOverride: true,
-    timestamp: '42 minutes ago',
-    date: '2026-08-24 18:13:05',
-    ipAddress: '192.168.1.108',
-    device: 'Safari on macOS',
-    details: 'Created direct dispatch assignment for Juan Dela Cruz to Ayala Center Makati under CEO Dispatch Board override access.'
-  },
-  {
-    id: 'LOG-1004',
-    adminName: 'Nherie Anne Ferreras',
-    adminRole: 'Accountant',
-    adminRoleKey: 'accountant',
-    moduleName: 'Tickets & Leaves',
-    moduleKey: 'hr_tickets',
-    department: 'HR Department',
-    action: 'Approved Sick Leave',
-    targetEntity: 'Jemira Berdin (Fever - 3 Days)',
-    isOverride: true,
-    timestamp: '1 hour ago',
-    date: '2026-08-24 17:50:33',
-    ipAddress: '192.168.1.104',
-    device: 'Chrome on Windows 11',
-    details: 'Approved 3-day sick leave request for Jemira Berdin using granted Tickets & Leaves permission override.'
-  },
-  {
-    id: 'LOG-1005',
-    adminName: 'Andrew Adarayan',
-    adminRole: 'Field Operations',
-    adminRoleKey: 'coordinator',
-    moduleName: '201 Files',
-    moduleKey: 'hr_files',
-    department: 'HR Department',
-    action: 'Uploaded Document',
-    targetEntity: 'PhilHealth_ID.pdf (Juan Dela Cruz)',
-    isOverride: true,
-    timestamp: '2 hours ago',
-    date: '2026-08-24 16:45:19',
-    ipAddress: '192.168.1.112',
-    device: 'Edge on Windows 11',
-    details: 'Attached PhilHealth ID document to Juan Dela Cruz 201 file record under CEO Granted 201 Files module override.'
-  },
-  {
-    id: 'LOG-1006',
-    adminName: 'Sasha P. Usa',
-    adminRole: 'HR Department',
-    adminRoleKey: 'hr',
-    moduleName: 'Live Tracking',
-    moduleKey: 'coordinator_tracking',
-    department: 'Field Operations',
-    action: 'Spotlighted Technician Fleet',
-    targetEntity: 'Juan Dela Cruz (Active Location)',
-    isOverride: true,
-    timestamp: '3 hours ago',
-    date: '2026-08-24 15:30:11',
-    ipAddress: '192.168.1.108',
-    device: 'Safari on macOS',
-    details: 'Used Live Tracking map spotlight feature on Juan Dela Cruz using granted Field Operations tracking access.'
-  },
-
-  // --- STANDARD SCOPE ACTIVITIES (Category 1) ---
-  {
-    id: 'LOG-2001',
-    adminName: 'Sasha P. Usa',
-    adminRole: 'HR Department',
-    adminRoleKey: 'hr',
-    moduleName: 'Tickets & Leaves',
-    moduleKey: 'hr_tickets',
-    department: 'HR Department',
-    action: 'Resolved Ticket Dispute',
-    targetEntity: 'TICK-8841 (Overtime Calculation Error)',
-    isOverride: false,
-    timestamp: '15 minutes ago',
-    date: '2026-08-24 18:40:00',
-    ipAddress: '192.168.1.108',
-    device: 'Safari on macOS',
-    details: 'HR admin marked ticket #8841 as resolved and updated status note.'
-  },
-  {
-    id: 'LOG-2002',
-    adminName: 'Nherie Anne Ferreras',
-    adminRole: 'Accountant',
-    adminRoleKey: 'accountant',
-    moduleName: 'Audit Logs',
-    moduleKey: 'accountant_audit',
-    department: 'Accountant',
-    action: 'Updated Kinsenas Overtime Hours',
-    targetEntity: 'Technician Payroll (Albert Flores)',
-    isOverride: false,
-    timestamp: '35 minutes ago',
-    date: '2026-08-24 18:20:14',
-    ipAddress: '192.168.1.104',
-    device: 'Chrome on Windows 11',
-    details: 'Accountant calculated and confirmed regular OT and night diff hours for Kinsenas period.'
-  },
-  {
-    id: 'LOG-2003',
-    adminName: 'Andrew Adarayan',
-    adminRole: 'Field Operations',
-    adminRoleKey: 'coordinator',
-    moduleName: 'Dispatch & Scheduling',
-    moduleKey: 'coordinator_dispatch',
-    department: 'Field Operations',
-    action: 'Updated Geofence Address',
-    targetEntity: 'Glorietta 4, Makati City (100m radius)',
-    isOverride: false,
-    timestamp: '1 hour ago',
-    date: '2026-08-24 17:45:00',
-    ipAddress: '192.168.1.112',
-    device: 'Edge on Windows 11',
-    details: 'Field Operations updated geofence center coordinates via Nominatim OpenStreetMap search.'
-  },
-  {
-    id: 'LOG-2004',
-    adminName: 'Sasha P. Usa',
-    adminRole: 'HR Department',
-    adminRoleKey: 'hr',
-    moduleName: '201 Files',
-    moduleKey: 'hr_files',
-    department: 'HR Department',
-    action: 'Issued Written Warning',
-    targetEntity: 'Juan Dela Cruz (Unexcused Absence)',
-    isOverride: false,
-    timestamp: '2 hours ago',
-    date: '2026-08-24 16:30:22',
-    ipAddress: '192.168.1.108',
-    device: 'Safari on macOS',
-    details: 'HR issued formal written warning for unexcused absence on Aug 20.'
-  },
-  {
-    id: 'LOG-2005',
-    adminName: 'Andrew Adarayan',
-    adminRole: 'Field Operations',
-    adminRoleKey: 'coordinator',
-    moduleName: 'Inventory Management',
-    moduleKey: 'coordinator_inventory',
-    department: 'Field Operations',
-    action: 'Issued Tool Equipment',
-    targetEntity: 'Optical Fiber Splicer (Juan Dela Cruz)',
-    isOverride: false,
-    timestamp: '4 hours ago',
-    date: '2026-08-24 14:15:00',
-    ipAddress: '192.168.1.112',
-    device: 'Edge on Windows 11',
-    details: 'Logged tool checkout equipment for field technician assignment.'
-  },
-]
+import { fetchAdminActivities, formatRelativeTime, formatExactDate, AdminActivityItem } from '@/lib/auditLogger'
 
 export default function AdminActivitiesClient() {
+  const [activities, setActivities] = useState<AdminActivityItem[]>([])
   const [activeTab, setActiveTab] = useState<'override' | 'standard'>('override')
   const [search, setSearch] = useState('')
   const [selectedRole, setSelectedRole] = useState<string>('all')
   const [selectedModule, setSelectedModule] = useState<string>('all')
-  const [selectedLog, setSelectedLog] = useState<ActivityLog | null>(null)
+  const [selectedLog, setSelectedLog] = useState<AdminActivityItem | null>(null)
+  const [, setTick] = useState(0)
+
+  // Load activities and setup listeners
+  useEffect(() => {
+    const loadLogs = () => {
+      setActivities(fetchAdminActivities())
+    }
+
+    loadLogs()
+
+    window.addEventListener('admin_activities_updated', loadLogs)
+    window.addEventListener('storage', loadLogs)
+
+    // Interval to update relative timestamps every 30s
+    const timer = setInterval(() => {
+      setTick(t => t + 1)
+    }, 30000)
+
+    return () => {
+      window.removeEventListener('admin_activities_updated', loadLogs)
+      window.removeEventListener('storage', loadLogs)
+      clearInterval(timer)
+    }
+  }, [])
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1)
@@ -248,7 +54,7 @@ export default function AdminActivitiesClient() {
 
   // Filter logs based on active tab and search filters
   const filteredLogs = useMemo(() => {
-    return MOCK_ACTIVITIES.filter(log => {
+    return activities.filter(log => {
       // Category filter
       if (activeTab === 'override' && !log.isOverride) return false
       if (activeTab === 'standard' && log.isOverride) return false
@@ -271,18 +77,17 @@ export default function AdminActivitiesClient() {
 
       return true
     })
-  }, [activeTab, search, selectedRole, selectedModule])
+  }, [activities, activeTab, search, selectedRole, selectedModule])
 
   const totalPages = Math.ceil(filteredLogs.length / ITEMS_PER_PAGE) || 1
   const paginatedLogs = useMemo(() => {
     const start = (currentPage - 1) * ITEMS_PER_PAGE
     return filteredLogs.slice(start, start + ITEMS_PER_PAGE)
-  }, [filteredLogs, currentPage])
+  }, [filteredLogs, currentPage, ITEMS_PER_PAGE])
 
   // Count summaries
-  const totalCount = MOCK_ACTIVITIES.length
-  const overrideCount = MOCK_ACTIVITIES.filter(l => l.isOverride).length
-  const standardCount = MOCK_ACTIVITIES.filter(l => !l.isOverride).length
+  const overrideCount = useMemo(() => activities.filter(l => l.isOverride).length, [activities])
+  const standardCount = useMemo(() => activities.filter(l => !l.isOverride).length, [activities])
 
   return (
     <div className="flex flex-col h-full w-full max-w-full overflow-hidden p-6">
@@ -476,10 +281,10 @@ export default function AdminActivitiesClient() {
                     <td className="border border-gray-300 px-4 py-2.5 whitespace-nowrap">
                       <div className="flex flex-col text-xs">
                         <span className="font-bold text-gray-800 flex items-center gap-1">
-                          <Clock className="w-3 h-3 text-gray-400" />
-                          {log.timestamp}
+                          <Clock className="w-3 h-3 text-gray-400 shrink-0" />
+                          {formatRelativeTime(log.timestamp)}
                         </span>
-                        <span className="text-[10px] text-gray-400 font-mono mt-0.5">{log.date}</span>
+                        <span className="text-[10px] text-gray-400 font-mono mt-0.5">{formatExactDate(log.timestamp)}</span>
                       </div>
                     </td>
                   </tr>
@@ -573,7 +378,7 @@ export default function AdminActivitiesClient() {
                 <div className="text-emerald-400 font-bold">{selectedLog.action}</div>
                 <div className="text-gray-300">Target: {selectedLog.targetEntity}</div>
                 <div className="text-gray-400 text-[10px] pt-1 border-t border-slate-800">
-                  Timestamp: {selectedLog.date} ({selectedLog.timestamp})
+                  Timestamp: {formatExactDate(selectedLog.timestamp)} ({formatRelativeTime(selectedLog.timestamp)})
                 </div>
               </div>
 
