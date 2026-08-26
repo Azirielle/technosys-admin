@@ -48,18 +48,20 @@ const ICON_MAP: Record<string, LucideIcon> = {
 
 export function Sidebar({ navItems, title, role }: SidebarProps) {
   const [effectiveItems, setEffectiveItems] = useState<NavItem[]>(navItems)
+  const [showLogoutModal, setShowLogoutModal] = useState(false)
+  const [isLoggingOut, setIsLoggingOut] = useState(false)
 
-  const handleClientLogout = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const executeLogout = async () => {
+    setIsLoggingOut(true)
     try {
-      const { createClient } = await import('@/lib/supabase/client');
-      const supabase = createClient();
-      await supabase.auth.signOut();
+      const { createClient } = await import('@/lib/supabase/client')
+      const supabase = createClient()
+      await supabase.auth.signOut()
     } catch (err) {
-      console.log('Client signout fallback:', err);
+      console.log('Client signout fallback:', err)
     }
-    window.location.href = '/login';
-  };
+    window.location.href = '/login'
+  }
 
   useEffect(() => {
     const updateNavWithOverrides = () => {
@@ -152,13 +154,52 @@ export function Sidebar({ navItems, title, role }: SidebarProps) {
             <span className="text-xs text-gray-400">Online</span>
           </div>
         </div>
-        <form action={logout} onSubmit={handleClientLogout} className="w-full">
-          <button type="submit" className="flex items-center w-full gap-3 px-2 py-2 text-sm font-medium text-red-400 hover:text-red-300 hover:bg-gray-800 rounded-md transition-colors">
-            <LogOut className="w-5 h-5 shrink-0" />
-            Logout
-          </button>
-        </form>
+        <button 
+          type="button" 
+          onClick={() => setShowLogoutModal(true)}
+          className="flex items-center w-full gap-3 px-2 py-2 text-sm font-medium text-red-400 hover:text-red-300 hover:bg-gray-800 rounded-md transition-colors"
+        >
+          <LogOut className="w-5 h-5 shrink-0" />
+          Logout
+        </button>
       </div>
+
+      {/* Logout Confirmation Modal */}
+      {showLogoutModal && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden border border-gray-200 animate-scale-in">
+            <div className="p-6 text-center space-y-4">
+              <div className="w-14 h-14 bg-red-50 text-red-600 rounded-full flex items-center justify-center mx-auto border border-red-100 shadow-sm">
+                <LogOut className="w-7 h-7 text-red-600" />
+              </div>
+              <div>
+                <h3 className="font-black text-gray-900 text-base">Confirm Logout?</h3>
+                <p className="text-xs text-gray-500 mt-1.5 font-medium leading-relaxed">
+                  Are you sure you want to log out of TechnoSys Admin?
+                </p>
+              </div>
+              <div className="pt-2 flex gap-3">
+                <button 
+                  type="button"
+                  onClick={() => setShowLogoutModal(false)}
+                  disabled={isLoggingOut}
+                  className="flex-1 py-2.5 bg-gray-100 text-gray-700 rounded-xl font-bold text-xs hover:bg-gray-200 disabled:opacity-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="button"
+                  onClick={executeLogout}
+                  disabled={isLoggingOut}
+                  className="flex-1 py-2.5 bg-red-600 text-white rounded-xl font-bold text-xs hover:bg-red-700 shadow-sm disabled:opacity-50 transition-colors"
+                >
+                  {isLoggingOut ? 'Logging out...' : 'Yes, Logout'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </aside>
   )
 }
