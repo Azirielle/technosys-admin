@@ -327,37 +327,10 @@ export default function AuditLogClient() {
                 <option value="jul_16_31">July 16 - 31, 2026</option>
               </select>
             </div>
-            
-            <div className="flex items-center gap-4">
-              <div className="text-sm font-bold text-gray-500">
-                {filteredRecords.length} Records found
-              </div>
-              
-              {/* Pagination Controls */}
-              <div className="flex items-center gap-1 bg-gray-50 rounded-lg border border-gray-200 p-1">
-                <button 
-                  disabled={currentPage === 1}
-                  onClick={() => setCurrentPage(p => p - 1)}
-                  className="p-1 rounded text-gray-600 hover:bg-gray-200 disabled:opacity-30 disabled:hover:bg-transparent"
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                </button>
-                <span className="text-xs font-black text-gray-700 px-2">
-                  PAGE {currentPage} / {totalPages}
-                </span>
-                <button 
-                  disabled={currentPage === totalPages}
-                  onClick={() => setCurrentPage(p => p + 1)}
-                  className="p-1 rounded text-gray-600 hover:bg-gray-200 disabled:opacity-30 disabled:hover:bg-transparent"
-                >
-                  <ChevronRight className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
           </div>
 
           {/* Table */}
-          <div className="bg-white border border-gray-200 rounded-b-xl overflow-hidden shadow-sm">
+          <div className="bg-white border border-gray-200 border-b-0 rounded-b-none overflow-y-scroll flex-1 shadow-sm [scrollbar-gutter:stable]">
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse whitespace-nowrap">
                 <thead>
@@ -419,6 +392,38 @@ export default function AuditLogClient() {
                 </tbody>
               </table>
             </div>
+          </div>
+
+          {/* Standardized Bottom Pagination Bar */}
+          <div className="bg-gray-50 px-4 py-3 border border-gray-200 rounded-b-xl flex items-center justify-between shrink-0">
+            <p className="text-sm text-gray-700">
+              Showing <span className="font-semibold">{filteredRecords.length === 0 ? 0 : Math.min((currentPage - 1) * ITEMS_PER_PAGE + 1, filteredRecords.length)}</span> to <span className="font-semibold">{Math.min(currentPage * ITEMS_PER_PAGE, filteredRecords.length)}</span> of <span className="font-semibold">{filteredRecords.length}</span> results
+            </p>
+            <nav className="inline-flex rounded-md shadow-sm">
+              <button
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                className="px-3 py-1.5 rounded-l-md border border-gray-300 bg-white text-gray-500 hover:bg-gray-50 disabled:opacity-50 text-sm font-medium transition-colors"
+              >
+                Prev
+              </button>
+              {Array.from({ length: totalPages }).map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => setCurrentPage(i + 1)}
+                  className={`px-3 py-1.5 border-t border-b border-r border-gray-300 text-sm font-medium ${currentPage === i + 1 ? 'bg-indigo-50 text-indigo-600 font-bold border-indigo-200 z-10' : 'bg-white text-gray-500 hover:bg-gray-50'} -ml-px transition-colors`}
+                >
+                  {i + 1}
+                </button>
+              ))}
+              <button
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages || totalPages === 0}
+                className="px-3 py-1.5 rounded-r-md border border-gray-300 border-l bg-white text-gray-500 hover:bg-gray-50 disabled:opacity-50 -ml-px text-sm font-medium transition-colors"
+              >
+                Next
+              </button>
+            </nav>
           </div>
 
         </div>
