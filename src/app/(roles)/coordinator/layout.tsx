@@ -1,10 +1,10 @@
 import { Sidebar, NavItem } from '@/components/dashboard/Sidebar'
-import { Home, Calendar, MapPin, Box } from 'lucide-react'
 
 const navItems: NavItem[] = [
   { title: 'Scheduling', href: '/coordinator', iconName: 'Calendar' },
   { title: 'Live Tracking', href: '/coordinator/tracking', iconName: 'MapPin' },
   { title: 'Inventory', href: '/coordinator/inventory', iconName: 'Box' },
+  { title: 'Broadcaster', href: '/coordinator/announcements', iconName: 'MessageSquare' },
 ]
 
 export default function CoordinatorLayout({ children }: { children: React.ReactNode }) {

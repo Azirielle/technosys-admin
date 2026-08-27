@@ -1,8 +1,8 @@
 import { Sidebar, NavItem } from '@/components/dashboard/Sidebar'
-import { Home, FileSpreadsheet } from 'lucide-react'
 
 const navItems: NavItem[] = [
   { title: 'Audit Logs', href: '/accountant', iconName: 'FileSpreadsheet' },
+  { title: 'Broadcaster', href: '/accountant/announcements', iconName: 'MessageSquare' },
 ]
 
 export default function AccountantLayout({ children }: { children: React.ReactNode }) {
