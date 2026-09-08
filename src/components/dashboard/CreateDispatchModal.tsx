@@ -119,16 +119,11 @@ export default function CreateDispatchModal({
     const fetchCoords = async () => {
       setIsSearching(true);
       try {
-        const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(debouncedLocation)}&format=json&limit=5&countrycodes=ph`, {
-          headers: {
-            'Accept-Language': 'en',
-            // It's good practice to provide a user agent for Nominatim, though client-side fetch might use the browser's default.
-          }
-        });
+        const res = await fetch(`/api/geocode?q=${encodeURIComponent(debouncedLocation)}`);
         const data = await res.json();
-        setSearchResults(data || []);
+        setSearchResults(Array.isArray(data) ? data : []);
       } catch (err) {
-        console.error("Nominatim fetch failed", err);
+        console.error("Geocode fetch failed", err);
       } finally {
         setIsSearching(false);
       }

@@ -124,17 +124,17 @@ export default function DispatchBoardClient() {
     if (data) setProfiles(data);
   };
 
-  // Autocomplete Search using Nominatim
+  // Autocomplete Search using internal geocode API proxy
   const searchAddress = async (query: string) => {
     setAddressQuery(query);
     setFormData(p => ({ ...p, location: query }));
     if (query.length >= 2) {
       try {
-        const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&countrycodes=ph`);
+        const res = await fetch(`/api/geocode?q=${encodeURIComponent(query)}`);
         const results = await res.json();
-        setAddressResults(results);
+        setAddressResults(Array.isArray(results) ? results : []);
       } catch (e) {
-        console.error("Nominatim search failed", e);
+        console.error("Geocode search failed", e);
       }
     } else {
       setAddressResults([]);
