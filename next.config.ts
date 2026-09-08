@@ -1,3 +1,4 @@
+import path from "path";
 import type { NextConfig } from "next";
 
 const cspHeader = `
@@ -15,6 +16,14 @@ const cspHeader = `
 `.replace(/\s{2,}/g, ' ').trim();
 
 const nextConfig: NextConfig = {
+  turbopack: {
+    root: path.resolve(__dirname),
+  },
+  experimental: {
+    cpus: 4,
+    optimizePackageImports: ['lucide-react', 'date-fns', 'recharts'],
+  },
+  serverExternalPackages: ['pdf-parse', '@langchain/textsplitters', 'playwright'],
   poweredByHeader: false,
   async headers() {
     return [

@@ -1,3 +1,5 @@
+'use client'
+
 import { Sidebar, NavItem } from '@/components/dashboard/Sidebar'
 import { Home, Settings } from 'lucide-react'
 

@@ -53,21 +53,10 @@ export async function proxy(request: NextRequest) {
   } else if (user) {
     // Handle authenticated routing logic
     if (pathname === '/' || pathname.startsWith('/login')) {
-      const defaultRoute = user.user_metadata?.default_dashboard_route || '/coordinator';
+      const defaultRoute = user.user_metadata?.default_dashboard_route || '/hr';
       const url = request.nextUrl.clone();
       url.pathname = defaultRoute;
       response = NextResponse.redirect(url);
-    } else {
-      // Role-based Path Protection
-      const currentRoutePrefix = `/${pathname.split('/')[1]}`;
-      const allowedRoute = user.user_metadata?.default_dashboard_route || '/coordinator';
-
-      // Ensure they don't manually navigate outside their route (ignore api/assets)
-      if (currentRoutePrefix !== allowedRoute && currentRoutePrefix !== '') {
-        const url = request.nextUrl.clone();
-        url.pathname = allowedRoute;
-        response = NextResponse.redirect(url);
-      }
     }
   }
 

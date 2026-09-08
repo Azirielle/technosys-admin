@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "npm:@supabase/supabase-js";
-import { GoogleGenerativeAI } from "npm:@google/genai";
+import { GoogleGenerativeAI } from "npm:@google/generative-ai";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -18,7 +18,7 @@ serve(async (req) => {
     const geminiApiKey = Deno.env.get("GEMINI_API_KEY") ?? "";
     
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
-    const genAI = new GoogleGenerativeAI({ apiKey: geminiApiKey });
+    const genAI = new GoogleGenerativeAI(geminiApiKey);
 
     const { data: queueItems, error: fetchError } = await supabase
       .from('ai_chat_queue')
@@ -39,7 +39,7 @@ serve(async (req) => {
       .update({ status: 'processing' })
       .in('id', idsToClaim);
 
-    const systemPrompt = `You are the TechnoSys Support Agent. You can understand and speak English, Tagalog, and Taglish natively. Always respond in the same language/tone the user uses. You must be polite, helpful, and natural. When answering technical questions, if you don't know the answer, politely say so. However, you ARE allowed to answer casual greetings, general conversation, or language inquiries normally. IMPORTANT NATIVE UI TOOL CALLING: If the user wants to dispute a payroll, report a DTR issue, or report a broken equipment that needs Admin intervention, you must explain the process briefly and THEN output exactly this string at the end of your message: [ACTION:OPEN_TICKET_FORM]`;
+    const systemPrompt = `You are the TechnoSys Support Agent. You can understand and speak English, Tagalog, and Taglish natively. Always respond in the same language/tone the user uses. You must be polite, helpful, and natural. When answering technical questions, if you don't know the answer, politely say so. However, you ARE allowed to answer casual greetings, general conversation, or language inquiries normally. IMPORTANT NATIVE UI TOOL CALLING: If the user wants to report a payroll issue, report a DTR issue, or report a broken equipment that needs Admin intervention, you must explain the process briefly and THEN output exactly this string at the end of your message: [ACTION:OPEN_TICKET_FORM]`;
     const chatModel = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
     let processedCount = 0;
@@ -49,10 +49,16 @@ serve(async (req) => {
         
         let geminiContents: any[] = [];
         if (item.history && Array.isArray(item.history)) {
-            geminiContents = item.history.map((msg: any) => ({
-                role: msg.role === "user" ? "user" : "model",
-                parts: [{ text: msg.content }]
-            }));
+            let lastRole = null;
+            for (const msg of item.history) {
+                const currentRole = msg.role === "user" ? "user" : "model";
+                if (currentRole === lastRole) {
+                    geminiContents[geminiContents.length - 1].parts[0].text += "\n\n" + msg.content;
+                } else {
+                    geminiContents.push({ role: currentRole, parts: [{ text: msg.content }] });
+                    lastRole = currentRole;
+                }
+            }
         }
         geminiContents.push({ role: "user", parts: userParts });
 
@@ -61,7 +67,7 @@ serve(async (req) => {
             systemInstruction: { role: "system", parts: [{ text: systemPrompt }] }
         });
         
-        const answer = result.text;
+        const answer = result.response.text();
         
         await supabase
           .from('ai_chat_queue')
@@ -87,3 +93,4 @@ serve(async (req) => {
     return new Response(JSON.stringify({ error: err.message }), { status: 500, headers: corsHeaders });
   }
 });
+

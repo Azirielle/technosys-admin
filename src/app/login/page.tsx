@@ -1,10 +1,11 @@
 import { login } from './actions'
 
-export default function LoginPage({
+export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: { message: string }
+  searchParams: Promise<{ message?: string }>
 }) {
+  const resolvedSearchParams = await searchParams
   return (
     <div className="flex h-screen w-full items-center justify-center bg-gray-50">
       <div className="w-full max-w-md space-y-8 rounded-lg bg-white p-8 shadow-md">
@@ -65,9 +66,9 @@ export default function LoginPage({
             </button>
           </div>
 
-          {searchParams?.message && (
+          {resolvedSearchParams?.message && (
             <p className="mt-4 bg-red-100 p-4 text-center text-sm text-red-600">
-              {searchParams.message}
+              {resolvedSearchParams.message}
             </p>
           )}
         </form>
