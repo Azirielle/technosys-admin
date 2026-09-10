@@ -30,11 +30,11 @@ export default function OperationalTelemetry() {
       const todayEnd = new Date();
       todayEnd.setHours(23, 59, 59, 999);
 
-      const [techRes, ticketRes, scheduleRes] = await Promise.all([
+      const [techRes, ticketRes, scheduleRes, timeLogRes] = await Promise.all([
         // 1. Query technician locations for online status
         supabase
           .from('technician_locations')
-          .select('status, updated_at'),
+          .select('technician_id, status, updated_at'),
         
         // 2. Query open tickets
         supabase
@@ -49,12 +49,22 @@ export default function OperationalTelemetry() {
           .is('technician_id', null)
           .gte('start_time', todayStart.toISOString())
           .lte('start_time', todayEnd.toISOString()),
+
+        // 4. Query today's open shifts (Duty-Bound check)
+        supabase
+          .from('time_logs')
+          .select('technician_id')
+          .gte('app_time_in', todayStart.toISOString())
+          .lte('app_time_in', todayEnd.toISOString())
+          .is('app_time_out', null),
       ]);
 
+      const openShiftTechIds = new Set((timeLogRes.data || []).map((tl: any) => tl.technician_id));
       const now = Date.now();
       const activeCrews = (techRes.data || []).filter((loc: any) => {
         const diffMinutes = (now - new Date(loc.updated_at).getTime()) / (1000 * 60);
-        return diffMinutes < 15 && loc.status !== 'offline';
+        const hasActiveShift = openShiftTechIds.has(loc.technician_id);
+        return hasActiveShift && loc.status === 'working' && diffMinutes < 30;
       }).length;
 
       const pendingTickets = ticketRes.count ?? 0;
@@ -82,6 +92,9 @@ export default function OperationalTelemetry() {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'technician_locations' }, () => {
         fetchMetrics();
       })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'time_logs' }, () => {
+        fetchMetrics();
+      })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'tickets' }, () => {
         fetchMetrics();
       })
@@ -93,8 +106,8 @@ export default function OperationalTelemetry() {
       })
       .subscribe();
 
-    // Heartbeat check every 60s to refresh stale 15-minute technician offline transitions
-    const interval = setInterval(fetchMetrics, 60000);
+    // Heartbeat check every 30s to refresh stale technician offline transitions
+    const interval = setInterval(fetchMetrics, 30000);
 
     return () => {
       supabase.removeChannel(channel);
