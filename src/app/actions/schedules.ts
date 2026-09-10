@@ -586,12 +586,24 @@ export async function reassignSchedule(scheduleId: string, newTechnicianId: stri
       throw new Error("The selected replacement technician is on approved leave during this schedule timeframe.")
     }
 
-    // Fetch names for logging and push
+    // Fetch names, role, and level for validation, logging, and push
     const { data: newTechProfile } = await supabaseAdmin
       .from('profiles')
-      .select('full_name, push_token')
+      .select('full_name, push_token, role, technician_level')
       .eq('id', newTechnicianId)
       .single()
+
+    if (!newTechProfile) {
+      throw new Error("Replacement technician not found.")
+    }
+
+    if (newTechProfile.role !== 'technician' && newTechProfile.role !== 'helper') {
+      throw new Error(`Role Restriction: Cannot dispatch administrative personnel (${newTechProfile.full_name} - ${newTechProfile.role}). Only field staff can be assigned.`)
+    }
+
+    if ((newTechProfile.role === 'helper' || newTechProfile.technician_level === 'helper') && !seniorPartnerId) {
+      throw new Error("Operational Hierarchy: A Helper cannot be assigned as a solo lead technician. Please select an accompanying Senior or Standard Technician.")
+    }
 
     const newTechName = newTechProfile?.full_name || 'Staff'
     const oldTechName = (originalSchedule.profiles as any)?.full_name || 'Staff'
@@ -737,4 +749,356 @@ export async function deleteSchedule(scheduleId: string) {
     return { error: err.message || "Failed to delete schedule." }
   }
 }
+
+// ---------------------------------------------------------------------------
+// Chunk 50: FSM Hierarchy Dispatch with Support Crew & Casual Helpers
+// ---------------------------------------------------------------------------
+
+export async function createDispatchesWithCrew(data: {
+  leadTechnicianId: string;
+  helperTechnicianIds?: string[];
+  casualHelperIds?: string[];
+  clientName: string;
+  location: string;
+  date: string;
+  startTime: string;
+  endTime?: string;
+  attendanceMode: string;
+  geofenceLat: number;
+  geofenceLon: number;
+  geofenceRadius: number;
+  attendanceTrackingMode?: string;
+}) {
+  try {
+    const { authorized } = await verifyRoleAccess('schedules', true);
+    if (!authorized) {
+      return { error: "Unauthorized. Scheduling write permissions required." };
+    }
+
+    const {
+      leadTechnicianId,
+      helperTechnicianIds = [],
+      casualHelperIds = [],
+      clientName,
+      location,
+      date,
+      startTime: rawStartTime,
+      endTime: rawEndTime,
+      attendanceMode,
+      geofenceLat,
+      geofenceLon,
+      geofenceRadius = 500,
+      attendanceTrackingMode
+    } = data;
+
+    if (!leadTechnicianId) {
+      return { error: "A Lead Technician is required for this dispatch." };
+    }
+    if (!clientName || !clientName.trim()) {
+      return { error: "Client / Assignment name is required." };
+    }
+
+    const fullStartTime = new Date(`${date}T${rawStartTime}:00`).toISOString();
+    const fullEndTime = rawEndTime ? new Date(`${date}T${rawEndTime}:00`).toISOString() : null;
+
+    // Validate past dates (30 minutes grace period)
+    const now = Date.now();
+    const startMs = new Date(fullStartTime).getTime();
+    if (startMs < now - 1800000) {
+      return { error: "Cannot dispatch assignments to past dates." };
+    }
+
+    // 1. Fetch lead technician profile
+    const { data: leadProfile } = await supabaseAdmin
+      .from('profiles')
+      .select('id, full_name, role, technician_level, push_token')
+      .eq('id', leadTechnicianId)
+      .single();
+
+    if (!leadProfile) {
+      return { error: "Lead technician not found." };
+    }
+
+    // Role whitelisting: Reject admin accounts
+    if (leadProfile.role !== 'technician') {
+      return { error: `Role Restriction: ${leadProfile.full_name} has role "${leadProfile.role}". Only field technicians can be assigned as Lead.` };
+    }
+
+    // Operational Hierarchy: A helper cannot be designated as lead
+    if (leadProfile.technician_level === 'helper' || leadProfile.role === 'helper') {
+      return { error: "Operational Hierarchy: A Helper cannot be designated as Lead Technician. Please select a Senior or Standard Technician." };
+    }
+
+    // 2. Leave conflict check
+    const targetIds = [leadTechnicianId, ...helperTechnicianIds];
+    const { data: leaves, error: leavesErr } = await supabaseAdmin
+      .from('leaves')
+      .select('*')
+      .in('technician_id', targetIds)
+      .eq('status', 'approved');
+
+    if (leavesErr) throw leavesErr;
+
+    const hasConflict = (tid: string) => {
+      return leaves?.some(l => {
+        if (l.technician_id !== tid) return false;
+        if (fullEndTime) {
+          return isRangeOverlappingWithLeave(fullStartTime, fullEndTime, l.start_date, l.end_date);
+        } else {
+          return isTimeConflictingWithLeave(fullStartTime, l.start_date, l.end_date);
+        }
+      });
+    };
+
+    if (hasConflict(leadTechnicianId)) {
+      return { error: `Lead technician "${leadProfile.full_name}" is on approved leave during this schedule timeframe.` };
+    }
+
+    // 3. Insert Lead Technician Schedule
+    const leadInsert = {
+      technician_id: leadTechnicianId,
+      senior_partner_id: null,
+      client_name: clientName.trim(),
+      location: location.trim(),
+      start_time: fullStartTime,
+      end_time: fullEndTime,
+      attendance_mode: attendanceMode,
+      geofence_lat: geofenceLat,
+      geofence_lon: geofenceLon,
+      geofence_radius: geofenceRadius,
+      attendance_tracking_mode: attendanceTrackingMode || (attendanceMode === 'hq' ? 'pacita_hq' : 'direct_on_site'),
+      status: 'scheduled'
+    };
+
+    const { data: createdLeadSchedule, error: leadSchedErr } = await supabaseAdmin
+      .from('schedules')
+      .insert(leadInsert)
+      .select('id')
+      .single();
+
+    if (leadSchedErr || !createdLeadSchedule) {
+      throw leadSchedErr || new Error("Failed to create lead technician schedule.");
+    }
+
+    const leadScheduleId = createdLeadSchedule.id;
+
+    // 4. Insert Helper Technicians (if any) with senior_partner_id = leadTechnicianId
+    if (helperTechnicianIds.length > 0) {
+      const { data: helperProfiles } = await supabaseAdmin
+        .from('profiles')
+        .select('id, full_name, role, push_token')
+        .in('id', helperTechnicianIds);
+
+      const helperInserts = helperTechnicianIds.map(hId => {
+        const hProf = helperProfiles?.find(p => p.id === hId);
+        if (hProf && hProf.role !== 'technician' && hProf.role !== 'helper') {
+          throw new Error(`Cannot assign administrative staff member "${hProf.full_name}" (${hProf.role}) as helper.`);
+        }
+        if (hasConflict(hId)) {
+          throw new Error(`Helper "${hProf?.full_name || hId}" is on approved leave.`);
+        }
+
+        return {
+          technician_id: hId,
+          senior_partner_id: leadTechnicianId,
+          client_name: clientName.trim(),
+          location: location.trim(),
+          start_time: fullStartTime,
+          end_time: fullEndTime,
+          attendance_mode: attendanceMode,
+          geofence_lat: geofenceLat,
+          geofence_lon: geofenceLon,
+          geofence_radius: geofenceRadius,
+          attendance_tracking_mode: attendanceTrackingMode || (attendanceMode === 'hq' ? 'pacita_hq' : 'direct_on_site'),
+          status: 'scheduled'
+        };
+      });
+
+      const { error: helperErr } = await supabaseAdmin
+        .from('schedules')
+        .insert(helperInserts);
+
+      if (helperErr) throw helperErr;
+
+      // Push notification to helpers
+      for (const hProf of helperProfiles || []) {
+        if (hProf.push_token) {
+          await sendPushNotification(
+            hProf.push_token,
+            "New Field Dispatch",
+            `You are assigned to support Lead Tech ${leadProfile.full_name} at "${clientName.trim()}".`
+          );
+        }
+      }
+    }
+
+    // 5. Insert Casual Helpers (if any) linked to the lead schedule
+    if (casualHelperIds.length > 0) {
+      const casualInserts = casualHelperIds.map(chId => ({
+        schedule_id: leadScheduleId,
+        casual_helper_id: chId
+      }));
+
+      const { error: chErr } = await supabaseAdmin
+        .from('schedule_casual_helpers')
+        .insert(casualInserts);
+
+      if (chErr) {
+        console.error("Failed to link casual helpers:", chErr);
+      }
+    }
+
+    // Push notification to lead technician
+    if (leadProfile.push_token) {
+      const crewCount = helperTechnicianIds.length + casualHelperIds.length;
+      await sendPushNotification(
+        leadProfile.push_token,
+        "New Dispatch Assigned",
+        `You are Lead Technician for "${clientName.trim()}"${crewCount > 0 ? ` with ${crewCount} crew members` : ''}.`
+      );
+    }
+
+    // Log Activity
+    const crewSummary = `${helperTechnicianIds.length} regular helpers, ${casualHelperIds.length} casual helpers`;
+    await logActivity(
+      'create_schedule',
+      'schedule',
+      `Dispatched Lead ${leadProfile.full_name} to "${clientName.trim()}" (Crew: ${crewSummary})`
+    );
+
+    revalidatePath("/coordinator");
+    return { success: true, scheduleId: leadScheduleId };
+  } catch (err: any) {
+    console.error("Failed to create dispatches with crew:", err.message || err);
+    return { error: err.message || "Failed to create dispatches with crew." };
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Casual Helpers Register Actions
+// ---------------------------------------------------------------------------
+
+export async function getCasualHelpers() {
+  try {
+    const { data, error } = await supabaseAdmin
+      .from('casual_helpers')
+      .select('*, schedule_casual_helpers(id)')
+      .order('full_name');
+
+    if (error) throw error;
+
+    return {
+      success: true,
+      helpers: (data || []).map((ch: any) => ({
+        id: ch.id,
+        full_name: ch.full_name,
+        contact_number: ch.contact_number,
+        daily_rate: Number(ch.daily_rate) || 610.00,
+        emergency_contact: ch.emergency_contact,
+        notes: ch.notes,
+        status: ch.status,
+        created_at: ch.created_at,
+        dispatch_count: ch.schedule_casual_helpers ? ch.schedule_casual_helpers.length : 0
+      }))
+    };
+  } catch (err: any) {
+    console.error("Failed to get casual helpers:", err.message || err);
+    return { error: err.message || "Failed to get casual helpers." };
+  }
+}
+
+export async function createCasualHelper(data: {
+  fullName: string;
+  contactNumber: string;
+  dailyRate?: number;
+  emergencyContact?: string;
+  notes?: string;
+}) {
+  try {
+    const { authorized } = await verifyRoleAccess('schedules', true);
+    if (!authorized) {
+      return { error: "Unauthorized. Coordinator permissions required." };
+    }
+
+    if (!data.fullName || !data.fullName.trim()) {
+      return { error: "Full name is required." };
+    }
+    if (!data.contactNumber || !data.contactNumber.trim()) {
+      return { error: "Contact phone number is required." };
+    }
+
+    const { data: created, error } = await supabaseAdmin
+      .from('casual_helpers')
+      .insert({
+        full_name: data.fullName.trim(),
+        contact_number: data.contactNumber.trim(),
+        daily_rate: data.dailyRate && !isNaN(data.dailyRate) ? data.dailyRate : 610.00,
+        emergency_contact: data.emergencyContact?.trim() || null,
+        notes: data.notes?.trim() || null,
+        status: 'active'
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    await logActivity(
+      'create_casual_helper',
+      'casual_helpers',
+      `Registered casual worker "${data.fullName.trim()}" (Daily Rate: ₱${data.dailyRate || 610})`
+    );
+
+    revalidatePath("/coordinator");
+    return { success: true, helper: created };
+  } catch (err: any) {
+    console.error("Failed to create casual helper:", err.message || err);
+    return { error: err.message || "Failed to register casual helper." };
+  }
+}
+
+export async function updateCasualHelper(id: string, data: {
+  fullName?: string;
+  contactNumber?: string;
+  dailyRate?: number;
+  emergencyContact?: string;
+  notes?: string;
+  status?: 'active' | 'inactive' | 'blacklisted';
+}) {
+  try {
+    const { authorized } = await verifyRoleAccess('schedules', true);
+    if (!authorized) {
+      return { error: "Unauthorized. Coordinator permissions required." };
+    }
+
+    if (!id) return { error: "Helper ID is required." };
+
+    const updatePayload: any = { updated_at: new Date().toISOString() };
+    if (data.fullName !== undefined) updatePayload.full_name = data.fullName.trim();
+    if (data.contactNumber !== undefined) updatePayload.contact_number = data.contactNumber.trim();
+    if (data.dailyRate !== undefined && !isNaN(data.dailyRate)) updatePayload.daily_rate = data.dailyRate;
+    if (data.emergencyContact !== undefined) updatePayload.emergency_contact = data.emergencyContact?.trim() || null;
+    if (data.notes !== undefined) updatePayload.notes = data.notes?.trim() || null;
+    if (data.status !== undefined) updatePayload.status = data.status;
+
+    const { error } = await supabaseAdmin
+      .from('casual_helpers')
+      .update(updatePayload)
+      .eq('id', id);
+
+    if (error) throw error;
+
+    await logActivity('update_casual_helper', 'casual_helpers', `Updated details for casual worker ID ${id}`);
+    revalidatePath("/coordinator");
+    return { success: true };
+  } catch (err: any) {
+    console.error("Failed to update casual helper:", err.message || err);
+    return { error: err.message || "Failed to update casual helper." };
+  }
+}
+
+export async function toggleCasualHelperStatus(id: string, currentStatus: string) {
+  const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
+  return updateCasualHelper(id, { status: newStatus as any });
+}
+
 

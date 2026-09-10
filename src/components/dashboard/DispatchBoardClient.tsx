@@ -5,9 +5,13 @@ import dynamic from "next/dynamic";
 import { createClient } from "@/lib/supabase/client";
 import { 
   Search, Filter, Calendar as CalendarIcon, MapPin, Map as MapIcon, Plus, X, User, Navigation, Info, Settings2,
-  Edit3, UserCheck, Ban, CheckCircle2, AlertTriangle, RotateCcw
+  Edit3, UserCheck, Ban, CheckCircle2, AlertTriangle, RotateCcw, Users, Phone, DollarSign, UserPlus, Check,
+  ChevronDown, ChevronUp, ShieldCheck, ShieldAlert, Award
 } from "lucide-react";
-import { updateSchedule, reassignSchedule, cancelSchedule } from "@/app/actions/schedules";
+import { 
+  updateSchedule, reassignSchedule, cancelSchedule, createDispatchesWithCrew,
+  getCasualHelpers, createCasualHelper, updateCasualHelper, toggleCasualHelperStatus 
+} from "@/app/actions/schedules";
 
 const GeofenceMap = dynamic(() => import("./GeofenceMap"), {
   ssr: false,
@@ -19,6 +23,9 @@ export default function DispatchBoardClient() {
   const [schedules, setSchedules] = useState<any[]>([]);
   const [profiles, setProfiles] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Top-Level View Switcher
+  const [viewTab, setViewTab] = useState<'dispatches' | 'casual_helpers'>('dispatches');
   
   // Datatable State
   const [searchQuery, setSearchQuery] = useState("");
@@ -55,7 +62,29 @@ export default function DispatchBoardClient() {
   const [cancelPreset, setCancelPreset] = useState("Client Rescheduled");
   const [cancelCustomNotes, setCancelCustomNotes] = useState("");
   
+  // Search & Filter in Dispatch Modal
   const [techSearch, setTechSearch] = useState("");
+  const [techFilterTier, setTechFilterTier] = useState<'all' | 'senior' | 'standard' | 'helper'>('all');
+
+  // Lead & Support Crew State
+  const [leadTechId, setLeadTechId] = useState<string>("");
+  const [selectedHelperIds, setSelectedHelperIds] = useState<string[]>([]);
+  const [selectedCasualHelperIds, setSelectedCasualHelperIds] = useState<string[]>([]);
+
+  // Casual Helpers Register State
+  const [casualHelpers, setCasualHelpers] = useState<any[]>([]);
+  const [casualHelperLoading, setCasualHelperLoading] = useState(false);
+  const [isCasualModalOpen, setIsCasualModalOpen] = useState(false);
+  const [editingCasualHelper, setEditingCasualHelper] = useState<any>(null);
+  const [casualForm, setCasualForm] = useState({
+    fullName: "",
+    contactNumber: "",
+    dailyRate: 610.00,
+    emergencyContact: "",
+    notes: ""
+  });
+  const [casualSearch, setCasualSearch] = useState("");
+  const [casualStatusFilter, setCasualStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
   
   // Form State
   const [formData, setFormData] = useState({
@@ -98,6 +127,7 @@ export default function DispatchBoardClient() {
   useEffect(() => {
     fetchSchedules();
     fetchProfiles();
+    fetchCasualHelpers();
   }, [dateFilter]);
 
   const fetchSchedules = async () => {
@@ -109,13 +139,22 @@ export default function DispatchBoardClient() {
 
     const { data } = await supabase
       .from('schedules')
-      .select('*, profiles!technician_id(full_name)')
+      .select('*, profiles!technician_id(full_name, role, technician_level), senior_partner:profiles!senior_partner_id(full_name), schedule_casual_helpers(id, casual_helper_id, casual_helpers(id, full_name, contact_number, daily_rate))')
       .gte('start_time', startOfDay.toISOString())
       .lte('start_time', endOfDay.toISOString())
       .order('start_time', { ascending: true });
       
     if (data) setSchedules(data);
     setLoading(false);
+  };
+
+  const fetchCasualHelpers = async () => {
+    setCasualHelperLoading(true);
+    const res = await getCasualHelpers();
+    if (res?.success && res?.helpers) {
+      setCasualHelpers(res.helpers);
+    }
+    setCasualHelperLoading(false);
   };
 
   const [busyTechIds, setBusyTechIds] = useState<string[]>([]);
@@ -141,8 +180,12 @@ export default function DispatchBoardClient() {
   }, [formData.date, formData.start_time, formData.end_time]);
 
   const fetchProfiles = async () => {
-    // Select the new technician_level and lifecycle_status for conflict awareness
-    const { data, error } = await supabase.from('profiles').select('id, full_name, lifecycle_status, technician_level').order('full_name');
+    // Whitelist strictly field staff: technicians and regular helpers. Exclude administrative accounts.
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('id, full_name, role, lifecycle_status, technician_level')
+      .in('role', ['technician', 'helper'])
+      .order('full_name');
     if (error) {
       console.error("Failed to fetch profiles:", error);
     }
@@ -194,46 +237,144 @@ export default function DispatchBoardClient() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (formData.technician_ids.length === 0) {
-      alert("Please select at least one technician.");
+
+    if (isOfficeMode) {
+      if (!leadTechId) {
+        alert("Please select a technician for Office Duty.");
+        return;
+      }
+      setIsSubmitting(true);
+      const res = await createDispatchesWithCrew({
+        leadTechnicianId: leadTechId,
+        helperTechnicianIds: [],
+        casualHelperIds: [],
+        clientName: "Office Duty",
+        location: "Pacita HQ",
+        date: formData.date,
+        startTime: formData.start_time,
+        endTime: formData.end_time,
+        attendanceMode: "hq",
+        geofenceLat: 14.3541,
+        geofenceLon: 121.0665,
+        geofenceRadius: 100,
+        attendanceTrackingMode: 'pacita_hq'
+      });
+      setIsSubmitting(false);
+      if (res?.success) {
+        setIsModalOpen(false);
+        setLeadTechId("");
+        setSelectedHelperIds([]);
+        setSelectedCasualHelperIds([]);
+        fetchSchedules();
+      } else {
+        alert(res?.error || "Error scheduling office hours.");
+      }
       return;
     }
 
-    const selectedProfiles = profiles.filter(p => formData.technician_ids.includes(p.id));
-    const hasHelper = selectedProfiles.some(p => p.technician_level === 'helper');
-    const hasSeniorOrTech = selectedProfiles.some(p => p.technician_level === 'senior' || p.technician_level === 'technician' || !p.technician_level);
-    
-    if (hasHelper && !hasSeniorOrTech) {
-      alert("A Helper cannot be deployed alone. Please also select a Senior or Standard Technician.");
+    if (!leadTechId) {
+      alert("Operational Hierarchy Rule: Every dispatch requires a designated Lead Technician (Senior or Standard Technician). Helpers cannot be deployed unsupervised.");
       return;
     }
-    
+
+    if (!formData.client_name.trim()) {
+      alert("Please enter a Client / Assignment name.");
+      return;
+    }
+
     setIsSubmitting(true);
-    
-    const startTime = new Date(`${formData.date}T${formData.start_time}:00`).toISOString();
-    const endTime = new Date(`${formData.date}T${formData.end_time}:00`).toISOString();
-
-    const insertData = formData.technician_ids.map(techId => ({
-      technician_id: techId,
-      client_name: formData.client_name,
+    const res = await createDispatchesWithCrew({
+      leadTechnicianId: leadTechId,
+      helperTechnicianIds: selectedHelperIds,
+      casualHelperIds: selectedCasualHelperIds,
+      clientName: formData.client_name,
       location: formData.location,
-      start_time: startTime,
-      end_time: endTime,
-      attendance_mode: formData.attendance_mode,
-      geofence_lat: formData.geofence_lat,
-      geofence_lon: formData.geofence_lon,
-      geofence_radius: formData.geofence_radius,
-      attendance_tracking_mode: formData.attendance_mode === 'hq' ? 'pacita_hq' : 'direct_on_site'
-    }));
-
-    const { error } = await supabase.from('schedules').insert(insertData);
+      date: formData.date,
+      startTime: formData.start_time,
+      endTime: formData.end_time,
+      attendanceMode: formData.attendance_mode,
+      geofenceLat: formData.geofence_lat,
+      geofenceLon: formData.geofence_lon,
+      geofenceRadius: formData.geofence_radius,
+      attendanceTrackingMode: formData.attendance_mode === 'hq' ? 'pacita_hq' : 'direct_on_site'
+    });
 
     setIsSubmitting(false);
-    if (!error) {
+    if (res?.success) {
       setIsModalOpen(false);
+      setLeadTechId("");
+      setSelectedHelperIds([]);
+      setSelectedCasualHelperIds([]);
+      setFormData(p => ({ ...p, client_name: "", location: "" }));
       fetchSchedules();
+      fetchCasualHelpers();
     } else {
-      alert("Error creating dispatch: " + error.message);
+      alert(res?.error || "Error creating dispatch.");
+    }
+  };
+
+  const openRegisterCasualModal = (helperToEdit?: any) => {
+    if (helperToEdit) {
+      setEditingCasualHelper(helperToEdit);
+      setCasualForm({
+        fullName: helperToEdit.full_name,
+        contactNumber: helperToEdit.contact_number,
+        dailyRate: helperToEdit.daily_rate || 610.00,
+        emergencyContact: helperToEdit.emergency_contact || "",
+        notes: helperToEdit.notes || ""
+      });
+    } else {
+      setEditingCasualHelper(null);
+      setCasualForm({
+        fullName: "",
+        contactNumber: "",
+        dailyRate: 610.00,
+        emergencyContact: "",
+        notes: ""
+      });
+    }
+    setIsCasualModalOpen(true);
+  };
+
+  const handleSaveCasualHelper = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!casualForm.fullName.trim()) {
+      alert("Full name is required.");
+      return;
+    }
+    if (!casualForm.contactNumber.trim()) {
+      alert("Contact number is required.");
+      return;
+    }
+
+    setIsSubmitting(true);
+    let res: any;
+    if (editingCasualHelper) {
+      res = await updateCasualHelper(editingCasualHelper.id, casualForm);
+    } else {
+      res = await createCasualHelper(casualForm);
+      if (res.success && res.helper) {
+        // If modal open, auto-select this new casual worker for the dispatch
+        setSelectedCasualHelperIds(prev => [...prev, res.helper.id]);
+      }
+    }
+    setIsSubmitting(false);
+
+    if (res?.error) {
+      alert(res.error);
+    } else {
+      setIsCasualModalOpen(false);
+      setEditingCasualHelper(null);
+      fetchCasualHelpers();
+    }
+  };
+
+  const handleToggleCasualStatus = async (helper: any) => {
+    const res = await toggleCasualHelperStatus(helper.id, helper.status);
+    if (res?.error) {
+      alert(res.error);
+    } else {
+      fetchCasualHelpers();
     }
   };
 
@@ -419,18 +560,65 @@ export default function DispatchBoardClient() {
     <div className="flex flex-col h-full w-full max-w-full">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 bg-white p-4 rounded-xl border border-gray-200 shadow-sm gap-4">
         <div>
-          <h1 className="text-xl font-bold tracking-tight text-gray-900 leading-none mb-1">Scheduling & Dispatch</h1>
-          <p className="text-xs text-gray-500">Manage daily field assignments and geofences.</p>
+          <h1 className="text-xl font-bold tracking-tight text-gray-900 leading-none mb-1">
+            {viewTab === 'dispatches' ? 'Scheduling & Dispatch' : 'Casual Helpers Register'}
+          </h1>
+          <p className="text-xs text-gray-500">
+            {viewTab === 'dispatches' 
+              ? 'Manage daily field assignments, crew hierarchy, and geofences.' 
+              : 'Register and manage on-demand casual support crew with daily-wage tracking.'}
+          </p>
         </div>
-        <button 
-          onClick={() => setIsModalOpen(true)}
-          className="flex items-center justify-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors shadow-sm font-medium text-sm"
+        <div className="flex items-center gap-2">
+          {viewTab === 'dispatches' ? (
+            <button 
+              onClick={() => setIsModalOpen(true)}
+              className="flex items-center justify-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors shadow-sm font-medium text-sm cursor-pointer"
+            >
+              <Plus className="w-4 h-4" />
+              Create Dispatch
+            </button>
+          ) : (
+            <button 
+              onClick={() => openRegisterCasualModal()}
+              className="flex items-center justify-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors shadow-sm font-medium text-sm cursor-pointer"
+            >
+              <UserPlus className="w-4 h-4" />
+              Register Casual Worker
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Top View Switcher Tabs */}
+      <div className="flex items-center gap-2 mb-4">
+        <button
+          type="button"
+          onClick={() => setViewTab('dispatches')}
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
+            viewTab === 'dispatches'
+              ? 'bg-indigo-600 text-white shadow-sm ring-2 ring-indigo-600/20'
+              : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
+          }`}
         >
-          <Plus className="w-4 h-4" />
-          Create Dispatch
+          <CalendarIcon className="w-3.5 h-3.5" />
+          Active Dispatches ({filtered.length})
+        </button>
+        <button
+          type="button"
+          onClick={() => { setViewTab('casual_helpers'); fetchCasualHelpers(); }}
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
+            viewTab === 'casual_helpers'
+              ? 'bg-indigo-600 text-white shadow-sm ring-2 ring-indigo-600/20'
+              : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
+          }`}
+        >
+          <Users className="w-3.5 h-3.5" />
+          Casual Helpers Register ({casualHelpers.length})
         </button>
       </div>
 
+      {viewTab === 'dispatches' && (
       <div className="bg-white rounded-xl shadow-sm border border-gray-300 overflow-hidden flex flex-col flex-1 pb-6">
         {/* Toolbar */}
         <div className="p-4 border-b border-gray-300 bg-gray-50 flex flex-wrap gap-4 items-center justify-between">
@@ -502,12 +690,42 @@ export default function DispatchBoardClient() {
                   <tr key={s.id} className={`hover:bg-indigo-50/50 transition-colors ${s.status === 'cancelled' ? 'bg-zinc-50/70 opacity-75' : ''}`}>
                     <td className="border border-gray-300 px-4 py-4 whitespace-nowrap">
                       <div className="flex items-center gap-3">
-                        <div className={`h-8 w-8 rounded-full flex items-center justify-center border ${s.technician_id ? 'bg-indigo-100 border-indigo-200 text-indigo-700' : 'bg-amber-100 border-amber-200 text-amber-700'}`}>
+                        <div className={`h-8 w-8 rounded-full flex items-center justify-center border shrink-0 ${s.technician_id ? 'bg-indigo-100 border-indigo-200 text-indigo-700' : 'bg-amber-100 border-amber-200 text-amber-700'}`}>
                           <User className="h-4 w-4" />
                         </div>
-                        <span className="text-sm font-bold text-gray-900">
-                          {s.profiles?.full_name || (s.technician_id ? 'Unknown Staff' : 'Unassigned')}
-                        </span>
+                        <div className="flex flex-col">
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-sm font-bold text-gray-900">
+                              {s.profiles?.full_name || (s.technician_id ? 'Unknown Staff' : 'Unassigned')}
+                            </span>
+                            {s.profiles?.technician_level === 'senior' && (
+                              <span className="text-[9px] font-bold bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded uppercase tracking-wider border border-amber-200">
+                                SENIOR
+                              </span>
+                            )}
+                            {s.profiles?.role === 'helper' && (
+                              <span className="text-[9px] font-bold bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded uppercase tracking-wider border border-slate-200">
+                                HELPER
+                              </span>
+                            )}
+                          </div>
+                          {s.senior_partner?.full_name && (
+                            <span className="text-[10px] text-gray-500 font-medium">
+                              Lead: {s.senior_partner.full_name}
+                            </span>
+                          )}
+                          {s.schedule_casual_helpers && s.schedule_casual_helpers.length > 0 && (
+                            <div className="flex items-center gap-1 mt-1">
+                              <span 
+                                className="inline-flex items-center gap-1 text-[10px] font-semibold bg-indigo-50 text-indigo-700 px-1.5 py-0.5 rounded border border-indigo-200" 
+                                title={s.schedule_casual_helpers.map((sch: any) => `${sch.casual_helpers?.full_name || 'Worker'} (${sch.casual_helpers?.contact_number || 'No phone'})`).join('\n')}
+                              >
+                                <Users className="w-2.5 h-2.5 text-indigo-500" />
+                                +{s.schedule_casual_helpers.length} Casual Helper{s.schedule_casual_helpers.length > 1 ? 's' : ''}
+                              </span>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </td>
                     <td className="border border-gray-300 px-4 py-4">
@@ -614,6 +832,332 @@ export default function DispatchBoardClient() {
           </nav>
         </div>
       </div>
+      )}
+
+      {/* Casual Helpers Register View */}
+      {viewTab === 'casual_helpers' && (
+        <div className="flex flex-col flex-1 gap-5 overflow-y-auto">
+          {/* 4 KPI Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex items-center justify-between">
+              <div>
+                <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Total Helpers</p>
+                <p className="text-2xl font-black text-gray-900 mt-1">{casualHelpers.length}</p>
+                <span className="text-[10px] text-gray-400 font-medium">On-demand registered roster</span>
+              </div>
+              <div className="p-3 rounded-xl bg-indigo-50 text-indigo-600 border border-indigo-100">
+                <Users className="w-5 h-5" />
+              </div>
+            </div>
+
+            <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex items-center justify-between">
+              <div>
+                <p className="text-xs font-bold text-emerald-600 uppercase tracking-wider">Active on Roster</p>
+                <p className="text-2xl font-black text-emerald-700 mt-1">
+                  {casualHelpers.filter(c => c.status === 'active').length}
+                </p>
+                <span className="text-[10px] text-emerald-600/80 font-medium">Ready for deployment</span>
+              </div>
+              <div className="p-3 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-100">
+                <ShieldCheck className="w-5 h-5" />
+              </div>
+            </div>
+
+            <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex items-center justify-between">
+              <div>
+                <p className="text-xs font-bold text-amber-600 uppercase tracking-wider">Dispatches Handled</p>
+                <p className="text-2xl font-black text-amber-700 mt-1">
+                  {casualHelpers.reduce((sum, c) => sum + (c.dispatch_count || 0), 0)}
+                </p>
+                <span className="text-[10px] text-amber-600/80 font-medium">Total missions completed</span>
+              </div>
+              <div className="p-3 rounded-xl bg-amber-50 text-amber-600 border border-amber-100">
+                <Award className="w-5 h-5" />
+              </div>
+            </div>
+
+            <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex items-center justify-between">
+              <div>
+                <p className="text-xs font-bold text-blue-600 uppercase tracking-wider">NCR Daily Baseline</p>
+                <p className="text-2xl font-black text-blue-700 mt-1">₱610.00</p>
+                <span className="text-[10px] text-blue-600/80 font-medium">DOLE Statutory baseline</span>
+              </div>
+              <div className="p-3 rounded-xl bg-blue-50 text-blue-600 border border-blue-100">
+                <DollarSign className="w-5 h-5" />
+              </div>
+            </div>
+          </div>
+
+          {/* Casual Helpers Catalog Table */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-300 overflow-hidden flex flex-col flex-1 pb-4">
+            {/* Toolbar */}
+            <div className="p-4 border-b border-gray-300 bg-gray-50 flex flex-wrap gap-4 items-center justify-between">
+              <div className="flex flex-wrap gap-3 items-center">
+                <div className="relative w-full sm:w-72">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Search className="h-4 w-4 text-gray-400" />
+                  </div>
+                  <input
+                    type="text"
+                    placeholder="Search casual helper name, phone, notes..."
+                    value={casualSearch}
+                    onChange={(e) => setCasualSearch(e.target.value)}
+                    className="block w-full pl-9 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 sm:text-sm"
+                  />
+                </div>
+                <div className="flex items-center gap-1 bg-white border border-gray-300 p-1 rounded-md">
+                  <button
+                    type="button"
+                    onClick={() => setCasualStatusFilter('all')}
+                    className={`px-2.5 py-1 text-xs font-bold rounded cursor-pointer ${casualStatusFilter === 'all' ? 'bg-indigo-50 text-indigo-700' : 'text-gray-600 hover:text-gray-900'}`}
+                  >
+                    All ({casualHelpers.length})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCasualStatusFilter('active')}
+                    className={`px-2.5 py-1 text-xs font-bold rounded cursor-pointer ${casualStatusFilter === 'active' ? 'bg-emerald-50 text-emerald-700' : 'text-gray-600 hover:text-gray-900'}`}
+                  >
+                    Active ({casualHelpers.filter(c => c.status === 'active').length})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCasualStatusFilter('inactive')}
+                    className={`px-2.5 py-1 text-xs font-bold rounded cursor-pointer ${casualStatusFilter === 'inactive' ? 'bg-rose-50 text-rose-700' : 'text-gray-600 hover:text-gray-900'}`}
+                  >
+                    Inactive ({casualHelpers.filter(c => c.status !== 'active').length})
+                  </button>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => openRegisterCasualModal()}
+                className="flex items-center gap-2 px-3.5 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-xs font-bold shadow-sm transition-colors cursor-pointer"
+              >
+                <UserPlus className="w-4 h-4" />
+                + Register New Worker
+              </button>
+            </div>
+
+            {/* Table */}
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200 text-left border-collapse">
+                <thead className="bg-gray-100 text-gray-700 uppercase font-bold text-[11px] tracking-wider">
+                  <tr>
+                    <th className="border border-gray-300 px-4 py-3">Worker Name & Operational Notes</th>
+                    <th className="border border-gray-300 px-4 py-3">Contact Phone</th>
+                    <th className="border border-gray-300 px-4 py-3 text-right">Daily Wage Rate</th>
+                    <th className="border border-gray-300 px-4 py-3 text-center">Missions Handled</th>
+                    <th className="border border-gray-300 px-4 py-3 text-center">Status</th>
+                    <th className="border border-gray-300 px-4 py-3 text-center">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {casualHelpers
+                    .filter(c => casualStatusFilter === 'all' ? true : casualStatusFilter === 'active' ? c.status === 'active' : c.status !== 'active')
+                    .filter(c => 
+                      c.full_name.toLowerCase().includes(casualSearch.toLowerCase()) ||
+                      (c.contact_number || '').includes(casualSearch) ||
+                      (c.notes || '').toLowerCase().includes(casualSearch.toLowerCase())
+                    ).length === 0 ? (
+                      <tr>
+                        <td colSpan={6} className="text-center py-12 text-gray-500 font-medium">
+                          No casual helpers match the specified criteria.
+                        </td>
+                      </tr>
+                    ) : (
+                      casualHelpers
+                        .filter(c => casualStatusFilter === 'all' ? true : casualStatusFilter === 'active' ? c.status === 'active' : c.status !== 'active')
+                        .filter(c => 
+                          c.full_name.toLowerCase().includes(casualSearch.toLowerCase()) ||
+                          (c.contact_number || '').includes(casualSearch) ||
+                          (c.notes || '').toLowerCase().includes(casualSearch.toLowerCase())
+                        )
+                        .map((ch) => (
+                          <tr key={ch.id} className="hover:bg-indigo-50/40 transition-colors">
+                            <td className="border border-gray-300 px-4 py-3.5">
+                              <div className="flex items-center gap-3">
+                                <div className="h-9 w-9 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-700 shrink-0 font-bold text-xs">
+                                  {ch.full_name.slice(0, 2).toUpperCase()}
+                                </div>
+                                <div className="flex flex-col">
+                                  <span className="text-sm font-bold text-gray-900">{ch.full_name}</span>
+                                  {ch.notes && (
+                                    <span className="text-[11px] text-gray-500 line-clamp-1">{ch.notes}</span>
+                                  )}
+                                  {ch.emergency_contact && (
+                                    <span className="text-[10px] text-gray-400 font-medium">Emergency: {ch.emergency_contact}</span>
+                                  )}
+                                </div>
+                              </div>
+                            </td>
+                            <td className="border border-gray-300 px-4 py-3.5 whitespace-nowrap">
+                              <div className="flex items-center gap-1.5 text-xs font-mono text-gray-700">
+                                <Phone className="w-3.5 h-3.5 text-gray-400" />
+                                <span>{ch.contact_number}</span>
+                              </div>
+                            </td>
+                            <td className="border border-gray-300 px-4 py-3.5 whitespace-nowrap text-right">
+                              <span className="text-sm font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                                ₱{Number(ch.daily_rate).toFixed(2)}/day
+                              </span>
+                            </td>
+                            <td className="border border-gray-300 px-4 py-3.5 whitespace-nowrap text-center">
+                              <span className="text-xs font-bold text-gray-700 bg-gray-100 px-2.5 py-1 rounded-full border border-gray-200">
+                                {ch.dispatch_count || 0} missions
+                              </span>
+                            </td>
+                            <td className="border border-gray-300 px-4 py-3.5 whitespace-nowrap text-center">
+                              <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border ${
+                                ch.status === 'active' 
+                                  ? 'bg-emerald-100 text-emerald-800 border-emerald-300' 
+                                  : 'bg-zinc-100 text-zinc-600 border-zinc-200'
+                              }`}>
+                                {ch.status}
+                              </span>
+                            </td>
+                            <td className="border border-gray-300 px-4 py-3.5 whitespace-nowrap text-center">
+                              <div className="flex items-center justify-center gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => openRegisterCasualModal(ch)}
+                                  title="Edit Worker Details"
+                                  className="p-1.5 text-zinc-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors cursor-pointer"
+                                >
+                                  <Edit3 className="w-4 h-4" />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleToggleCasualStatus(ch)}
+                                  title={ch.status === 'active' ? 'Deactivate Worker' : 'Activate Worker'}
+                                  className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+                                    ch.status === 'active'
+                                      ? 'text-emerald-600 hover:text-rose-600 hover:bg-rose-50'
+                                      : 'text-zinc-400 hover:text-emerald-600 hover:bg-emerald-50'
+                                  }`}
+                                >
+                                  <RotateCcw className="w-4 h-4" />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))
+                    )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Register / Edit Casual Worker Modal */}
+      {isCasualModalOpen && (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-gray-900/50 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden border border-gray-200 animate-in fade-in zoom-in-95 duration-150">
+            <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-indigo-50/50">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-indigo-100 text-indigo-700">
+                  <UserPlus className="w-5 h-5" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-bold text-gray-900 leading-tight">
+                    {editingCasualHelper ? 'Edit Casual Worker' : 'Register Casual Worker'}
+                  </h2>
+                  <p className="text-xs text-gray-500 font-medium">On-demand support crew without app accounts.</p>
+                </div>
+              </div>
+              <button 
+                type="button"
+                onClick={() => setIsCasualModalOpen(false)}
+                className="p-2 rounded-lg hover:bg-gray-200 text-gray-500 hover:text-gray-700 transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveCasualHelper} className="p-6 space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Full Legal Name *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Rommel Bautista"
+                  value={casualForm.fullName}
+                  onChange={(e) => setCasualForm({ ...casualForm, fullName: e.target.value })}
+                  className="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none font-medium text-gray-900"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Contact Phone *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="0917-xxx-xxxx"
+                    value={casualForm.contactNumber}
+                    onChange={(e) => setCasualForm({ ...casualForm, contactNumber: e.target.value })}
+                    className="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none font-medium text-gray-900 font-mono"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Daily Wage Rate (₱) *</label>
+                  <input
+                    type="number"
+                    step="10"
+                    min="500"
+                    required
+                    value={casualForm.dailyRate}
+                    onChange={(e) => setCasualForm({ ...casualForm, dailyRate: parseFloat(e.target.value) || 610 })}
+                    className="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none font-medium text-gray-900 font-mono"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Emergency Contact (Optional)</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Elena Bautista (0918-xxx-xxxx)"
+                  value={casualForm.emergencyContact}
+                  onChange={(e) => setCasualForm({ ...casualForm, emergencyContact: e.target.value })}
+                  className="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none font-medium text-gray-900"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Skills / Operational Notes (Optional)</label>
+                <textarea
+                  rows={2}
+                  placeholder="e.g. Certified for heavy lifting, grease trap cleaning, safety boots equipped"
+                  value={casualForm.notes}
+                  onChange={(e) => setCasualForm({ ...casualForm, notes: e.target.value })}
+                  className="w-full border border-gray-300 rounded-lg p-2.5 text-xs focus:ring-2 focus:ring-indigo-500 outline-none font-medium text-gray-900"
+                />
+              </div>
+
+              <div className="pt-2 flex justify-end gap-2 border-t border-gray-100">
+                <button
+                  type="button"
+                  onClick={() => setIsCasualModalOpen(false)}
+                  className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg text-xs font-medium hover:bg-gray-50 cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-xs font-bold hover:bg-indigo-700 shadow-sm disabled:opacity-50 cursor-pointer flex items-center gap-1.5"
+                >
+                  <Check className="w-3.5 h-3.5" />
+                  {isSubmitting ? 'Saving...' : editingCasualHelper ? 'Update Worker' : 'Register Worker'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Smart Dispatch Modal */}
       {isModalOpen && (
@@ -668,81 +1212,229 @@ export default function DispatchBoardClient() {
                 
                 {/* Tech & Time */}
                 <div className="grid grid-cols-1 gap-4">
-                  <div>
-                    <div className="flex items-center justify-between mb-1">
-                      <label className="text-xs font-bold text-gray-700 uppercase tracking-wider">Technicians ({formData.technician_ids.length} selected)</label>
-                      <button 
-                        type="button" 
-                        onClick={() => {
-                          if (formData.technician_ids.length === profiles.length) {
-                            setFormData({...formData, technician_ids: []}); // Deselect all
-                          } else {
-                            setFormData({...formData, technician_ids: profiles.map(p => p.id)}); // Select all
-                          }
-                        }}
-                        className="text-[10px] font-bold text-indigo-600 hover:text-indigo-800 uppercase tracking-wider"
+                  {isOfficeMode ? (
+                    <div>
+                      <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
+                        HQ Duty Technician *
+                      </label>
+                      <select
+                        value={leadTechId}
+                        onChange={(e) => setLeadTechId(e.target.value)}
+                        className="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none font-medium text-gray-900 bg-white"
                       >
-                        {formData.technician_ids.length === profiles.length ? 'Deselect All' : 'Select All'}
-                      </button>
+                        <option value="">-- Choose Field Staff --</option>
+                        {profiles.map(p => (
+                          <option key={p.id} value={p.id} disabled={p.lifecycle_status === 'on_leave'}>
+                            {p.full_name} ({p.technician_level === 'senior' ? 'Senior Tech' : p.role === 'helper' ? 'Helper' : 'Technician'}){p.lifecycle_status === 'on_leave' ? ' - ON LEAVE' : ''}
+                          </option>
+                        ))}
+                      </select>
                     </div>
-                    
-                    <div className="border border-gray-300 rounded-lg overflow-hidden flex flex-col bg-white">
-                      <div className="p-2 border-b border-gray-200 bg-gray-50 flex items-center gap-2">
-                        <Search className="w-4 h-4 text-gray-400" />
-                        <input 
-                          type="text" 
-                          placeholder="Filter technicians..." 
-                          value={techSearch}
-                          onChange={(e) => setTechSearch(e.target.value)}
-                          className="w-full bg-transparent text-sm outline-none placeholder-gray-400 text-gray-900"
-                        />
-                      </div>
-                      <div className="max-h-40 overflow-y-auto p-1 bg-white">
-                        {profiles.filter(p => p.full_name.toLowerCase().includes(techSearch.toLowerCase())).length === 0 ? (
-                          <div className="p-3 text-center text-xs text-gray-500 font-medium">No technicians found</div>
-                        ) : (
-                          profiles.filter(p => p.full_name.toLowerCase().includes(techSearch.toLowerCase())).map(p => (
-                            <label key={p.id} className={`flex items-center gap-3 p-2 rounded cursor-pointer hover:bg-gray-50 transition-colors ${formData.technician_ids.includes(p.id) ? 'bg-indigo-50/50' : ''}`}>
-                              <input 
-                                type="checkbox"
-                                disabled={p.lifecycle_status === 'on_leave'} 
-                                checked={formData.technician_ids.includes(p.id)}
-                                onChange={(e) => {
-                                  if (e.target.checked) {
-                                    setFormData({...formData, technician_ids: [...formData.technician_ids, p.id]});
-                                  } else {
-                                    setFormData({...formData, technician_ids: formData.technician_ids.filter(id => id !== p.id)});
-                                  }
-                                }}
-                                className="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600 focus:ring-offset-0 cursor-pointer disabled:opacity-50"
-                              />
-                              <div className="flex items-center gap-2 flex-1">
-                                <div className="h-6 w-6 rounded-full bg-gray-100 flex items-center justify-center border border-gray-200 shrink-0">
-                                  <User className="h-3 w-3 text-gray-500" />
-                                </div>
-                                <div className="flex flex-col">
-                                  <span className={`text-sm font-medium ${p.lifecycle_status === 'on_leave' ? 'text-gray-400 line-through' : formData.technician_ids.includes(p.id) ? 'text-indigo-900 font-bold' : 'text-gray-700'}`}>
-                                    {p.full_name}
-                                  </span>
-                                  <div className="flex flex-wrap gap-1 mt-0.5">
-                                    {p.technician_level === 'senior' && <span className="text-[9px] font-bold bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded uppercase tracking-wider">SENIOR</span>}
-                                    {p.technician_level === 'helper' && <span className="text-[9px] font-bold bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded uppercase tracking-wider">HELPER</span>}
-                                    {p.lifecycle_status === 'on_leave' ? (
-                                      <span className="text-[9px] font-bold bg-red-100 text-red-700 px-1.5 py-0.5 rounded uppercase tracking-wider">ON LEAVE</span>
-                                    ) : busyTechIds.includes(p.id) ? (
-                                      <span className="text-[9px] font-bold bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded uppercase tracking-wider">BUSY</span>
-                                    ) : (
-                                      <span className="text-[9px] font-bold bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded uppercase tracking-wider">AVAILABLE</span>
+                  ) : (
+                    <div className="space-y-4">
+                      {/* Section 1: Lead Technician */}
+                      <div>
+                        <div className="flex items-center justify-between mb-1.5">
+                          <div className="flex items-center gap-1.5">
+                            <ShieldCheck className="w-3.5 h-3.5 text-indigo-600" />
+                            <label className="text-xs font-bold text-gray-900 uppercase tracking-wider">
+                              1. Lead Technician <span className="text-rose-500">*</span>
+                            </label>
+                          </div>
+                          <div className="flex gap-1 bg-gray-100 p-0.5 rounded-md">
+                            <button
+                              type="button"
+                              onClick={() => setTechFilterTier('all')}
+                              className={`px-2 py-0.5 text-[10px] font-bold rounded cursor-pointer ${techFilterTier === 'all' ? 'bg-white shadow-xs text-indigo-700' : 'text-gray-500 hover:text-gray-800'}`}
+                            >
+                              All Techs
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setTechFilterTier('senior')}
+                              className={`px-2 py-0.5 text-[10px] font-bold rounded cursor-pointer ${techFilterTier === 'senior' ? 'bg-white shadow-xs text-amber-700' : 'text-gray-500 hover:text-gray-800'}`}
+                            >
+                              Senior Only
+                            </button>
+                          </div>
+                        </div>
+                        
+                        <div className="border border-gray-300 rounded-lg overflow-hidden flex flex-col bg-white">
+                          <div className="p-2 border-b border-gray-200 bg-gray-50 flex items-center gap-2">
+                            <Search className="w-3.5 h-3.5 text-gray-400" />
+                            <input 
+                              type="text" 
+                              placeholder="Search lead technician..." 
+                              value={techSearch}
+                              onChange={(e) => setTechSearch(e.target.value)}
+                              className="w-full bg-transparent text-xs outline-none placeholder-gray-400 text-gray-900"
+                            />
+                          </div>
+                          <div className="max-h-36 overflow-y-auto p-1 bg-white divide-y divide-gray-50">
+                            {profiles
+                              .filter(p => p.role === 'technician')
+                              .filter(p => techFilterTier === 'senior' ? p.technician_level === 'senior' : true)
+                              .filter(p => p.full_name.toLowerCase().includes(techSearch.toLowerCase()))
+                              .map(p => {
+                                const isSelected = leadTechId === p.id;
+                                const isBusy = busyTechIds.includes(p.id);
+                                const isOnLeave = p.lifecycle_status === 'on_leave';
+                                return (
+                                  <div
+                                    key={p.id}
+                                    onClick={() => {
+                                      if (!isOnLeave) {
+                                        setLeadTechId(p.id);
+                                        setSelectedHelperIds(prev => prev.filter(id => id !== p.id));
+                                      }
+                                    }}
+                                    className={`flex items-center justify-between p-2 rounded-md cursor-pointer transition-all ${
+                                      isOnLeave ? 'opacity-40 cursor-not-allowed bg-gray-50' : isSelected ? 'bg-indigo-50 border border-indigo-200 shadow-xs' : 'hover:bg-gray-50'
+                                    }`}
+                                  >
+                                    <div className="flex items-center gap-2.5 min-w-0">
+                                      <div className={`h-6 w-6 rounded-full flex items-center justify-center shrink-0 border ${isSelected ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-gray-100 text-gray-500 border-gray-200'}`}>
+                                        {isSelected ? <Check className="w-3 h-3" /> : <User className="w-3 h-3" />}
+                                      </div>
+                                      <div className="flex flex-col min-w-0">
+                                        <span className={`text-xs font-bold truncate ${isSelected ? 'text-indigo-950' : 'text-gray-800'}`}>
+                                          {p.full_name}
+                                        </span>
+                                        <div className="flex items-center gap-1 mt-0.5">
+                                          {p.technician_level === 'senior' ? (
+                                            <span className="text-[8px] font-bold bg-amber-100 text-amber-700 px-1 py-0.2 rounded border border-amber-200 uppercase">SENIOR</span>
+                                          ) : (
+                                            <span className="text-[8px] font-bold bg-blue-50 text-blue-700 px-1 py-0.2 rounded border border-blue-200 uppercase">TECH</span>
+                                          )}
+                                          {isOnLeave ? (
+                                            <span className="text-[8px] font-bold text-rose-600">ON LEAVE</span>
+                                          ) : isBusy ? (
+                                            <span className="text-[8px] font-bold text-amber-600">BUSY</span>
+                                          ) : (
+                                            <span className="text-[8px] font-bold text-emerald-600">AVAILABLE</span>
+                                          )}
+                                        </div>
+                                      </div>
+                                    </div>
+                                    {isSelected && (
+                                      <span className="text-[10px] font-bold bg-indigo-600 text-white px-2 py-0.5 rounded-full uppercase tracking-wider">
+                                        Lead
+                                      </span>
                                     )}
                                   </div>
-                                </div>
-                              </div>
-                            </label>
-                          ))
-                        )}
+                                );
+                              })}
+                          </div>
+                        </div>
                       </div>
+
+                      {/* Section 2: Support Crew - Regular Helpers */}
+                      <div>
+                        <div className="flex items-center justify-between mb-1">
+                          <label className="text-xs font-bold text-gray-700 uppercase tracking-wider">
+                            2. Company Helpers ({selectedHelperIds.length} selected)
+                          </label>
+                          <span className="text-[10px] text-gray-400 font-medium">Regular field assistants</span>
+                        </div>
+                        <div className="border border-gray-300 rounded-lg p-1.5 max-h-28 overflow-y-auto bg-white space-y-1">
+                          {profiles
+                            .filter(p => (p.role === 'helper' || p.technician_level === 'helper') && p.id !== leadTechId)
+                            .map(p => {
+                              const isChecked = selectedHelperIds.includes(p.id);
+                              const isOnLeave = p.lifecycle_status === 'on_leave';
+                              return (
+                                <label key={p.id} className={`flex items-center gap-2.5 p-1.5 rounded cursor-pointer transition-colors ${isChecked ? 'bg-indigo-50/70' : 'hover:bg-gray-50'}`}>
+                                  <input
+                                    type="checkbox"
+                                    disabled={isOnLeave}
+                                    checked={isChecked}
+                                    onChange={(e) => {
+                                      if (e.target.checked) {
+                                        setSelectedHelperIds([...selectedHelperIds, p.id]);
+                                      } else {
+                                        setSelectedHelperIds(selectedHelperIds.filter(id => id !== p.id));
+                                      }
+                                    }}
+                                    className="w-3.5 h-3.5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600 cursor-pointer disabled:opacity-50"
+                                  />
+                                  <div className="flex items-center justify-between flex-1 min-w-0">
+                                    <span className={`text-xs font-medium truncate ${isOnLeave ? 'text-gray-400 line-through' : isChecked ? 'text-indigo-900 font-bold' : 'text-gray-700'}`}>
+                                      {p.full_name}
+                                    </span>
+                                    <span className="text-[8px] font-bold bg-slate-100 text-slate-600 px-1.5 py-0.2 rounded uppercase">
+                                      {isOnLeave ? 'ON LEAVE' : 'HELPER'}
+                                    </span>
+                                  </div>
+                                </label>
+                              );
+                            })}
+                        </div>
+                      </div>
+
+                      {/* Section 3: Support Crew - Casual Helpers */}
+                      <div>
+                        <div className="flex items-center justify-between mb-1">
+                          <label className="text-xs font-bold text-gray-700 uppercase tracking-wider">
+                            3. Casual Helpers ({selectedCasualHelperIds.length} selected)
+                          </label>
+                          <button
+                            type="button"
+                            onClick={() => openRegisterCasualModal()}
+                            className="text-[10px] font-bold text-indigo-600 hover:text-indigo-800 uppercase tracking-wider cursor-pointer"
+                          >
+                            + Quick Register
+                          </button>
+                        </div>
+                        <div className="border border-gray-300 rounded-lg p-1.5 max-h-28 overflow-y-auto bg-white space-y-1">
+                          {casualHelpers.filter(ch => ch.status === 'active').length === 0 ? (
+                            <div className="p-2 text-center text-xs text-gray-400">No active casual helpers registered</div>
+                          ) : (
+                            casualHelpers.filter(ch => ch.status === 'active').map(ch => {
+                              const isChecked = selectedCasualHelperIds.includes(ch.id);
+                              return (
+                                <label key={ch.id} className={`flex items-center gap-2.5 p-1.5 rounded cursor-pointer transition-colors ${isChecked ? 'bg-indigo-50/70' : 'hover:bg-gray-50'}`}>
+                                  <input
+                                    type="checkbox"
+                                    checked={isChecked}
+                                    onChange={(e) => {
+                                      if (e.target.checked) {
+                                        setSelectedCasualHelperIds([...selectedCasualHelperIds, ch.id]);
+                                      } else {
+                                        setSelectedCasualHelperIds(selectedCasualHelperIds.filter(id => id !== ch.id));
+                                      }
+                                    }}
+                                    className="w-3.5 h-3.5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600 cursor-pointer"
+                                  />
+                                  <div className="flex items-center justify-between flex-1 min-w-0">
+                                    <div className="flex flex-col min-w-0">
+                                      <span className={`text-xs font-medium truncate ${isChecked ? 'text-indigo-900 font-bold' : 'text-gray-700'}`}>
+                                        {ch.full_name}
+                                      </span>
+                                      <span className="text-[10px] text-gray-400 font-mono">{ch.contact_number}</span>
+                                    </div>
+                                    <span className="text-[9px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
+                                      ₱{Number(ch.daily_rate).toFixed(0)}/day
+                                    </span>
+                                  </div>
+                                </label>
+                              );
+                            })
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Hierarchy Alert Banner */}
+                      {!leadTechId && (selectedHelperIds.length > 0 || selectedCasualHelperIds.length > 0) && (
+                        <div className="p-2.5 bg-rose-50 border border-rose-200 rounded-lg flex items-start gap-2 text-xs text-rose-800">
+                          <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+                          <div>
+                            <span className="font-bold">Hierarchy Rule: </span>
+                            A Lead Technician must be selected. Support crew cannot be dispatched without a Senior or Standard Technician.
+                          </div>
+                        </div>
+                      )}
                     </div>
-                  </div>
+                  )}
 
                   {!isOfficeMode && (
                     <div>
@@ -939,8 +1631,8 @@ export default function DispatchBoardClient() {
               </button>
               <button 
                 onClick={handleSubmit}
-                disabled={isSubmitting || formData.technician_ids.length === 0 || !formData.client_name}
-                className="px-5 py-2.5 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                disabled={isSubmitting || (isOfficeMode ? !leadTechId : (!leadTechId || !formData.client_name))}
+                className="px-5 py-2.5 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 cursor-pointer"
               >
                 {isSubmitting ? 'Creating...' : 'Create Dispatch & Geofence'}
               </button>
@@ -1168,12 +1860,13 @@ export default function DispatchBoardClient() {
                   onChange={(e) => setNewTechnicianId(e.target.value)}
                   className="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none font-medium text-gray-900 bg-white"
                 >
-                  <option value="">-- Choose Active Personnel --</option>
+                  <option value="">-- Choose Active Field Technician --</option>
                   {profiles
+                    .filter(p => p.role === 'technician')
                     .filter(p => p.id !== reassigningSchedule.technician_id)
                     .map(p => (
-                      <option key={p.id} value={p.id}>
-                        {p.full_name} ({p.technician_level || 'technician'})
+                      <option key={p.id} value={p.id} disabled={p.lifecycle_status === 'on_leave'}>
+                        {p.full_name} ({p.technician_level === 'senior' ? 'Senior Tech' : 'Technician'}){p.lifecycle_status === 'on_leave' ? ' - ON LEAVE' : ''}
                       </option>
                     ))}
                 </select>
