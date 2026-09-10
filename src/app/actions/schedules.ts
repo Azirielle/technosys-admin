@@ -430,10 +430,12 @@ export async function updateSchedule(formData: FormData) {
     const clientName = formData.get("clientName") as string
     const location = formData.get("location") as string
     const startTime = formData.get("startTime") as string
-    const endTime = formData.get("endTime") as string // Can be empty / null
-    const attendanceMode = (formData.get("attendanceMode") as string) || 'hq'
+    const endTime = formData.get("endTime") as string
+    const attendanceMode = (formData.get("attendanceMode") as string) || 'direct_dispatch'
     const isVip = formData.get("isVip") === "on"
-    const allowanceRate = parseFloat(formData.get("allowanceRate") as string || "0")
+    const geofenceLat = formData.get("geofenceLat") ? parseFloat(formData.get("geofenceLat") as string) : null
+    const geofenceLon = formData.get("geofenceLon") ? parseFloat(formData.get("geofenceLon") as string) : null
+    const geofenceRadius = formData.get("geofenceRadius") ? parseInt(formData.get("geofenceRadius") as string) : 500
 
     if (!scheduleId) {
       throw new Error("Schedule ID is required.")
@@ -450,54 +452,46 @@ export async function updateSchedule(formData: FormData) {
       throw new Error("Schedule not found.")
     }
 
-    // 1. Fetch technician profile to get name for activity logs
-    const { data: techProfile } = await supabaseAdmin
-      .from('profiles')
-      .select('full_name')
-      .eq('id', technicianId)
-      .single()
-    const techName = techProfile?.full_name || 'Staff'
+    if (originalSchedule.status === 'cancelled') {
+      throw new Error("Cannot edit a cancelled schedule.")
+    }
 
-    const targetIds = [technicianId, seniorPartnerId].filter(Boolean) as string[]
+    // Check conflict if technician or dates changed
+    if (technicianId) {
+      const { data: leaves } = await supabaseAdmin
+        .from('leaves')
+        .select('*')
+        .eq('technician_id', technicianId)
+        .eq('status', 'approved')
 
-    const { data: leaves, error: leavesErr } = await supabaseAdmin
-      .from('leaves')
-      .select('*')
-      .in('technician_id', targetIds)
-      .eq('status', 'approved')
-
-    if (leavesErr) throw leavesErr
-
-    const hasConflict = (targetId: string) => {
-      return leaves?.some(leave => {
-        if (leave.technician_id !== targetId) return false
+      const hasConflict = leaves?.some(leave => {
         if (endTime) {
           return isRangeOverlappingWithLeave(startTime, endTime, leave.start_date, leave.end_date)
         } else {
           return isTimeConflictingWithLeave(startTime, leave.start_date, leave.end_date)
         }
       })
+
+      if (hasConflict) {
+        throw new Error("The selected technician is on approved leave during this schedule timeframe.")
+      }
     }
 
-    if (hasConflict(technicianId)) {
-      throw new Error(`The selected employee "${techName}" is on approved leave during this schedule's timeframe.`)
-    }
-
-    if (seniorPartnerId && hasConflict(seniorPartnerId)) {
-      throw new Error(`The selected senior partner is on approved leave during this schedule's timeframe.`)
-    }
-
-    // Update schedule
     const updateData: any = {
-      technician_id: technicianId,
-      senior_partner_id: seniorPartnerId,
       client_name: clientName,
       location,
       start_time: new Date(startTime).toISOString(),
       end_time: endTime ? new Date(endTime).toISOString() : null,
       attendance_mode: attendanceMode,
-      is_vip_hook: isVip
+      is_vip_hook: isVip,
+      updated_at: new Date().toISOString()
     }
+
+    if (technicianId) updateData.technician_id = technicianId
+    if (seniorPartnerId !== undefined) updateData.senior_partner_id = seniorPartnerId
+    if (geofenceLat !== null && !isNaN(geofenceLat)) updateData.geofence_lat = geofenceLat
+    if (geofenceLon !== null && !isNaN(geofenceLon)) updateData.geofence_lon = geofenceLon
+    if (geofenceRadius !== null && !isNaN(geofenceRadius)) updateData.geofence_radius = geofenceRadius
 
     const { error: updateErr } = await supabaseAdmin
       .from('schedules')
@@ -506,16 +500,13 @@ export async function updateSchedule(formData: FormData) {
 
     if (updateErr) throw updateErr
 
-    // Send push notification if technician, location, or start time changed
-    const techChanged = originalSchedule.technician_id !== technicianId
-    const locationChanged = originalSchedule.location !== location
-    const timeChanged = new Date(originalSchedule.start_time).getTime() !== new Date(startTime).getTime()
-
-    if (techChanged || locationChanged || timeChanged) {
+    // Send push notification to technician if changed or updated
+    const targetTechId = technicianId || originalSchedule.technician_id
+    if (targetTechId) {
       const { data: targetProfile } = await supabaseAdmin
         .from('profiles')
         .select('push_token')
-        .eq('id', technicianId)
+        .eq('id', targetTechId)
         .single();
       if (targetProfile?.push_token) {
         await sendPushNotification(
@@ -525,7 +516,7 @@ export async function updateSchedule(formData: FormData) {
         );
       }
 
-      if (techChanged && originalSchedule.technician_id) {
+      if (technicianId && originalSchedule.technician_id && originalSchedule.technician_id !== technicianId) {
         const { data: oldProfile } = await supabaseAdmin
           .from('profiles')
           .select('push_token')
@@ -534,20 +525,175 @@ export async function updateSchedule(formData: FormData) {
         if (oldProfile?.push_token) {
           await sendPushNotification(
             oldProfile.push_token,
-            "Dispatch Cancelled",
-            `Your assignment for client "${originalSchedule.client_name}" has been reassigned/cancelled.`
+            "Dispatch Reassigned",
+            `Your assignment for client "${originalSchedule.client_name}" has been transferred.`
           );
         }
       }
     }
 
-    await logActivity('update_schedule', 'schedule', `Updated schedule details for client "${clientName}" (Technician: ${techName})`)
+    await logActivity('update_schedule', 'schedule', `Updated schedule details for client "${clientName}"`)
 
-    revalidatePath("/dashboard/schedules")
+    revalidatePath("/coordinator")
     return { success: true }
   } catch (err: any) {
     console.error("Failed to update schedule:", err.message || err)
     return { error: err.message || "Failed to update schedule." }
+  }
+}
+
+export async function reassignSchedule(scheduleId: string, newTechnicianId: string, seniorPartnerId: string | null, reason?: string) {
+  try {
+    const { authorized } = await verifyRoleAccess('schedules', true)
+    if (!authorized) {
+      return { error: "Unauthorized. Scheduling write permissions required." }
+    }
+
+    if (!scheduleId || !newTechnicianId) {
+      throw new Error("Schedule ID and new technician are required.")
+    }
+
+    const { data: originalSchedule, error: fetchErr } = await supabaseAdmin
+      .from('schedules')
+      .select('*, profiles!technician_id(full_name)')
+      .eq('id', scheduleId)
+      .single()
+
+    if (fetchErr || !originalSchedule) {
+      throw new Error("Schedule not found.")
+    }
+
+    if (originalSchedule.status === 'cancelled') {
+      throw new Error("Cannot reassign a cancelled schedule.")
+    }
+
+    // Check if new technician has approved leave conflict
+    const { data: leaves } = await supabaseAdmin
+      .from('leaves')
+      .select('*')
+      .eq('technician_id', newTechnicianId)
+      .eq('status', 'approved')
+
+    const hasConflict = leaves?.some(leave => {
+      if (originalSchedule.end_time) {
+        return isRangeOverlappingWithLeave(originalSchedule.start_time, originalSchedule.end_time, leave.start_date, leave.end_date)
+      } else {
+        return isTimeConflictingWithLeave(originalSchedule.start_time, leave.start_date, leave.end_date)
+      }
+    })
+
+    if (hasConflict) {
+      throw new Error("The selected replacement technician is on approved leave during this schedule timeframe.")
+    }
+
+    // Fetch names for logging and push
+    const { data: newTechProfile } = await supabaseAdmin
+      .from('profiles')
+      .select('full_name, push_token')
+      .eq('id', newTechnicianId)
+      .single()
+
+    const newTechName = newTechProfile?.full_name || 'Staff'
+    const oldTechName = (originalSchedule.profiles as any)?.full_name || 'Staff'
+
+    const { error: updateErr } = await supabaseAdmin
+      .from('schedules')
+      .update({
+        technician_id: newTechnicianId,
+        senior_partner_id: seniorPartnerId || null,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', scheduleId)
+
+    if (updateErr) throw updateErr
+
+    // Notify old technician
+    if (originalSchedule.technician_id) {
+      const { data: oldProfile } = await supabaseAdmin
+        .from('profiles')
+        .select('push_token')
+        .eq('id', originalSchedule.technician_id)
+        .single()
+
+      if (oldProfile?.push_token) {
+        await sendPushNotification(
+          oldProfile.push_token,
+          "Dispatch Reassigned",
+          `Your assignment for "${originalSchedule.client_name}" has been transferred to ${newTechName}.${reason ? ` Reason: ${reason}` : ''}`
+        )
+      }
+    }
+
+    // Notify new technician
+    if (newTechProfile?.push_token) {
+      await sendPushNotification(
+        newTechProfile.push_token,
+        "New Dispatch Assigned",
+        `You have been assigned to client "${originalSchedule.client_name}".`
+      )
+    }
+
+    await logActivity('reassign_schedule', 'schedule', `Reassigned schedule for "${originalSchedule.client_name}" from ${oldTechName} to ${newTechName}${reason ? ` (${reason})` : ''}`)
+    revalidatePath("/coordinator")
+    return { success: true }
+  } catch (err: any) {
+    console.error("Failed to reassign schedule:", err.message || err)
+    return { error: err.message || "Failed to reassign schedule." }
+  }
+}
+
+export async function cancelSchedule(scheduleId: string, reason: string) {
+  try {
+    const { authorized } = await verifyRoleAccess('schedules', true)
+    if (!authorized) {
+      return { error: "Unauthorized. Scheduling write permissions required." }
+    }
+
+    if (!scheduleId) {
+      throw new Error("Schedule ID is required.")
+    }
+
+    if (!reason || !reason.trim()) {
+      throw new Error("A mandatory cancellation reason is required.")
+    }
+
+    const { data: originalSchedule, error: fetchErr } = await supabaseAdmin
+      .from('schedules')
+      .select('*, profiles!technician_id(full_name, push_token)')
+      .eq('id', scheduleId)
+      .single()
+
+    if (fetchErr || !originalSchedule) {
+      throw new Error("Schedule not found.")
+    }
+
+    const { error: updateErr } = await supabaseAdmin
+      .from('schedules')
+      .update({
+        status: 'cancelled',
+        cancellation_reason: reason.trim(),
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', scheduleId)
+
+    if (updateErr) throw updateErr
+
+    // Send push notification to technician if assigned
+    const techProfile = originalSchedule.profiles as any
+    if (techProfile?.push_token) {
+      await sendPushNotification(
+        techProfile.push_token,
+        "Dispatch Cancelled",
+        `Your schedule for "${originalSchedule.client_name}" has been cancelled. Reason: ${reason.trim()}`
+      )
+    }
+
+    await logActivity('cancel_schedule', 'schedule', `Cancelled dispatch for "${originalSchedule.client_name}". Reason: ${reason.trim()}`)
+    revalidatePath("/coordinator")
+    return { success: true }
+  } catch (err: any) {
+    console.error("Failed to cancel schedule:", err.message || err)
+    return { error: err.message || "Failed to cancel schedule." }
   }
 }
 
