@@ -3,9 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "predev": "node scripts/clean-zombies.mjs",
     "dev": "next dev",
     "dev:webpack": "next dev --webpack",
-    "clean:zombies": "powershell -Command \"Get-CimInstance Win32_Process -Filter \\\"Name = 'node.exe'\\\" | Where-Object { $_.CommandLine -match 'postcss|\\.next' } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }\"",
+    "clean:zombies": "node scripts/clean-zombies.mjs",
     "build": "next build",
     "start": "next start",
     "lint": "eslint"

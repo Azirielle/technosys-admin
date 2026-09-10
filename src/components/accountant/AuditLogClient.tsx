@@ -4,8 +4,6 @@ import { useState, useEffect } from 'react';
 import { Calendar, Search, Download, AlertCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 
-import * as XLSX from 'xlsx';
-
 export default function AuditLogClient() {
   const supabase = createClient();
   const [records, setRecords] = useState<any[]>([]);
@@ -110,7 +108,8 @@ export default function AuditLogClient() {
     setCurrentPage(1); // Reset page on filter/search change
   }, [search]);
 
-  const exportToExcel = () => {
+  const exportToExcel = async () => {
+    const XLSX = await import('xlsx');
     const periodLabel = period === 'aug_1_15' ? 'August 1 - 15, 2026' : 'July 16 - 31, 2026';
     
     // Header & metadata block
