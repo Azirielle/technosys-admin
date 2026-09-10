@@ -65,7 +65,7 @@ export default function GatewayPortal() {
           <div className="mb-8 p-3 rounded-2xl bg-white/8 ring-1 ring-white/10">
             <Image
               src="/logo.png"
-              alt="TechnoSys"
+              alt="TechnoCycle Admin"
               width={64}
               height={64}
               className="rounded-xl"
@@ -78,7 +78,7 @@ export default function GatewayPortal() {
             className="text-4xl md:text-5xl font-bold tracking-[-0.03em] leading-[1.1]"
             style={{ color: 'oklch(0.97 0.005 160)' }}
           >
-            TechnoSys
+            TechnoCycle
           </h1>
 
           {/* Divider */}
@@ -268,7 +268,7 @@ export default function GatewayPortal() {
             className="mt-8 text-center text-[0.75rem] leading-relaxed"
             style={{ color: 'oklch(0.64 0 0)' }}
           >
-            By continuing, you agree to TechnoSys&apos;s{' '}
+            By continuing, you agree to TechnoCycle&apos;s{' '}
             <span style={{ color: 'oklch(0.45 0.14 160)' }}>Terms of Use</span>
             {' '}and{' '}
             <span style={{ color: 'oklch(0.45 0.14 160)' }}>Privacy Policy</span>.

@@ -23,6 +23,7 @@ import {
 } from 'lucide-react'
 import { logout } from '@/app/actions'
 import { getSystemOverrides, getModuleHref, SYSTEM_MODULES, RoleKey } from '@/lib/overrides'
+import OperationalTelemetry from '@/components/dashboard/OperationalTelemetry'
 
 export type NavItem = {
   title: string
@@ -144,9 +145,9 @@ export function Sidebar({ navItems, title, role }: SidebarProps) {
           </div>
           <div className="flex flex-col min-w-0">
             <div className="flex items-center gap-1.5">
-              <span className="font-bold text-xs tracking-tight text-zinc-900">TechnoSys</span>
-              <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-zinc-200/70 text-zinc-700 border border-zinc-300/50">
-                PRO
+              <span className="font-bold text-xs tracking-tight text-zinc-900">TechnoCycle</span>
+              <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300/60">
+                Admin
               </span>
             </div>
             <span className="text-[11px] font-medium text-zinc-500 truncate">
@@ -217,29 +218,8 @@ export function Sidebar({ navItems, title, role }: SidebarProps) {
           </nav>
         </div>
 
-        {/* Operational Telemetry Card */}
-        <div className="p-3 bg-zinc-100/70 border border-zinc-200/60 rounded-xl mt-4">
-          <div className="flex items-center justify-between text-[11px] font-semibold text-zinc-700 mb-1.5">
-            <div className="flex items-center gap-1.5">
-              <Activity className="w-3.5 h-3.5 text-emerald-600" />
-              <span>System Status</span>
-            </div>
-            <span className="inline-flex items-center gap-1 text-[10px] text-emerald-600 font-medium">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              Live
-            </span>
-          </div>
-          <div className="space-y-1 text-[10px] text-zinc-500">
-            <div className="flex justify-between">
-              <span>Gateway</span>
-              <span className="font-mono text-zinc-700">Supabase Edge</span>
-            </div>
-            <div className="flex justify-between">
-              <span>Auth Engine</span>
-              <span className="font-mono text-zinc-700">SSR Enforced</span>
-            </div>
-          </div>
-        </div>
+        {/* Real-World Operational Telemetry Component */}
+        <OperationalTelemetry />
       </div>
 
       {/* Encapsulated User & Sign-Out Dock */}
@@ -280,7 +260,7 @@ export function Sidebar({ navItems, title, role }: SidebarProps) {
               <div>
                 <h3 className="font-bold text-zinc-900 text-base">Confirm Logout?</h3>
                 <p className="text-xs text-zinc-500 mt-1.5 leading-relaxed">
-                  Are you sure you want to end your TechnoSys session?
+                  Are you sure you want to end your TechnoCycle Admin session?
                 </p>
               </div>
               <div className="pt-2 flex gap-3">

@@ -12,8 +12,8 @@ import { MobileHardwareListener } from "@/components/mobile-hardware-listener";
 import NextTopLoader from 'nextjs-toploader';
 
 export const metadata: Metadata = {
-  title: "TechnoSys — Access Portal",
-  description: "TechnoSys Cross-Platform Geofenced IMS",
+  title: "TechnoCycle Admin — Operations Portal",
+  description: "TechnoCycle Operations, Fleet Tracking & HR Portal",
 };
 
 export default function RootLayout({

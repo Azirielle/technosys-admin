@@ -50,7 +50,7 @@ export default function LoginClientWrapper({
           </motion.div>
           
           <h1 className="text-4xl font-black tracking-tight text-slate-900 flex items-center gap-1.5 mb-2">
-            <span className="text-emerald-600 bg-clip-text">TechnoSys</span> 
+            <span className="text-emerald-600 bg-clip-text">TechnoCycle</span> 
             <span className="font-medium text-slate-400">Hub</span>
           </h1>
           
