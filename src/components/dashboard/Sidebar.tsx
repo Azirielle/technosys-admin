@@ -22,7 +22,7 @@ import {
   Megaphone,
 } from 'lucide-react'
 import { logout } from '@/app/actions'
-import { getSystemOverrides, getModuleHref, SYSTEM_MODULES, RoleKey } from '@/lib/overrides'
+import { getSystemOverrides, fetchRemoteOverrides, subscribeToOverrideChanges, getModuleHref, SYSTEM_MODULES, RoleKey } from '@/lib/overrides'
 import OperationalTelemetry from '@/components/dashboard/OperationalTelemetry'
 
 export type NavItem = {
@@ -114,10 +114,20 @@ export function Sidebar({ navItems, title, role }: SidebarProps) {
 
     updateNavWithOverrides()
 
+    // Fetch initial fresh overrides from Supabase
+    fetchRemoteOverrides().then(() => {
+      updateNavWithOverrides()
+    })
+
+    const unsubscribeRealtime = subscribeToOverrideChanges(() => {
+      updateNavWithOverrides()
+    })
+
     window.addEventListener('system_overrides_updated', updateNavWithOverrides)
     window.addEventListener('storage', updateNavWithOverrides)
 
     return () => {
+      unsubscribeRealtime()
       window.removeEventListener('system_overrides_updated', updateNavWithOverrides)
       window.removeEventListener('storage', updateNavWithOverrides)
     }

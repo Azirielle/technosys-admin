@@ -100,6 +100,76 @@ export function saveSystemOverrides(overrides: OverrideMap): void {
   }
 }
 
+/**
+ * Fetches overrides directly from Supabase and syncs local cache.
+ */
+export async function fetchRemoteOverrides(): Promise<OverrideMap> {
+  if (typeof window === 'undefined') {
+    return { accountant: [], coordinator: [], hr: [] };
+  }
+
+  try {
+    const { createClient } = await import('@/lib/supabase/client');
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from('system_overrides')
+      .select('role_key, granted_modules');
+
+    if (!error && data) {
+      const map: OverrideMap = { accountant: [], coordinator: [], hr: [] };
+      data.forEach((row: { role_key: string; granted_modules: string[] }) => {
+        if (row.role_key === 'accountant' || row.role_key === 'coordinator' || row.role_key === 'hr') {
+          map[row.role_key] = Array.isArray(row.granted_modules) ? row.granted_modules : [];
+        }
+      });
+      saveSystemOverrides(map);
+      return map;
+    }
+  } catch (err) {
+    console.warn('Failed to fetch remote system overrides, using local fallback:', err);
+  }
+
+  return getSystemOverrides();
+}
+
+/**
+ * Subscribes to Supabase Realtime changes on `system_overrides`.
+ * Invokes callback and fires 'system_overrides_updated' event when changes occur.
+ */
+export function subscribeToOverrideChanges(onUpdate?: (overrides: OverrideMap) => void): () => void {
+  if (typeof window === 'undefined') return () => {};
+
+  try {
+    let channel: any = null;
+    import('@/lib/supabase/client').then(({ createClient }) => {
+      const supabase = createClient();
+      channel = supabase
+        .channel('realtime-system-overrides')
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'system_overrides' },
+          async () => {
+            const fresh = await fetchRemoteOverrides();
+            if (onUpdate) onUpdate(fresh);
+          }
+        )
+        .subscribe();
+    });
+
+    return () => {
+      if (channel) {
+        import('@/lib/supabase/client').then(({ createClient }) => {
+          const supabase = createClient();
+          supabase.removeChannel(channel);
+        });
+      }
+    };
+  } catch (err) {
+    console.warn('Failed to subscribe to system overrides realtime:', err);
+    return () => {};
+  }
+}
+
 export function getModuleHref(modId: string, role: RoleKey): string {
   switch (modId) {
     case 'hr_files':
