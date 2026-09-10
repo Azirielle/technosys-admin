@@ -20,7 +20,6 @@ const nextConfig: NextConfig = {
     root: path.resolve(__dirname),
   },
   experimental: {
-    cpus: 4,
     optimizePackageImports: ['lucide-react', 'date-fns', 'recharts'],
   },
   serverExternalPackages: ['pdf-parse', '@langchain/textsplitters', 'playwright'],
