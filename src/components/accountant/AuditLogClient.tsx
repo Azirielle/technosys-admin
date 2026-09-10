@@ -20,13 +20,42 @@ import {
   Moon, 
   Sun,
   Users,
-  Briefcase
+  Briefcase,
+  Edit3,
+  History,
+  Sparkles,
+  Loader2,
+  Info,
+  Pencil,
+  Check
 } from 'lucide-react';
 import { 
   getAuditPayrollRecords, 
   EmployeeAuditSummary, 
   DailyAuditRecord 
 } from '@/app/actions/audit';
+import { correctTimeLogPunch } from '@/app/actions/audit-corrections';
+
+function getManila24HourTime(date: Date): string {
+  try {
+    const parts = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'Asia/Manila',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+    }).formatToParts(date);
+    let hour = '08';
+    let minute = '00';
+    for (const p of parts) {
+      if (p.type === 'hour') hour = p.value.padStart(2, '0');
+      if (p.type === 'minute') minute = p.value.padStart(2, '0');
+    }
+    if (hour === '24') hour = '00';
+    return `${hour}:${minute}`;
+  } catch (e) {
+    return '08:00';
+  }
+}
 
 interface KinsenasPeriod {
   id: string;
@@ -58,6 +87,28 @@ export default function AuditLogClient() {
   // Inspection Modal
   const [selectedEmployee, setSelectedEmployee] = useState<EmployeeAuditSummary | null>(null);
 
+  // Correction Modal State
+  const [editingDay, setEditingDay] = useState<{
+    employee: EmployeeAuditSummary;
+    day: DailyAuditRecord;
+  } | null>(null);
+  const [editTimeIn, setEditTimeIn] = useState('08:00');
+  const [editTimeOut, setEditTimeOut] = useState('17:00');
+  const [isNextDay, setIsNextDay] = useState(false);
+  const [editReason, setEditReason] = useState('');
+  const [savingCorrection, setSavingCorrection] = useState(false);
+  const [correctionError, setCorrectionError] = useState<string | null>(null);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  // History Inspector State
+  const [viewingHistoryTech, setViewingHistoryTech] = useState<{
+    employeeId: string;
+    employeeName: string;
+    targetDate: string;
+  } | null>(null);
+  const [historyRecords, setHistoryRecords] = useState<any[]>([]);
+  const [loadingHistory, setLoadingHistory] = useState(false);
+
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 8;
@@ -65,6 +116,150 @@ export default function AuditLogClient() {
   const currentPeriod = useMemo(() => {
     return KINSENAS_PERIODS.find(p => p.id === selectedPeriodId) || KINSENAS_PERIODS[1];
   }, [selectedPeriodId]);
+
+  const openCorrectionModal = (employee: EmployeeAuditSummary, day: DailyAuditRecord) => {
+    setEditingDay({ employee, day });
+    setCorrectionError(null);
+    setEditReason('');
+    setIsNextDay(false);
+
+    if (day.rawTimeIn) {
+      setEditTimeIn(getManila24HourTime(new Date(day.rawTimeIn)));
+    } else {
+      setEditTimeIn('08:00');
+    }
+
+    if (day.rawTimeOut) {
+      setEditTimeOut(getManila24HourTime(new Date(day.rawTimeOut)));
+    } else {
+      setEditTimeOut('17:00');
+    }
+  };
+
+  const openHistoryModal = async (employeeId: string, employeeName: string, targetDate: string) => {
+    setViewingHistoryTech({ employeeId, employeeName, targetDate });
+    setLoadingHistory(true);
+    try {
+      const { getTimeLogCorrectionHistory } = await import('@/app/actions/audit-corrections');
+      const res = await getTimeLogCorrectionHistory(employeeId, targetDate, targetDate);
+      if (res.success) {
+        setHistoryRecords(res.records);
+      }
+    } catch (err) {
+      console.error("Failed to load history:", err);
+    } finally {
+      setLoadingHistory(false);
+    }
+  };
+
+  const correctionPreview = useMemo(() => {
+    if (!editingDay) return null;
+    const { day } = editingDay;
+    const targetDate = day.date;
+    const inDate = new Date(`${targetDate}T${editTimeIn}:00+08:00`);
+    let outDate = new Date(`${targetDate}T${editTimeOut}:00+08:00`);
+    if (isNextDay) {
+      outDate = new Date(new Date(`${targetDate}T12:00:00+08:00`).getTime() + 24 * 3600 * 1000);
+      const nextDateStr = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Manila' }).format(outDate);
+      outDate = new Date(`${nextDateStr}T${editTimeOut}:00+08:00`);
+    }
+
+    if (isNaN(inDate.getTime()) || isNaN(outDate.getTime()) || outDate <= inDate) {
+      return null;
+    }
+
+    const grossHours = (outDate.getTime() - inDate.getTime()) / (1000 * 60 * 60);
+    const netHours = grossHours > 5 ? Math.max(0, grossHours - 1) : grossHours;
+
+    const defStart = new Date(`${targetDate}T08:00:00+08:00`);
+    let lateMins = 0;
+    if (inDate.getTime() > defStart.getTime()) {
+      lateMins = Math.floor((inDate.getTime() - defStart.getTime()) / (1000 * 60));
+    }
+
+    let regOt = 0;
+    let sunHolOt = 0;
+    if (day.isSunday || day.isHoliday) {
+      sunHolOt = netHours;
+    } else if (netHours > 8) {
+      regOt = netHours - 8;
+    }
+
+    return {
+      grossHours: grossHours.toFixed(1),
+      netHours: netHours.toFixed(1),
+      mealBreakDeducted: grossHours > 5,
+      lateMins,
+      regOt: regOt.toFixed(1),
+      sunHolOt: sunHolOt.toFixed(1),
+    };
+  }, [editingDay, editTimeIn, editTimeOut, isNextDay]);
+
+  const handleSaveCorrection = async () => {
+    if (!editingDay) return;
+    const trimmed = editReason.trim();
+    if (trimmed.length < 10) {
+      setCorrectionError("A substantive audit rationale of at least 10 characters is required.");
+      return;
+    }
+
+    const { employee, day } = editingDay;
+    const targetDate = day.date;
+    const inIso = `${targetDate}T${editTimeIn}:00+08:00`;
+    let outIso = `${targetDate}T${editTimeOut}:00+08:00`;
+    if (isNextDay) {
+      const nextDate = new Date(new Date(`${targetDate}T12:00:00+08:00`).getTime() + 24 * 3600 * 1000);
+      const nextDateStr = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Manila' }).format(nextDate);
+      outIso = `${nextDateStr}T${editTimeOut}:00+08:00`;
+    }
+
+    if (new Date(outIso).getTime() <= new Date(inIso).getTime()) {
+      setCorrectionError("Clock-out time must be after clock-in time. If the shift crossed midnight, check 'Shift Ends Next Day'.");
+      return;
+    }
+
+    setSavingCorrection(true);
+    setCorrectionError(null);
+
+    try {
+      const res = await correctTimeLogPunch({
+        timeLogId: day.timeLogId,
+        technicianId: employee.id,
+        targetDate: targetDate,
+        timeIn: inIso,
+        timeOut: outIso,
+        reason: trimmed
+      });
+
+      if (!res.success) {
+        setCorrectionError(res.error || "Failed to persist correction.");
+        setSavingCorrection(false);
+        return;
+      }
+
+      setToastMessage(`Attendance punch corrected on ${targetDate} for ${employee.name}. Permanent audit trail recorded.`);
+      setTimeout(() => setToastMessage(null), 5000);
+      setEditingDay(null);
+
+      // Re-fetch data
+      await loadAuditData();
+
+      // Update current inspection modal if open
+      const freshRes = await getAuditPayrollRecords(
+        currentPeriod.startDate,
+        currentPeriod.endDate,
+        roleFilter
+      );
+      if (freshRes.success) {
+        const updatedEmp = freshRes.records.find(r => r.id === employee.id);
+        if (updatedEmp) setSelectedEmployee(updatedEmp);
+      }
+    } catch (err: any) {
+      setCorrectionError(err?.message || "Unexpected error submitting punch correction.");
+    } finally {
+      setSavingCorrection(false);
+    }
+  };
 
   useEffect(() => {
     loadAuditData();
@@ -762,6 +957,7 @@ export default function AuditLogClient() {
                     <th className="px-2 py-2.5 font-black text-emerald-700 uppercase text-center">Sun/Hol</th>
                     <th className="px-2 py-2.5 font-black text-purple-600 uppercase text-center">ND</th>
                     <th className="px-3 py-2.5 font-black text-gray-600 uppercase">Daily Status</th>
+                    <th className="px-3 py-2.5 font-black text-gray-600 uppercase text-right">Audit Action</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
@@ -855,51 +1051,83 @@ export default function AuditLogClient() {
 
                       {/* Daily Status Badge */}
                       <td className="px-3 py-2.5">
-                        {day.status === 'present' && (
-                          <span className="inline-flex items-center gap-1 font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded text-[11px]">
-                            <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Present
-                          </span>
-                        )}
-                        {day.status === 'late' && (
-                          <span className="inline-flex items-center gap-1 font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded text-[11px]">
-                            <AlertTriangle className="w-3 h-3 text-amber-600" /> Late ({day.lateMinutes}m)
-                          </span>
-                        )}
-                        {day.status === 'overtime' && (
-                          <span className="inline-flex items-center gap-1 font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded text-[11px]">
-                            <Clock className="w-3 h-3 text-indigo-600" /> Overtime
-                          </span>
-                        )}
-                        {day.status === 'absent' && (
-                          <span className="inline-flex items-center gap-1 font-bold text-red-700 bg-red-50 border border-red-200 px-2 py-0.5 rounded text-[11px]" title={day.notes}>
-                            <ShieldAlert className="w-3 h-3 text-red-600" /> Missed Shift
-                          </span>
-                        )}
-                        {day.status === 'approved_leave' && (
-                          <span className="inline-flex items-center gap-1 font-bold text-blue-700 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded text-[11px]">
-                            <Briefcase className="w-3 h-3 text-blue-600" /> Leave ({day.leaveType})
-                          </span>
-                        )}
-                        {day.status === 'rest_day' && (
-                          <span className="font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded text-[11px]">
-                            Rest Day
-                          </span>
-                        )}
-                        {day.status === 'holiday' && (
-                          <span className="font-bold text-cyan-700 bg-cyan-50 border border-cyan-200 px-2 py-0.5 rounded text-[11px]" title={day.holidayName || ''}>
-                            Holiday ({day.holidayName?.slice(0, 14)}...)
-                          </span>
-                        )}
-                        {day.status === 'off_duty' && (
-                          <span className="font-semibold text-gray-400 text-[11px]">
-                            Standby
-                          </span>
-                        )}
-                        {day.status === 'unclosed' && (
-                          <span className="font-bold text-rose-700 bg-rose-50 border border-rose-200 px-2 py-0.5 rounded text-[11px]">
-                            Incomplete Punch
-                          </span>
-                        )}
+                        <div className="flex items-center gap-1 flex-wrap">
+                          {day.status === 'present' && (
+                            <span className="inline-flex items-center gap-1 font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded text-[11px]">
+                              <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Present
+                            </span>
+                          )}
+                          {day.status === 'late' && (
+                            <span className="inline-flex items-center gap-1 font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded text-[11px]">
+                              <AlertTriangle className="w-3 h-3 text-amber-600" /> Late ({day.lateMinutes}m)
+                            </span>
+                          )}
+                          {day.status === 'overtime' && (
+                            <span className="inline-flex items-center gap-1 font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded text-[11px]">
+                              <Clock className="w-3 h-3 text-indigo-600" /> Overtime
+                            </span>
+                          )}
+                          {day.status === 'absent' && (
+                            <span className="inline-flex items-center gap-1 font-bold text-red-700 bg-red-50 border border-red-200 px-2 py-0.5 rounded text-[11px]" title={day.notes}>
+                              <ShieldAlert className="w-3 h-3 text-red-600" /> Missed Shift
+                            </span>
+                          )}
+                          {day.status === 'approved_leave' && (
+                            <span className="inline-flex items-center gap-1 font-bold text-blue-700 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded text-[11px]">
+                              <Briefcase className="w-3 h-3 text-blue-600" /> Leave ({day.leaveType})
+                            </span>
+                          )}
+                          {day.status === 'rest_day' && (
+                            <span className="font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded text-[11px]">
+                              Rest Day
+                            </span>
+                          )}
+                          {day.status === 'holiday' && (
+                            <span className="font-bold text-cyan-700 bg-cyan-50 border border-cyan-200 px-2 py-0.5 rounded text-[11px]" title={day.holidayName || ''}>
+                              Holiday ({day.holidayName?.slice(0, 14)}...)
+                            </span>
+                          )}
+                          {day.status === 'off_duty' && (
+                            <span className="font-semibold text-gray-400 text-[11px]">
+                              Standby
+                            </span>
+                          )}
+                          {day.status === 'unclosed' && (
+                            <span className="font-bold text-rose-700 bg-rose-50 border border-rose-200 px-2 py-0.5 rounded text-[11px]">
+                              Incomplete Punch
+                            </span>
+                          )}
+
+                          {day.isCorrected && (
+                            <span className="inline-flex items-center gap-1 font-bold text-amber-800 bg-amber-50 border border-amber-300/80 px-1.5 py-0.5 rounded text-[10px]" title={day.correctionDetails?.reason}>
+                              <History className="w-2.5 h-2.5 text-amber-600" />
+                              Audited
+                            </span>
+                          )}
+                        </div>
+                      </td>
+
+                      {/* Audit Action Buttons */}
+                      <td className="px-3 py-2.5 text-right whitespace-nowrap">
+                        <div className="flex items-center justify-end gap-1.5">
+                          {day.isCorrected && (
+                            <button
+                              onClick={() => openHistoryModal(selectedEmployee.id, selectedEmployee.name, day.date)}
+                              title="Inspect compliance audit trail for this date"
+                              className="inline-flex items-center gap-1 px-2 py-1 rounded bg-amber-50 text-amber-800 border border-amber-300/80 text-[11px] font-bold hover:bg-amber-100 transition-colors cursor-pointer shadow-2xs"
+                            >
+                              <History className="w-3 h-3 text-amber-600" />
+                              Audit Trail
+                            </button>
+                          )}
+                          <button
+                            onClick={() => openCorrectionModal(selectedEmployee, day)}
+                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 text-xs font-bold transition-colors cursor-pointer shadow-2xs"
+                          >
+                            <Edit3 className="w-3 h-3 text-indigo-600" />
+                            {day.actualTimeIn ? 'Correct Punch' : 'Add Missing Shift'}
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -911,9 +1139,248 @@ export default function AuditLogClient() {
             <div className="px-6 py-3 bg-gray-50 border-t border-gray-200 flex justify-end shrink-0">
               <button
                 onClick={() => setSelectedEmployee(null)}
-                className="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold rounded-lg transition-colors shadow-2xs"
+                className="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold rounded-lg transition-colors shadow-2xs cursor-pointer"
               >
                 Done Auditing
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Floating Success Toast Banner */}
+      {toastMessage && (
+        <div className="fixed bottom-6 right-6 z-50 bg-emerald-900 text-white px-5 py-3 rounded-xl shadow-2xl border border-emerald-700 flex items-center gap-2.5 text-xs font-bold animate-in slide-in-from-bottom-5">
+          <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+          <span>{toastMessage}</span>
+        </div>
+      )}
+
+      {/* Punch Correction Modal */}
+      {editingDay && (
+        <div className="fixed inset-0 z-[60] bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150">
+          <div className="bg-white rounded-2xl max-w-lg w-full shadow-2xl overflow-hidden border border-gray-200 flex flex-col">
+            {/* Modal Header */}
+            <div className="px-5 py-4 bg-slate-900 text-white flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white">
+                  <Clock className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold tracking-tight">DTR Punch Correction</h3>
+                  <p className="text-[11px] text-slate-300">{editingDay.employee.name} &bull; {editingDay.day.date} ({editingDay.day.dayOfWeek})</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setEditingDay(null)}
+                className="p-1 rounded-md text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-5 space-y-4 text-xs overflow-y-auto max-h-[75vh]">
+              {/* Compliance Warning */}
+              <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-amber-900 flex items-start gap-2.5">
+                <ShieldAlert className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                <div className="leading-relaxed">
+                  <span className="font-bold">DOLE Audit Requirement:</span> All punch modifications are permanently logged into the compliance register under your administrator credentials. Raw punch history is preserved.
+                </div>
+              </div>
+
+              {/* Input Fields */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-gray-700 font-bold mb-1">Time In (PST / UTC+8)</label>
+                  <input
+                    type="time"
+                    value={editTimeIn}
+                    onChange={(e) => setEditTimeIn(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg font-mono text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-gray-700 font-bold mb-1">Time Out (PST / UTC+8)</label>
+                  <input
+                    type="time"
+                    value={editTimeOut}
+                    onChange={(e) => setEditTimeOut(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg font-mono text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  />
+                </div>
+              </div>
+
+              {/* Next Day Toggle */}
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="isNextDay"
+                  checked={isNextDay}
+                  onChange={(e) => setIsNextDay(e.target.checked)}
+                  className="w-4 h-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500 cursor-pointer"
+                />
+                <label htmlFor="isNextDay" className="text-gray-700 font-medium cursor-pointer">
+                  Shift crosses midnight (Clock-out occurs on the following day)
+                </label>
+              </div>
+
+              {/* Real-time Math Preview Card */}
+              {correctionPreview ? (
+                <div className="bg-slate-50 border border-slate-200 rounded-xl p-3.5 space-y-2">
+                  <div className="text-[10px] font-black uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
+                    Live DOLE Kinsenas Math Preview
+                  </div>
+                  <div className="grid grid-cols-4 gap-2 text-center">
+                    <div className="bg-white p-2 rounded-lg border border-gray-200">
+                      <span className="text-[10px] text-gray-400 block font-bold">Net Hours</span>
+                      <span className="font-bold text-gray-900 text-xs">{correctionPreview.netHours}h</span>
+                      {correctionPreview.mealBreakDeducted && (
+                        <span className="text-[9px] text-gray-400 block">-1h meal break</span>
+                      )}
+                    </div>
+                    <div className="bg-white p-2 rounded-lg border border-gray-200">
+                      <span className="text-[10px] text-gray-400 block font-bold">Late</span>
+                      <span className={`font-bold text-xs ${correctionPreview.lateMins > 0 ? 'text-amber-600' : 'text-gray-400'}`}>
+                        {correctionPreview.lateMins}m
+                      </span>
+                    </div>
+                    <div className="bg-white p-2 rounded-lg border border-gray-200">
+                      <span className="text-[10px] text-gray-400 block font-bold">Reg OT</span>
+                      <span className={`font-bold text-xs ${Number(correctionPreview.regOt) > 0 ? 'text-emerald-600' : 'text-gray-400'}`}>
+                        {correctionPreview.regOt}h
+                      </span>
+                    </div>
+                    <div className="bg-white p-2 rounded-lg border border-gray-200">
+                      <span className="text-[10px] text-gray-400 block font-bold">Sun/Hol OT</span>
+                      <span className={`font-bold text-xs ${Number(correctionPreview.sunHolOt) > 0 ? 'text-emerald-700' : 'text-gray-400'}`}>
+                        {correctionPreview.sunHolOt}h
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="bg-rose-50 border border-rose-200 text-rose-700 p-2.5 rounded-lg text-xs font-semibold">
+                  Invalid shift range: Clock-out must be after clock-in.
+                </div>
+              )}
+
+              {/* Mandatory Rationale */}
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="font-bold text-gray-700">Audit Rationale & Rationale Notes *</label>
+                  <span className={`text-[10px] font-mono ${editReason.trim().length >= 10 ? 'text-emerald-600 font-bold' : 'text-gray-400'}`}>
+                    {editReason.trim().length} / 10 characters minimum
+                  </span>
+                </div>
+                <textarea
+                  rows={3}
+                  value={editReason}
+                  onChange={(e) => setEditReason(e.target.value)}
+                  placeholder="e.g., Technician completed off-grid field emergency at Makati Med; device battery depleted during sign-off. Verified with coordinator dispatch log."
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs leading-relaxed focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                />
+              </div>
+
+              {correctionError && (
+                <div className="p-2.5 bg-red-50 border border-red-200 rounded-lg text-red-700 text-xs flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 shrink-0" />
+                  <span>{correctionError}</span>
+                </div>
+              )}
+            </div>
+
+            {/* Modal Actions */}
+            <div className="px-5 py-3 bg-gray-50 border-t border-gray-200 flex items-center justify-end gap-2.5">
+              <button
+                type="button"
+                onClick={() => setEditingDay(null)}
+                disabled={savingCorrection}
+                className="px-3.5 py-2 border border-gray-300 rounded-lg text-gray-700 font-bold hover:bg-gray-100 disabled:opacity-50 text-xs transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleSaveCorrection}
+                disabled={savingCorrection || editReason.trim().length < 10 || !correctionPreview}
+                className="inline-flex items-center gap-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-bold rounded-lg text-xs transition-colors shadow-sm cursor-pointer"
+              >
+                {savingCorrection ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Recording Audit...
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 className="w-4 h-4" />
+                    Save Auditable Correction
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* History Inspector Modal */}
+      {viewingHistoryTech && (
+        <div className="fixed inset-0 z-[70] bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150">
+          <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl overflow-hidden border border-gray-200 flex flex-col">
+            <div className="px-5 py-3.5 bg-slate-900 text-white flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <History className="w-4 h-4 text-indigo-400" />
+                <h3 className="text-xs font-bold uppercase tracking-wider">Audit Correction Trail</h3>
+              </div>
+              <button
+                onClick={() => setViewingHistoryTech(null)}
+                className="p-1 rounded-md text-slate-400 hover:text-white cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="p-4 space-y-3 overflow-y-auto max-h-[60vh] text-xs">
+              <div className="text-[11px] text-gray-500 font-medium">
+                {viewingHistoryTech.employeeName} &bull; {viewingHistoryTech.targetDate}
+              </div>
+              {loadingHistory ? (
+                <div className="p-8 text-center text-gray-400">Loading audit history...</div>
+              ) : historyRecords.length === 0 ? (
+                <div className="p-8 text-center text-gray-400">No correction history found for this date.</div>
+              ) : (
+                historyRecords.map((h) => (
+                  <div key={h.id} className="p-3 bg-gray-50 border border-gray-200 rounded-xl space-y-1.5">
+                    <div className="flex items-center justify-between text-[11px]">
+                      <span className="font-bold text-gray-800">{h.actor_name} ({h.actor_role.toUpperCase()})</span>
+                      <span className="text-[10px] text-gray-400 font-mono">
+                        {new Date(h.created_at).toLocaleString('en-US', { timeZone: 'Asia/Manila' })}
+                      </span>
+                    </div>
+                    <div className="text-gray-700 font-mono text-[11px] bg-white p-2 rounded border border-gray-200">
+                      {h.original_time_in ? (
+                        <div>
+                          <span className="text-gray-400">Original:</span> {new Date(h.original_time_in).toLocaleTimeString('en-US', { timeZone: 'Asia/Manila', hour: '2-digit', minute: '2-digit' })} &rarr; {h.original_time_out ? new Date(h.original_time_out).toLocaleTimeString('en-US', { timeZone: 'Asia/Manila', hour: '2-digit', minute: '2-digit' }) : 'Open'}
+                        </div>
+                      ) : (
+                        <div className="text-gray-400 italic">Original: No mobile punch recorded</div>
+                      )}
+                      <div className="text-indigo-700 font-bold">
+                        <span className="text-gray-400 font-normal">Corrected:</span> {new Date(h.corrected_time_in).toLocaleTimeString('en-US', { timeZone: 'Asia/Manila', hour: '2-digit', minute: '2-digit' })} &rarr; {new Date(h.corrected_time_out).toLocaleTimeString('en-US', { timeZone: 'Asia/Manila', hour: '2-digit', minute: '2-digit' })}
+                      </div>
+                    </div>
+                    <div className="text-gray-600 text-[11px] italic bg-amber-50/50 p-2 rounded border border-amber-100">
+                      "{h.reason}"
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+            <div className="p-3 bg-gray-50 border-t border-gray-200 flex justify-end">
+              <button
+                onClick={() => setViewingHistoryTech(null)}
+                className="px-3.5 py-1.5 bg-slate-800 hover:bg-slate-900 text-white rounded-lg text-xs font-bold cursor-pointer"
+              >
+                Close
               </button>
             </div>
           </div>

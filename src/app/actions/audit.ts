@@ -8,11 +8,14 @@ import { getBranchFilter } from "@/lib/branch-filter"
 export interface DailyAuditRecord {
   date: string; // 'YYYY-MM-DD'
   dayOfWeek: string; // 'Mon', 'Tue', etc.
+  timeLogId?: string | null;
   scheduledStart: string | null;
   scheduledEnd: string | null;
   scheduleClient?: string | null;
   actualTimeIn: string | null;
   actualTimeOut: string | null;
+  rawTimeIn?: string | null;
+  rawTimeOut?: string | null;
   grossHours: number;
   hoursWorked: number; // net of 1h lunch if gross > 5h
   lateMinutes: number;
@@ -25,6 +28,14 @@ export interface DailyAuditRecord {
   status: 'present' | 'late' | 'overtime' | 'absent' | 'approved_leave' | 'rest_day' | 'holiday' | 'off_duty' | 'unclosed';
   leaveType?: string | null;
   notes?: string;
+  isManualEntry?: boolean;
+  isCorrected?: boolean;
+  correctionDetails?: {
+    id: string;
+    reason: string;
+    actorRole: string;
+    createdAt: string;
+  };
 }
 
 export interface EmployeeAuditSummary {
@@ -185,7 +196,7 @@ export async function getAuditPayrollRecords(
     // 3. Batch Fetch Time Logs for the period
     const { data: timeLogs, error: logsErr } = await supabaseAdmin
       .from('time_logs')
-      .select('id, technician_id, app_time_in, app_time_out, total_hours, status')
+      .select('id, technician_id, app_time_in, app_time_out, total_hours, status, is_manual_entry')
       .in('technician_id', profileIds)
       .gte('app_time_in', utcStart)
       .lte('app_time_in', utcEnd)
@@ -226,6 +237,15 @@ export async function getAuditPayrollRecords(
 
     if (leaveErr) throw leaveErr;
 
+    // 7. Batch Fetch DTR Corrections in Range
+    const { data: corrections } = await supabaseAdmin
+      .from('time_log_corrections')
+      .select('id, time_log_id, technician_id, target_date, reason, actor_role, created_at')
+      .in('technician_id', profileIds)
+      .gte('target_date', startDate)
+      .lte('target_date', endDate)
+      .order('created_at', { ascending: false });
+
     // Create lookup maps for fast access
     const holidayMap = new Map<string, { name: string; multiplier: number }>();
     (holidays || []).forEach(h => {
@@ -234,11 +254,12 @@ export async function getAuditPayrollRecords(
 
     const datesList = getDatesInRange(startDate, endDate);
 
-    // 7. Aggregate metrics per employee
+    // 8. Aggregate metrics per employee
     const aggregatedSummaries: EmployeeAuditSummary[] = profiles.map(profile => {
       const empLogs = (timeLogs || []).filter(l => l.technician_id === profile.id);
       const empScheds = (schedules || []).filter(s => s.technician_id === profile.id);
       const empLeaves = (leaves || []).filter(lv => lv.technician_id === profile.id);
+      const empCorrections = (corrections || []).filter(c => c.technician_id === profile.id);
 
       let daysWorked = 0;
       let totalHours = 0;
@@ -277,6 +298,16 @@ export async function getAuditPayrollRecords(
           return lv.start_date <= dateStr && lv.end_date >= dateStr;
         });
 
+        // Matching DTR correction on this date
+        const correction = empCorrections.find(c => c.target_date === dateStr);
+        const isCorrected = !!correction;
+        const correctionDetails = correction ? {
+          id: correction.id,
+          reason: correction.reason,
+          actorRole: correction.actor_role,
+          createdAt: correction.created_at
+        } : undefined;
+
         const scheduledStart = sched ? getManilaTimeString(new Date(sched.start_time)) : null;
         const scheduledEnd = sched && sched.end_time ? getManilaTimeString(new Date(sched.end_time)) : null;
 
@@ -291,6 +322,9 @@ export async function getAuditPayrollRecords(
             dailyBreakdown.push({
               date: dateStr,
               dayOfWeek,
+              timeLogId: log.id,
+              rawTimeIn: log.app_time_in,
+              rawTimeOut: null,
               scheduledStart,
               scheduledEnd,
               scheduleClient: sched?.client_name,
@@ -307,6 +341,9 @@ export async function getAuditPayrollRecords(
               holidayName: holiday?.name,
               status: 'unclosed',
               notes: 'Shift currently ongoing or missing clock-out',
+              isManualEntry: !!log.is_manual_entry,
+              isCorrected,
+              correctionDetails,
             });
             return;
           }
@@ -367,6 +404,9 @@ export async function getAuditPayrollRecords(
           dailyBreakdown.push({
             date: dateStr,
             dayOfWeek,
+            timeLogId: log.id,
+            rawTimeIn: log.app_time_in,
+            rawTimeOut: log.app_time_out,
             scheduledStart,
             scheduledEnd,
             scheduleClient: sched?.client_name,
@@ -382,6 +422,9 @@ export async function getAuditPayrollRecords(
             isHoliday,
             holidayName: holiday?.name,
             status,
+            isManualEntry: !!log.is_manual_entry,
+            isCorrected,
+            correctionDetails,
           });
 
         } else if (leave) {
@@ -389,6 +432,9 @@ export async function getAuditPayrollRecords(
           dailyBreakdown.push({
             date: dateStr,
             dayOfWeek,
+            timeLogId: null,
+            rawTimeIn: null,
+            rawTimeOut: null,
             scheduledStart,
             scheduledEnd,
             scheduleClient: sched?.client_name,
@@ -406,6 +452,9 @@ export async function getAuditPayrollRecords(
             status: 'approved_leave',
             leaveType: leave.leave_type,
             notes: `Official ${leave.leave_type.toUpperCase()} leave`,
+            isManualEntry: false,
+            isCorrected,
+            correctionDetails,
           });
 
         } else if (sched) {
@@ -414,6 +463,9 @@ export async function getAuditPayrollRecords(
           dailyBreakdown.push({
             date: dateStr,
             dayOfWeek,
+            timeLogId: null,
+            rawTimeIn: null,
+            rawTimeOut: null,
             scheduledStart,
             scheduledEnd,
             scheduleClient: sched.client_name,
@@ -430,12 +482,18 @@ export async function getAuditPayrollRecords(
             holidayName: holiday?.name,
             status: 'absent',
             notes: `Missed scheduled dispatch at ${sched.client_name}`,
+            isManualEntry: false,
+            isCorrected,
+            correctionDetails,
           });
 
         } else if (isSunday) {
           dailyBreakdown.push({
             date: dateStr,
             dayOfWeek,
+            timeLogId: null,
+            rawTimeIn: null,
+            rawTimeOut: null,
             scheduledStart: null,
             scheduledEnd: null,
             actualTimeIn: null,
@@ -451,12 +509,18 @@ export async function getAuditPayrollRecords(
             holidayName: holiday?.name,
             status: 'rest_day',
             notes: 'Sunday Rest Day',
+            isManualEntry: false,
+            isCorrected,
+            correctionDetails,
           });
 
         } else if (isHoliday) {
           dailyBreakdown.push({
             date: dateStr,
             dayOfWeek,
+            timeLogId: null,
+            rawTimeIn: null,
+            rawTimeOut: null,
             scheduledStart: null,
             scheduledEnd: null,
             actualTimeIn: null,
@@ -472,6 +536,9 @@ export async function getAuditPayrollRecords(
             holidayName: holiday.name,
             status: 'holiday',
             notes: `Official Holiday: ${holiday.name}`,
+            isManualEntry: false,
+            isCorrected,
+            correctionDetails,
           });
 
         } else {
@@ -479,6 +546,9 @@ export async function getAuditPayrollRecords(
           dailyBreakdown.push({
             date: dateStr,
             dayOfWeek,
+            timeLogId: null,
+            rawTimeIn: null,
+            rawTimeOut: null,
             scheduledStart: null,
             scheduledEnd: null,
             actualTimeIn: null,
@@ -493,6 +563,9 @@ export async function getAuditPayrollRecords(
             isHoliday: false,
             status: 'off_duty',
             notes: 'No dispatch assigned',
+            isManualEntry: false,
+            isCorrected,
+            correctionDetails,
           });
         }
       });
