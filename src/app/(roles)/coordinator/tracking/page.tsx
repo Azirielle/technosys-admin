@@ -31,6 +31,32 @@ export default function TrackingPage() {
 
   useEffect(() => {
     fetchLocations()
+
+    // Real-Time Fleet Tracking Bridge
+    const channel = supabase
+      .channel('admin-fleet-tracking-hub')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'technician_locations' },
+        () => {
+          fetchLocations()
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'time_logs' },
+        () => {
+          fetchLocations()
+        }
+      )
+      .on('broadcast', { event: 'location_update' }, () => {
+        fetchLocations()
+      })
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
   }, [])
 
   const fetchLocations = async () => {
@@ -41,10 +67,10 @@ export default function TrackingPage() {
       
     if (data) {
       const formatted = data.map((loc: any) => {
-        // Calculate if updated in last 15 minutes (Visual 5-Second Rule for 'Online' status)
+        // Calculate if updated in last 15 minutes and not explicitly offline
         const updatedTime = new Date(loc.updated_at)
         const diffMinutes = (new Date().getTime() - updatedTime.getTime()) / (1000 * 60)
-        const isOnline = diffMinutes < 15
+        const isOnline = diffMinutes < 15 && loc.status !== 'offline'
 
         return {
           id: loc.technician_id,
