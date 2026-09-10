@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server"
 import { verifyRoleAccess } from "@/lib/permissions"
+import { dispatchNotificationCascade } from "@/lib/notification-cascade"
 
 export async function getWarnings() {
   const supabase = await createClient()
@@ -104,13 +105,33 @@ export async function forwardWarning(id: string) {
     if (!authorized || !userId) return { error: "Unauthorized." }
 
     const supabase = await createClient()
-    const { error } = await supabase.from('employee_warnings').update({
-      status: 'issued_to_technician',
-      service_dept_reviewer_id: userId,
-      updated_at: new Date().toISOString()
-    }).eq("id", id)
+    const { data: updatedWarning, error } = await supabase
+      .from('employee_warnings')
+      .update({
+        status: 'issued_to_technician',
+        service_dept_reviewer_id: userId,
+        updated_at: new Date().toISOString()
+      })
+      .eq("id", id)
+      .select('employee_id, subject, warning_level, details')
+      .single()
 
     if (error) return { error: error.message }
+
+    // Trigger Transactional Notification Cascade (Push -> SMS)
+    if (updatedWarning?.employee_id) {
+      const warningTitle = `Formal Warning: ${updatedWarning.warning_level?.toUpperCase() || 'DISCIPLINARY'}`;
+      const warningMsg = `A formal disciplinary notice has been issued: "${updatedWarning.subject}". Review in your mobile app portal immediately.`;
+      
+      dispatchNotificationCascade({
+        recipientId: updatedWarning.employee_id,
+        title: warningTitle,
+        message: warningMsg,
+        category: 'DISCIPLINARY_WARNING',
+        data: { warningId: id, type: 'DISCIPLINARY_WARNING' }
+      }).catch(err => console.error("[WARNING_CASCADE_ERROR]:", err));
+    }
+
     return { success: true }
   } catch (err: any) {
     return { error: err.message }

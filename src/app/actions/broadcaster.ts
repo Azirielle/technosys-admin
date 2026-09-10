@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server"
 import { verifyRoleAccess } from "@/lib/permissions"
+import { batchDispatchNotificationCascade, NotificationCategory } from "@/lib/notification-cascade"
 
 export async function getContacts() {
   const supabase = await createClient()
@@ -90,29 +91,47 @@ export async function sendBroadcast(formData: FormData) {
     }
 
     const recipientIds = JSON.parse(recipientIdsStr) as string[]
-
     const supabase = await createClient()
-    
-    // In a real app, you would fetch the phone numbers for these IDs,
-    // and then call the SMS provider API here.
+
+    const category: NotificationCategory = departmentTag.toUpperCase().includes('PAYROLL') 
+      ? 'PAYROLL_RELEASE' 
+      : 'CRITICAL_ANNOUNCEMENT';
+
     const { data: contacts } = await supabase
       .from('announcement_contacts')
-      .select('phone_number')
+      .select('id, full_name, phone_number')
       .in('id', recipientIds)
       
-    console.log(`[MOCK SMS SENT] Sender: ${departmentTag}, Message: "${message}", Recipients: ${contacts?.length || 0}`)
-    // If process.env.SMS_PROVIDER === 'bulksms' ... call API ...
+    let deliveryStatus = 'dispatched';
+    if (contacts && contacts.length > 0) {
+      const recipients = contacts.map((c: any) => ({
+        id: c.id,
+        phone: c.phone_number,
+        name: c.full_name
+      }));
+
+      const cascadeSummary = await batchDispatchNotificationCascade(
+        recipients,
+        `Broadcaster [${departmentTag}]`,
+        message,
+        category,
+        { departmentTag, senderId: userId }
+      );
+
+      deliveryStatus = `dispatched (push: ${cascadeSummary.pushCount}, sms: ${cascadeSummary.smsCount})`;
+      console.log(`[BROADCASTER_CASCADE_SUMMARY] Total: ${cascadeSummary.total}, Push: ${cascadeSummary.pushCount}, SMS: ${cascadeSummary.smsCount}`);
+    }
 
     const { error } = await supabase.from('announcements').insert({
       sender_id: userId,
       department_tag: departmentTag,
       message: message,
       recipient_count: recipientIds.length,
-      status: 'mock_sent'
+      status: deliveryStatus
     })
 
     if (error) return { error: error.message }
-    return { success: true }
+    return { success: true, status: deliveryStatus }
   } catch (err: any) {
     return { error: err.message }
   }
