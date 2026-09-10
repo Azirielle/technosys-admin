@@ -25,6 +25,11 @@ export async function createOrUpdateInventoryItem(formData: FormData) {
     const id = formData.get("id")?.toString()
     const name = formData.get("name")?.toString().trim()
     const description = formData.get("description")?.toString().trim() || ""
+    const category = formData.get("category")?.toString().trim() || "General Tools"
+    const serial_number = formData.get("serial_number")?.toString().trim() || null
+    const unit_cost = Number(formData.get("unit_cost")) || 0
+    const is_serialized = formData.get("is_serialized") === "true"
+    const item_status = formData.get("status")?.toString() || "active"
     const total_stock = Number(formData.get("total_stock"))
     const available_stock = Number(formData.get("available_stock"))
     const image_url = formData.get("image_url")?.toString() || null
@@ -95,6 +100,11 @@ export async function createOrUpdateInventoryItem(formData: FormData) {
         .update({
           name,
           description,
+          category,
+          serial_number,
+          unit_cost,
+          is_serialized,
+          status: item_status,
           total_stock,
           available_stock,
           image_url: finalImageUrl,
@@ -128,6 +138,11 @@ export async function createOrUpdateInventoryItem(formData: FormData) {
         .insert({
           name,
           description,
+          category,
+          serial_number,
+          unit_cost,
+          is_serialized,
+          status: item_status,
           total_stock,
           available_stock,
           image_url: finalImageUrl
@@ -141,10 +156,12 @@ export async function createOrUpdateInventoryItem(formData: FormData) {
     await logActivity({
       category: 'inventory',
       action: id ? 'updated' : 'created',
-      description: `${id ? 'Updated' : 'Created'} inventory tool "${name}" (Total: ${total_stock}, Available: ${available_stock})`
+      description: `${id ? 'Updated' : 'Created'} inventory tool "${name}" [${category}] (Total: ${total_stock}, Available: ${available_stock})`
     })
 
-    revalidatePath('/dashboard/inventory')
+    revalidatePath('/coordinator/inventory')
+    revalidatePath('/hr/inventory')
+    revalidatePath('/accountant/inventory')
     return { success: true }
   } catch (err: any) {
     console.error("Failed to create/update inventory item:", err.message)
@@ -180,7 +197,9 @@ export async function deleteInventoryItem(id: string) {
       description: `Deleted tool item ID: ${id}`
     })
 
-    revalidatePath('/dashboard/inventory')
+    revalidatePath('/coordinator/inventory')
+    revalidatePath('/hr/inventory')
+    revalidatePath('/accountant/inventory')
     return { success: true }
   } catch (err: any) {
     console.error("Failed to delete inventory item:", err.message)
@@ -212,7 +231,7 @@ export async function getToolAssignments(technicianId?: string) {
       .from('tool_handovers')
       .select(`
         *,
-        tool:tool_catalog!tool_id(name, image_url),
+        tool:tool_catalog!tool_id(name, image_url, category, serial_number),
         technician:profiles!technician_id(full_name, role)
       `)
       .order('handed_over_at', { ascending: false })
@@ -231,7 +250,7 @@ export async function getToolAssignments(technicianId?: string) {
 }
 
 // 6. Assign/Borrow a tool to a technician
-export async function assignTool(technicianId: string, toolId: string, quantity: number, notes?: string) {
+export async function assignTool(technicianId: string, toolId: string, quantity: number = 1, notes?: string) {
   try {
     if (isNaN(quantity) || quantity <= 0) {
       return { error: "Quantity must be greater than 0." }
@@ -290,7 +309,9 @@ export async function assignTool(technicianId: string, toolId: string, quantity:
       description: `Assigned ${quantity}x "${tool.name}" to ${techName} (Notes: ${notes || 'None'})`
     })
 
-    revalidatePath('/dashboard/inventory')
+    revalidatePath('/coordinator/inventory')
+    revalidatePath('/hr/inventory')
+    revalidatePath('/accountant/inventory')
     return { success: true }
   } catch (err: any) {
     console.error("Failed to assign tool:", err.message)
@@ -298,8 +319,15 @@ export async function assignTool(technicianId: string, toolId: string, quantity:
   }
 }
 
-// 7. Process return / damage / loss of a tool
-export async function returnTool(assignmentId: string, status: 'returned' | 'lost' | 'damaged', notes?: string) {
+// 7. Process return / condition audit / damage / loss of a tool
+export async function returnTool(
+  assignmentId: string,
+  status: 'returned' | 'lost' | 'damaged',
+  conditionOnReturn: 'good' | 'minor_wear' | 'damaged' | 'lost' = 'good',
+  conditionNotes?: string,
+  damageFee: number = 0,
+  receivedBy?: string
+) {
   try {
     // Fetch active assignment record
     const { data: assign, error: assignErr } = await supabaseAdmin
@@ -316,13 +344,19 @@ export async function returnTool(assignmentId: string, status: 'returned' | 'los
       return { error: "This tool assignment has already been processed/returned." }
     }
 
-    // Update assignment status
+    const handoverQty = assign.quantity || 1
+
+    // Update assignment status and condition audit details
     const { error: updateAssignErr } = await supabaseAdmin
       .from('tool_handovers')
       .update({
         returned_at: new Date().toISOString(),
         status,
-        notes: notes?.trim() || null
+        condition_on_return: conditionOnReturn,
+        condition_notes: conditionNotes?.trim() || null,
+        damage_fee: damageFee || 0,
+        received_by: receivedBy || null,
+        notes: conditionNotes?.trim() || assign.notes
       })
       .eq('id', assignmentId)
 
@@ -333,12 +367,12 @@ export async function returnTool(assignmentId: string, status: 'returned' | 'los
     let nextTotal = tool.total_stock
 
     if (status === 'returned') {
-      // Put back in warehouse stock
-      nextAvailable = tool.available_stock + assign.quantity
+      // Returned in usable condition -> put back in warehouse stock
+      nextAvailable = tool.available_stock + handoverQty
     } else {
       // Lost or damaged beyond repair:
-      // It does not return to available stock, and it decreases total inventory assets
-      nextTotal = Math.max(0, tool.total_stock - assign.quantity)
+      // It does not return to available stock, and it permanently decreases total inventory assets
+      nextTotal = Math.max(0, tool.total_stock - handoverQty)
     }
 
     // Update quantities in catalog
@@ -364,10 +398,12 @@ export async function returnTool(assignmentId: string, status: 'returned' | 'los
     await logActivity({
       category: 'inventory',
       action: status === 'returned' ? 'restocked' : status,
-      description: `Processed return for ${assign.quantity}x "${tool.name}" from ${techName} with status: ${status.toUpperCase()} (Notes: ${notes || 'None'})`
+      description: `Processed return for ${handoverQty}x "${tool.name}" from ${techName} with condition [${conditionOnReturn.toUpperCase()}] and status ${status.toUpperCase()}${damageFee > 0 ? ` (Damage Fee: ₱${damageFee})` : ''}${conditionNotes ? ` (Notes: ${conditionNotes})` : ''}`
     })
 
-    revalidatePath('/dashboard/inventory')
+    revalidatePath('/coordinator/inventory')
+    revalidatePath('/hr/inventory')
+    revalidatePath('/accountant/inventory')
     return { success: true }
   } catch (err: any) {
     console.error("Failed to process tool return:", err.message)
