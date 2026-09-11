@@ -25,10 +25,10 @@ export default async function LoginPage({
             <Image 
               src="/technocycle_logo.png" 
               alt="TechnoCycle Logo" 
-              width={40} 
-              height={40} 
+              width={48} 
+              height={48} 
               unoptimized
-              className="object-contain"
+              className="w-full h-full object-contain"
               priority
             />
           </div>

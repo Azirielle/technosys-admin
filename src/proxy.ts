@@ -37,15 +37,26 @@ export async function proxy(request: NextRequest) {
 
   const { data: { user } } = await supabase.auth.getUser()
 
-  // Static assets and public routes skip auth checks
-  if (
+  // Static assets, images, and public routes skip auth checks
+  const isStaticOrPublic = 
     pathname.startsWith('/_next') || 
     pathname.startsWith('/favicon.ico') || 
     pathname.startsWith('/api') || 
     pathname.startsWith('/assets') ||
-    pathname.startsWith('/icons')
-  ) {
-    // just apply security headers below
+    pathname.startsWith('/icons') ||
+    pathname.startsWith('/portfolio') ||
+    pathname.endsWith('.png') ||
+    pathname.endsWith('.jpg') ||
+    pathname.endsWith('.jpeg') ||
+    pathname.endsWith('.webp') ||
+    pathname.endsWith('.svg') ||
+    pathname.endsWith('.ico') ||
+    pathname.endsWith('.webmanifest') ||
+    pathname.endsWith('.woff') ||
+    pathname.endsWith('.woff2');
+
+  if (isStaticOrPublic) {
+    // static asset bypass: skip auth checks
   } else if (!user && !pathname.startsWith('/login')) {
     // Redirect unauthenticated users to login
     const loginUrl = new URL('/login', request.url);
@@ -67,18 +78,19 @@ export async function proxy(request: NextRequest) {
   response.headers.set('Server', 'Webserver');
   response.headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
   
+  const isProd = process.env.NODE_ENV === 'production';
   const cspHeader = `
     default-src 'self';
     script-src 'self' 'unsafe-eval' 'unsafe-inline';
     style-src 'self' 'unsafe-inline';
-    img-src 'self' blob: data: https://*.supabase.co https://*.tile.openstreetmap.org https://unpkg.com https://images.unsplash.com https://via.placeholder.com;
+    img-src 'self' blob: data: https://*.supabase.co https://*.tile.openstreetmap.org https://unpkg.com https://images.unsplash.com https://via.placeholder.com https://cdnjs.cloudflare.com;
     font-src 'self' data:;
     object-src 'none';
     base-uri 'self';
     form-action 'self';
     frame-ancestors 'none';
     connect-src 'self' https://*.supabase.co wss://*.supabase.co https://nominatim.openstreetmap.org;
-    upgrade-insecure-requests;
+    ${isProd ? 'upgrade-insecure-requests;' : ''}
   `;
   response.headers.set('Content-Security-Policy', cspHeader.replace(/\s{2,}/g, ' ').trim());
 
