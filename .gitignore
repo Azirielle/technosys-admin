@@ -47,6 +47,8 @@ test-*.js
 check-*.js
 verify-*.js
 *.png
+!public/**/*.png
+!public/*.png
 *.log
 
 .vercel
