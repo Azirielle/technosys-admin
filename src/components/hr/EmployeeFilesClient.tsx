@@ -47,6 +47,16 @@ export default function EmployeeFilesClient() {
     base_salary: 0
   });
   const [isSavingSettings, setIsSavingSettings] = useState(false);
+  const [settingsError, setSettingsError] = useState<string | null>(null);
+  const [settingsConfirmation, setSettingsConfirmation] = useState<{
+    isOpen: boolean;
+    employeeName: string;
+    updatedRole: string;
+    updatedLevel: string;
+    updatedStatus: string;
+    updatedSalary: number;
+    isPromotion: boolean;
+  } | null>(null);
 
   // Upload State
   const [uploadingDoc, setUploadingDoc] = useState<string | null>(null);
@@ -241,9 +251,10 @@ export default function EmployeeFilesClient() {
 
     // Logic Enforcer: OJT cannot be Senior
     if (editForm.employment_status === 'ojt' && editForm.technician_level === 'senior') {
-      alert("An OJT cannot hold a Senior Technician level. Please correct the fields.");
+      setSettingsError("An OJT cannot hold a Senior Technician level. Please adjust either employment status or operational level.");
       return;
     }
+    setSettingsError(null);
 
     setIsSavingSettings(true);
     
@@ -269,14 +280,21 @@ export default function EmployeeFilesClient() {
           title: `Congratulations on your promotion!`,
           body: `You are now a ${editForm.employment_status.toUpperCase()} ${editForm.technician_level.toUpperCase()}. Keep up the great work!`
         });
-        alert(`Profile updated. Promotion detected: Celebratory SMS & Push Notification sent to ${selectedEmp.full_name}!`);
-      } else {
-        alert("Profile updated successfully.");
       }
       
       const updatedEmp = { ...selectedEmp, ...editForm };
       setSelectedEmp(updatedEmp);
       setEmployees(employees.map(emp => emp.id === updatedEmp.id ? updatedEmp : emp));
+
+      setSettingsConfirmation({
+        isOpen: true,
+        employeeName: selectedEmp.full_name,
+        updatedRole: editForm.role,
+        updatedLevel: editForm.technician_level,
+        updatedStatus: editForm.employment_status,
+        updatedSalary: editForm.base_salary,
+        isPromotion
+      });
     }
     setIsSavingSettings(false);
   };
@@ -380,64 +398,65 @@ export default function EmployeeFilesClient() {
           </div>
 
           {/* Table */}
-          <div className="bg-white border border-gray-200 border-b-0 rounded-b-none overflow-y-scroll flex-1 shadow-sm [scrollbar-gutter:stable]">
+          <div className="bg-white border border-zinc-200 border-b-0 rounded-b-none overflow-y-scroll flex-1 shadow-xs [scrollbar-gutter:stable]">
             <table className="w-full text-left border-collapse table-fixed">
               <thead>
-                <tr className="bg-gray-50 border-b border-gray-200 sticky top-0 z-10">
-                  <th className="px-5 py-3 text-xs font-black text-gray-500 uppercase tracking-wider w-[28%]">Employee</th>
-                  <th className="px-5 py-3 text-xs font-black text-gray-500 uppercase tracking-wider w-[22%]">Role & Level</th>
-                  <th className="px-5 py-3 text-xs font-black text-gray-500 uppercase tracking-wider w-[20%]">Employment Status</th>
-                  <th className="px-5 py-3 text-xs font-black text-gray-500 uppercase tracking-wider w-[16%]">Base Salary</th>
-                  <th className="px-5 py-3 text-xs font-black text-gray-500 uppercase tracking-wider w-[14%]">Record</th>
+                <tr className="bg-zinc-50 border-b border-zinc-200 sticky top-0 z-10 text-[11px] font-semibold text-zinc-600 uppercase tracking-wider">
+                  <th className="px-3.5 py-2.5 border-r border-zinc-200 w-[28%]">Employee</th>
+                  <th className="px-3.5 py-2.5 border-r border-zinc-200 w-[22%]">Role & Level</th>
+                  <th className="px-3.5 py-2.5 border-r border-zinc-200 w-[20%]">Employment Status</th>
+                  <th className="px-3.5 py-2.5 border-r border-zinc-200 w-[16%]">Base Compensation</th>
+                  <th className="px-3.5 py-2.5 w-[14%]">Record</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-zinc-200">
                 {loading ? (
-                  <tr><td colSpan={5} className="p-8 text-center text-gray-400 font-medium">Loading records...</td></tr>
+                  <tr><td colSpan={5} className="p-8 text-center text-zinc-400 font-medium text-xs">Loading records...</td></tr>
                 ) : paginatedEmployees.length === 0 ? (
-                  <tr><td colSpan={5} className="p-8 text-center text-gray-400 font-medium">No employees found.</td></tr>
+                  <tr><td colSpan={5} className="p-8 text-center text-zinc-400 font-medium text-xs">No employees found.</td></tr>
                 ) : paginatedEmployees.map((emp) => {
                   const warnCount = emp.employee_warnings?.length || 0;
+                  const isMonthly = (emp.base_salary || 0) >= 3000;
                   
                   return (
-                    <tr key={emp.id} className="hover:bg-indigo-50/50 transition-colors group cursor-pointer" onClick={() => handleSelectEmp(emp)}>
-                      <td className="px-5 py-3">
-                        <div className="font-bold text-gray-900">{emp.full_name}</div>
-                        <div className="text-xs text-gray-500 font-medium mt-0.5">
+                    <tr key={emp.id} className="hover:bg-zinc-50/80 transition-colors group cursor-pointer" onClick={() => handleSelectEmp(emp)}>
+                      <td className="px-3.5 py-2 border-r border-zinc-200">
+                        <div className="font-semibold text-zinc-900 text-xs">{emp.full_name}</div>
+                        <div className="text-[11px] text-zinc-500 font-medium mt-0.5">
                           {emp.lifecycle_status === 'active' ? (
-                            <span className="text-emerald-600">Active</span>
+                            <span className="text-emerald-600 font-medium">Active</span>
                           ) : (
-                            <span className="text-red-500 uppercase">{emp.lifecycle_status}</span>
+                            <span className="text-red-500 uppercase font-semibold">{emp.lifecycle_status}</span>
                           )}
                         </div>
                       </td>
-                      <td className="px-5 py-3">
-                        <div className="text-sm font-bold text-gray-700 capitalize">{emp.role}</div>
+                      <td className="px-3.5 py-2 border-r border-zinc-200">
+                        <div className="text-xs font-semibold text-zinc-800 capitalize">{emp.role}</div>
                         {emp.technician_level && (
-                          <div className="text-[10px] font-black uppercase tracking-wider text-indigo-600 bg-indigo-50 inline-block px-2 py-0.5 rounded mt-0.5 border border-indigo-100">
+                          <div className="text-[10px] font-bold uppercase tracking-wider text-indigo-700 bg-indigo-50 inline-block px-1.5 py-0.2 rounded mt-0.5 border border-indigo-150">
                             {emp.technician_level}
                           </div>
                         )}
                       </td>
-                      <td className="px-5 py-3">
-                        <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-wider
-                          ${emp.employment_status === 'regular' ? 'bg-blue-50 text-blue-700 border border-blue-200' : 'bg-gray-100 text-gray-600 border border-gray-200'}
+                      <td className="px-3.5 py-2 border-r border-zinc-200">
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider
+                          ${emp.employment_status === 'regular' ? 'bg-blue-50 text-blue-700 border border-blue-200' : 'bg-zinc-100 text-zinc-600 border border-zinc-200'}
                         `}>
                           {emp.employment_status}
                         </span>
                       </td>
-                      <td className="px-5 py-3">
-                        <span className="font-mono font-bold text-sm text-emerald-700 bg-emerald-50 px-2 py-1 rounded border border-emerald-100">
-                          ₱{emp.base_salary?.toLocaleString()}/day
+                      <td className="px-3.5 py-2 border-r border-zinc-200">
+                        <span className="font-mono font-bold text-xs text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 inline-block">
+                          ₱{Number(emp.base_salary || 0).toLocaleString()}{isMonthly ? '/mo' : '/day'}
                         </span>
                       </td>
-                      <td className="px-5 py-3">
+                      <td className="px-3.5 py-2">
                         {warnCount > 0 ? (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-black bg-red-100 text-red-700 px-2 py-1 rounded border border-red-200">
-                            <AlertTriangle className="w-3 h-3" /> {warnCount} WARNINGS
+                          <span className="inline-flex items-center gap-1 text-[10px] font-bold bg-red-50 text-red-700 px-2 py-0.5 rounded border border-red-200">
+                            <AlertTriangle className="w-3 h-3" /> {warnCount} WARNING{warnCount > 1 ? 'S' : ''}
                           </span>
                         ) : (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-black bg-emerald-50 text-emerald-600 px-2 py-1 rounded border border-emerald-200">
+                          <span className="inline-flex items-center gap-1 text-[10px] font-bold bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded border border-emerald-200">
                             <CheckCircle2 className="w-3 h-3" /> CLEAN
                           </span>
                         )}
@@ -497,7 +516,9 @@ export default function EmployeeFilesClient() {
                 <div>
                   <h2 className="text-lg font-black text-gray-900 flex items-center gap-2 leading-none">
                     {selectedEmp.full_name}
-                    <span className="font-mono text-xs text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full font-bold">₱{selectedEmp.base_salary}/day</span>
+                    <span className="font-mono text-xs text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full font-bold">
+                      ₱{Number(selectedEmp.base_salary || 0).toLocaleString()}{(selectedEmp.base_salary || 0) >= 3000 ? '/mo' : '/day'}
+                    </span>
                   </h2>
                   <p className="text-[11px] font-bold text-gray-500 uppercase tracking-wider mt-1">
                     {selectedEmp.role} &bull; {selectedEmp.employment_status} &bull; {selectedEmp.technician_level}
@@ -717,86 +738,168 @@ export default function EmployeeFilesClient() {
               )}
 
               {activeTab === 'settings' && (
-                <form onSubmit={saveSettings} className="max-w-xl mx-auto space-y-5 py-4">
-                  <div className="bg-indigo-50 border border-indigo-100 p-4 rounded-xl flex gap-3">
-                    <Settings className="w-5 h-5 text-indigo-600 shrink-0 mt-0.5" />
-                    <div>
-                      <h4 className="text-sm font-bold text-indigo-900">Profile & Salary Editor</h4>
-                      <p className="text-xs text-indigo-700 mt-1 font-medium">Update the employee's role, operational level, and compensation. Promotions will automatically trigger an SMS/Push notification.</p>
+                <form onSubmit={saveSettings} className="space-y-3.5 py-1">
+                  {/* Top Context Banner */}
+                  <div className="bg-indigo-50/70 border border-indigo-150 p-3 rounded-xl flex items-center justify-between">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-7 h-7 rounded-lg bg-indigo-600 text-white flex items-center justify-center shrink-0 shadow-2xs">
+                        <Settings className="w-3.5 h-3.5" />
+                      </div>
+                      <div>
+                        <h4 className="text-xs font-bold text-zinc-900">Profile & Individual Compensation</h4>
+                        <p className="text-[11px] text-zinc-500 font-medium">
+                          Editing <span className="font-semibold text-zinc-800">{selectedEmp.full_name}</span> &bull; Base compensation is negotiated individually per technician.
+                        </p>
+                      </div>
                     </div>
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-700 bg-indigo-100/70 px-2 py-0.5 rounded-full border border-indigo-200">
+                      201 File Profile
+                    </span>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">System Role</label>
-                      <select 
-                        value={editForm.role}
-                        onChange={e => setEditForm({...editForm, role: e.target.value})}
-                        className="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-indigo-500 outline-none font-medium text-gray-900"
-                      >
-                        <option value="technician">Technician</option>
-                        <option value="coordinator">Coordinator</option>
-                        <option value="hr">HR</option>
-                        <option value="accountant">Accountant</option>
-                        <option value="ceo">CEO</option>
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Employment Status</label>
-                      <select 
-                        value={editForm.employment_status}
-                        onChange={e => setEditForm({...editForm, employment_status: e.target.value})}
-                        className="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-indigo-500 outline-none font-medium text-gray-900"
-                      >
-                        <option value="ojt">OJT (Trainee)</option>
-                        <option value="contractual">Contractual</option>
-                        <option value="provisionary">Provisionary</option>
-                        <option value="regular">Regular</option>
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Technician Level</label>
-                      <select 
-                        value={editForm.technician_level}
-                        onChange={e => setEditForm({...editForm, technician_level: e.target.value})}
-                        className="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-indigo-500 outline-none font-medium text-gray-900"
-                      >
-                        <option value="helper">Helper</option>
-                        <option value="technician">Technician</option>
-                        <option value="senior">Senior Technician</option>
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Daily Base Salary (₱)</label>
-                      <input 
-                        type="number"
-                        min="0"
-                        step="1"
-                        required
-                        value={editForm.base_salary}
-                        onChange={e => setEditForm({...editForm, base_salary: Number(e.target.value)})}
-                        className="w-full font-mono border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-indigo-500 outline-none font-bold text-emerald-700 bg-emerald-50"
-                      />
-                    </div>
-                  </div>
-
-                  {editForm.employment_status === 'ojt' && editForm.technician_level === 'senior' && (
-                    <div className="text-xs font-bold text-red-600 bg-red-50 p-3 rounded border border-red-200">
-                      <AlertTriangle className="w-4 h-4 inline mr-1" />
-                      Error: An OJT cannot be assigned as a Senior Technician.
+                  {settingsError && (
+                    <div className="text-xs font-semibold text-red-700 bg-red-50 border border-red-200 p-2.5 rounded-xl flex items-center gap-2 animate-in fade-in duration-150">
+                      <AlertTriangle className="w-4 h-4 text-red-500 shrink-0" />
+                      <span>{settingsError}</span>
                     </div>
                   )}
 
-                  <div className="pt-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                    {/* Card 1: Operational Placement */}
+                    <div className="bg-zinc-50/70 border border-zinc-200 rounded-xl p-3.5 space-y-2.5">
+                      <div className="flex items-center justify-between pb-1.5 border-b border-zinc-200/60">
+                        <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-600">Operational Placement</span>
+                        <span className="text-[10px] text-zinc-500 font-medium">Role & Level</span>
+                      </div>
+
+                      <div className="space-y-2">
+                        <div>
+                          <label className="block text-[10px] font-bold text-zinc-700 uppercase tracking-wider mb-1">System Role</label>
+                          <select 
+                            value={editForm.role}
+                            onChange={e => setEditForm({...editForm, role: e.target.value})}
+                            className="w-full border border-zinc-200 rounded-lg px-2.5 py-1.5 text-xs bg-white focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 outline-none font-medium text-zinc-900 shadow-2xs"
+                          >
+                            <option value="technician">Technician</option>
+                            <option value="coordinator">Coordinator</option>
+                            <option value="hr">HR</option>
+                            <option value="accountant">Accountant</option>
+                            <option value="ceo">CEO</option>
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="block text-[10px] font-bold text-zinc-700 uppercase tracking-wider mb-1">Technician Level</label>
+                          <select 
+                            value={editForm.technician_level}
+                            onChange={e => {
+                              const newLvl = e.target.value;
+                              setEditForm({...editForm, technician_level: newLvl});
+                              if (editForm.employment_status === 'ojt' && newLvl === 'senior') {
+                                setSettingsError("An OJT cannot hold a Senior Technician level.");
+                              } else {
+                                setSettingsError(null);
+                              }
+                            }}
+                            className="w-full border border-zinc-200 rounded-lg px-2.5 py-1.5 text-xs bg-white focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 outline-none font-medium text-zinc-900 shadow-2xs"
+                          >
+                            <option value="helper">Helper</option>
+                            <option value="technician">Technician</option>
+                            <option value="senior">Senior Technician</option>
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="block text-[10px] font-bold text-zinc-700 uppercase tracking-wider mb-1">Employment Status</label>
+                          <select 
+                            value={editForm.employment_status}
+                            onChange={e => {
+                              const newStatus = e.target.value;
+                              setEditForm({...editForm, employment_status: newStatus});
+                              if (newStatus === 'ojt' && editForm.technician_level === 'senior') {
+                                setSettingsError("An OJT cannot hold a Senior Technician level.");
+                              } else {
+                                setSettingsError(null);
+                              }
+                            }}
+                            className="w-full border border-zinc-200 rounded-lg px-2.5 py-1.5 text-xs bg-white focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 outline-none font-medium text-zinc-900 shadow-2xs"
+                          >
+                            <option value="ojt">OJT (Trainee)</option>
+                            <option value="contractual">Contractual</option>
+                            <option value="provisionary">Provisionary</option>
+                            <option value="regular">Regular</option>
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Card 2: Individual Base Compensation */}
+                    <div className="bg-zinc-50/70 border border-zinc-200 rounded-xl p-3.5 space-y-2.5 flex flex-col justify-between">
+                      <div>
+                        <div className="flex items-center justify-between pb-1.5 border-b border-zinc-200/60">
+                          <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-600">Individual Compensation</span>
+                          <span className="text-[10px] text-emerald-700 font-bold bg-emerald-100/70 px-2 py-0.2 rounded-full border border-emerald-200">
+                            Custom Rate
+                          </span>
+                        </div>
+
+                        <div className="mt-2 space-y-2">
+                          <div>
+                            <div className="flex items-center justify-between mb-1">
+                              <label className="text-[10px] font-bold text-zinc-700 uppercase tracking-wider">
+                                {editForm.base_salary >= 3000 ? 'Monthly Base Salary (₱)' : 'Daily Base Rate (₱)'}
+                              </label>
+                              <span className="text-[10px] font-mono text-zinc-500">
+                                {editForm.base_salary >= 3000 ? '₱/month' : '₱/day'}
+                              </span>
+                            </div>
+                            <div className="relative">
+                              <span className="absolute left-3 top-1/2 -translate-y-1/2 font-mono font-bold text-emerald-600 text-xs">₱</span>
+                              <input 
+                                type="number"
+                                min="0"
+                                step="1"
+                                required
+                                value={editForm.base_salary}
+                                onChange={e => setEditForm({...editForm, base_salary: Number(e.target.value)})}
+                                className="w-full font-mono font-bold text-xs text-emerald-800 bg-white border border-zinc-200 rounded-lg pl-7 pr-3 py-1.5 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 outline-none shadow-2xs"
+                              />
+                            </div>
+                          </div>
+
+                          {/* Reference equivalence helper */}
+                          <div className="bg-white border border-zinc-200 rounded-lg p-2 space-y-1 text-xs">
+                            <div className="flex items-center justify-between text-[11px]">
+                              <span className="text-zinc-500 font-medium">Recorded Rate:</span>
+                              <span className="font-bold text-emerald-700 font-mono">
+                                ₱{Number(editForm.base_salary || 0).toLocaleString()} {editForm.base_salary >= 3000 ? '/ mo' : '/ day'}
+                              </span>
+                            </div>
+                            <div className="flex items-center justify-between text-[10px] text-zinc-500 pt-1 border-t border-zinc-100">
+                              <span>Estimated Equivalent:</span>
+                              <span className="font-mono font-semibold text-zinc-700">
+                                {editForm.base_salary >= 3000 
+                                  ? `≈ ₱${(editForm.base_salary / 26).toFixed(2)}/day (26-day basis)`
+                                  : `≈ ₱${(editForm.base_salary * 26).toLocaleString()}/mo (26-day basis)`}
+                              </span>
+                            </div>
+                          </div>
+
+                          <p className="text-[10px] text-zinc-500 italic leading-tight">
+                            Note: Technician base rate is configured individually and does not inherit shared role defaults.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="pt-1">
                     <button 
                       type="submit"
                       disabled={isSavingSettings || (editForm.employment_status === 'ojt' && editForm.technician_level === 'senior')}
-                      className="w-full py-3 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      className="w-full py-2.5 bg-zinc-900 hover:bg-zinc-800 text-white rounded-xl font-bold text-xs shadow-xs disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                     >
-                      {isSavingSettings ? 'Saving...' : 'Save Profile & Compensation'}
+                      {isSavingSettings ? 'Saving Profile & Compensation...' : 'Save Profile & Individual Compensation'}
                     </button>
                   </div>
                 </form>
@@ -935,6 +1038,65 @@ export default function EmployeeFilesClient() {
             <button
               onClick={() => {
                 setWarningConfirmation(null);
+                setActiveTab('docs');
+              }}
+              className="w-full py-2.5 bg-zinc-900 hover:bg-zinc-800 text-white rounded-xl text-xs font-semibold shadow-xs transition-colors"
+            >
+              Done & Return to 201 File
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* In-App Styled Profile & Compensation Save Confirmation Modal */}
+      {settingsConfirmation?.isOpen && (
+        <div className="fixed inset-0 bg-zinc-900/60 backdrop-blur-xs z-[75] flex items-center justify-center p-4 animate-in fade-in duration-150">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden border border-zinc-200 text-center flex flex-col items-center p-6">
+            <div className="w-12 h-12 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-200 flex items-center justify-center mb-3 shadow-2xs">
+              <CheckCircle2 className="w-6 h-6" />
+            </div>
+
+            <h3 className="text-base font-bold text-zinc-900">
+              {settingsConfirmation.isPromotion ? 'Promotion & Compensation Updated' : 'Profile & Compensation Saved'}
+            </h3>
+            <p className="text-xs text-zinc-500 mt-1">
+              Changes to <span className="font-semibold text-zinc-800">{settingsConfirmation.employeeName}</span> have been committed to their 201 profile.
+            </p>
+
+            <div className="w-full bg-zinc-50 border border-zinc-200/80 rounded-xl p-3 my-4 text-left space-y-2 text-xs">
+              <div className="flex items-center justify-between">
+                <span className="text-zinc-500 font-medium">Technician:</span>
+                <span className="font-bold text-zinc-900">{settingsConfirmation.employeeName}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-zinc-500 font-medium">Operational Placement:</span>
+                <span className="font-semibold text-zinc-800 capitalize">
+                  {settingsConfirmation.updatedRole} &bull; {settingsConfirmation.updatedLevel}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-zinc-500 font-medium">Employment Status:</span>
+                <span className="font-semibold text-zinc-800 uppercase text-[10px] tracking-wider px-2 py-0.5 rounded bg-zinc-200/60">
+                  {settingsConfirmation.updatedStatus}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-zinc-500 font-medium">Individual Base Rate:</span>
+                <span className="font-bold font-mono text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                  ₱{Number(settingsConfirmation.updatedSalary || 0).toLocaleString()}{settingsConfirmation.updatedSalary >= 3000 ? '/mo' : '/day'}
+                </span>
+              </div>
+              {settingsConfirmation.isPromotion && (
+                <div className="flex items-center justify-between pt-1.5 border-t border-zinc-200/60 text-emerald-700">
+                  <span className="font-medium">Promotion Dispatch:</span>
+                  <span className="font-semibold">Celebratory Push Queued</span>
+                </div>
+              )}
+            </div>
+
+            <button
+              onClick={() => {
+                setSettingsConfirmation(null);
                 setActiveTab('docs');
               }}
               className="w-full py-2.5 bg-zinc-900 hover:bg-zinc-800 text-white rounded-xl text-xs font-semibold shadow-xs transition-colors"
