@@ -33,10 +33,12 @@ export type NavItem = {
   isOverride?: boolean
 }
 
+export type SidebarRole = RoleKey | 'ceo'
+
 interface SidebarProps {
   navItems: NavItem[]
   title: string
-  role?: RoleKey
+  role?: SidebarRole
 }
 
 const ICON_MAP: Record<string, LucideIcon> = {
@@ -77,7 +79,7 @@ export function Sidebar({ navItems, title, role }: SidebarProps) {
 
   useEffect(() => {
     const updateNavWithOverrides = () => {
-      if (!role) {
+      if (!role || role === 'ceo') {
         setEffectiveItems(navItems)
         return
       }
@@ -228,7 +230,7 @@ export function Sidebar({ navItems, title, role }: SidebarProps) {
         </div>
 
         {/* Real-World Operational Telemetry Component */}
-        <OperationalTelemetry />
+        <OperationalTelemetry role={role} />
       </div>
 
       {/* Encapsulated User & Sign-Out Dock */}
