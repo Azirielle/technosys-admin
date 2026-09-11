@@ -489,7 +489,6 @@ export default function AuditLogClient() {
         'Employee Name',
         'Role',
         'Level & Status',
-        'Base Salary (Daily)',
         'Days Worked',
         'Total Hours Worked',
         'Late Incidents',
@@ -520,7 +519,6 @@ export default function AuditLogClient() {
         r.name,
         r.role.toUpperCase(),
         `${r.level.toUpperCase()} • ${r.status.toUpperCase()}`,
-        `₱${(r.base_salary || 0).toLocaleString()}/day`,
         r.daysWorked,
         r.totalHours,
         r.lateCount,
@@ -536,7 +534,6 @@ export default function AuditLogClient() {
     data.push([]);
     data.push([
       'TOTALS',
-      '',
       '',
       '',
       totDays,
@@ -555,7 +552,6 @@ export default function AuditLogClient() {
       { wch: 28 },
       { wch: 16 },
       { wch: 26 },
-      { wch: 20 },
       { wch: 14 },
       { wch: 18 },
       { wch: 15 },
@@ -581,7 +577,6 @@ export default function AuditLogClient() {
       "Employee Name",
       "Role",
       "Level & Status",
-      "Base Salary (Daily)",
       "Days Worked",
       "Total Hours Worked",
       "Late Incidents",
@@ -611,7 +606,6 @@ export default function AuditLogClient() {
         escapeCSV(r.name),
         escapeCSV(r.role.toUpperCase()),
         escapeCSV(`${r.level.toUpperCase()} • ${r.status.toUpperCase()}`),
-        escapeCSV(`₱${(r.base_salary || 0).toLocaleString()}/day`),
         r.daysWorked,
         r.totalHours,
         r.lateCount,
@@ -634,7 +628,6 @@ export default function AuditLogClient() {
 
     const totalsRow = [
       escapeCSV("TOTALS"),
-      '""',
       '""',
       '""',
       totDays,
@@ -679,7 +672,7 @@ export default function AuditLogClient() {
                   </span>
                 </h1>
                 <p className="text-xs text-gray-500 mt-0.5 font-medium">
-                  Review verified 15-day (Kinsenas) attendance, late minutes, overtime, and night differentials for payroll validation.
+                  Review verified field attendance, late minutes, overtime, and night differentials for operations and time audit.
                 </p>
               </div>
             </div>
@@ -860,36 +853,35 @@ export default function AuditLogClient() {
           </div>
 
           {/* Main Table */}
-          <div className="bg-white border border-gray-200 border-b-0 rounded-b-none overflow-y-scroll flex-1 shadow-xs [scrollbar-gutter:stable]">
+          <div className="bg-white border border-zinc-200 border-b-0 rounded-b-none overflow-y-scroll flex-1 shadow-2xs [scrollbar-gutter:stable]">
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse whitespace-nowrap">
                 <thead>
-                  <tr className="bg-gray-50 border-b border-gray-200">
-                    <th className="px-5 py-3 text-xs font-black text-gray-500 uppercase tracking-wider sticky left-0 bg-gray-50 border-r border-gray-200 min-w-[240px]">Employee</th>
-                    <th className="px-3 py-3 text-xs font-black text-gray-500 uppercase tracking-wider">Base Salary</th>
-                    <th className="px-3 py-3 text-xs font-black text-indigo-600 uppercase tracking-wider border-l border-gray-200 bg-indigo-50/30 text-center">Days Worked</th>
-                    <th className="px-3 py-3 text-xs font-black text-amber-600 uppercase tracking-wider text-center">Tardiness</th>
-                    <th className="px-3 py-3 text-xs font-black text-emerald-600 uppercase tracking-wider border-l border-gray-200 bg-emerald-50/30 text-center">Reg OT</th>
-                    <th className="px-3 py-3 text-xs font-black text-emerald-600 uppercase tracking-wider bg-emerald-50/30 text-center">Sun/Hol OT</th>
-                    <th className="px-3 py-3 text-xs font-black text-purple-600 uppercase tracking-wider bg-purple-50/30 border-r border-gray-200 text-center">Night Diff</th>
-                    <th className="px-3 py-3 text-xs font-black text-red-600 uppercase tracking-wider text-center">Absences</th>
-                    <th className="px-3 py-3 text-xs font-black text-blue-600 uppercase tracking-wider text-center">Leaves</th>
-                    <th className="px-4 py-3 text-xs font-black text-gray-500 uppercase tracking-wider text-right">Audit</th>
+                  <tr className="bg-zinc-50 border-b border-zinc-200 text-[11px] font-semibold text-zinc-600 uppercase tracking-wider">
+                    <th className="px-3.5 py-2.5 sticky left-0 bg-zinc-50 border-r border-zinc-200 min-w-[220px] z-10">Employee / Spec</th>
+                    <th className="px-3 py-2.5 border-r border-zinc-200 text-center">Days Worked</th>
+                    <th className="px-3 py-2.5 border-r border-zinc-200 text-center">Tardiness</th>
+                    <th className="px-3 py-2.5 border-r border-zinc-200 text-center">Reg OT</th>
+                    <th className="px-3 py-2.5 border-r border-zinc-200 text-center">Sun/Hol OT</th>
+                    <th className="px-3 py-2.5 border-r border-zinc-200 text-center">Night Diff</th>
+                    <th className="px-3 py-2.5 border-r border-zinc-200 text-center">Absences</th>
+                    <th className="px-3 py-2.5 border-r border-zinc-200 text-center">Leaves</th>
+                    <th className="px-3.5 py-2.5 text-right">Audit</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
+                <tbody className="divide-y divide-zinc-200 bg-white text-xs">
                   {loading ? (
                     <tr>
-                      <td colSpan={10} className="p-12 text-center text-gray-400 font-medium">
+                      <td colSpan={9} className="p-12 text-center text-zinc-400 font-medium">
                         <div className="flex flex-col items-center justify-center gap-2">
-                          <Clock className="w-6 h-6 animate-spin text-indigo-500" />
+                          <Clock className="w-5 h-5 animate-spin text-zinc-500" />
                           <span>Computing live Kinsenas attendance & time logs...</span>
                         </div>
                       </td>
                     </tr>
                   ) : errorMsg ? (
                     <tr>
-                      <td colSpan={10} className="p-8 text-center text-red-500 font-semibold bg-red-50/50">
+                      <td colSpan={9} className="p-8 text-center text-rose-500 font-semibold bg-rose-50/50">
                         <div className="flex items-center justify-center gap-2">
                           <AlertCircle className="w-5 h-5" />
                           <span>{errorMsg}</span>
@@ -898,31 +890,31 @@ export default function AuditLogClient() {
                     </tr>
                   ) : paginatedRecords.length === 0 ? (
                     <tr>
-                      <td colSpan={10} className="p-12 text-center text-gray-400 font-medium">
+                      <td colSpan={9} className="p-12 text-center text-zinc-400 font-medium">
                         No field crew or attendance records found for this period.
                       </td>
                     </tr>
                   ) : paginatedRecords.map((r) => (
-                    <tr key={r.id} className="hover:bg-indigo-50/20 transition-colors">
+                    <tr key={r.id} className="hover:bg-zinc-50/75 transition-colors">
                       {/* Sticky Employee column */}
-                      <td className="px-5 py-3.5 sticky left-0 bg-white border-r border-gray-100 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)]">
-                        <div className="flex items-center gap-3">
-                          <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-black ${
+                      <td className="px-3.5 py-2 sticky left-0 bg-white border-r border-zinc-200 z-10">
+                        <div className="flex items-center gap-2.5">
+                          <div className={`w-7 h-7 rounded-lg flex items-center justify-center text-[10px] font-bold shrink-0 ${
                             r.role === 'helper' 
-                              ? 'bg-amber-100 text-amber-700 border border-amber-200' 
-                              : 'bg-indigo-100 text-indigo-700 border border-indigo-200'
+                              ? 'bg-amber-100 text-amber-800 border border-amber-200' 
+                              : 'bg-emerald-100 text-emerald-800 border border-emerald-200'
                           }`}>
                             {r.name.slice(0, 2).toUpperCase()}
                           </div>
-                          <div>
-                            <div className="font-bold text-gray-900 text-sm">{r.name}</div>
+                          <div className="min-w-0">
+                            <div className="font-bold text-zinc-900 leading-tight truncate">{r.name}</div>
                             <div className="flex items-center gap-1.5 mt-0.5">
-                              <span className={`text-[9px] font-black uppercase px-1.5 py-0.2 rounded ${
-                                r.role === 'helper' ? 'bg-amber-50 text-amber-700 border border-amber-200' : 'bg-blue-50 text-blue-700 border border-blue-200'
+                              <span className={`text-[9px] font-bold uppercase px-1.5 py-0.2 rounded border ${
+                                r.role === 'helper' ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-emerald-50 text-emerald-700 border-emerald-200'
                               }`}>
                                 {r.role}
                               </span>
-                              <span className="text-[10px] font-bold text-gray-500 uppercase">
+                              <span className="text-[10px] text-zinc-400 font-medium uppercase truncate">
                                 {r.level} &bull; {r.status}
                               </span>
                             </div>
@@ -930,92 +922,86 @@ export default function AuditLogClient() {
                         </div>
                       </td>
 
-                      {/* Base Salary */}
-                      <td className="px-3 py-3.5">
-                        <span className="font-mono font-bold text-xs text-gray-700">
-                          ₱{r.base_salary?.toLocaleString()}/day
-                        </span>
-                      </td>
-
                       {/* Days Worked */}
-                      <td className="px-3 py-3.5 border-l border-gray-100 bg-indigo-50/10 text-center">
-                        <span className="font-bold text-gray-900 text-sm">{r.daysWorked}</span>
-                        <div className="text-[10px] font-mono text-gray-400">{r.totalHours}h net</div>
+                      <td className="px-3 py-2 border-r border-zinc-200 text-center whitespace-nowrap">
+                        <span className="font-bold text-zinc-900 text-xs">{r.daysWorked}</span>
+                        <span className="text-[10px] text-zinc-400 ml-1 font-mono">({r.totalHours}h)</span>
                       </td>
 
                       {/* Tardiness */}
-                      <td className="px-3 py-3.5 text-center">
+                      <td className="px-3 py-2 border-r border-zinc-200 text-center whitespace-nowrap">
                         {r.lateCount > 0 ? (
-                          <span className="font-bold text-amber-700 bg-amber-50 border border-amber-200/80 px-2 py-0.5 rounded text-xs inline-flex items-center gap-1">
+                          <span className="font-bold text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded text-[11px] inline-flex items-center gap-1">
                             {r.lateCount} ({r.totalLateMinutes}m)
                           </span>
                         ) : (
-                          <span className="font-bold text-gray-300">0</span>
+                          <span className="font-mono text-zinc-300 text-xs">0</span>
                         )}
                       </td>
 
                       {/* Regular OT */}
-                      <td className="px-3 py-3.5 border-l border-gray-100 bg-emerald-50/10 text-center">
+                      <td className="px-3 py-2 border-r border-zinc-200 text-center whitespace-nowrap">
                         {r.regOtHours > 0 ? (
-                          <span className="font-mono font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded text-xs">
+                          <span className="font-mono font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded text-[11px]">
                             {r.regOtHours}h
                           </span>
                         ) : (
-                          <span className="font-mono text-gray-300">0.0</span>
+                          <span className="font-mono text-zinc-300 text-xs">0.0</span>
                         )}
                       </td>
 
                       {/* Sun/Holiday OT */}
-                      <td className="px-3 py-3.5 bg-emerald-50/10 text-center">
+                      <td className="px-3 py-2 border-r border-zinc-200 text-center whitespace-nowrap">
                         {r.sunHolidayOtHours > 0 ? (
-                          <span className="font-mono font-bold text-emerald-800 bg-emerald-100/70 border border-emerald-200 px-2 py-0.5 rounded text-xs">
+                          <span className="font-mono font-bold text-emerald-800 bg-emerald-100 border border-emerald-300 px-1.5 py-0.5 rounded text-[11px]">
                             {r.sunHolidayOtHours}h
                           </span>
                         ) : (
-                          <span className="font-mono text-gray-300">0.0</span>
+                          <span className="font-mono text-zinc-300 text-xs">0.0</span>
                         )}
                       </td>
 
                       {/* Night Diff */}
-                      <td className="px-3 py-3.5 border-r border-gray-100 bg-purple-50/10 text-center">
+                      <td className="px-3 py-2 border-r border-zinc-200 text-center whitespace-nowrap">
                         {r.nightDiffHours > 0 ? (
-                          <span className="font-mono font-bold text-purple-700 bg-purple-50 border border-purple-200/60 px-2 py-0.5 rounded text-xs">
+                          <span className="font-mono font-bold text-purple-700 bg-purple-50 border border-purple-200 px-1.5 py-0.5 rounded text-[11px]">
                             {r.nightDiffHours}h
                           </span>
                         ) : (
-                          <span className="font-mono text-gray-300">0.0</span>
+                          <span className="font-mono text-zinc-300 text-xs">0.0</span>
                         )}
                       </td>
 
                       {/* Absences */}
-                      <td className="px-3 py-3.5 text-center">
+                      <td className="px-3 py-2 border-r border-zinc-200 text-center whitespace-nowrap">
                         {r.absences > 0 ? (
-                          <span className="font-bold text-red-700 bg-red-50 border border-red-200/80 px-2 py-0.5 rounded text-xs">
+                          <span className="font-bold text-rose-700 bg-rose-50 border border-rose-200 px-1.5 py-0.5 rounded text-[11px]">
                             {r.absences}
                           </span>
                         ) : (
-                          <span className="font-bold text-gray-300">0</span>
+                          <span className="font-mono text-zinc-300 text-xs">0</span>
                         )}
                       </td>
 
                       {/* Approved Leaves */}
-                      <td className="px-3 py-3.5 text-center">
+                      <td className="px-3 py-2 border-r border-zinc-200 text-center whitespace-nowrap">
                         {r.approvedLeaves > 0 ? (
-                          <span className="font-bold text-blue-700 bg-blue-50 border border-blue-200/80 px-2 py-0.5 rounded text-xs">
+                          <span className="font-bold text-blue-700 bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded text-[11px]">
                             {r.approvedLeaves}d
                           </span>
                         ) : (
-                          <span className="font-bold text-gray-300">0</span>
+                          <span className="font-mono text-zinc-300 text-xs">0</span>
                         )}
                       </td>
 
                       {/* Action Button: Inspect DTR */}
-                      <td className="px-4 py-3.5 text-right">
+                      <td className="px-3.5 py-2 text-right whitespace-nowrap">
                         <button
                           onClick={() => setSelectedEmployee(r)}
-                          className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200/60 rounded-md transition-colors shadow-2xs"
+                          className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold text-zinc-700 bg-zinc-100 hover:bg-zinc-200 border border-zinc-300/80 rounded-lg transition-colors shadow-2xs"
                         >
-                          <Eye className="w-3.5 h-3.5" /> Inspect DTR
+                          <Eye className="w-3.5 h-3.5 text-zinc-500" />
+                          <span>Inspect DTR</span>
                         </button>
                       </td>
                     </tr>
@@ -1026,15 +1012,15 @@ export default function AuditLogClient() {
           </div>
 
           {/* Bottom Pagination Bar */}
-          <div className="bg-white px-4 py-3 border border-gray-200 rounded-b-xl flex items-center justify-between shrink-0 shadow-2xs">
-            <p className="text-xs font-semibold text-gray-600">
-              Showing <span className="font-bold text-gray-900">{filteredRecords.length === 0 ? 0 : Math.min((currentPage - 1) * ITEMS_PER_PAGE + 1, filteredRecords.length)}</span> to <span className="font-bold text-gray-900">{Math.min(currentPage * ITEMS_PER_PAGE, filteredRecords.length)}</span> of <span className="font-bold text-gray-900">{filteredRecords.length}</span> staff
+          <div className="bg-white px-4 py-2.5 border border-zinc-200 rounded-b-xl flex items-center justify-between shrink-0 shadow-2xs">
+            <p className="text-xs font-semibold text-zinc-600">
+              Showing <span className="font-bold text-zinc-900">{filteredRecords.length === 0 ? 0 : Math.min((currentPage - 1) * ITEMS_PER_PAGE + 1, filteredRecords.length)}</span> to <span className="font-bold text-zinc-900">{Math.min(currentPage * ITEMS_PER_PAGE, filteredRecords.length)}</span> of <span className="font-bold text-zinc-900">{filteredRecords.length}</span> staff
             </p>
-            <nav className="inline-flex rounded-md shadow-2xs">
+            <nav className="inline-flex rounded-lg shadow-2xs overflow-hidden border border-zinc-300">
               <button
                 onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                 disabled={currentPage === 1}
-                className="px-3 py-1 rounded-l-md border border-gray-300 bg-white text-gray-600 hover:bg-gray-50 disabled:opacity-50 text-xs font-bold transition-colors"
+                className="px-3 py-1 bg-white text-zinc-600 hover:bg-zinc-50 disabled:opacity-40 text-xs font-semibold transition-colors border-r border-zinc-300"
               >
                 Prev
               </button>
@@ -1042,7 +1028,9 @@ export default function AuditLogClient() {
                 <button
                   key={i}
                   onClick={() => setCurrentPage(i + 1)}
-                  className={`px-3 py-1 border-t border-b border-r border-gray-300 text-xs font-bold ${currentPage === i + 1 ? 'bg-indigo-50 text-indigo-600 border-indigo-300 z-10' : 'bg-white text-gray-600 hover:bg-gray-50'} -ml-px transition-colors`}
+                  className={`px-3 py-1 text-xs font-semibold border-r last:border-r-0 border-zinc-300 transition-colors ${
+                    currentPage === i + 1 ? 'bg-zinc-900 text-white font-bold' : 'bg-white text-zinc-600 hover:bg-zinc-50'
+                  }`}
                 >
                   {i + 1}
                 </button>
@@ -1050,7 +1038,7 @@ export default function AuditLogClient() {
               <button
                 onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                 disabled={currentPage === totalPages || totalPages === 0}
-                className="px-3 py-1 rounded-r-md border border-gray-300 border-l bg-white text-gray-600 hover:bg-gray-50 disabled:opacity-50 -ml-px text-xs font-bold transition-colors"
+                className="px-3 py-1 bg-white text-zinc-600 hover:bg-zinc-50 disabled:opacity-40 text-xs font-semibold transition-colors"
               >
                 Next
               </button>
