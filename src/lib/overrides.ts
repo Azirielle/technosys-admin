@@ -210,12 +210,16 @@ export async function fetchRemoteOverrides(): Promise<{ overrides: OverrideMap; 
 export function subscribeToOverrideChanges(onUpdate?: (overrides: OverrideMap, metadata?: OverrideMetadataMap) => void): () => void {
   if (typeof window === 'undefined') return () => {};
 
+  let isCancelled = false;
+  let activeChannel: any = null;
+
   try {
-    let channel: any = null;
     import('@/lib/supabase/client').then(({ createClient }) => {
+      if (isCancelled) return;
       const supabase = createClient();
-      channel = supabase
-        .channel('realtime-system-overrides')
+      const channelName = `realtime-overrides-${Math.random().toString(36).substring(2, 9)}`;
+      const channel = supabase
+        .channel(channelName)
         .on(
           'postgres_changes',
           { event: '*', schema: 'public', table: 'system_overrides' },
@@ -225,13 +229,22 @@ export function subscribeToOverrideChanges(onUpdate?: (overrides: OverrideMap, m
           }
         )
         .subscribe();
+
+      if (isCancelled) {
+        supabase.removeChannel(channel);
+      } else {
+        activeChannel = channel;
+      }
+    }).catch(err => {
+      console.warn('Failed to initialize realtime override client:', err);
     });
 
     return () => {
-      if (channel) {
+      isCancelled = true;
+      if (activeChannel) {
         import('@/lib/supabase/client').then(({ createClient }) => {
           const supabase = createClient();
-          supabase.removeChannel(channel);
+          supabase.removeChannel(activeChannel);
         });
       }
     };

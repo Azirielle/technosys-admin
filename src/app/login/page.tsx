@@ -20,30 +20,25 @@ export default async function LoginPage({
       {/* Right Side: 42% Branded Authentication Console */}
       <div className="w-full lg:w-[42%] xl:w-[40%] flex flex-col justify-between bg-zinc-50 p-6 sm:p-10 lg:p-12 xl:p-14 border-t lg:border-t-0 lg:border-l border-zinc-200 min-h-screen">
         {/* Top Header & Organization Lockup */}
-        <div className="flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-white border border-zinc-200 flex items-center justify-center shadow-2xs overflow-hidden p-1">
-              <Image 
-                src="/logo.png" 
-                alt="TechnoCycle Logo" 
-                width={32} 
-                height={32} 
-                className="object-contain"
-                priority
-              />
-            </div>
-            <div>
-              <div className="font-serif font-bold tracking-tight text-zinc-900 text-base sm:text-lg leading-none">
-                TECHNOCYCLE
-              </div>
-              <div className="text-[10px] tracking-widest text-zinc-500 font-semibold uppercase mt-0.5">
-                CORPORATION
-              </div>
-            </div>
+        <div className="flex items-center gap-3.5">
+          <div className="w-12 h-12 rounded-xl bg-white border border-zinc-200/80 flex items-center justify-center shadow-2xs overflow-hidden p-1 shrink-0">
+            <Image 
+              src="/technocycle_logo.png" 
+              alt="TechnoCycle Logo" 
+              width={40} 
+              height={40} 
+              unoptimized
+              className="object-contain"
+              priority
+            />
           </div>
-
-          <div className="px-2.5 py-1 rounded-full bg-zinc-200/70 border border-zinc-300/80 text-[10px] font-mono font-semibold uppercase text-zinc-700 tracking-wider shadow-2xs">
-            PROD TERMINAL
+          <div>
+            <div className="font-serif font-bold tracking-tight text-zinc-900 text-lg sm:text-xl leading-none">
+              TECHNOCYCLE
+            </div>
+            <div className="text-[11px] tracking-widest text-zinc-500 font-semibold uppercase mt-1">
+              CORPORATION
+            </div>
           </div>
         </div>
 
@@ -51,10 +46,10 @@ export default async function LoginPage({
         <div className="w-full max-w-md mx-auto my-auto py-8 space-y-6">
           <div className="space-y-1.5">
             <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-zinc-900">
-              Operations Portal
+              Technocycle Admin Portal
             </h1>
             <p className="text-sm text-zinc-500 leading-relaxed">
-              Sign in to access centralized HVAC dispatch, live attendance audits, and equipment tracking.
+              Sign in to your administrative account.
             </p>
           </div>
 
@@ -156,18 +151,12 @@ export default async function LoginPage({
           </form>
         </div>
 
-        {/* Bottom Footer & Security Badge */}
-        <div className="pt-6 border-t border-zinc-200 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-zinc-400">
-          <div className="flex items-center gap-2">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
-            </span>
-            <span className="text-zinc-600 font-medium">Edge Gateway Live</span>
-            <span className="text-zinc-300">•</span>
-            <span>TLS 1.3 Encrypted</span>
-          </div>
-          <div className="text-zinc-400 font-mono text-[11px]">
+        {/* Bottom Footer */}
+        <div className="pt-6 border-t border-zinc-200 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-zinc-500">
+          <p className="text-xs text-zinc-500">
+            By signing in, you agree to TechnoCycle administrative policies.
+          </p>
+          <div className="text-zinc-400 font-mono text-[11px] shrink-0">
             © 2026 TechnoCycle Corporation
           </div>
         </div>

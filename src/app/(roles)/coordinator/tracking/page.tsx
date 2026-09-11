@@ -130,9 +130,10 @@ export default function TrackingPage() {
   useEffect(() => {
     fetchLocations()
 
-    // Real-Time Fleet Tracking Bridge
+    // Real-Time Fleet Tracking Bridge (isolated channel topic)
+    const channelName = `admin-fleet-tracking-${Math.random().toString(36).substring(2, 9)}`
     const channel = supabase
-      .channel('admin-fleet-tracking-hub')
+      .channel(channelName)
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'technician_locations' },

@@ -34,7 +34,8 @@ import {
   Check,
   Lock,
   Unlock,
-  ShieldCheck
+  ShieldCheck,
+  RefreshCw
 } from 'lucide-react';
 import { 
   getAuditPayrollRecords, 
@@ -297,7 +298,7 @@ export default function AuditLogClient() {
     loadAuditData();
   }, [selectedPeriodId, roleFilter]);
 
-  const loadAuditData = async () => {
+  const loadAuditData = async (isRetry = false) => {
     setLoading(true);
     setErrorMsg(null);
     try {
@@ -312,7 +313,15 @@ export default function AuditLogClient() {
         setErrorMsg(res.error || 'Failed to aggregate audit payroll records');
       }
     } catch (err: any) {
-      setErrorMsg(err?.message || 'Server error loading audit logs');
+      const msg = err?.message || 'Server error loading audit logs';
+      if (!isRetry && (msg.includes('fetch') || msg.includes('network') || msg.includes('Failed'))) {
+        // Automatic single-shot retry after 1s for transient compilation/network hiccups
+        setTimeout(() => {
+          loadAuditData(true);
+        }, 1000);
+        return;
+      }
+      setErrorMsg(msg);
     } finally {
       setLoading(false);
     }
@@ -715,10 +724,20 @@ export default function AuditLogClient() {
                     </tr>
                   ) : errorMsg ? (
                     <tr>
-                      <td colSpan={9} className="p-8 text-center text-rose-500 font-semibold bg-rose-50/50">
-                        <div className="flex items-center justify-center gap-2">
-                          <AlertCircle className="w-5 h-5" />
-                          <span>{errorMsg}</span>
+                      <td colSpan={9} className="p-8 text-center text-rose-500 font-semibold bg-rose-50/50 dark:bg-rose-950/20">
+                        <div className="flex flex-col items-center justify-center gap-2.5">
+                          <div className="flex items-center gap-2 text-rose-600 dark:text-rose-400">
+                            <AlertCircle className="w-5 h-5 shrink-0" />
+                            <span>{errorMsg}</span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => loadAuditData(true)}
+                            className="mt-1 px-3 py-1.5 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-2xs transition-colors flex items-center gap-1.5 cursor-pointer"
+                          >
+                            <RefreshCw className="w-3.5 h-3.5" />
+                            Retry Loading Attendance
+                          </button>
                         </div>
                       </td>
                     </tr>
