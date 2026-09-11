@@ -1050,37 +1050,37 @@ export default function AuditLogClient() {
 
       {/* 15-Day Kinsenas DTR Inspection Modal */}
       {selectedEmployee && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150">
-          <div className="bg-white rounded-2xl max-w-5xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden border border-gray-200">
+        <div className="fixed inset-0 z-50 bg-zinc-900/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150">
+          <div className="bg-white rounded-2xl max-w-5xl w-full max-h-[88vh] flex flex-col shadow-2xl overflow-hidden border border-zinc-200">
             {/* Modal Header */}
-            <div className="px-6 py-4 bg-slate-900 text-white flex items-center justify-between shrink-0">
+            <div className="px-6 py-4 bg-zinc-900 text-white flex items-center justify-between shrink-0">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center font-black text-sm text-white">
+                <div className="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center font-bold text-sm text-white shrink-0">
                   {selectedEmployee.name.slice(0, 2).toUpperCase()}
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <h2 className="text-lg font-black tracking-tight">{selectedEmployee.name}</h2>
-                    <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${
-                      selectedEmployee.role === 'helper' ? 'bg-amber-400 text-slate-900' : 'bg-indigo-400 text-slate-900'
+                    <h2 className="text-base font-bold tracking-tight">{selectedEmployee.name}</h2>
+                    <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full ${
+                      selectedEmployee.role === 'helper' ? 'bg-amber-400 text-zinc-900' : 'bg-indigo-400 text-zinc-900'
                     }`}>
                       {selectedEmployee.role}
                     </span>
                   </div>
-                  <div className="text-xs text-slate-300 mt-0.5">
-                    {selectedEmployee.level} &bull; {selectedEmployee.status.toUpperCase()} &bull; Base: ₱{selectedEmployee.base_salary.toLocaleString()}/day
+                  <div className="text-xs text-zinc-300 mt-0.5">
+                    {selectedEmployee.level || 'Technician'} &bull; {selectedEmployee.status.toUpperCase()} &bull; Field Operations
                   </div>
                 </div>
               </div>
 
               <div className="flex items-center gap-3">
                 <div className="text-right hidden sm:block">
-                  <div className="text-xs font-bold text-slate-300">Period</div>
-                  <div className="text-xs font-black text-indigo-400">{currentPeriod.label}</div>
+                  <div className="text-[11px] font-semibold text-zinc-400">Period</div>
+                  <div className="text-xs font-bold text-indigo-400">{currentPeriod.label}</div>
                 </div>
                 <button 
                   onClick={() => setSelectedEmployee(null)}
-                  className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors"
+                  className="p-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white transition-colors cursor-pointer"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -1088,30 +1088,30 @@ export default function AuditLogClient() {
             </div>
 
             {/* Modal Mini Telemetry Bar */}
-            <div className="px-6 py-3 bg-slate-50 border-b border-gray-200 grid grid-cols-2 sm:grid-cols-6 gap-2 text-center text-xs shrink-0">
-              <div className="bg-white p-2 rounded-lg border border-gray-200 shadow-2xs">
-                <span className="text-gray-400 block text-[10px] uppercase font-bold">Days Worked</span>
-                <span className="font-black text-gray-900 text-sm">{selectedEmployee.daysWorked} <span className="text-xs font-normal text-gray-500">({selectedEmployee.totalHours}h)</span></span>
+            <div className="px-6 py-2.5 bg-zinc-50 border-b border-zinc-200 grid grid-cols-2 sm:grid-cols-6 gap-2 text-center text-xs shrink-0">
+              <div className="bg-white p-2 rounded-lg border border-zinc-200 shadow-2xs">
+                <span className="text-zinc-500 block text-[10px] uppercase font-semibold">Days Worked</span>
+                <span className="font-bold text-zinc-900 text-sm">{selectedEmployee.daysWorked} <span className="text-xs font-normal text-zinc-500">({selectedEmployee.totalHours}h)</span></span>
               </div>
-              <div className="bg-white p-2 rounded-lg border border-gray-200 shadow-2xs">
-                <span className="text-gray-400 block text-[10px] uppercase font-bold">Tardiness</span>
-                <span className="font-black text-amber-600 text-sm">{selectedEmployee.lateCount} <span className="text-xs font-normal text-gray-500">({selectedEmployee.totalLateMinutes}m)</span></span>
+              <div className="bg-white p-2 rounded-lg border border-zinc-200 shadow-2xs">
+                <span className="text-zinc-500 block text-[10px] uppercase font-semibold">Tardiness</span>
+                <span className="font-bold text-amber-600 text-sm">{selectedEmployee.lateCount} <span className="text-xs font-normal text-zinc-500">({selectedEmployee.totalLateMinutes}m)</span></span>
               </div>
-              <div className="bg-white p-2 rounded-lg border border-gray-200 shadow-2xs">
-                <span className="text-gray-400 block text-[10px] uppercase font-bold">Reg OT</span>
-                <span className="font-black text-emerald-600 text-sm">{selectedEmployee.regOtHours}h</span>
+              <div className="bg-white p-2 rounded-lg border border-zinc-200 shadow-2xs">
+                <span className="text-zinc-500 block text-[10px] uppercase font-semibold">Reg OT</span>
+                <span className="font-bold text-emerald-600 text-sm">{selectedEmployee.regOtHours}h</span>
               </div>
-              <div className="bg-white p-2 rounded-lg border border-gray-200 shadow-2xs">
-                <span className="text-gray-400 block text-[10px] uppercase font-bold">Sun/Hol OT</span>
-                <span className="font-black text-emerald-700 text-sm">{selectedEmployee.sunHolidayOtHours}h</span>
+              <div className="bg-white p-2 rounded-lg border border-zinc-200 shadow-2xs">
+                <span className="text-zinc-500 block text-[10px] uppercase font-semibold">Sun/Hol OT</span>
+                <span className="font-bold text-emerald-700 text-sm">{selectedEmployee.sunHolidayOtHours}h</span>
               </div>
-              <div className="bg-white p-2 rounded-lg border border-gray-200 shadow-2xs">
-                <span className="text-gray-400 block text-[10px] uppercase font-bold">Night Diff</span>
-                <span className="font-black text-purple-600 text-sm">{selectedEmployee.nightDiffHours}h</span>
+              <div className="bg-white p-2 rounded-lg border border-zinc-200 shadow-2xs">
+                <span className="text-zinc-500 block text-[10px] uppercase font-semibold">Night Diff</span>
+                <span className="font-bold text-purple-600 text-sm">{selectedEmployee.nightDiffHours}h</span>
               </div>
-              <div className="bg-white p-2 rounded-lg border border-gray-200 shadow-2xs">
-                <span className="text-gray-400 block text-[10px] uppercase font-bold">Absences / Leaves</span>
-                <span className="font-black text-red-600 text-sm">{selectedEmployee.absences} <span className="text-xs font-bold text-blue-600">/ {selectedEmployee.approvedLeaves}d</span></span>
+              <div className="bg-white p-2 rounded-lg border border-zinc-200 shadow-2xs">
+                <span className="text-zinc-500 block text-[10px] uppercase font-semibold">Absences / Leaves</span>
+                <span className="font-bold text-red-600 text-sm">{selectedEmployee.absences} <span className="text-xs font-bold text-blue-600">/ {selectedEmployee.approvedLeaves}d</span></span>
               </div>
             </div>
 
@@ -1129,209 +1129,215 @@ export default function AuditLogClient() {
             )}
 
             {/* Daily Chronological Breakdown Table */}
-            <div className="flex-1 overflow-y-auto p-6 [scrollbar-gutter:stable]">
-              <table className="w-full text-left border-collapse text-xs whitespace-nowrap">
-                <thead>
-                  <tr className="bg-gray-50 border-b border-gray-200">
-                    <th className="px-3 py-2.5 font-black text-gray-600 uppercase">Date</th>
-                    <th className="px-3 py-2.5 font-black text-gray-600 uppercase">Scheduled Shift</th>
-                    <th className="px-3 py-2.5 font-black text-gray-600 uppercase">Dispatch Site</th>
-                    <th className="px-3 py-2.5 font-black text-indigo-600 uppercase">Actual In / Out</th>
-                    <th className="px-2 py-2.5 font-black text-gray-600 uppercase text-center">Hours</th>
-                    <th className="px-2 py-2.5 font-black text-amber-600 uppercase text-center">Late</th>
-                    <th className="px-2 py-2.5 font-black text-emerald-600 uppercase text-center">Reg OT</th>
-                    <th className="px-2 py-2.5 font-black text-emerald-700 uppercase text-center">Sun/Hol</th>
-                    <th className="px-2 py-2.5 font-black text-purple-600 uppercase text-center">ND</th>
-                    <th className="px-3 py-2.5 font-black text-gray-600 uppercase">Daily Status</th>
-                    <th className="px-3 py-2.5 font-black text-gray-600 uppercase text-right">Audit Action</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {selectedEmployee.dailyBreakdown.map((day) => (
-                    <tr key={day.date} className="hover:bg-gray-50/80 transition-colors">
-                      {/* Date */}
-                      <td className="px-3 py-2.5">
-                        <span className="font-bold text-gray-900">{day.date}</span>
-                        <span className={`ml-1.5 text-[10px] font-bold ${day.isSunday ? 'text-rose-500' : 'text-gray-400'}`}>
-                          ({day.dayOfWeek})
-                        </span>
-                      </td>
-
-                      {/* Scheduled Shift */}
-                      <td className="px-3 py-2.5 text-gray-600 font-medium">
-                        {day.scheduledStart ? (
-                          <span>{day.scheduledStart} - {day.scheduledEnd || '17:00'}</span>
-                        ) : (
-                          <span className="text-gray-400 italic">Unscheduled</span>
-                        )}
-                      </td>
-
-                      {/* Dispatch Site */}
-                      <td className="px-3 py-2.5 text-gray-700 max-w-[160px] truncate">
-                        {day.scheduleClient ? (
-                          <span className="font-semibold text-gray-800" title={day.scheduleClient}>{day.scheduleClient}</span>
-                        ) : (
-                          <span className="text-gray-300">-</span>
-                        )}
-                      </td>
-
-                      {/* Actual In / Out */}
-                      <td className="px-3 py-2.5">
-                        {day.actualTimeIn ? (
-                          <div className="font-mono font-bold text-gray-900">
-                            {day.actualTimeIn} &rarr; {day.actualTimeOut || 'Open'}
-                          </div>
-                        ) : (
-                          <span className="text-gray-300 font-mono">-</span>
-                        )}
-                      </td>
-
-                      {/* Hours */}
-                      <td className="px-2 py-2.5 text-center font-mono font-bold text-gray-800">
-                        {day.hoursWorked > 0 ? `${day.hoursWorked}h` : '-'}
-                      </td>
-
-                      {/* Late Mins */}
-                      <td className="px-2 py-2.5 text-center">
-                        {day.lateMinutes > 0 ? (
-                          <span className="font-bold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded">
-                            {day.lateMinutes}m
-                          </span>
-                        ) : (
-                          <span className="text-gray-300">-</span>
-                        )}
-                      </td>
-
-                      {/* Reg OT */}
-                      <td className="px-2 py-2.5 text-center font-mono">
-                        {day.regOtHours > 0 ? (
-                          <span className="font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">
-                            {day.regOtHours}h
-                          </span>
-                        ) : (
-                          <span className="text-gray-300">-</span>
-                        )}
-                      </td>
-
-                      {/* Sun/Hol OT */}
-                      <td className="px-2 py-2.5 text-center font-mono">
-                        {day.sunHolidayOtHours > 0 ? (
-                          <span className="font-bold text-emerald-700 bg-emerald-100/70 px-1.5 py-0.5 rounded">
-                            {day.sunHolidayOtHours}h
-                          </span>
-                        ) : (
-                          <span className="text-gray-300">-</span>
-                        )}
-                      </td>
-
-                      {/* Night Diff */}
-                      <td className="px-2 py-2.5 text-center font-mono">
-                        {day.nightDiffHours > 0 ? (
-                          <span className="font-bold text-purple-700 bg-purple-50 px-1.5 py-0.5 rounded">
-                            {day.nightDiffHours}h
-                          </span>
-                        ) : (
-                          <span className="text-gray-300">-</span>
-                        )}
-                      </td>
-
-                      {/* Daily Status Badge */}
-                      <td className="px-3 py-2.5">
-                        <div className="flex items-center gap-1 flex-wrap">
-                          {day.status === 'present' && (
-                            <span className="inline-flex items-center gap-1 font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded text-[11px]">
-                              <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Present
-                            </span>
-                          )}
-                          {day.status === 'late' && (
-                            <span className="inline-flex items-center gap-1 font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded text-[11px]">
-                              <AlertTriangle className="w-3 h-3 text-amber-600" /> Late ({day.lateMinutes}m)
-                            </span>
-                          )}
-                          {day.status === 'overtime' && (
-                            <span className="inline-flex items-center gap-1 font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded text-[11px]">
-                              <Clock className="w-3 h-3 text-indigo-600" /> Overtime
-                            </span>
-                          )}
-                          {day.status === 'absent' && (
-                            <span className="inline-flex items-center gap-1 font-bold text-red-700 bg-red-50 border border-red-200 px-2 py-0.5 rounded text-[11px]" title={day.notes}>
-                              <ShieldAlert className="w-3 h-3 text-red-600" /> Missed Shift
-                            </span>
-                          )}
-                          {day.status === 'approved_leave' && (
-                            <span className="inline-flex items-center gap-1 font-bold text-blue-700 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded text-[11px]">
-                              <Briefcase className="w-3 h-3 text-blue-600" /> Leave ({day.leaveType})
-                            </span>
-                          )}
-                          {day.status === 'rest_day' && (
-                            <span className="font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded text-[11px]">
-                              Rest Day
-                            </span>
-                          )}
-                          {day.status === 'holiday' && (
-                            <span className="font-bold text-cyan-700 bg-cyan-50 border border-cyan-200 px-2 py-0.5 rounded text-[11px]" title={day.holidayName || ''}>
-                              Holiday ({day.holidayName?.slice(0, 14)}...)
-                            </span>
-                          )}
-                          {day.status === 'off_duty' && (
-                            <span className="font-semibold text-gray-400 text-[11px]">
-                              Standby
-                            </span>
-                          )}
-                          {day.status === 'unclosed' && (
-                            <span className="font-bold text-rose-700 bg-rose-50 border border-rose-200 px-2 py-0.5 rounded text-[11px]">
-                              Incomplete Punch
-                            </span>
-                          )}
-
-                          {day.isCorrected && (
-                            <span className="inline-flex items-center gap-1 font-bold text-amber-800 bg-amber-50 border border-amber-300/80 px-1.5 py-0.5 rounded text-[10px]" title={day.correctionDetails?.reason}>
-                              <History className="w-2.5 h-2.5 text-amber-600" />
-                              Audited
-                            </span>
-                          )}
-                        </div>
-                      </td>
-
-                      {/* Audit Action Buttons */}
-                      <td className="px-3 py-2.5 text-right whitespace-nowrap">
-                        <div className="flex items-center justify-end gap-1.5">
-                          {day.isCorrected && (
-                            <button
-                              onClick={() => openHistoryModal(selectedEmployee.id, selectedEmployee.name, day.date)}
-                              title="Inspect compliance audit trail for this date"
-                              className="inline-flex items-center gap-1 px-2 py-1 rounded bg-amber-50 text-amber-800 border border-amber-300/80 text-[11px] font-bold hover:bg-amber-100 transition-colors cursor-pointer shadow-2xs"
-                            >
-                              <History className="w-3 h-3 text-amber-600" />
-                              Audit Trail
-                            </button>
-                          )}
-                          <button
-                            disabled={periodLock?.is_locked}
-                            onClick={() => openCorrectionModal(selectedEmployee, day)}
-                            title={periodLock?.is_locked ? "This Kinsenas period is finalized and locked. CEO override required to edit." : undefined}
-                            className={`inline-flex items-center gap-1 px-2.5 py-1 rounded text-xs font-bold transition-colors shadow-2xs ${
-                              periodLock?.is_locked
-                                ? "bg-gray-100 text-gray-400 border border-gray-200 cursor-not-allowed opacity-60"
-                                : "bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 cursor-pointer"
-                            }`}
-                          >
-                            <Edit3 className="w-3 h-3" />
-                            {day.actualTimeIn ? 'Correct Punch' : 'Add Missing Shift'}
-                          </button>
-                        </div>
-                      </td>
+            <div className="flex-1 overflow-y-auto p-5 [scrollbar-gutter:stable]">
+              <div className="border border-zinc-200 rounded-xl overflow-hidden bg-white shadow-2xs">
+                <table className="w-full text-left border-collapse text-xs table-fixed">
+                  <thead>
+                    <tr className="bg-zinc-50 border-b border-zinc-200">
+                      <th className="border-r border-zinc-200 px-3 py-2 text-[11px] font-semibold text-zinc-600 uppercase tracking-wider w-[10%]">Date</th>
+                      <th className="border-r border-zinc-200 px-3 py-2 text-[11px] font-semibold text-zinc-600 uppercase tracking-wider w-[11%]">Scheduled Shift</th>
+                      <th className="border-r border-zinc-200 px-3 py-2 text-[11px] font-semibold text-zinc-600 uppercase tracking-wider w-[13%]">Dispatch Site</th>
+                      <th className="border-r border-zinc-200 px-3 py-2 text-[11px] font-bold text-indigo-600 uppercase tracking-wider text-center w-[17%]">Actual In / Out</th>
+                      <th className="border-r border-zinc-200 px-2 py-2 text-[11px] font-semibold text-zinc-600 uppercase tracking-wider text-center w-[6%]">Hours</th>
+                      <th className="border-r border-zinc-200 px-2 py-2 text-[11px] font-semibold text-amber-600 uppercase tracking-wider text-center w-[6%]">Late</th>
+                      <th className="border-r border-zinc-200 px-2 py-2 text-[11px] font-semibold text-emerald-600 uppercase tracking-wider text-center w-[6%]">Reg OT</th>
+                      <th className="border-r border-zinc-200 px-2 py-2 text-[11px] font-semibold text-emerald-700 uppercase tracking-wider text-center w-[6%]">Sun/Hol</th>
+                      <th className="border-r border-zinc-200 px-2 py-2 text-[11px] font-semibold text-purple-600 uppercase tracking-wider text-center w-[5%]">ND</th>
+                      <th className="border-r border-zinc-200 px-3 py-2 text-[11px] font-semibold text-zinc-600 uppercase tracking-wider w-[12%]">Daily Status</th>
+                      <th className="px-3 py-2 text-[11px] font-semibold text-zinc-600 uppercase tracking-wider text-right w-[8%]">Audit Action</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody className="divide-y divide-zinc-200 bg-white">
+                    {selectedEmployee.dailyBreakdown.map((day) => (
+                      <tr key={day.date} className="hover:bg-zinc-50/70 transition-colors">
+                        {/* Date */}
+                        <td className="border-r border-zinc-200 px-3 py-2 overflow-hidden truncate">
+                          <span className="font-semibold text-zinc-900">{day.date}</span>
+                          <span className={`ml-1.5 text-[10px] font-bold ${day.isSunday ? 'text-rose-500' : 'text-zinc-400'}`}>
+                            ({day.dayOfWeek})
+                          </span>
+                        </td>
+
+                        {/* Scheduled Shift */}
+                        <td className="border-r border-zinc-200 px-3 py-2 text-zinc-600 font-medium overflow-hidden truncate">
+                          {day.scheduledStart ? (
+                            <span>{day.scheduledStart} - {day.scheduledEnd || '17:00'}</span>
+                          ) : (
+                            <span className="text-zinc-400 italic">Unscheduled</span>
+                          )}
+                        </td>
+
+                        {/* Dispatch Site */}
+                        <td className="border-r border-zinc-200 px-3 py-2 text-zinc-700 overflow-hidden truncate">
+                          {day.scheduleClient ? (
+                            <span className="font-medium text-zinc-800" title={day.scheduleClient}>{day.scheduleClient}</span>
+                          ) : (
+                            <span className="text-zinc-300">-</span>
+                          )}
+                        </td>
+
+                        {/* Actual In / Out - Center Aligned */}
+                        <td className="border-r border-zinc-200 px-3 py-2 text-center whitespace-nowrap">
+                          {day.actualTimeIn ? (
+                            <div className="font-mono font-bold text-zinc-900 flex items-center justify-center gap-1.5">
+                              <span>{day.actualTimeIn}</span>
+                              <span className="text-zinc-400 font-normal">&rarr;</span>
+                              <span>{day.actualTimeOut || 'Open'}</span>
+                            </div>
+                          ) : (
+                            <div className="flex justify-center">
+                              <span className="text-zinc-300 font-mono">-</span>
+                            </div>
+                          )}
+                        </td>
+
+                        {/* Hours */}
+                        <td className="border-r border-zinc-200 px-2 py-2 text-center font-mono font-bold text-zinc-800">
+                          {day.hoursWorked > 0 ? `${day.hoursWorked}h` : '-'}
+                        </td>
+
+                        {/* Late Mins */}
+                        <td className="border-r border-zinc-200 px-2 py-2 text-center">
+                          {day.lateMinutes > 0 ? (
+                            <span className="font-semibold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded text-[11px] border border-amber-200">
+                              {day.lateMinutes}m
+                            </span>
+                          ) : (
+                            <span className="text-zinc-300">-</span>
+                          )}
+                        </td>
+
+                        {/* Reg OT */}
+                        <td className="border-r border-zinc-200 px-2 py-2 text-center font-mono">
+                          {day.regOtHours > 0 ? (
+                            <span className="font-semibold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded text-[11px] border border-emerald-200">
+                              {day.regOtHours}h
+                            </span>
+                          ) : (
+                            <span className="text-zinc-300">-</span>
+                          )}
+                        </td>
+
+                        {/* Sun/Hol OT */}
+                        <td className="border-r border-zinc-200 px-2 py-2 text-center font-mono">
+                          {day.sunHolidayOtHours > 0 ? (
+                            <span className="font-semibold text-emerald-700 bg-emerald-100/70 px-1.5 py-0.5 rounded text-[11px] border border-emerald-300">
+                              {day.sunHolidayOtHours}h
+                            </span>
+                          ) : (
+                            <span className="text-zinc-300">-</span>
+                          )}
+                        </td>
+
+                        {/* Night Diff */}
+                        <td className="border-r border-zinc-200 px-2 py-2 text-center font-mono">
+                          {day.nightDiffHours > 0 ? (
+                            <span className="font-semibold text-purple-700 bg-purple-50 px-1.5 py-0.5 rounded text-[11px] border border-purple-200">
+                              {day.nightDiffHours}h
+                            </span>
+                          ) : (
+                            <span className="text-zinc-300">-</span>
+                          )}
+                        </td>
+
+                        {/* Daily Status Badge */}
+                        <td className="border-r border-zinc-200 px-3 py-2 overflow-hidden">
+                          <div className="flex items-center gap-1 flex-wrap">
+                            {day.status === 'present' && (
+                              <span className="inline-flex items-center gap-1 font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded text-[10px]">
+                                <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Present
+                              </span>
+                            )}
+                            {day.status === 'late' && (
+                              <span className="inline-flex items-center gap-1 font-semibold text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded text-[10px]">
+                                <AlertTriangle className="w-3 h-3 text-amber-600" /> Late ({day.lateMinutes}m)
+                              </span>
+                            )}
+                            {day.status === 'overtime' && (
+                              <span className="inline-flex items-center gap-1 font-semibold text-indigo-700 bg-indigo-50 border border-indigo-200 px-1.5 py-0.5 rounded text-[10px]">
+                                <Clock className="w-3 h-3 text-indigo-600" /> Overtime
+                              </span>
+                            )}
+                            {day.status === 'absent' && (
+                              <span className="inline-flex items-center gap-1 font-semibold text-red-700 bg-red-50 border border-red-200 px-1.5 py-0.5 rounded text-[10px]" title={day.notes}>
+                                <ShieldAlert className="w-3 h-3 text-red-600" /> Missed
+                              </span>
+                            )}
+                            {day.status === 'approved_leave' && (
+                              <span className="inline-flex items-center gap-1 font-semibold text-blue-700 bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded text-[10px]">
+                                <Briefcase className="w-3 h-3 text-blue-600" /> Leave ({day.leaveType})
+                              </span>
+                            )}
+                            {day.status === 'rest_day' && (
+                              <span className="font-semibold text-zinc-500 bg-zinc-100 border border-zinc-200 px-1.5 py-0.5 rounded text-[10px]">
+                                Rest Day
+                              </span>
+                            )}
+                            {day.status === 'holiday' && (
+                              <span className="font-semibold text-cyan-700 bg-cyan-50 border border-cyan-200 px-1.5 py-0.5 rounded text-[10px]" title={day.holidayName || ''}>
+                                Holiday
+                              </span>
+                            )}
+                            {day.status === 'off_duty' && (
+                              <span className="font-medium text-zinc-400 text-[10px]">
+                                Standby
+                              </span>
+                            )}
+                            {day.status === 'unclosed' && (
+                              <span className="font-semibold text-rose-700 bg-rose-50 border border-rose-200 px-1.5 py-0.5 rounded text-[10px]">
+                                Incomplete
+                              </span>
+                            )}
+
+                            {day.isCorrected && (
+                              <span className="inline-flex items-center gap-1 font-semibold text-amber-800 bg-amber-50 border border-amber-300 px-1 py-0.5 rounded text-[9px]" title={day.correctionDetails?.reason}>
+                                <History className="w-2.5 h-2.5 text-amber-600" />
+                                Audited
+                              </span>
+                            )}
+                          </div>
+                        </td>
+
+                        {/* Audit Action Buttons */}
+                        <td className="px-3 py-2 text-right whitespace-nowrap">
+                          <div className="flex items-center justify-end gap-1">
+                            {day.isCorrected && (
+                              <button
+                                onClick={() => openHistoryModal(selectedEmployee.id, selectedEmployee.name, day.date)}
+                                title="Inspect compliance audit trail for this date"
+                                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-300 text-[10px] font-semibold hover:bg-amber-100 transition-colors cursor-pointer"
+                              >
+                                <History className="w-3 h-3 text-amber-600" />
+                                Trail
+                              </button>
+                            )}
+                            <button
+                              disabled={periodLock?.is_locked}
+                              onClick={() => openCorrectionModal(selectedEmployee, day)}
+                              title={periodLock?.is_locked ? "This Kinsenas period is finalized and locked. CEO override required to edit." : undefined}
+                              className={`inline-flex items-center gap-1 px-2 py-1 rounded text-[11px] font-semibold transition-colors shadow-2xs ${
+                                periodLock?.is_locked
+                                  ? "bg-zinc-100 text-zinc-400 border border-zinc-200 cursor-not-allowed opacity-60"
+                                  : "bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 cursor-pointer"
+                              }`}
+                            >
+                              <Edit3 className="w-3 h-3" />
+                              {day.actualTimeIn ? 'Correct' : 'Add Shift'}
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
 
             {/* Modal Footer */}
-            <div className="px-6 py-3 bg-gray-50 border-t border-gray-200 flex justify-end shrink-0">
+            <div className="px-6 py-3 bg-zinc-50 border-t border-zinc-200 flex justify-end shrink-0">
               <button
                 onClick={() => setSelectedEmployee(null)}
-                className="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold rounded-lg transition-colors shadow-2xs cursor-pointer"
+                className="px-4 py-2 bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-semibold rounded-lg transition-colors shadow-2xs cursor-pointer"
               >
                 Done Auditing
               </button>
@@ -1350,22 +1356,22 @@ export default function AuditLogClient() {
 
       {/* Punch Correction Modal */}
       {editingDay && (
-        <div className="fixed inset-0 z-[60] bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150">
-          <div className="bg-white rounded-2xl max-w-lg w-full shadow-2xl overflow-hidden border border-gray-200 flex flex-col">
+        <div className="fixed inset-0 z-[60] bg-zinc-900/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150">
+          <div className="bg-white rounded-2xl max-w-lg w-full shadow-2xl overflow-hidden border border-zinc-200 flex flex-col">
             {/* Modal Header */}
-            <div className="px-5 py-4 bg-slate-900 text-white flex items-center justify-between">
+            <div className="px-5 py-4 bg-zinc-900 text-white flex items-center justify-between">
               <div className="flex items-center gap-2.5">
                 <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white">
                   <Clock className="w-4 h-4" />
                 </div>
                 <div>
                   <h3 className="text-sm font-bold tracking-tight">DTR Punch Correction</h3>
-                  <p className="text-[11px] text-slate-300">{editingDay.employee.name} &bull; {editingDay.day.date} ({editingDay.day.dayOfWeek})</p>
+                  <p className="text-[11px] text-zinc-300">{editingDay.employee.name} &bull; {editingDay.day.date} ({editingDay.day.dayOfWeek})</p>
                 </div>
               </div>
               <button
                 onClick={() => setEditingDay(null)}
-                className="p-1 rounded-md text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
+                className="p-1 rounded-md text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -1383,21 +1389,21 @@ export default function AuditLogClient() {
               {/* Input Fields */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-gray-700 font-bold mb-1">Time In (PST / UTC+8)</label>
+                  <label className="block text-zinc-700 font-semibold mb-1">Time In (PST / UTC+8)</label>
                   <input
                     type="time"
                     value={editTimeIn}
                     onChange={(e) => setEditTimeIn(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg font-mono text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                    className="w-full px-3 py-2 border border-zinc-200 rounded-lg font-mono text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                   />
                 </div>
                 <div>
-                  <label className="block text-gray-700 font-bold mb-1">Time Out (PST / UTC+8)</label>
+                  <label className="block text-zinc-700 font-semibold mb-1">Time Out (PST / UTC+8)</label>
                   <input
                     type="time"
                     value={editTimeOut}
                     onChange={(e) => setEditTimeOut(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg font-mono text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                    className="w-full px-3 py-2 border border-zinc-200 rounded-lg font-mono text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                   />
                 </div>
               </div>
@@ -1409,43 +1415,43 @@ export default function AuditLogClient() {
                   id="isNextDay"
                   checked={isNextDay}
                   onChange={(e) => setIsNextDay(e.target.checked)}
-                  className="w-4 h-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500 cursor-pointer"
+                  className="w-4 h-4 text-indigo-600 rounded border-zinc-300 focus:ring-indigo-500 cursor-pointer"
                 />
-                <label htmlFor="isNextDay" className="text-gray-700 font-medium cursor-pointer">
+                <label htmlFor="isNextDay" className="text-zinc-700 font-medium cursor-pointer">
                   Shift crosses midnight (Clock-out occurs on the following day)
                 </label>
               </div>
 
               {/* Real-time Math Preview Card */}
               {correctionPreview ? (
-                <div className="bg-slate-50 border border-slate-200 rounded-xl p-3.5 space-y-2">
-                  <div className="text-[10px] font-black uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+                <div className="bg-zinc-50 border border-zinc-200 rounded-xl p-3.5 space-y-2">
+                  <div className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500 flex items-center gap-1.5">
                     <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
                     Live DOLE Kinsenas Math Preview
                   </div>
                   <div className="grid grid-cols-4 gap-2 text-center">
-                    <div className="bg-white p-2 rounded-lg border border-gray-200">
-                      <span className="text-[10px] text-gray-400 block font-bold">Net Hours</span>
-                      <span className="font-bold text-gray-900 text-xs">{correctionPreview.netHours}h</span>
+                    <div className="bg-white p-2 rounded-lg border border-zinc-200">
+                      <span className="text-[10px] text-zinc-400 block font-semibold">Net Hours</span>
+                      <span className="font-bold text-zinc-900 text-xs">{correctionPreview.netHours}h</span>
                       {correctionPreview.mealBreakDeducted && (
-                        <span className="text-[9px] text-gray-400 block">-1h meal break</span>
+                        <span className="text-[9px] text-zinc-400 block">-1h meal break</span>
                       )}
                     </div>
-                    <div className="bg-white p-2 rounded-lg border border-gray-200">
-                      <span className="text-[10px] text-gray-400 block font-bold">Late</span>
-                      <span className={`font-bold text-xs ${correctionPreview.lateMins > 0 ? 'text-amber-600' : 'text-gray-400'}`}>
+                    <div className="bg-white p-2 rounded-lg border border-zinc-200">
+                      <span className="text-[10px] text-zinc-400 block font-semibold">Late</span>
+                      <span className={`font-bold text-xs ${correctionPreview.lateMins > 0 ? 'text-amber-600' : 'text-zinc-400'}`}>
                         {correctionPreview.lateMins}m
                       </span>
                     </div>
-                    <div className="bg-white p-2 rounded-lg border border-gray-200">
-                      <span className="text-[10px] text-gray-400 block font-bold">Reg OT</span>
-                      <span className={`font-bold text-xs ${Number(correctionPreview.regOt) > 0 ? 'text-emerald-600' : 'text-gray-400'}`}>
+                    <div className="bg-white p-2 rounded-lg border border-zinc-200">
+                      <span className="text-[10px] text-zinc-400 block font-semibold">Reg OT</span>
+                      <span className={`font-bold text-xs ${Number(correctionPreview.regOt) > 0 ? 'text-emerald-600' : 'text-zinc-400'}`}>
                         {correctionPreview.regOt}h
                       </span>
                     </div>
-                    <div className="bg-white p-2 rounded-lg border border-gray-200">
-                      <span className="text-[10px] text-gray-400 block font-bold">Sun/Hol OT</span>
-                      <span className={`font-bold text-xs ${Number(correctionPreview.sunHolOt) > 0 ? 'text-emerald-700' : 'text-gray-400'}`}>
+                    <div className="bg-white p-2 rounded-lg border border-zinc-200">
+                      <span className="text-[10px] text-zinc-400 block font-semibold">Sun/Hol OT</span>
+                      <span className={`font-bold text-xs ${Number(correctionPreview.sunHolOt) > 0 ? 'text-emerald-700' : 'text-zinc-400'}`}>
                         {correctionPreview.sunHolOt}h
                       </span>
                     </div>
@@ -1460,8 +1466,8 @@ export default function AuditLogClient() {
               {/* Mandatory Rationale */}
               <div>
                 <div className="flex items-center justify-between mb-1">
-                  <label className="font-bold text-gray-700">Audit Rationale & Rationale Notes *</label>
-                  <span className={`text-[10px] font-mono ${editReason.trim().length >= 10 ? 'text-emerald-600 font-bold' : 'text-gray-400'}`}>
+                  <label className="font-semibold text-zinc-700">Audit Rationale & Rationale Notes *</label>
+                  <span className={`text-[10px] font-mono ${editReason.trim().length >= 10 ? 'text-emerald-600 font-bold' : 'text-zinc-400'}`}>
                     {editReason.trim().length} / 10 characters minimum
                   </span>
                 </div>
@@ -1470,7 +1476,7 @@ export default function AuditLogClient() {
                   value={editReason}
                   onChange={(e) => setEditReason(e.target.value)}
                   placeholder="e.g., Technician completed off-grid field emergency at Makati Med; device battery depleted during sign-off. Verified with coordinator dispatch log."
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs leading-relaxed focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  className="w-full px-3 py-2 border border-zinc-200 rounded-lg text-xs leading-relaxed focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                 />
               </div>
 
@@ -1483,12 +1489,12 @@ export default function AuditLogClient() {
             </div>
 
             {/* Modal Actions */}
-            <div className="px-5 py-3 bg-gray-50 border-t border-gray-200 flex items-center justify-end gap-2.5">
+            <div className="px-5 py-3 bg-zinc-50 border-t border-zinc-200 flex items-center justify-end gap-2.5">
               <button
                 type="button"
                 onClick={() => setEditingDay(null)}
                 disabled={savingCorrection}
-                className="px-3.5 py-2 border border-gray-300 rounded-lg text-gray-700 font-bold hover:bg-gray-100 disabled:opacity-50 text-xs transition-colors cursor-pointer"
+                className="px-3.5 py-2 border border-zinc-200 rounded-lg text-zinc-700 font-semibold hover:bg-zinc-100 disabled:opacity-50 text-xs transition-colors cursor-pointer"
               >
                 Cancel
               </button>
@@ -1496,7 +1502,7 @@ export default function AuditLogClient() {
                 type="button"
                 onClick={handleSaveCorrection}
                 disabled={savingCorrection || editReason.trim().length < 10 || !correctionPreview}
-                className="inline-flex items-center gap-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-bold rounded-lg text-xs transition-colors shadow-sm cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-semibold rounded-lg text-xs transition-colors shadow-xs cursor-pointer"
               >
                 {savingCorrection ? (
                   <>
@@ -1517,16 +1523,16 @@ export default function AuditLogClient() {
 
       {/* History Inspector Modal */}
       {viewingHistoryTech && (
-        <div className="fixed inset-0 z-[70] bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150">
-          <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl overflow-hidden border border-gray-200 flex flex-col">
-            <div className="px-5 py-3.5 bg-slate-900 text-white flex items-center justify-between">
+        <div className="fixed inset-0 z-[70] bg-zinc-900/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150">
+          <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl overflow-hidden border border-zinc-200 flex flex-col">
+            <div className="px-5 py-3.5 bg-zinc-900 text-white flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <History className="w-4 h-4 text-indigo-400" />
                 <h3 className="text-xs font-bold uppercase tracking-wider">Audit Correction Trail</h3>
               </div>
               <button
                 onClick={() => setViewingHistoryTech(null)}
-                className="p-1 rounded-md text-slate-400 hover:text-white cursor-pointer"
+                className="p-1 rounded-md text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
