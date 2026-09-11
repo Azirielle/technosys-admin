@@ -26,6 +26,15 @@ const nextConfig: NextConfig = {
   },
   serverExternalPackages: ['pdf-parse', '@langchain/textsplitters', 'playwright'],
   poweredByHeader: false,
+  async redirects() {
+    return [
+      {
+        source: '/coordinator/dispatch',
+        destination: '/coordinator',
+        permanent: false,
+      },
+    ];
+  },
   async headers() {
     return [
       {
