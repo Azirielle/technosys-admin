@@ -30,6 +30,14 @@ export default function EmployeeFilesClient() {
   const [sendSms, setSendSms] = useState(false);
   const [sendPush, setSendPush] = useState(true);
   const [isSubmittingWarning, setIsSubmittingWarning] = useState(false);
+  const [warningConfirmation, setWarningConfirmation] = useState<{
+    isOpen: boolean;
+    employeeName: string;
+    employeeRole: string;
+    subject: string;
+    sentPush: boolean;
+    sentSms: boolean;
+  } | null>(null);
   
   // Settings State
   const [editForm, setEditForm] = useState({
@@ -186,11 +194,16 @@ export default function EmployeeFilesClient() {
     e.preventDefault();
     if (!selectedEmp || !warningSubject || !warningDetails) return;
     setIsSubmittingWarning(true);
+
+    // Get authenticated HR user for accurate audit attribution
+    const { data: { user } } = await supabase.auth.getUser();
+    const issuerId = user?.id || selectedEmp.id;
+
     const { error } = await supabase
       .from('employee_warnings')
       .insert({
         employee_id: selectedEmp.id,
-        issued_by: selectedEmp.id, 
+        issued_by: issuerId, 
         subject: warningSubject,
         details: warningDetails,
         warning_level: 'Standard Warning',
@@ -207,11 +220,17 @@ export default function EmployeeFilesClient() {
     }
 
     if (!error) {
-      alert(`Warning issued to ${selectedEmp.full_name}! ${sendSms ? '(SMS Sent)' : ''}`);
+      setWarningConfirmation({
+        isOpen: true,
+        employeeName: selectedEmp.full_name,
+        employeeRole: selectedEmp.role || 'technician',
+        subject: warningSubject,
+        sentPush: sendPush,
+        sentSms: sendSms
+      });
       setWarningSubject('');
       setWarningDetails('');
       fetchEmployees(); // Refresh to update warning count
-      setActiveTab('docs');
     }
     setIsSubmittingWarning(false);
   };
@@ -610,6 +629,25 @@ export default function EmployeeFilesClient() {
 
               {activeTab === 'warnings' && (
                 <form onSubmit={submitWarning} className="max-w-xl mx-auto space-y-3 py-1">
+                  {/* Explicit Target Technician Banner */}
+                  <div className="flex items-center gap-3 p-3 bg-zinc-50 border border-zinc-200 rounded-xl">
+                    <div className="w-8 h-8 rounded-lg bg-zinc-200 text-zinc-700 font-bold flex items-center justify-center text-xs shrink-0">
+                      {selectedEmp.full_name?.slice(0, 2).toUpperCase()}
+                    </div>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-bold text-zinc-900">{selectedEmp.full_name}</span>
+                        <span className="text-[9px] font-bold uppercase px-1.5 py-0.2 bg-zinc-100 text-zinc-700 border border-zinc-200 rounded">
+                          {selectedEmp.role}
+                        </span>
+                        <span className="text-[10px] text-zinc-400 font-medium uppercase truncate">
+                          {selectedEmp.technician_level || 'General'} &bull; {selectedEmp.employment_status || 'Regular'}
+                        </span>
+                      </div>
+                      <p className="text-[10px] text-zinc-500 mt-0.5">Disciplinary notice will be filed under this technician's 201 records.</p>
+                    </div>
+                  </div>
+
                   <div className="bg-red-50 border border-red-100 p-3 rounded-xl flex gap-3">
                     <AlertTriangle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
                     <div>
@@ -850,6 +888,59 @@ export default function EmployeeFilesClient() {
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* In-App Styled Warning Confirmation Modal */}
+      {warningConfirmation?.isOpen && (
+        <div className="fixed inset-0 bg-zinc-900/60 backdrop-blur-xs z-[75] flex items-center justify-center p-4 animate-in fade-in duration-150">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden border border-zinc-200 text-center flex flex-col items-center p-6">
+            <div className="w-12 h-12 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-200 flex items-center justify-center mb-3 shadow-2xs">
+              <CheckCircle2 className="w-6 h-6" />
+            </div>
+
+            <h3 className="text-base font-bold text-zinc-900">Disciplinary Warning Issued</h3>
+            <p className="text-xs text-zinc-500 mt-1">
+              Notice has been recorded and officially filed in <span className="font-semibold text-zinc-800">{warningConfirmation.employeeName}</span>'s 201 record.
+            </p>
+
+            <div className="w-full bg-zinc-50 border border-zinc-200/80 rounded-xl p-3 my-4 text-left space-y-2 text-xs">
+              <div className="flex items-center justify-between">
+                <span className="text-zinc-500 font-medium">Target Technician:</span>
+                <span className="font-bold text-zinc-900">{warningConfirmation.employeeName}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-zinc-500 font-medium">Warning Subject:</span>
+                <span className="font-semibold text-zinc-800 truncate max-w-[200px]">{warningConfirmation.subject}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-zinc-500 font-medium">Mobile Push Notification:</span>
+                <span className={`font-semibold ${warningConfirmation.sentPush ? 'text-emerald-600' : 'text-zinc-400'}`}>
+                  {warningConfirmation.sentPush ? 'Dispatched' : 'Skipped'}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-zinc-500 font-medium">SMS Alert:</span>
+                <span className={`font-semibold ${warningConfirmation.sentSms ? 'text-emerald-600' : 'text-zinc-400'}`}>
+                  {warningConfirmation.sentSms ? 'Dispatched' : 'Skipped'}
+                </span>
+              </div>
+              <div className="flex items-center justify-between pt-1.5 border-t border-zinc-200/60">
+                <span className="text-zinc-500 font-medium">201 Dossier:</span>
+                <span className="font-semibold text-indigo-600">Updated in Database</span>
+              </div>
+            </div>
+
+            <button
+              onClick={() => {
+                setWarningConfirmation(null);
+                setActiveTab('docs');
+              }}
+              className="w-full py-2.5 bg-zinc-900 hover:bg-zinc-800 text-white rounded-xl text-xs font-semibold shadow-xs transition-colors"
+            >
+              Done & Return to 201 File
+            </button>
           </div>
         </div>
       )}
