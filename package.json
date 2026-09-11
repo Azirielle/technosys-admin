@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "predev": "node scripts/clean-zombies.mjs",
-    "dev": "next dev",
+    "dev": "node --max-old-space-size=4096 ./node_modules/next/dist/bin/next dev",
     "dev:webpack": "next dev --webpack",
     "clean:zombies": "node scripts/clean-zombies.mjs",
     "build": "next build",

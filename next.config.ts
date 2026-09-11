@@ -1,18 +1,20 @@
 import path from "path";
 import type { NextConfig } from "next";
 
+const isProd = process.env.NODE_ENV === 'production';
+
 const cspHeader = `
   default-src 'self';
   script-src 'self' 'unsafe-eval' 'unsafe-inline';
   style-src 'self' 'unsafe-inline';
-  img-src 'self' blob: data: https://*.supabase.co https://*.tile.openstreetmap.org https://unpkg.com https://images.unsplash.com https://via.placeholder.com;
+  img-src 'self' blob: data: https://*.supabase.co https://*.tile.openstreetmap.org https://unpkg.com https://images.unsplash.com https://via.placeholder.com https://cdnjs.cloudflare.com;
   font-src 'self' data:;
   object-src 'none';
   base-uri 'self';
   form-action 'self';
   frame-ancestors 'none';
   connect-src 'self' https://*.supabase.co wss://*.supabase.co https://nominatim.openstreetmap.org;
-  upgrade-insecure-requests;
+  ${isProd ? 'upgrade-insecure-requests;' : ''}
 `.replace(/\s{2,}/g, ' ').trim();
 
 const nextConfig: NextConfig = {

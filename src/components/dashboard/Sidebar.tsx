@@ -21,7 +21,6 @@ import {
   ShieldAlert,
   Megaphone,
 } from 'lucide-react'
-import { logout } from '@/app/actions'
 import { getSystemOverrides, fetchRemoteOverrides, subscribeToOverrideChanges, getModuleHref, SYSTEM_MODULES, RoleKey } from '@/lib/overrides'
 import OperationalTelemetry from '@/components/dashboard/OperationalTelemetry'
 
