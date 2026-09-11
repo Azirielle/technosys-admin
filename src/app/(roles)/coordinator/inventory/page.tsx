@@ -101,10 +101,30 @@ export default function InventoryLedgerPage() {
   const [selectedAssignment, setSelectedAssignment] = useState<ToolAssignment | null>(null)
   const [isToolModalOpen, setIsToolModalOpen] = useState(false)
   const [editingTool, setEditingTool] = useState<ToolCatalogItem | null>(null)
+  const [formSerial, setFormSerial] = useState('')
   const [isCheckoutModalOpen, setIsCheckoutModalOpen] = useState(false)
   const [checkoutTool, setCheckoutTool] = useState<ToolCatalogItem | null>(null)
   const [isReturnModalOpen, setIsReturnModalOpen] = useState(false)
   const [returningAssignment, setReturningAssignment] = useState<ToolAssignment | null>(null)
+
+  const generateAssetTag = () => {
+    const randomNum = Math.floor(1000 + Math.random() * 9000)
+    return `TC-EQP-${randomNum}`
+  }
+
+  const handleOpenAddTool = () => {
+    setEditingTool(null)
+    setFormSerial(generateAssetTag())
+    setFormError(null)
+    setIsToolModalOpen(true)
+  }
+
+  const handleOpenEditTool = (tool: ToolCatalogItem) => {
+    setEditingTool(tool)
+    setFormSerial(tool.serial_number || '')
+    setFormError(null)
+    setIsToolModalOpen(true)
+  }
 
   // Forms
   const [checkoutTechId, setCheckoutTechId] = useState('')
@@ -299,10 +319,7 @@ export default function InventoryLedgerPage() {
 
         <div className="flex items-center gap-2">
           <button
-            onClick={() => {
-              setEditingTool(null)
-              setIsToolModalOpen(true)
-            }}
+            onClick={handleOpenAddTool}
             className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold shadow-xs transition-colors"
           >
             <Plus className="w-4 h-4" />
@@ -345,7 +362,7 @@ export default function InventoryLedgerPage() {
             <Wrench className="w-5 h-5" />
           </div>
           <div>
-            <p className="text-[11px] font-medium text-zinc-500">Field Custody (Checked Out)</p>
+            <p className="text-[11px] font-medium text-zinc-500">In Field / Deployed</p>
             <p className="text-lg font-bold text-amber-600">{activeLoans} <span className="text-xs font-normal text-zinc-400">deployed</span></p>
           </div>
         </div>
@@ -393,7 +410,7 @@ export default function InventoryLedgerPage() {
               }`}
             >
               <Layers className="w-3.5 h-3.5" />
-              <span>Custody Ledger ({assignments.filter(a => a.status === 'checked_out').length} Active)</span>
+              <span>Issued Tools & Deployments ({assignments.filter(a => a.status === 'checked_out').length} Active)</span>
             </button>
           </div>
         </div>
@@ -444,7 +461,7 @@ export default function InventoryLedgerPage() {
                 }}
                 className="pl-2.5 pr-8 py-1 text-xs border border-zinc-300 rounded-xl bg-white text-zinc-700 focus:outline-none focus:ring-2 focus:ring-emerald-500"
               >
-                <option value="checked_out">Active Checkouts Only</option>
+                <option value="checked_out">Currently Issued / Deployed</option>
                 <option value="returned">Returned (Historical)</option>
                 <option value="damaged">Damaged / Repair</option>
                 <option value="lost">Lost / Missing</option>
@@ -456,273 +473,271 @@ export default function InventoryLedgerPage() {
 
         {/* TAB 1: EQUIPMENT VAULT (CATALOG) */}
         {activeTab === 'catalog' && (
-          <div className="overflow-x-auto flex-1">
-            <table className="min-w-full divide-y divide-zinc-200 text-left">
-              <thead className="bg-zinc-50/70 text-[11px] font-semibold text-zinc-500 uppercase tracking-wider">
-                <tr>
-                  <th className="px-5 py-3">Equipment / Spec</th>
-                  <th className="px-4 py-3">Category</th>
-                  <th className="px-4 py-3">Stock Level</th>
-                  <th className="px-4 py-3">Asset Value</th>
-                  <th className="px-4 py-3">Status</th>
-                  <th className="px-5 py-3 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-zinc-100 bg-white text-xs">
-                {loading ? (
+          <div className="overflow-x-auto flex-1 p-3">
+            <div className="border border-zinc-200 rounded-xl overflow-hidden shadow-2xs">
+              <table className="min-w-full divide-y divide-zinc-200 text-left">
+                <thead className="bg-zinc-50 text-[11px] font-semibold text-zinc-600 uppercase tracking-wider">
                   <tr>
-                    <td colSpan={6} className="px-6 py-12 text-center text-zinc-400">
-                      Loading equipment catalog...
-                    </td>
+                    <th className="px-3.5 py-2.5 border-r border-zinc-200">Equipment / Spec</th>
+                    <th className="px-3 py-2.5 border-r border-zinc-200">Category</th>
+                    <th className="px-3 py-2.5 border-r border-zinc-200">Stock Level</th>
+                    <th className="px-3 py-2.5 border-r border-zinc-200">Status</th>
+                    <th className="px-3.5 py-2.5 text-right">Actions</th>
                   </tr>
-                ) : filteredCatalog.length === 0 ? (
-                  <tr>
-                    <td colSpan={6} className="px-6 py-12 text-center text-zinc-500">
-                      No equipment matches your search filter.
-                    </td>
-                  </tr>
-                ) : (
-                  filteredCatalog.map((tool) => {
-                    const isAvailable = tool.available_stock > 0
-                    const isLowStock = isAvailable && tool.available_stock <= 2
+                </thead>
+                <tbody className="divide-y divide-zinc-200 bg-white text-xs">
+                  {loading ? (
+                    <tr>
+                      <td colSpan={5} className="px-4 py-8 text-center text-zinc-400">
+                        Loading equipment catalog...
+                      </td>
+                    </tr>
+                  ) : filteredCatalog.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="px-4 py-8 text-center text-zinc-500">
+                        No equipment matches your search filter.
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredCatalog.map((tool) => {
+                      const isAvailable = tool.available_stock > 0
+                      const isLowStock = isAvailable && tool.available_stock <= 2
 
-                    return (
-                      <tr key={tool.id} className="hover:bg-zinc-50/80 transition-colors">
-                        <td className="px-5 py-3.5">
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-xl bg-zinc-100 border border-zinc-200/80 overflow-hidden flex items-center justify-center shrink-0">
-                              {tool.image_url ? (
-                                <img src={tool.image_url} alt={tool.name} className="w-full h-full object-cover" />
-                              ) : (
-                                <Wrench className="w-5 h-5 text-zinc-400" />
-                              )}
-                            </div>
-                            <div>
-                              <p className="font-semibold text-zinc-900 leading-snug">{tool.name}</p>
-                              <div className="flex items-center gap-2 mt-0.5">
-                                {tool.serial_number && (
-                                  <span className="font-mono text-[10px] text-zinc-500 bg-zinc-100 px-1.5 py-0.2 rounded border border-zinc-200">
-                                    SN: {tool.serial_number}
-                                  </span>
+                      return (
+                        <tr key={tool.id} className="hover:bg-zinc-50/75 transition-colors">
+                          <td className="px-3.5 py-2 border-r border-zinc-200">
+                            <div className="flex items-center gap-2.5">
+                              <div className="w-7 h-7 rounded-lg bg-zinc-100 border border-zinc-200/80 overflow-hidden flex items-center justify-center shrink-0">
+                                {tool.image_url ? (
+                                  <img src={tool.image_url} alt={tool.name} className="w-full h-full object-cover" />
+                                ) : (
+                                  <Wrench className="w-3.5 h-3.5 text-zinc-400" />
                                 )}
-                                <span className="text-[11px] text-zinc-400 truncate max-w-xs">{tool.description}</span>
                               </div>
-                            </div>
-                          </div>
-                        </td>
-
-                        <td className="px-4 py-3.5 whitespace-nowrap">
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold bg-zinc-100 text-zinc-700 border border-zinc-200">
-                            {tool.category}
-                          </span>
-                        </td>
-
-                        <td className="px-4 py-3.5 whitespace-nowrap">
-                          <div className="flex items-center gap-2">
-                            <span
-                              className={`w-2 h-2 rounded-full ${
-                                !isAvailable
-                                  ? 'bg-rose-500'
-                                  : isLowStock
-                                  ? 'bg-amber-500 animate-pulse'
-                                  : 'bg-emerald-500'
-                              }`}
-                            />
-                            <span className="font-bold text-zinc-900">{tool.available_stock}</span>
-                            <span className="text-zinc-400">/ {tool.total_stock} Available</span>
-                          </div>
-                        </td>
-
-                        <td className="px-4 py-3.5 whitespace-nowrap font-mono text-zinc-700">
-                          {tool.unit_cost > 0 ? `₱${tool.unit_cost.toLocaleString()}` : '—'}
-                        </td>
-
-                        <td className="px-4 py-3.5 whitespace-nowrap">
-                          <span
-                            className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold border ${
-                              tool.status === 'active'
-                                ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                                : tool.status === 'maintenance'
-                                ? 'bg-amber-50 text-amber-700 border-amber-200'
-                                : 'bg-zinc-100 text-zinc-600 border-zinc-200'
-                            }`}
-                          >
-                            {tool.status.toUpperCase()}
-                          </span>
-                        </td>
-
-                        <td className="px-5 py-3.5 text-right whitespace-nowrap">
-                          <div className="flex items-center justify-end gap-1.5">
-                            <button
-                              disabled={tool.available_stock <= 0}
-                              onClick={() => {
-                                setCheckoutTool(tool)
-                                setIsCheckoutModalOpen(true)
-                              }}
-                              className="px-2.5 py-1 bg-emerald-50 text-emerald-700 hover:bg-emerald-600 hover:text-white rounded-lg border border-emerald-200 font-semibold text-[11px] transition-colors disabled:opacity-40 disabled:pointer-events-none"
-                            >
-                              Check Out
-                            </button>
-                            <button
-                              onClick={() => {
-                                setEditingTool(tool)
-                                setIsToolModalOpen(true)
-                              }}
-                              className="p-1.5 bg-zinc-100 text-zinc-600 hover:bg-zinc-200 rounded-lg transition-colors"
-                              title="Edit Tool"
-                            >
-                              <Edit2 className="w-3.5 h-3.5" />
-                            </button>
-                            <button
-                              onClick={() => handleDeleteTool(tool.id, tool.name)}
-                              className="p-1.5 bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white rounded-lg transition-colors"
-                              title="Delete Tool"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    )
-                  })
-                )}
-              </tbody>
-            </table>
-          </div>
-        )}
-
-        {/* TAB 2: CUSTODY LEDGER */}
-        {activeTab === 'ledger' && (
-          <div className="overflow-x-auto flex-1">
-            <table className="min-w-full divide-y divide-zinc-200 text-left">
-              <thead className="bg-zinc-50/70 text-[11px] font-semibold text-zinc-500 uppercase tracking-wider">
-                <tr>
-                  <th className="px-5 py-3">Asset / Tool</th>
-                  <th className="px-4 py-3">Assigned Crew</th>
-                  <th className="px-4 py-3">Duration / Aging</th>
-                  <th className="px-4 py-3">Status / Condition</th>
-                  <th className="px-5 py-3 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-zinc-100 bg-white text-xs">
-                {loading ? (
-                  <tr>
-                    <td colSpan={5} className="px-6 py-12 text-center text-zinc-400">
-                      Loading custody ledger...
-                    </td>
-                  </tr>
-                ) : filteredAssignments.length === 0 ? (
-                  <tr>
-                    <td colSpan={5} className="px-6 py-12 text-center text-zinc-500">
-                      No custody records match your filters.
-                    </td>
-                  </tr>
-                ) : (
-                  filteredAssignments.map((a) => {
-                    const days = getDaysBorrowed(a.handed_over_at, a.returned_at)
-                    const isOverdue = a.status === 'checked_out' && days > 3
-
-                    return (
-                      <tr
-                        key={a.id}
-                        onClick={() => setSelectedAssignment(a)}
-                        className="hover:bg-zinc-50/80 transition-colors cursor-pointer"
-                      >
-                        <td className="px-5 py-3.5">
-                          <div className="flex items-center gap-3">
-                            <div className="w-9 h-9 rounded-xl bg-zinc-100 border border-zinc-200 overflow-hidden flex items-center justify-center shrink-0">
-                              {a.tool_catalog?.image_url ? (
-                                <img src={a.tool_catalog.image_url} alt="" className="w-full h-full object-cover" />
-                              ) : (
-                                <Wrench className="w-4 h-4 text-zinc-400" />
-                              )}
-                            </div>
-                            <div>
-                              <p className="font-bold text-zinc-900 leading-snug">
-                                {a.tool_catalog?.name || 'Unknown Tool'}
-                              </p>
-                              <div className="flex items-center gap-2 mt-0.5">
-                                <span className="font-mono text-[10px] text-zinc-400">
-                                  #{a.id.slice(0, 8).toUpperCase()}
-                                </span>
-                                {a.tool_catalog?.serial_number && (
-                                  <span className="text-[10px] bg-zinc-100 text-zinc-600 px-1 rounded">
-                                    SN: {a.tool_catalog.serial_number}
-                                  </span>
+                              <div className="min-w-0">
+                                <div className="flex items-center gap-1.5">
+                                  <p className="font-semibold text-zinc-900 leading-tight truncate">{tool.name}</p>
+                                  {tool.serial_number && (
+                                    <span className="font-mono text-[9px] text-zinc-500 bg-zinc-100 px-1 py-0.2 rounded border border-zinc-200 shrink-0">
+                                      {tool.serial_number}
+                                    </span>
+                                  )}
+                                </div>
+                                {tool.description && (
+                                  <p className="text-[10px] text-zinc-400 truncate max-w-xs leading-tight mt-0.5">{tool.description}</p>
                                 )}
                               </div>
                             </div>
-                          </div>
-                        </td>
+                          </td>
 
-                        <td className="px-4 py-3.5 whitespace-nowrap">
-                          <div className="flex items-center gap-2">
-                            <div className="w-6 h-6 rounded-full bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold text-[10px]">
-                              {a.profiles?.full_name?.charAt(0) || 'T'}
-                            </div>
-                            <div>
-                              <p className="font-semibold text-zinc-900">{a.profiles?.full_name || 'Technician'}</p>
-                              <p className="text-[10px] text-zinc-400 uppercase">{a.profiles?.role || 'Field Crew'}</p>
-                            </div>
-                          </div>
-                        </td>
-
-                        <td className="px-4 py-3.5 whitespace-nowrap">
-                          <div className="flex flex-col gap-0.5">
-                            <span className="text-zinc-700 font-medium">
-                              {new Date(a.handed_over_at).toLocaleDateString()}
+                          <td className="px-3 py-2 whitespace-nowrap border-r border-zinc-200">
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold bg-zinc-100 text-zinc-700 border border-zinc-200">
+                              {tool.category}
                             </span>
+                          </td>
+
+                          <td className="px-3 py-2 whitespace-nowrap border-r border-zinc-200">
+                            <div className="flex items-center gap-2">
+                              <span
+                                className={`w-1.5 h-1.5 rounded-full ${
+                                  !isAvailable
+                                    ? 'bg-rose-500'
+                                    : isLowStock
+                                    ? 'bg-amber-500 animate-pulse'
+                                    : 'bg-emerald-500'
+                                }`}
+                              />
+                              <span className="font-bold text-zinc-900">{tool.available_stock}</span>
+                              <span className="text-zinc-400 text-[11px]">/ {tool.total_stock} Available</span>
+                            </div>
+                          </td>
+
+                          <td className="px-3 py-2 whitespace-nowrap border-r border-zinc-200">
                             <span
-                              className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold border w-fit ${
-                                isOverdue
-                                  ? 'bg-rose-50 text-rose-700 border-rose-200 animate-pulse'
+                              className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+                                tool.status === 'active'
+                                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                  : tool.status === 'maintenance'
+                                  ? 'bg-amber-50 text-amber-700 border-amber-200'
                                   : 'bg-zinc-100 text-zinc-600 border-zinc-200'
                               }`}
                             >
-                              {days} DAYS {a.status === 'checked_out' ? 'OUT' : 'TOTAL'}
+                              {tool.status.toUpperCase()}
                             </span>
-                          </div>
-                        </td>
+                          </td>
 
-                        <td className="px-4 py-3.5 whitespace-nowrap">
-                          <div className="flex flex-col gap-1">
-                            <span
-                              className={`inline-flex items-center px-2 py-0.5 rounded-full border text-[10px] font-bold w-fit ${getStatusBadge(
-                                a.status
-                              )}`}
-                            >
-                              {a.status.toUpperCase()} ({a.quantity || 1}x)
-                            </span>
-                            {a.condition_on_return && (
-                              <span className="text-[10px] text-zinc-500 font-medium">
-                                Audit: {a.condition_on_return.toUpperCase()}
+                          <td className="px-3.5 py-2 text-right whitespace-nowrap">
+                            <div className="flex items-center justify-end gap-1.5">
+                              <button
+                                disabled={tool.available_stock <= 0}
+                                onClick={() => {
+                                  setCheckoutTool(tool)
+                                  setIsCheckoutModalOpen(true)
+                                }}
+                                className="px-2.5 py-1 bg-emerald-50 text-emerald-700 hover:bg-emerald-600 hover:text-white rounded-lg border border-emerald-200 font-semibold text-[11px] transition-colors disabled:opacity-40 disabled:pointer-events-none"
+                              >
+                                Issue Tool
+                              </button>
+                              <button
+                                onClick={() => handleOpenEditTool(tool)}
+                                className="p-1 bg-zinc-100 text-zinc-600 hover:bg-zinc-200 rounded-lg transition-colors"
+                                title="Edit Tool"
+                              >
+                                <Edit2 className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteTool(tool.id, tool.name)}
+                                className="p-1 bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white rounded-lg transition-colors"
+                                title="Delete Tool"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      )
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* TAB 2: ISSUED TOOLS & DEPLOYMENTS */}
+        {activeTab === 'ledger' && (
+          <div className="overflow-x-auto flex-1 p-3">
+            <div className="border border-zinc-200 rounded-xl overflow-hidden shadow-2xs">
+              <table className="min-w-full divide-y divide-zinc-200 text-left">
+                <thead className="bg-zinc-50 text-[11px] font-semibold text-zinc-600 uppercase tracking-wider">
+                  <tr>
+                    <th className="px-3.5 py-2.5 border-r border-zinc-200">Asset / Tool</th>
+                    <th className="px-3 py-2.5 border-r border-zinc-200">Assigned Crew</th>
+                    <th className="px-3 py-2.5 border-r border-zinc-200">Duration / Aging</th>
+                    <th className="px-3 py-2.5 border-r border-zinc-200">Status / Condition</th>
+                    <th className="px-3.5 py-2.5 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-zinc-200 bg-white text-xs">
+                  {loading ? (
+                    <tr>
+                      <td colSpan={5} className="px-4 py-8 text-center text-zinc-400">
+                        Loading issued tools ledger...
+                      </td>
+                    </tr>
+                  ) : filteredAssignments.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="px-4 py-8 text-center text-zinc-500">
+                        No issued tool records match your filters.
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredAssignments.map((a) => {
+                      const days = getDaysBorrowed(a.handed_over_at, a.returned_at)
+                      const isOverdue = a.status === 'checked_out' && days > 3
+
+                      return (
+                        <tr
+                          key={a.id}
+                          onClick={() => setSelectedAssignment(a)}
+                          className="hover:bg-zinc-50/75 transition-colors cursor-pointer"
+                        >
+                          <td className="px-3.5 py-2 border-r border-zinc-200">
+                            <div className="flex items-center gap-2.5">
+                              <div className="w-7 h-7 rounded-lg bg-zinc-100 border border-zinc-200 overflow-hidden flex items-center justify-center shrink-0">
+                                {a.tool_catalog?.image_url ? (
+                                  <img src={a.tool_catalog.image_url} alt="" className="w-full h-full object-cover" />
+                                ) : (
+                                  <Wrench className="w-3.5 h-3.5 text-zinc-400" />
+                                )}
+                              </div>
+                              <div className="min-w-0">
+                                <p className="font-bold text-zinc-900 leading-tight truncate">
+                                  {a.tool_catalog?.name || 'Unknown Tool'}
+                                </p>
+                                <div className="flex items-center gap-1.5 mt-0.5">
+                                  <span className="font-mono text-[9px] text-zinc-400">
+                                    #{a.id.slice(0, 8).toUpperCase()}
+                                  </span>
+                                  {a.tool_catalog?.serial_number && (
+                                    <span className="text-[9px] font-mono bg-zinc-100 text-zinc-600 px-1 py-0.2 rounded border border-zinc-200">
+                                      {a.tool_catalog.serial_number}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          </td>
+
+                          <td className="px-3 py-2 whitespace-nowrap border-r border-zinc-200">
+                            <div className="flex items-center gap-2">
+                              <div className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold text-[9px]">
+                                {a.profiles?.full_name?.charAt(0) || 'T'}
+                              </div>
+                              <div>
+                                <p className="font-semibold text-zinc-900 leading-tight text-xs">{a.profiles?.full_name || 'Technician'}</p>
+                                <p className="text-[9px] text-zinc-400 uppercase leading-tight">{a.profiles?.role || 'Field Crew'}</p>
+                              </div>
+                            </div>
+                          </td>
+
+                          <td className="px-3 py-2 whitespace-nowrap border-r border-zinc-200">
+                            <div className="flex flex-col gap-0.5">
+                              <span className="text-zinc-700 font-medium text-xs">
+                                {new Date(a.handed_over_at).toLocaleDateString()}
                               </span>
-                            )}
-                          </div>
-                        </td>
+                              <span
+                                className={`inline-flex items-center px-1.5 py-0.2 rounded text-[9px] font-bold border w-fit ${
+                                  isOverdue
+                                    ? 'bg-rose-50 text-rose-700 border-rose-200 animate-pulse'
+                                    : 'bg-zinc-100 text-zinc-600 border-zinc-200'
+                                }`}
+                              >
+                                {days} DAYS {a.status === 'checked_out' ? 'OUT' : 'TOTAL'}
+                              </span>
+                            </div>
+                          </td>
 
-                        <td className="px-5 py-3.5 text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
-                          {a.status === 'checked_out' ? (
-                            <button
-                              onClick={() => {
-                                setReturningAssignment(a)
-                                setIsReturnModalOpen(true)
-                              }}
-                              className="inline-flex items-center gap-1 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold shadow-xs transition-colors"
-                            >
-                              <ArrowDownLeft className="w-3.5 h-3.5" />
-                              <span>Process Return</span>
-                            </button>
-                          ) : (
-                            <span className="text-zinc-400 text-xs font-medium">Closed</span>
-                          )}
-                        </td>
-                      </tr>
-                    )
-                  })
-                )}
-              </tbody>
-            </table>
+                          <td className="px-3 py-2 whitespace-nowrap border-r border-zinc-200">
+                            <div className="flex flex-col gap-0.5">
+                              <span
+                                className={`inline-flex items-center px-2 py-0.5 rounded-full border text-[10px] font-bold w-fit ${getStatusBadge(
+                                  a.status
+                                )}`}
+                              >
+                                {a.status === 'checked_out' ? 'IN FIELD' : a.status.toUpperCase()} ({a.quantity || 1}x)
+                              </span>
+                              {a.condition_on_return && (
+                                <span className="text-[9px] text-zinc-500 font-medium">
+                                  Audit: {a.condition_on_return.toUpperCase()}
+                                </span>
+                              )}
+                            </div>
+                          </td>
+
+                          <td className="px-3.5 py-2 text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                            {a.status === 'checked_out' ? (
+                              <button
+                                onClick={() => {
+                                  setReturningAssignment(a)
+                                  setIsReturnModalOpen(true)
+                                }}
+                                className="inline-flex items-center gap-1 px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[11px] font-semibold shadow-2xs transition-colors"
+                              >
+                                <ArrowDownLeft className="w-3 h-3" />
+                                <span>Process Return</span>
+                              </button>
+                            ) : (
+                              <span className="text-zinc-400 text-xs font-medium">Closed</span>
+                            )}
+                          </td>
+                        </tr>
+                      )
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
       </div>
@@ -783,12 +798,24 @@ export default function InventoryLedgerPage() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-zinc-700 mb-1">Serial / Asset Tag</label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-xs font-semibold text-zinc-700">Serial / Asset Tag</label>
+                    <button
+                      type="button"
+                      onClick={() => setFormSerial(generateAssetTag())}
+                      className="text-[10px] text-emerald-600 hover:text-emerald-700 font-semibold inline-flex items-center gap-1 transition-colors"
+                      title="Generate random serial number"
+                    >
+                      <RefreshCw className="w-3 h-3" />
+                      Auto-Generate
+                    </button>
+                  </div>
                   <input
                     type="text"
                     name="serial_number"
-                    defaultValue={editingTool?.serial_number || ''}
-                    placeholder="e.g. SN-550S-0412"
+                    value={formSerial}
+                    onChange={(e) => setFormSerial(e.target.value)}
+                    placeholder="e.g. TC-EQP-8492"
                     className="w-full px-3 py-2 border border-zinc-300 rounded-xl text-xs font-mono focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
                   />
                 </div>
@@ -891,7 +918,7 @@ export default function InventoryLedgerPage() {
           <div className="bg-white rounded-2xl shadow-xl max-w-md w-full overflow-hidden border border-zinc-200">
             <div className="px-6 py-4 border-b border-zinc-200 flex items-center justify-between">
               <div>
-                <h3 className="text-base font-bold text-zinc-900">Issue Equipment Handover</h3>
+                <h3 className="text-base font-bold text-zinc-900">Issue Equipment to Crew</h3>
                 <p className="text-xs text-zinc-500">Assign equipment custody to field personnel.</p>
               </div>
               <button
@@ -957,7 +984,7 @@ export default function InventoryLedgerPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-zinc-700 mb-1">Checkout / Site Notes</label>
+                <label className="block text-xs font-semibold text-zinc-700 mb-1">Deployment / Site Notes</label>
                 <input
                   type="text"
                   placeholder="e.g. Dispatched for SM Mall HVAC retrofit"
@@ -1134,7 +1161,7 @@ export default function InventoryLedgerPage() {
                     className="w-full px-3 py-2 border border-zinc-300 rounded-xl text-xs font-mono focus:ring-2 focus:ring-emerald-500"
                   />
                   <p className="text-[10px] text-zinc-400 mt-1">
-                    Recorded in activity audit log and flaggable for payroll deduction review.
+                    Recorded in activity audit log and flaggable for coordinator review.
                   </p>
                 </div>
               )}
