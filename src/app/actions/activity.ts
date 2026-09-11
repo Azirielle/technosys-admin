@@ -9,7 +9,9 @@ export interface ActivityLog {
   action: string
   description: string
   performed_by_name: string | null
+  performed_by_role?: string | null
   created_at: string
+  is_override?: boolean
 }
 
 // Log a system/admin activity, accepting either object arguments or positional arguments
@@ -65,8 +67,8 @@ export async function logActivity(
   }
 }
 
-// Fetch activity logs, mapping Phase 9 schema back to the frontend ActivityLog interface
-export async function getActivityLogs(category?: string, page = 1, pageSize = 10) {
+// Fetch activity logs, mapping schema back to the frontend ActivityLog interface
+export async function getActivityLogs(category?: string, page = 1, pageSize = 50) {
   try {
     const supabase = await createClient()
     
@@ -89,14 +91,35 @@ export async function getActivityLogs(category?: string, page = 1, pageSize = 10
       return { error: error.message, logs: [], count: 0 }
     }
 
-    const logs: ActivityLog[] = (data || []).map((row: any) => ({
-      id: row.id,
-      category: row.target_category || 'other',
-      action: row.action_type || '',
-      description: row.description || '',
-      performed_by_name: row.actor?.full_name || 'System',
-      created_at: row.created_at
-    }))
+    const logs: ActivityLog[] = (data || []).map((row: any) => {
+      const role = row.actor?.role || (row.actor_id ? 'staff' : 'system')
+      const cat = row.target_category || 'other'
+      const desc = row.description || ''
+      const action = row.action_type || ''
+
+      let isOverride = cat === 'system_overrides' || 
+                       action.toLowerCase().includes('override') || 
+                       desc.toLowerCase().includes('override')
+
+      if (role === 'accountant' && (cat === 'inventory' || cat === 'tickets' || cat === 'leaves' || cat === 'schedule')) {
+        isOverride = true
+      } else if (role === 'coordinator' && (cat === 'tickets' || cat === 'leaves' || cat === 'audit' || cat === 'compliance')) {
+        isOverride = true
+      } else if (role === 'hr' && (cat === 'inventory' || cat === 'schedule' || cat === 'audit')) {
+        isOverride = true
+      }
+
+      return {
+        id: row.id,
+        category: cat,
+        action: action,
+        description: desc,
+        performed_by_name: row.actor?.full_name || (role === 'system' ? 'System Process' : 'Administrator'),
+        performed_by_role: role,
+        created_at: row.created_at,
+        is_override: isOverride
+      }
+    })
 
     return { logs, count: count || 0 }
   } catch (e: any) {

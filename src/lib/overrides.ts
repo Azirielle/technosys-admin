@@ -70,7 +70,35 @@ export const SYSTEM_MODULES: SystemModule[] = [
 // Map of roleKey -> array of module IDs explicitly granted by CEO overrides
 export type OverrideMap = Record<RoleKey, string[]>;
 
+export type OverrideDuration = '1_day' | '2_days' | '7_days' | 'indefinite';
+
+export type OverrideMetadataItem = {
+  duration: OverrideDuration;
+  expires_at: string | null;
+  granted_at: string;
+  granted_by_name?: string;
+};
+
+export type OverrideMetadataMap = Record<RoleKey, Record<string, OverrideMetadataItem>>;
+
+export function isOverrideActive(item?: OverrideMetadataItem): boolean {
+  if (!item) return true;
+  if (!item.expires_at) return true;
+  return new Date(item.expires_at).getTime() > Date.now();
+}
+
+export function formatRemainingTime(expiresAt: string | null): string {
+  if (!expiresAt) return 'Active (Indefinite)';
+  const diffMs = new Date(expiresAt).getTime() - Date.now();
+  if (diffMs <= 0) return 'Expired';
+  const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+  if (diffHours < 24) return `${Math.max(1, diffHours)}h remaining`;
+  const diffDays = Math.floor(diffHours / 24);
+  return `${diffDays}d remaining`;
+}
+
 const STORAGE_KEY = 'technosys_system_overrides';
+const STORAGE_META_KEY = 'technosys_system_overrides_metadata';
 
 export function getSystemOverrides(): OverrideMap {
   if (typeof window === 'undefined') {
@@ -79,8 +107,20 @@ export function getSystemOverrides(): OverrideMap {
 
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
+    const rawMeta = localStorage.getItem(STORAGE_META_KEY);
     if (raw) {
-      return JSON.parse(raw);
+      const overrides: OverrideMap = JSON.parse(raw);
+      const meta: OverrideMetadataMap = rawMeta ? JSON.parse(rawMeta) : ({} as any);
+      
+      // Filter out expired overrides on the fly
+      const filtered: OverrideMap = { accountant: [], coordinator: [], hr: [] };
+      (Object.keys(overrides) as RoleKey[]).forEach(role => {
+        filtered[role] = (overrides[role] || []).filter(modId => {
+          const item = meta[role]?.[modId];
+          return isOverrideActive(item);
+        });
+      });
+      return filtered;
     }
   } catch (e) {
     console.error('Failed to parse system overrides:', e);
@@ -89,10 +129,30 @@ export function getSystemOverrides(): OverrideMap {
   return { accountant: [], coordinator: [], hr: [] };
 }
 
-export function saveSystemOverrides(overrides: OverrideMap): void {
+export function getSystemOverridesMetadata(): OverrideMetadataMap {
+  if (typeof window === 'undefined') {
+    return { accountant: {}, coordinator: {}, hr: {} };
+  }
+
+  try {
+    const rawMeta = localStorage.getItem(STORAGE_META_KEY);
+    if (rawMeta) {
+      return JSON.parse(rawMeta);
+    }
+  } catch (e) {
+    console.error('Failed to parse system overrides metadata:', e);
+  }
+
+  return { accountant: {}, coordinator: {}, hr: {} };
+}
+
+export function saveSystemOverrides(overrides: OverrideMap, metadata?: OverrideMetadataMap): void {
   if (typeof window === 'undefined') return;
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(overrides));
+    if (metadata) {
+      localStorage.setItem(STORAGE_META_KEY, JSON.stringify(metadata));
+    }
     // Dispatch custom event so sidebar updates instantly across tabs
     window.dispatchEvent(new Event('system_overrides_updated'));
   } catch (e) {
@@ -103,9 +163,9 @@ export function saveSystemOverrides(overrides: OverrideMap): void {
 /**
  * Fetches overrides directly from Supabase and syncs local cache.
  */
-export async function fetchRemoteOverrides(): Promise<OverrideMap> {
+export async function fetchRemoteOverrides(): Promise<{ overrides: OverrideMap; metadata: OverrideMetadataMap }> {
   if (typeof window === 'undefined') {
-    return { accountant: [], coordinator: [], hr: [] };
+    return { overrides: { accountant: [], coordinator: [], hr: [] }, metadata: { accountant: {}, coordinator: {}, hr: {} } };
   }
 
   try {
@@ -113,30 +173,41 @@ export async function fetchRemoteOverrides(): Promise<OverrideMap> {
     const supabase = createClient();
     const { data, error } = await supabase
       .from('system_overrides')
-      .select('role_key, granted_modules');
+      .select('role_key, granted_modules, override_metadata');
 
     if (!error && data) {
       const map: OverrideMap = { accountant: [], coordinator: [], hr: [] };
-      data.forEach((row: { role_key: string; granted_modules: string[] }) => {
+      const metaMap: OverrideMetadataMap = { accountant: {}, coordinator: {}, hr: {} };
+
+      data.forEach((row: { role_key: string; granted_modules: string[]; override_metadata?: any }) => {
         if (row.role_key === 'accountant' || row.role_key === 'coordinator' || row.role_key === 'hr') {
-          map[row.role_key] = Array.isArray(row.granted_modules) ? row.granted_modules : [];
+          const role = row.role_key as RoleKey;
+          const rawList = Array.isArray(row.granted_modules) ? row.granted_modules : [];
+          const roleMeta = row.override_metadata || {};
+          metaMap[role] = roleMeta;
+
+          // Prune any expired modules
+          map[role] = rawList.filter(modId => {
+            const item = roleMeta[modId];
+            return isOverrideActive(item);
+          });
         }
       });
-      saveSystemOverrides(map);
-      return map;
+      saveSystemOverrides(map, metaMap);
+      return { overrides: map, metadata: metaMap };
     }
   } catch (err) {
     console.warn('Failed to fetch remote system overrides, using local fallback:', err);
   }
 
-  return getSystemOverrides();
+  return { overrides: getSystemOverrides(), metadata: getSystemOverridesMetadata() };
 }
 
 /**
  * Subscribes to Supabase Realtime changes on `system_overrides`.
  * Invokes callback and fires 'system_overrides_updated' event when changes occur.
  */
-export function subscribeToOverrideChanges(onUpdate?: (overrides: OverrideMap) => void): () => void {
+export function subscribeToOverrideChanges(onUpdate?: (overrides: OverrideMap, metadata?: OverrideMetadataMap) => void): () => void {
   if (typeof window === 'undefined') return () => {};
 
   try {
@@ -150,7 +221,7 @@ export function subscribeToOverrideChanges(onUpdate?: (overrides: OverrideMap) =
           { event: '*', schema: 'public', table: 'system_overrides' },
           async () => {
             const fresh = await fetchRemoteOverrides();
-            if (onUpdate) onUpdate(fresh);
+            if (onUpdate) onUpdate(fresh.overrides, fresh.metadata);
           }
         )
         .subscribe();

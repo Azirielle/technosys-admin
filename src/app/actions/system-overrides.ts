@@ -5,23 +5,29 @@ import { supabaseAdmin } from "@/lib/supabase/admin"
 import { verifyRoleAccess } from "@/lib/permissions"
 import { revalidatePath } from "next/cache"
 import { logActivity } from "./activity"
-import { RoleKey, OverrideMap, SYSTEM_MODULES } from "@/lib/overrides"
+import { RoleKey, OverrideMap, OverrideMetadataMap, OverrideMetadataItem, isOverrideActive, SYSTEM_MODULES } from "@/lib/overrides"
 
 /**
  * Fetches current system-wide persistent module overrides from Supabase
  */
-export async function getPersistentOverrides(): Promise<{ success: boolean; overrides: OverrideMap; error?: string }> {
+export async function getPersistentOverrides(): Promise<{ 
+  success: boolean; 
+  overrides: OverrideMap; 
+  metadata: OverrideMetadataMap; 
+  error?: string 
+}> {
   try {
     const supabase = await createClient()
     const { data, error } = await supabase
       .from('system_overrides')
-      .select('role_key, granted_modules')
+      .select('role_key, granted_modules, override_metadata')
 
     if (error) {
       console.error("[SYSTEM_OVERRIDES_FETCH_ERROR]:", error.message)
       return {
         success: false,
         overrides: { accountant: [], coordinator: [], hr: [] },
+        metadata: { accountant: {}, coordinator: {}, hr: {} },
         error: error.message
       }
     }
@@ -31,32 +37,47 @@ export async function getPersistentOverrides(): Promise<{ success: boolean; over
       coordinator: [],
       hr: []
     }
+    const metaMap: OverrideMetadataMap = {
+      accountant: {},
+      coordinator: {},
+      hr: {}
+    }
 
     if (data) {
-      data.forEach((row: { role_key: string; granted_modules: string[] }) => {
+      data.forEach((row: any) => {
         if (row.role_key === 'accountant' || row.role_key === 'coordinator' || row.role_key === 'hr') {
-          map[row.role_key] = Array.isArray(row.granted_modules) ? row.granted_modules : []
+          const role = row.role_key as RoleKey
+          const rawModules = Array.isArray(row.granted_modules) ? row.granted_modules : []
+          const meta = row.override_metadata || {}
+          metaMap[role] = meta
+
+          map[role] = rawModules.filter((modId: string) => {
+            const item = meta[modId]
+            return isOverrideActive(item)
+          })
         }
       })
     }
 
-    return { success: true, overrides: map }
+    return { success: true, overrides: map, metadata: metaMap }
   } catch (err: any) {
     console.error("[SYSTEM_OVERRIDES_EXCEPTION]:", err.message)
     return {
       success: false,
       overrides: { accountant: [], coordinator: [], hr: [] },
+      metadata: { accountant: {}, coordinator: {}, hr: {} },
       error: err.message
     }
   }
 }
 
 /**
- * Persists an update to a specific role's granted modules
+ * Persists an update to a specific role's granted modules with duration metadata
  */
 export async function updatePersistentOverride(
   roleKey: RoleKey,
-  grantedModules: string[]
+  grantedModules: string[],
+  overrideMetadata?: Record<string, OverrideMetadataItem>
 ): Promise<{ success: boolean; error?: string }> {
   try {
     const supabase = await createClient()
@@ -73,6 +94,7 @@ export async function updatePersistentOverride(
       .upsert({
         role_key: roleKey,
         granted_modules: grantedModules,
+        override_metadata: overrideMetadata || {},
         updated_by: user.id,
         updated_at: new Date().toISOString()
       }, { onConflict: 'role_key' })
@@ -85,7 +107,7 @@ export async function updatePersistentOverride(
         action: 'update',
         category: 'system_overrides',
         description: `CEO updated cross-departmental overrides for role [${roleKey.toUpperCase()}]: ${grantedModules.length ? grantedModules.join(', ') : 'None (Defaults)'}`,
-        metadata: { roleKey, grantedModules }
+        metadata: { roleKey, grantedModules, overrideMetadata }
       })
     } catch (logErr) {
       console.warn("Failed to log override activity:", logErr)
@@ -119,6 +141,16 @@ export async function grantAllPersistentOverrides(): Promise<{ success: boolean;
     }
 
     const allModuleIds = SYSTEM_MODULES.map(m => m.id)
+    const defaultMeta: Record<string, OverrideMetadataItem> = {}
+    allModuleIds.forEach(id => {
+      defaultMeta[id] = {
+        duration: 'indefinite',
+        expires_at: null,
+        granted_at: new Date().toISOString(),
+        granted_by_name: 'CEO Administrator'
+      }
+    })
+
     const roles: RoleKey[] = ['accountant', 'coordinator', 'hr']
 
     for (const r of roles) {
@@ -127,6 +159,7 @@ export async function grantAllPersistentOverrides(): Promise<{ success: boolean;
         .upsert({
           role_key: r,
           granted_modules: allModuleIds,
+          override_metadata: defaultMeta,
           updated_by: user.id,
           updated_at: new Date().toISOString()
         }, { onConflict: 'role_key' })
@@ -177,6 +210,7 @@ export async function resetAllPersistentOverrides(): Promise<{ success: boolean;
         .upsert({
           role_key: r,
           granted_modules: [],
+          override_metadata: {},
           updated_by: user.id,
           updated_at: new Date().toISOString()
         }, { onConflict: 'role_key' })
