@@ -86,17 +86,7 @@ export async function correctTimeLogPunch(
       return { success: false, error: "Clock-out timestamp must be chronologically after clock-in timestamp." }
     }
 
-    // 2. Validate Kinsenas Cutoff Lock: Reject mutations if target date is in a locked period
-    const { isDateInLockedPeriod } = await import('./payroll-locks')
-    const { isLocked, lockInfo } = await isDateInLockedPeriod(input.targetDate)
-    if (isLocked) {
-      return {
-        success: false,
-        error: `Cannot alter attendance: Kinsenas pay period [${lockInfo?.start_date} to ${lockInfo?.end_date}] is finalized and locked. CEO unlock authorization is required.`
-      }
-    }
-
-    // 3. DOLE Net Hours calculation (deduct 1h unpaid meal break if shift > 5 hours)
+    // 2. DOLE Net Hours calculation (deduct 1h unpaid meal break if shift > 5 hours)
     const grossHours = (outDate.getTime() - inDate.getTime()) / (1000 * 60 * 60)
     const netHours = grossHours > 5 ? Math.max(0, grossHours - 1) : grossHours
 

@@ -39,12 +39,6 @@ import {
 } from '@/app/actions/audit';
 import { correctTimeLogPunch } from '@/app/actions/audit-corrections';
 import { createClient } from '@/lib/supabase/client';
-import { 
-  getPeriodLockStatus, 
-  lockPayrollPeriod, 
-  unlockPayrollPeriod, 
-  PayrollLockInfo 
-} from '@/app/actions/payroll-locks';
 
 function getManila24HourTime(date: Date): string {
   try {
@@ -123,38 +117,11 @@ export default function AuditLogClient() {
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 8;
 
-  // Cutoff Lock & Period Finalization State
   const [currentUserRole, setCurrentUserRole] = useState<string | null>(null);
-  const [periodLock, setPeriodLock] = useState<PayrollLockInfo | null>(null);
-  const [loadingLock, setLoadingLock] = useState(false);
-  const [isLockModalOpen, setIsLockModalOpen] = useState(false);
-  const [isUnlockModalOpen, setIsUnlockModalOpen] = useState(false);
-  const [lockNotes, setLockNotes] = useState('');
-  const [unlockReason, setUnlockReason] = useState('');
-  const [lockSubmitting, setLockSubmitting] = useState(false);
-  const [lockError, setLockError] = useState<string | null>(null);
 
   const currentPeriod = useMemo(() => {
     return KINSENAS_PERIODS.find(p => p.id === selectedPeriodId) || KINSENAS_PERIODS[1];
   }, [selectedPeriodId]);
-
-  const fetchLockStatus = async () => {
-    setLoadingLock(true);
-    try {
-      const res = await getPeriodLockStatus(currentPeriod.startDate, currentPeriod.endDate);
-      if (res.success) {
-        setPeriodLock(res.lockInfo);
-      }
-    } catch (err) {
-      console.error("Failed to fetch cutoff lock status:", err);
-    } finally {
-      setLoadingLock(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchLockStatus();
-  }, [selectedPeriodId, currentPeriod]);
 
   useEffect(() => {
     const resolveUser = async () => {
@@ -176,81 +143,9 @@ export default function AuditLogClient() {
       }
     };
     resolveUser();
-
-    const supabase = createClient();
-    const channel = supabase
-      .channel('public:payroll_cutoff_locks_audit')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'payroll_cutoff_locks' },
-        () => {
-          fetchLockStatus();
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
   }, []);
 
-  const handleLockPeriod = async () => {
-    setLockSubmitting(true);
-    setLockError(null);
-    try {
-      const res = await lockPayrollPeriod(
-        currentPeriod.id,
-        currentPeriod.startDate,
-        currentPeriod.endDate,
-        lockNotes.trim() || undefined
-      );
-      if (!res.success) {
-        setLockError(res.error || "Failed to lock payroll period.");
-        return;
-      }
-      setToastMessage(`Kinsenas cutoff (${currentPeriod.label}) has been finalized and locked.`);
-      setTimeout(() => setToastMessage(null), 5000);
-      setIsLockModalOpen(false);
-      setLockNotes('');
-      await fetchLockStatus();
-    } catch (err: any) {
-      setLockError(err?.message || "Failed to lock payroll period.");
-    } finally {
-      setLockSubmitting(false);
-    }
-  };
-
-  const handleUnlockPeriod = async () => {
-    if (unlockReason.trim().length < 10) {
-      setLockError("Mandatory CEO override rationale of at least 10 characters required.");
-      return;
-    }
-    setLockSubmitting(true);
-    setLockError(null);
-    try {
-      const res = await unlockPayrollPeriod(currentPeriod.id, unlockReason.trim());
-      if (!res.success) {
-        setLockError(res.error || "Failed to unlock payroll period.");
-        return;
-      }
-      setToastMessage(`Kinsenas cutoff (${currentPeriod.label}) reopened by CEO override.`);
-      setTimeout(() => setToastMessage(null), 5000);
-      setIsUnlockModalOpen(false);
-      setUnlockReason('');
-      await fetchLockStatus();
-    } catch (err: any) {
-      setLockError(err?.message || "Failed to unlock payroll period.");
-    } finally {
-      setLockSubmitting(false);
-    }
-  };
-
   const openCorrectionModal = (employee: EmployeeAuditSummary, day: DailyAuditRecord) => {
-    if (periodLock?.is_locked) {
-      setToastMessage("Attendance adjustment prohibited: This pay period has been finalized and locked.");
-      setTimeout(() => setToastMessage(null), 4000);
-      return;
-    }
     setEditingDay({ employee, day });
     setCorrectionError(null);
     setEditReason('');
@@ -796,57 +691,12 @@ export default function AuditLogClient() {
             </div>
 
             <div className="flex items-center gap-3">
-              {/* Cutoff Lock Status & Action */}
-              {periodLock?.is_locked ? (
-                <div className="flex items-center gap-2">
-                  <div 
-                    className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-50 text-amber-800 border border-amber-300 text-xs font-bold shadow-2xs" 
-                    title={`Locked by ${periodLock.locker_name || 'Finance'} at ${new Date(periodLock.locked_at).toLocaleString('en-US', { timeZone: 'Asia/Manila' })}`}
-                  >
-                    <Lock className="w-3.5 h-3.5 text-amber-700" />
-                    <span>Cutoff Frozen</span>
-                  </div>
-                  {['ceo', 'super_admin'].includes(currentUserRole || '') ? (
-                    <button
-                      onClick={() => {
-                        setLockError(null);
-                        setUnlockReason('');
-                        setIsUnlockModalOpen(true);
-                      }}
-                      className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition-colors cursor-pointer shadow-2xs"
-                      title="Administrative override to reopen cutoff"
-                    >
-                      <Unlock className="w-3.5 h-3.5" />
-                      <span>CEO Unlock</span>
-                    </button>
-                  ) : (
-                    <span className="text-[11px] text-gray-400 font-medium hidden sm:inline">(Locked for Payout)</span>
-                  )}
-                </div>
-              ) : (
-                <div className="flex items-center gap-2">
-                  <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-300 text-xs font-bold shadow-2xs">
-                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-                    <span>Audit Open</span>
-                  </div>
-                  {['accountant', 'ceo', 'super_admin'].includes(currentUserRole || '') && (
-                    <button
-                      onClick={() => {
-                        setLockError(null);
-                        setLockNotes('');
-                        setIsLockModalOpen(true);
-                      }}
-                      className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold transition-colors cursor-pointer shadow-2xs"
-                      title="Finalize this Kinsenas cutoff to prevent further edits"
-                    >
-                      <Lock className="w-3.5 h-3.5 text-amber-400" />
-                      <span>Freeze Cutoff</span>
-                    </button>
-                  )}
-                </div>
-              )}
+              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-300 text-xs font-semibold shadow-2xs">
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                <span>Live Attendance Audit</span>
+              </div>
 
-              <div className="text-xs font-bold text-gray-500 hidden md:block">
+              <div className="text-xs font-semibold text-zinc-500 hidden md:block">
                 Active Range: <span className="text-indigo-600 font-mono">{currentPeriod.startDate}</span> to <span className="text-indigo-600 font-mono">{currentPeriod.endDate}</span>
               </div>
             </div>
@@ -1115,19 +965,6 @@ export default function AuditLogClient() {
               </div>
             </div>
 
-            {/* Cutoff Frozen Notification Banner */}
-            {periodLock?.is_locked && (
-              <div className="px-6 py-2.5 bg-amber-500/10 border-b border-amber-200 flex items-center justify-between gap-3 text-xs shrink-0">
-                <div className="flex items-center gap-2 text-amber-900 font-bold">
-                  <Lock className="w-4 h-4 text-amber-700 shrink-0" />
-                  <span>Cutoff Frozen: This pay period has been finalized for payroll. Punch edits and manual attendance adjustments are locked.</span>
-                </div>
-                <span className="text-[11px] text-amber-800 font-medium shrink-0">
-                  Locked by {periodLock.locker_name || 'Finance'}
-                </span>
-              </div>
-            )}
-
             {/* Daily Chronological Breakdown Table */}
             <div className="flex-1 overflow-y-auto p-5 [scrollbar-gutter:stable]">
               <div className="border border-zinc-200 rounded-xl overflow-hidden bg-white shadow-2xs">
@@ -1312,14 +1149,8 @@ export default function AuditLogClient() {
                               </button>
                             )}
                             <button
-                              disabled={periodLock?.is_locked}
                               onClick={() => openCorrectionModal(selectedEmployee, day)}
-                              title={periodLock?.is_locked ? "This Kinsenas period is finalized and locked. CEO override required to edit." : undefined}
-                              className={`inline-flex items-center gap-1 px-2 py-1 rounded text-[11px] font-semibold transition-colors shadow-2xs ${
-                                periodLock?.is_locked
-                                  ? "bg-zinc-100 text-zinc-400 border border-zinc-200 cursor-not-allowed opacity-60"
-                                  : "bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 cursor-pointer"
-                              }`}
+                              className="inline-flex items-center gap-1 px-2 py-1 rounded text-[11px] font-semibold transition-colors shadow-2xs bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 cursor-pointer"
                             >
                               <Edit3 className="w-3 h-3" />
                               {day.actualTimeIn ? 'Correct' : 'Add Shift'}
@@ -1579,167 +1410,6 @@ export default function AuditLogClient() {
                 className="px-3.5 py-1.5 bg-slate-800 hover:bg-slate-900 text-white rounded-lg text-xs font-bold cursor-pointer"
               >
                 Close
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Cutoff Lock Confirmation Modal */}
-      {isLockModalOpen && (
-        <div className="fixed inset-0 z-[80] bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150">
-          <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl overflow-hidden border border-gray-200 flex flex-col">
-            <div className="px-5 py-3.5 bg-slate-900 text-white flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Lock className="w-4 h-4 text-amber-400" />
-                <h3 className="text-xs font-bold uppercase tracking-wider">Finalize & Freeze Kinsenas Cutoff</h3>
-              </div>
-              <button
-                onClick={() => setIsLockModalOpen(false)}
-                className="p-1 rounded-md text-slate-400 hover:text-white cursor-pointer"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-            <div className="p-5 space-y-3.5 text-xs">
-              <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-amber-900 space-y-1">
-                <div className="font-bold flex items-center gap-1.5 text-amber-800">
-                  <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
-                  Locking Period: {currentPeriod.label}
-                </div>
-                <p className="text-[11px] leading-relaxed text-amber-700">
-                  Finalizing will freeze all technician attendance records and DTR adjustments between <strong>{currentPeriod.startDate}</strong> and <strong>{currentPeriod.endDate}</strong>. Modifications will be blocked to ensure DOLE compliance and bank payroll alignment.
-                </p>
-              </div>
-
-              {lockError && (
-                <div className="p-2.5 bg-red-50 border border-red-200 rounded-lg text-red-700 font-bold text-xs flex items-center gap-2">
-                  <AlertCircle className="w-4 h-4 shrink-0" />
-                  <span>{lockError}</span>
-                </div>
-              )}
-
-              <div>
-                <label className="block text-gray-700 font-bold mb-1">
-                  Cutoff Memo / Audit Note (Optional)
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g., Verified against dispatch field sheets for payout"
-                  value={lockNotes}
-                  onChange={(e) => setLockNotes(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-                />
-              </div>
-            </div>
-            <div className="px-5 py-3 bg-gray-50 border-t border-gray-200 flex justify-end gap-2">
-              <button
-                type="button"
-                onClick={() => setIsLockModalOpen(false)}
-                className="px-3.5 py-1.5 text-xs font-bold text-gray-600 hover:text-gray-900 cursor-pointer"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={handleLockPeriod}
-                disabled={lockSubmitting}
-                className="inline-flex items-center gap-1.5 px-4 py-1.5 bg-slate-900 hover:bg-black disabled:opacity-50 text-white font-bold rounded-lg text-xs transition-colors shadow-xs cursor-pointer"
-              >
-                {lockSubmitting ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    Locking Cutoff...
-                  </>
-                ) : (
-                  <>
-                    <Lock className="w-3.5 h-3.5 text-amber-400" />
-                    Confirm & Lock Cutoff
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* CEO Administrative Override Modal */}
-      {isUnlockModalOpen && (
-        <div className="fixed inset-0 z-[80] bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150">
-          <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl overflow-hidden border border-gray-200 flex flex-col">
-            <div className="px-5 py-3.5 bg-rose-950 text-white flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Unlock className="w-4 h-4 text-rose-400" />
-                <h3 className="text-xs font-bold uppercase tracking-wider">CEO Administrative Override</h3>
-              </div>
-              <button
-                onClick={() => setIsUnlockModalOpen(false)}
-                className="p-1 rounded-md text-slate-400 hover:text-white cursor-pointer"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-            <div className="p-5 space-y-3.5 text-xs">
-              <div className="bg-rose-50 border border-rose-200 rounded-xl p-3 text-rose-900 space-y-1">
-                <div className="font-bold flex items-center gap-1.5 text-rose-800">
-                  <ShieldAlert className="w-4 h-4 text-rose-600 shrink-0" />
-                  DOLE Compliance Warning
-                </div>
-                <p className="text-[11px] leading-relaxed text-rose-700">
-                  Reopening <strong>{currentPeriod.label}</strong> allows post-disbursement time log tampering. This action is permanently recorded with your CEO credentials in the audit trail.
-                </p>
-              </div>
-
-              {lockError && (
-                <div className="p-2.5 bg-red-50 border border-red-200 rounded-lg text-red-700 font-bold text-xs flex items-center gap-2">
-                  <AlertCircle className="w-4 h-4 shrink-0" />
-                  <span>{lockError}</span>
-                </div>
-              )}
-
-              <div>
-                <label className="block text-gray-700 font-bold mb-1">
-                  Mandatory CEO Justification <span className="text-rose-600">*</span>
-                </label>
-                <textarea
-                  rows={3}
-                  placeholder="Explain why this finalized pay period must be reopened (minimum 10 characters)..."
-                  value={unlockReason}
-                  onChange={(e) => setUnlockReason(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs focus:ring-2 focus:ring-rose-500 focus:outline-none"
-                />
-                <div className="flex justify-between text-[10px] mt-1 font-semibold">
-                  <span className={unlockReason.trim().length >= 10 ? "text-emerald-600" : "text-amber-600"}>
-                    {unlockReason.trim().length >= 10 ? "Requirement satisfied" : `Minimum 10 characters required (${unlockReason.trim().length}/10)`}
-                  </span>
-                </div>
-              </div>
-            </div>
-            <div className="px-5 py-3 bg-gray-50 border-t border-gray-200 flex justify-end gap-2">
-              <button
-                type="button"
-                onClick={() => setIsUnlockModalOpen(false)}
-                className="px-3.5 py-1.5 text-xs font-bold text-gray-600 hover:text-gray-900 cursor-pointer"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={handleUnlockPeriod}
-                disabled={lockSubmitting || unlockReason.trim().length < 10}
-                className="inline-flex items-center gap-1.5 px-4 py-1.5 bg-rose-600 hover:bg-rose-700 disabled:opacity-50 text-white font-bold rounded-lg text-xs transition-colors shadow-xs cursor-pointer"
-              >
-                {lockSubmitting ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    Authorizing Override...
-                  </>
-                ) : (
-                  <>
-                    <Unlock className="w-3.5 h-3.5" />
-                    Authorize & Reopen Period
-                  </>
-                )}
               </button>
             </div>
           </div>
