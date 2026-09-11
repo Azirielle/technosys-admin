@@ -8,16 +8,14 @@ import {
   AlertCircle, 
   Calendar, 
   Clock, 
-  FileText, 
   ShieldAlert, 
   CheckCircle2, 
   AlertTriangle, 
-  ShieldCheck, 
   Zap 
 } from 'lucide-react'
 import { RoleKey } from '@/lib/overrides'
 
-interface OperationalTelemetryProps {
+export interface OperationalTelemetryProps {
   role?: RoleKey | 'ceo'
 }
 
@@ -187,7 +185,6 @@ export default function OperationalTelemetry({ role }: OperationalTelemetryProps
 
     channel.subscribe()
 
-    // Heartbeat check every 30s to keep freshness
     const interval = setInterval(fetchMetrics, 30000)
 
     return () => {
@@ -196,69 +193,68 @@ export default function OperationalTelemetry({ role }: OperationalTelemetryProps
     }
   }, [fetchMetrics, role])
 
-  // Dynamic Header Title & Accent
   const getHeaderInfo = () => {
     switch (role) {
       case 'hr':
-        return { title: 'HR Operations', pulseColor: 'text-indigo-600', dotColor: 'bg-indigo-500' }
+        return { title: 'HR Operations', pulseColor: 'text-blue-600 dark:text-blue-400', dotColor: 'bg-blue-500' }
       case 'accountant':
-        return { title: 'Attendance Audit', pulseColor: 'text-emerald-600', dotColor: 'bg-emerald-500' }
+        return { title: 'Attendance Audit', pulseColor: 'text-emerald-600 dark:text-emerald-400', dotColor: 'bg-emerald-500' }
       case 'ceo':
-        return { title: 'Executive Telemetry', pulseColor: 'text-amber-600', dotColor: 'bg-amber-500' }
+        return { title: 'Executive Telemetry', pulseColor: 'text-amber-600 dark:text-amber-400', dotColor: 'bg-amber-500' }
       default:
-        return { title: 'Field Operations', pulseColor: 'text-emerald-600', dotColor: 'bg-emerald-500' }
+        return { title: 'Field Operations', pulseColor: 'text-emerald-600 dark:text-emerald-400', dotColor: 'bg-emerald-500' }
     }
   }
 
   const { title, pulseColor, dotColor } = getHeaderInfo()
 
   return (
-    <div className="p-3 bg-zinc-100/70 border border-zinc-200/70 rounded-xl mt-4">
-      <div className="flex items-center justify-between text-[11px] font-semibold text-zinc-700 mb-2">
+    <div className="p-3 bg-zinc-100/70 dark:bg-zinc-900/80 border border-zinc-200/70 dark:border-zinc-800 rounded-xl mt-4 transition-colors duration-200">
+      <div className="flex items-center justify-between text-[11px] font-semibold text-zinc-700 dark:text-zinc-300 mb-2">
         <div className="flex items-center gap-1.5">
           <Radio className={`w-3.5 h-3.5 ${pulseColor} animate-pulse`} />
           <span>{title}</span>
         </div>
-        <span className="inline-flex items-center gap-1 text-[10px] text-zinc-500 font-medium">
+        <span className="inline-flex items-center gap-1 text-[10px] text-zinc-500 dark:text-zinc-400 font-medium">
           <span className={`w-1.5 h-1.5 rounded-full ${dotColor} animate-pulse`} />
           Realtime
         </span>
       </div>
 
-      <div className="space-y-1.5 text-[10px] text-zinc-500">
+      <div className="space-y-1.5 text-[10px] text-zinc-500 dark:text-zinc-400">
         {/* HR VIEW */}
         {role === 'hr' && (
           <>
             <div className="flex items-center justify-between">
-              <span className="flex items-center gap-1.5 text-zinc-600">
-                <Clock className="w-3 h-3 text-zinc-400" />
+              <span className="flex items-center gap-1.5 text-zinc-600 dark:text-zinc-400">
+                <Clock className="w-3 h-3 text-zinc-400 dark:text-zinc-500" />
                 Pending Leaves
               </span>
               <span className={`font-semibold px-1.5 py-0.5 rounded border ${
                 metrics.pendingLeaves > 0 
-                  ? 'bg-amber-50 text-amber-700 border-amber-200' 
-                  : 'bg-white text-zinc-800 border-zinc-200/80'
+                  ? 'bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800' 
+                  : 'bg-white dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 border-zinc-200/80 dark:border-zinc-700'
               }`}>
                 {loading ? '...' : `${metrics.pendingLeaves} Pending`}
               </span>
             </div>
 
             <div className="flex items-center justify-between">
-              <span className="flex items-center gap-1.5 text-zinc-600">
-                <Users className="w-3 h-3 text-zinc-400" />
+              <span className="flex items-center gap-1.5 text-zinc-600 dark:text-zinc-400">
+                <Users className="w-3 h-3 text-zinc-400 dark:text-zinc-500" />
                 Active Workforce
               </span>
-              <span className="font-semibold text-zinc-800 bg-white px-1.5 py-0.5 rounded border border-zinc-200/80">
+              <span className="font-semibold text-zinc-800 dark:text-zinc-200 bg-white dark:bg-zinc-800 px-1.5 py-0.5 rounded border border-zinc-200/80 dark:border-zinc-700">
                 {loading ? '...' : `${metrics.activeWorkforce} Staff`}
               </span>
             </div>
 
             <div className="flex items-center justify-between">
-              <span className="flex items-center gap-1.5 text-zinc-600">
-                <ShieldAlert className="w-3 h-3 text-zinc-400" />
+              <span className="flex items-center gap-1.5 text-zinc-600 dark:text-zinc-400">
+                <ShieldAlert className="w-3 h-3 text-zinc-400 dark:text-zinc-500" />
                 Disciplinary Warnings
               </span>
-              <span className="font-semibold text-zinc-800 bg-white px-1.5 py-0.5 rounded border border-zinc-200/80">
+              <span className="font-semibold text-zinc-800 dark:text-zinc-200 bg-white dark:bg-zinc-800 px-1.5 py-0.5 rounded border border-zinc-200/80 dark:border-zinc-700">
                 {loading ? '...' : `${metrics.issuedWarnings} Logged`}
               </span>
             </div>
@@ -269,39 +265,39 @@ export default function OperationalTelemetry({ role }: OperationalTelemetryProps
         {role === 'accountant' && (
           <>
             <div className="flex items-center justify-between">
-              <span className="flex items-center gap-1.5 text-zinc-600">
-                <Clock className="w-3 h-3 text-zinc-400" />
+              <span className="flex items-center gap-1.5 text-zinc-600 dark:text-zinc-400">
+                <Clock className="w-3 h-3 text-zinc-400 dark:text-zinc-500" />
                 Pending Review
               </span>
               <span className={`font-semibold px-1.5 py-0.5 rounded border ${
                 metrics.pendingReview > 0 
-                  ? 'bg-amber-50 text-amber-700 border-amber-200' 
-                  : 'bg-white text-zinc-800 border-zinc-200/80'
+                  ? 'bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800' 
+                  : 'bg-white dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 border-zinc-200/80 dark:border-zinc-700'
               }`}>
                 {loading ? '...' : `${metrics.pendingReview} Shifts`}
               </span>
             </div>
 
             <div className="flex items-center justify-between">
-              <span className="flex items-center gap-1.5 text-zinc-600">
-                <AlertTriangle className="w-3 h-3 text-zinc-400" />
+              <span className="flex items-center gap-1.5 text-zinc-600 dark:text-zinc-400">
+                <AlertTriangle className="w-3 h-3 text-zinc-400 dark:text-zinc-500" />
                 Missing Punches
               </span>
               <span className={`font-semibold px-1.5 py-0.5 rounded border ${
                 metrics.missingPunches > 0 
-                  ? 'bg-rose-50 text-rose-700 border-rose-200' 
-                  : 'bg-white text-zinc-800 border-zinc-200/80'
+                  ? 'bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-800' 
+                  : 'bg-white dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 border-zinc-200/80 dark:border-zinc-700'
               }`}>
                 {loading ? '...' : `${metrics.missingPunches} Active`}
               </span>
             </div>
 
             <div className="flex items-center justify-between">
-              <span className="flex items-center gap-1.5 text-zinc-600">
-                <CheckCircle2 className="w-3 h-3 text-zinc-400" />
+              <span className="flex items-center gap-1.5 text-zinc-600 dark:text-zinc-400">
+                <CheckCircle2 className="w-3 h-3 text-zinc-400 dark:text-zinc-500" />
                 Verified Today
               </span>
-              <span className="font-semibold text-zinc-800 bg-white px-1.5 py-0.5 rounded border border-zinc-200/80">
+              <span className="font-semibold text-emerald-800 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 px-1.5 py-0.5 rounded border border-emerald-200 dark:border-emerald-800">
                 {loading ? '...' : `${metrics.verifiedToday} Logged`}
               </span>
             </div>
@@ -312,35 +308,35 @@ export default function OperationalTelemetry({ role }: OperationalTelemetryProps
         {role === 'ceo' && (
           <>
             <div className="flex items-center justify-between">
-              <span className="flex items-center gap-1.5 text-zinc-600">
-                <Zap className="w-3 h-3 text-amber-500" />
+              <span className="flex items-center gap-1.5 text-zinc-600 dark:text-zinc-400">
+                <Zap className="w-3 h-3 text-amber-500 dark:text-amber-400" />
                 Active Overrides
               </span>
               <span className={`font-semibold px-1.5 py-0.5 rounded border ${
                 metrics.activeOverrides > 0 
-                  ? 'bg-amber-50 text-amber-800 border-amber-300' 
-                  : 'bg-white text-zinc-800 border-zinc-200/80'
+                  ? 'bg-amber-50 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border-amber-300 dark:border-amber-700' 
+                  : 'bg-white dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 border-zinc-200/80 dark:border-zinc-700'
               }`}>
                 {loading ? '...' : `${metrics.activeOverrides} Active`}
               </span>
             </div>
 
             <div className="flex items-center justify-between">
-              <span className="flex items-center gap-1.5 text-zinc-600">
-                <Users className="w-3 h-3 text-zinc-400" />
+              <span className="flex items-center gap-1.5 text-zinc-600 dark:text-zinc-400">
+                <Users className="w-3 h-3 text-zinc-400 dark:text-zinc-500" />
                 Workforce Strength
               </span>
-              <span className="font-semibold text-zinc-800 bg-white px-1.5 py-0.5 rounded border border-zinc-200/80">
+              <span className="font-semibold text-zinc-800 dark:text-zinc-200 bg-white dark:bg-zinc-800 px-1.5 py-0.5 rounded border border-zinc-200/80 dark:border-zinc-700">
                 {loading ? '...' : `${metrics.totalStaff} Total`}
               </span>
             </div>
 
             <div className="flex items-center justify-between">
-              <span className="flex items-center gap-1.5 text-zinc-600">
-                <Radio className="w-3 h-3 text-emerald-500" />
+              <span className="flex items-center gap-1.5 text-zinc-600 dark:text-zinc-400">
+                <Radio className="w-3 h-3 text-emerald-500 dark:text-emerald-400" />
                 Field Crew On Duty
               </span>
-              <span className="font-semibold text-emerald-800 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
+              <span className="font-semibold text-emerald-800 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 px-1.5 py-0.5 rounded border border-emerald-200 dark:border-emerald-800">
                 {loading ? '...' : `${metrics.activeCrews} In Field`}
               </span>
             </div>
@@ -351,25 +347,25 @@ export default function OperationalTelemetry({ role }: OperationalTelemetryProps
         {role !== 'hr' && role !== 'accountant' && role !== 'ceo' && (
           <>
             <div className="flex items-center justify-between">
-              <span className="flex items-center gap-1.5 text-zinc-600">
-                <Users className="w-3 h-3 text-zinc-400" />
+              <span className="flex items-center gap-1.5 text-zinc-600 dark:text-zinc-400">
+                <Users className="w-3 h-3 text-zinc-400 dark:text-zinc-500" />
                 Active Crews
               </span>
-              <span className="font-semibold text-zinc-800 bg-white px-1.5 py-0.5 rounded border border-zinc-200/80">
+              <span className="font-semibold text-zinc-800 dark:text-zinc-200 bg-white dark:bg-zinc-800 px-1.5 py-0.5 rounded border border-zinc-200/80 dark:border-zinc-700">
                 {loading ? '...' : `${metrics.activeCrews} On Duty`}
               </span>
             </div>
 
             <div className="flex items-center justify-between">
-              <span className="flex items-center gap-1.5 text-zinc-600">
-                <AlertCircle className="w-3 h-3 text-zinc-400" />
+              <span className="flex items-center gap-1.5 text-zinc-600 dark:text-zinc-400">
+                <AlertCircle className="w-3 h-3 text-zinc-400 dark:text-zinc-500" />
                 Pending Tickets
               </span>
               <span
                 className={`font-semibold px-1.5 py-0.5 rounded border ${
                   metrics.pendingTickets > 0
-                    ? 'bg-amber-50 text-amber-700 border-amber-200'
-                    : 'bg-white text-zinc-800 border-zinc-200/80'
+                    ? 'bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800'
+                    : 'bg-white dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 border-zinc-200/80 dark:border-zinc-700'
                 }`}
               >
                 {loading ? '...' : `${metrics.pendingTickets} Open`}
@@ -377,15 +373,15 @@ export default function OperationalTelemetry({ role }: OperationalTelemetryProps
             </div>
 
             <div className="flex items-center justify-between">
-              <span className="flex items-center gap-1.5 text-zinc-600">
-                <Calendar className="w-3 h-3 text-zinc-400" />
+              <span className="flex items-center gap-1.5 text-zinc-600 dark:text-zinc-400">
+                <Calendar className="w-3 h-3 text-zinc-400 dark:text-zinc-500" />
                 Today&apos;s Dispatches
               </span>
               <span
                 className={`font-semibold px-1.5 py-0.5 rounded border ${
                   metrics.unassignedSites > 0
-                    ? 'bg-indigo-50 text-indigo-700 border-indigo-200'
-                    : 'bg-white text-zinc-800 border-zinc-200/80'
+                    ? 'bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800'
+                    : 'bg-white dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 border-zinc-200/80 dark:border-zinc-700'
                 }`}
               >
                 {loading ? '...' : metrics.unassignedSites > 0 ? `${metrics.unassignedSites} Unassigned` : 'All Assigned'}

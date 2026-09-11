@@ -10,8 +10,8 @@ import { MapPin } from 'lucide-react';
 const createCustomIcon = () => {
   const html = renderToStaticMarkup(
     <div className="relative flex items-center justify-center">
-      <MapPin className="w-8 h-8 text-indigo-600 fill-indigo-100" />
-      <div className="absolute top-8 w-2 h-2 bg-indigo-600/30 rounded-full animate-ping" />
+      <MapPin className="w-8 h-8 text-blue-600 fill-blue-100" />
+      <div className="absolute top-8 w-2 h-2 bg-blue-600/30 rounded-full animate-ping" />
     </div>
   );
 

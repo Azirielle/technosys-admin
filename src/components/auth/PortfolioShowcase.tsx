@@ -95,7 +95,7 @@ export function PortfolioShowcase() {
       case 'Retail':
         return 'bg-orange-500/20 text-orange-300 border-orange-500/30'
       default:
-        return 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30'
+        return 'bg-blue-500/20 text-blue-300 border-blue-500/30'
     }
   }
 
@@ -213,7 +213,7 @@ export function PortfolioShowcase() {
           </h2>
           <div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-zinc-300">
             <div className="flex items-center gap-1.5 font-medium text-zinc-200">
-              <Building2 className="w-4 h-4 text-indigo-400 shrink-0" />
+              <Building2 className="w-4 h-4 text-blue-400 shrink-0" />
               <span>{activeProject.client}</span>
             </div>
             <div className="flex items-center gap-1.5 text-zinc-400">
@@ -253,7 +253,7 @@ export function PortfolioShowcase() {
           {/* Continuous Progress Line for Active Slide */}
           <div className="w-full bg-white/15 h-1 rounded-full overflow-hidden">
             <div 
-              className="bg-gradient-to-r from-indigo-500 via-sky-400 to-emerald-400 h-full transition-all duration-75 ease-linear rounded-full"
+              className="bg-gradient-to-r from-blue-500 via-sky-400 to-emerald-400 h-full transition-all duration-75 ease-linear rounded-full"
               style={{ width: `${progress}%` }}
             />
           </div>

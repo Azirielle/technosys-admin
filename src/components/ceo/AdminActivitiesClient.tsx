@@ -173,7 +173,7 @@ export default function AdminActivitiesClient() {
       <div className="bg-white p-5 rounded-xl border border-zinc-200 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4 shrink-0">
         <div>
           <h1 className="text-xl font-bold text-zinc-900 tracking-tight flex items-center gap-2">
-            <ShieldAlert className="w-5 h-5 text-indigo-600" />
+            <ShieldAlert className="w-5 h-5 text-blue-600" />
             Administrator Activity Audit Logs
           </h1>
           <p className="text-xs text-zinc-500 font-medium mt-0.5">
@@ -200,7 +200,7 @@ export default function AdminActivitiesClient() {
               onClick={() => { setActiveTab('override'); setCurrentPage(1); }}
               className={`flex items-center gap-2 px-3.5 py-2 text-xs font-semibold rounded-t-lg transition-all border-b-2 ${
                 activeTab === 'override'
-                  ? 'bg-white text-indigo-900 border-indigo-600 shadow-2xs font-bold'
+                  ? 'bg-white text-blue-900 border-blue-600 shadow-2xs font-bold'
                   : 'text-zinc-500 hover:text-zinc-900 border-transparent hover:bg-zinc-100/70'
               }`}
             >
@@ -215,8 +215,8 @@ export default function AdminActivitiesClient() {
               onClick={() => { setActiveTab('standard'); setCurrentPage(1); }}
               className={`flex items-center gap-2 px-3.5 py-2 text-xs font-semibold rounded-t-lg transition-all border-b-2 ${
                 activeTab === 'standard'
-                  ? 'bg-white text-zinc-900 border-indigo-600 shadow-2xs font-bold'
-                  : 'text-zinc-500 hover:text-zinc-900 border-transparent hover:bg-zinc-100/70'
+                  ? 'bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 border-blue-600 dark:border-blue-500 shadow-2xs font-bold'
+                  : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 border-transparent hover:bg-zinc-100/70 dark:hover:bg-zinc-800/70'
               }`}
             >
               <Lock className="w-3.5 h-3.5 text-emerald-600" />
@@ -229,7 +229,7 @@ export default function AdminActivitiesClient() {
 
           {/* Context Explainer */}
           <div className="py-2 flex items-center gap-1.5 text-[11px] font-medium text-zinc-500 border-t border-zinc-200/80 mt-1">
-            <Info className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+            <Info className="w-3.5 h-3.5 text-blue-600 shrink-0" />
             <span>
               {activeTab === 'override' 
                 ? 'Displaying operations logged across modules outside standard department permissions or under CEO overrides.'
@@ -239,7 +239,7 @@ export default function AdminActivitiesClient() {
         </div>
 
         {/* Filter Bar */}
-        <div className="p-3.5 bg-white border-b border-zinc-200 flex flex-wrap items-center justify-between gap-3 shrink-0">
+        <div className="p-3.5 bg-white dark:bg-zinc-900 border-b border-zinc-200/80 dark:border-zinc-800 flex flex-wrap items-center justify-between gap-3 shrink-0">
           <div className="flex items-center gap-3 flex-1 min-w-[260px] max-w-md">
             <div className="relative w-full">
               <Search className="w-4 h-4 text-zinc-400 absolute left-3 top-2.5" />
@@ -248,7 +248,7 @@ export default function AdminActivitiesClient() {
                 placeholder="Search administrator name, action, or description..."
                 value={search}
                 onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }}
-                className="w-full pl-9 pr-4 py-1.5 bg-zinc-50 border border-zinc-200 rounded-lg text-xs font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500 text-zinc-900"
+                className="w-full pl-9 pr-4 py-1.5 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-xs font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 text-zinc-900 dark:text-zinc-100 placeholder-zinc-400"
               />
             </div>
           </div>
@@ -261,7 +261,7 @@ export default function AdminActivitiesClient() {
             <select
               value={selectedRole}
               onChange={(e) => { setSelectedRole(e.target.value); setCurrentPage(1); }}
-              className="bg-zinc-50 border border-zinc-200 rounded-lg text-xs font-semibold text-zinc-700 px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-xs font-semibold text-zinc-700 dark:text-zinc-200 px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="all">All Roles</option>
               <option value="ceo">CEO</option>
@@ -278,7 +278,7 @@ export default function AdminActivitiesClient() {
             <select
               value={selectedCategory}
               onChange={(e) => { setSelectedCategory(e.target.value); setCurrentPage(1); }}
-              className="bg-zinc-50 border border-zinc-200 rounded-lg text-xs font-semibold text-zinc-700 px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-xs font-semibold text-zinc-700 dark:text-zinc-200 px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="all">All Modules</option>
               <option value="system_overrides">System Overrides</option>
@@ -296,7 +296,7 @@ export default function AdminActivitiesClient() {
         {/* Data Table */}
         <div className="overflow-y-auto flex-1 [scrollbar-gutter:stable]">
           <table className="w-full border-collapse table-fixed">
-            <thead className="bg-zinc-50 sticky top-0 z-10 border-b border-zinc-200">
+            <thead className="bg-zinc-50 dark:bg-zinc-800/80 sticky top-0 z-10 border-b border-zinc-200/80 dark:border-zinc-800">
               <tr>
                 <th className="border-r border-zinc-200 px-3.5 py-2.5 text-left text-[11px] font-semibold text-zinc-600 uppercase tracking-wider w-[24%]">
                   Administrator & Role
@@ -312,12 +312,12 @@ export default function AdminActivitiesClient() {
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-zinc-200">
+            <tbody className="bg-white dark:bg-zinc-900 divide-y divide-zinc-200/80 dark:divide-zinc-800">
               {isLoading ? (
                 <tr>
                   <td colSpan={4} className="px-6 py-12 text-center text-zinc-500">
                     <div className="flex flex-col items-center justify-center gap-2">
-                      <RefreshCw className="w-5 h-5 text-indigo-600 animate-spin" />
+                      <RefreshCw className="w-5 h-5 text-blue-600 animate-spin" />
                       <span className="text-xs font-medium">Fetching real activity logs...</span>
                     </div>
                   </td>
@@ -341,12 +341,12 @@ export default function AdminActivitiesClient() {
                     <tr
                       key={log.id}
                       onClick={() => setSelectedLog(log)}
-                      className="hover:bg-zinc-50/80 transition-colors cursor-pointer"
+                      className="hover:bg-zinc-50/80 dark:hover:bg-zinc-800/50 transition-colors cursor-pointer"
                     >
                       {/* Admin & Role */}
                       <td className="border-r border-zinc-200 px-3.5 py-2.5 overflow-hidden">
                         <div className="flex flex-col min-w-0">
-                          <span className="text-xs font-semibold text-zinc-900 flex items-center gap-1.5 truncate">
+                          <span className="text-xs font-semibold text-zinc-900 dark:text-zinc-100 flex items-center gap-1.5 truncate">
                             <User className="h-3.5 w-3.5 text-zinc-400 shrink-0" />
                             <span className="truncate">{log.performed_by_name || 'System'}</span>
                           </span>
@@ -443,7 +443,7 @@ export default function AdminActivitiesClient() {
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden border border-zinc-200 animate-in fade-in zoom-in-95 duration-150">
             <div className="p-4 bg-zinc-900 text-white flex items-center justify-between">
               <div className="flex items-center gap-2.5">
-                <ShieldAlert className="w-4 h-4 text-indigo-400" />
+                <ShieldAlert className="w-4 h-4 text-blue-400" />
                 <h3 className="font-bold text-sm tracking-tight">Security Audit Detail</h3>
               </div>
               <button
@@ -475,7 +475,7 @@ export default function AdminActivitiesClient() {
                 <div className="p-3 bg-zinc-50 rounded-xl border border-zinc-200">
                   <span className="text-[10px] font-semibold text-zinc-500 uppercase tracking-wider">Administrator</span>
                   <p className="font-bold text-zinc-900 text-xs mt-0.5">{selectedLog.performed_by_name || 'System'}</p>
-                  <span className="text-[10px] font-semibold text-indigo-700">{ROLE_LABELS[selectedLog.performed_by_role || ''] || selectedLog.performed_by_role || 'Staff'}</span>
+                  <span className="text-[10px] font-semibold text-blue-700">{ROLE_LABELS[selectedLog.performed_by_role || ''] || selectedLog.performed_by_role || 'Staff'}</span>
                 </div>
                 <div className="p-3 bg-zinc-50 rounded-xl border border-zinc-200">
                   <span className="text-[10px] font-semibold text-zinc-500 uppercase tracking-wider">Module & Department</span>

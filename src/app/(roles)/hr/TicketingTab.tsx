@@ -366,19 +366,19 @@ export function TicketingTab() {
   // Priority styling
   const getPriorityBadge = (priority: string) => {
     switch (priority?.toLowerCase()) {
-      case 'urgent': return <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-red-100 text-red-800 border border-red-200 animate-pulse">URGENT</span>
-      case 'high': return <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-orange-100 text-orange-800 border border-orange-200">HIGH</span>
-      case 'medium': return <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-blue-800 border border-blue-200">MEDIUM</span>
-      default: return <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-gray-100 text-gray-800 border border-gray-200">LOW</span>
+      case 'urgent': return <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-100 text-rose-800 border border-rose-200 dark:bg-rose-950/60 dark:text-rose-300 dark:border-rose-800 animate-pulse">URGENT</span>
+      case 'high': return <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800">HIGH</span>
+      case 'medium': return <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-blue-800 border border-blue-200 dark:bg-blue-950/60 dark:text-blue-300 dark:border-blue-800">MEDIUM</span>
+      default: return <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-zinc-100 text-zinc-800 border border-zinc-200 dark:bg-zinc-800 dark:text-zinc-300 dark:border-zinc-700">LOW</span>
     }
   }
 
   const getStatusBadge = (status: string) => {
     switch (status?.toLowerCase()) {
-      case 'resolved': return <span className="px-2 py-1 rounded bg-green-100 text-green-800 border border-green-200 text-xs font-bold">RESOLVED</span>
-      case 'closed': return <span className="px-2 py-1 rounded bg-gray-200 text-gray-700 border border-gray-300 text-xs font-bold">CLOSED</span>
-      case 'in_progress': return <span className="px-2 py-1 rounded bg-blue-100 text-blue-800 border border-blue-200 text-xs font-bold">IN PROGRESS</span>
-      default: return <span className="px-2 py-1 rounded bg-yellow-100 text-yellow-800 border border-yellow-200 text-xs font-bold">OPEN</span>
+      case 'resolved': return <span className="px-2 py-1 rounded bg-emerald-100 text-emerald-800 border border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800 text-xs font-bold">RESOLVED</span>
+      case 'closed': return <span className="px-2 py-1 rounded bg-zinc-200 text-zinc-700 border border-zinc-300 dark:bg-zinc-800 dark:text-zinc-400 dark:border-zinc-700 text-xs font-bold">CLOSED</span>
+      case 'in_progress': return <span className="px-2 py-1 rounded bg-blue-100 text-blue-800 border border-blue-200 dark:bg-blue-950/60 dark:text-blue-300 dark:border-blue-800 text-xs font-bold">IN PROGRESS</span>
+      default: return <span className="px-2 py-1 rounded bg-amber-100 text-amber-800 border border-amber-200 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800 text-xs font-bold">OPEN</span>
     }
   }
 
@@ -398,26 +398,26 @@ export function TicketingTab() {
     }
   }
 
-  if (loading) return <div className="p-12 text-center text-gray-500 font-medium">Loading tickets...</div>
+  if (loading) return <div className="p-12 text-center text-zinc-500 dark:text-zinc-400 font-medium">Loading tickets...</div>
 
   return (
     <div className="flex flex-col h-full gap-2.5 w-full">
       {/* 1. SLIMLINE HORIZONTAL SEGMENTED TELEMETRY STRIP (SAVES 110PX VERTICAL SPACE) */}
-      <div className="flex items-center justify-between gap-2 bg-white px-3 py-1.5 rounded-xl border border-zinc-200/80 shadow-2xs shrink-0">
+      <div className="flex items-center justify-between gap-2 bg-white dark:bg-zinc-900 px-3 py-1.5 rounded-xl border border-zinc-200/80 dark:border-zinc-800 shadow-2xs shrink-0">
         <div className="flex items-center gap-1.5 overflow-x-auto py-0.5 scrollbar-none">
           {/* Active Inbox Pill */}
           <button
             onClick={() => { setQuickFilter('all'); setShowArchived(false); setStatusFilter('all'); }}
             className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
               quickFilter === 'all' && !showArchived
-                ? 'bg-zinc-900 text-white shadow-xs'
-                : 'text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100'
+                ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 shadow-xs'
+                : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800'
             }`}
           >
             <Inbox className="w-3.5 h-3.5" />
             <span>Active Inbox</span>
             <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
-              quickFilter === 'all' && !showArchived ? 'bg-zinc-700 text-white' : 'bg-zinc-100 text-zinc-700 border border-zinc-200'
+              quickFilter === 'all' && !showArchived ? 'bg-zinc-700 text-white dark:bg-zinc-300 dark:text-zinc-900' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700'
             }`}>{kpis.active}</span>
           </button>
 
@@ -427,13 +427,13 @@ export function TicketingTab() {
             className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
               quickFilter === 'urgent' && !showArchived
                 ? 'bg-rose-600 text-white shadow-xs'
-                : 'text-zinc-600 hover:text-zinc-900 hover:bg-rose-50'
+                : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-rose-50 dark:hover:bg-rose-950/40'
             }`}
           >
             <AlertTriangle className={`w-3.5 h-3.5 ${quickFilter === 'urgent' && !showArchived ? 'text-white' : 'text-rose-500'}`} />
             <span>Needs Attention</span>
             <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
-              quickFilter === 'urgent' && !showArchived ? 'bg-rose-700 text-white' : kpis.urgent > 0 ? 'bg-rose-100 text-rose-700 font-bold animate-pulse' : 'bg-zinc-100 text-zinc-700 border border-zinc-200'
+              quickFilter === 'urgent' && !showArchived ? 'bg-rose-700 text-white' : kpis.urgent > 0 ? 'bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300 font-bold animate-pulse' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700'
             }`}>{kpis.urgent}</span>
           </button>
 
@@ -443,13 +443,13 @@ export function TicketingTab() {
             className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
               quickFilter === 'admin' && !showArchived
                 ? 'bg-purple-700 text-white shadow-xs'
-                : 'text-zinc-600 hover:text-zinc-900 hover:bg-purple-50'
+                : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-purple-50 dark:hover:bg-purple-950/40'
             }`}
           >
-            <ShieldAlert className={`w-3.5 h-3.5 ${quickFilter === 'admin' && !showArchived ? 'text-white' : 'text-purple-600'}`} />
+            <ShieldAlert className={`w-3.5 h-3.5 ${quickFilter === 'admin' && !showArchived ? 'text-white' : 'text-purple-500'}`} />
             <span>Admin Review</span>
             <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
-              quickFilter === 'admin' && !showArchived ? 'bg-purple-800 text-white' : 'bg-zinc-100 text-zinc-700 border border-zinc-200'
+              quickFilter === 'admin' && !showArchived ? 'bg-purple-800 text-white' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700'
             }`}>{kpis.adminMode}</span>
           </button>
 
@@ -459,13 +459,13 @@ export function TicketingTab() {
             className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
               quickFilter === 'resolved' && !showArchived
                 ? 'bg-emerald-700 text-white shadow-xs'
-                : 'text-zinc-600 hover:text-zinc-900 hover:bg-emerald-50'
+                : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-emerald-50 dark:hover:bg-emerald-950/40'
             }`}
           >
-            <CheckCircle2 className={`w-3.5 h-3.5 ${quickFilter === 'resolved' && !showArchived ? 'text-white' : 'text-emerald-600'}`} />
+            <CheckCircle2 className={`w-3.5 h-3.5 ${quickFilter === 'resolved' && !showArchived ? 'text-white' : 'text-emerald-500'}`} />
             <span>Resolved</span>
             <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
-              quickFilter === 'resolved' && !showArchived ? 'bg-emerald-800 text-white' : 'bg-zinc-100 text-zinc-700 border border-zinc-200'
+              quickFilter === 'resolved' && !showArchived ? 'bg-emerald-800 text-white' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700'
             }`}>{kpis.resolved}</span>
           </button>
 
@@ -475,30 +475,30 @@ export function TicketingTab() {
             className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
               showArchived || quickFilter === 'archived'
                 ? 'bg-amber-600 text-white shadow-xs'
-                : 'text-zinc-600 hover:text-zinc-900 hover:bg-amber-50'
+                : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-amber-50 dark:hover:bg-amber-950/40'
             }`}
           >
-            <Archive className={`w-3.5 h-3.5 ${showArchived || quickFilter === 'archived' ? 'text-white' : 'text-amber-600'}`} />
+            <Archive className={`w-3.5 h-3.5 ${showArchived || quickFilter === 'archived' ? 'text-white' : 'text-amber-500'}`} />
             <span>Vault Archive</span>
             <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
-              showArchived || quickFilter === 'archived' ? 'bg-amber-700 text-white' : 'bg-zinc-100 text-zinc-700 border border-zinc-200'
+              showArchived || quickFilter === 'archived' ? 'bg-amber-700 text-white' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700'
             }`}>{kpis.archived}</span>
           </button>
         </div>
 
         {/* Live sync indicator */}
-        <div className="hidden md:flex items-center gap-1.5 text-[11px] font-medium text-zinc-400 shrink-0 pr-1">
+        <div className="hidden md:flex items-center gap-1.5 text-[11px] font-medium text-zinc-400 dark:text-zinc-500 shrink-0 pr-1">
           <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
           <span>Live Sync</span>
         </div>
       </div>
 
       {/* 2. UNIFIED APPLICATION CANVAS (NO FLOATING CARD SOUP) */}
-      <div className="flex flex-1 min-h-0 bg-white rounded-2xl border border-zinc-200/80 shadow-xs overflow-hidden w-full">
+      <div className="flex flex-1 min-h-0 bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200/80 dark:border-zinc-800 shadow-xs overflow-hidden w-full">
         {/* LEFT COLUMN: MASTER INBOX */}
-        <div className="w-80 lg:w-96 flex flex-col border-r border-zinc-200/80 shrink-0 bg-zinc-50/40">
+        <div className="w-80 lg:w-96 flex flex-col border-r border-zinc-200/80 dark:border-zinc-800 shrink-0 bg-zinc-50/40 dark:bg-zinc-950/40">
           {/* Search and Filters Header */}
-          <div className="p-3 border-b border-zinc-200/80 bg-white flex flex-col gap-2">
+          <div className="p-3 border-b border-zinc-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900 flex flex-col gap-2">
             <div className="relative w-full">
               <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-zinc-400" />
               <input
@@ -506,7 +506,7 @@ export function TicketingTab() {
                 placeholder="Search tickets by title, name, ID..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-8 pr-3 py-1.5 bg-zinc-50/60 border border-zinc-200/80 rounded-lg text-xs focus:bg-white focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
+                className="w-full pl-8 pr-3 py-1.5 bg-zinc-50/60 dark:bg-zinc-800/60 border border-zinc-200/80 dark:border-zinc-700 rounded-lg text-xs text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:bg-white dark:focus:bg-zinc-800 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-all"
               />
             </div>
             
@@ -514,7 +514,7 @@ export function TicketingTab() {
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="flex-1 py-1 px-2 border border-zinc-200/80 rounded-lg text-[11px] font-semibold focus:ring-1 focus:ring-indigo-500 bg-white text-zinc-700"
+                className="flex-1 py-1 px-2 border border-zinc-200/80 dark:border-zinc-700 rounded-lg text-[11px] font-semibold focus:ring-1 focus:ring-blue-500 bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200"
               >
                 <option value="all">All Statuses</option>
                 <option value="open">Open</option>
@@ -532,8 +532,8 @@ export function TicketingTab() {
                 }}
                 className={`text-[11px] font-semibold px-2.5 py-1 rounded-lg border transition-colors shrink-0 ${
                   showArchived 
-                    ? 'bg-amber-100 text-amber-900 border-amber-300' 
-                    : 'bg-zinc-100 text-zinc-600 border-zinc-200 hover:bg-zinc-200 hover:text-zinc-900'
+                    ? 'bg-amber-100 dark:bg-amber-950/60 text-amber-900 dark:text-amber-300 border-amber-300 dark:border-amber-700' 
+                    : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 border-zinc-200 dark:border-zinc-700 hover:bg-zinc-200 dark:hover:bg-zinc-700 hover:text-zinc-900 dark:hover:text-zinc-100'
                 }`}
               >
                 {showArchived ? 'Active Tickets' : 'Archived'}
@@ -542,24 +542,24 @@ export function TicketingTab() {
           </div>
           
           {/* Master Ticket List (High-Density Linear Rows) */}
-          <div className="flex-1 overflow-y-auto divide-y divide-zinc-100/90">
+          <div className="flex-1 overflow-y-auto divide-y divide-zinc-100/90 dark:divide-zinc-800/80">
             {filteredTickets.map(ticket => (
               <div 
                 key={ticket.id} 
                 onClick={() => setSelectedTicket(ticket)}
                 className={`p-3.5 cursor-pointer transition-all text-left ${
                   selectedTicket?.id === ticket.id 
-                    ? 'bg-indigo-50/70 border-l-3 border-l-indigo-600 pl-3' 
-                    : 'hover:bg-zinc-100/60 border-l-3 border-l-transparent pl-3'
+                    ? 'bg-blue-50/70 dark:bg-blue-950/40 border-l-3 border-l-blue-600 dark:border-l-blue-500 pl-3' 
+                    : 'hover:bg-zinc-100/60 dark:hover:bg-zinc-800/40 border-l-3 border-l-transparent pl-3'
                 }`}
               >
                 <div className="flex items-center justify-between gap-2 mb-1">
                   <div className="flex items-center gap-1.5">
-                    <span className="font-mono text-[11px] font-bold text-zinc-600">
+                    <span className="font-mono text-[11px] font-bold text-zinc-600 dark:text-zinc-400">
                       #{ticket.id.slice(0, 8).toUpperCase()}
                     </span>
                     {ticket.is_archived && (
-                      <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-amber-100 text-amber-800">
+                      <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300">
                         ARCHIVED
                       </span>
                     )}
@@ -567,14 +567,14 @@ export function TicketingTab() {
                   {getPriorityBadge(ticket.priority)}
                 </div>
 
-                <h4 className="text-xs font-bold text-zinc-900 line-clamp-1 mb-1.5">{ticket.title}</h4>
+                <h4 className="text-xs font-bold text-zinc-900 dark:text-zinc-100 line-clamp-1 mb-1.5">{ticket.title}</h4>
 
-                <div className="flex items-center justify-between text-[11px] text-zinc-500">
-                  <span className="truncate max-w-[130px] font-medium text-zinc-700">
+                <div className="flex items-center justify-between text-[11px] text-zinc-500 dark:text-zinc-400">
+                  <span className="truncate max-w-[130px] font-medium text-zinc-700 dark:text-zinc-300">
                     {ticket.profiles?.full_name || 'Unknown User'}
                   </span>
                   <div className="flex items-center gap-1.5">
-                    <span className="text-[10px] text-zinc-400">
+                    <span className="text-[10px] text-zinc-400 dark:text-zinc-500">
                       {new Intl.DateTimeFormat('en-US', { 
                         month: 'short', 
                         day: 'numeric',
@@ -589,7 +589,7 @@ export function TicketingTab() {
             ))}
             
             {filteredTickets.length === 0 && (
-              <div className="text-center p-12 text-zinc-400 text-xs font-medium">
+              <div className="text-center p-12 text-zinc-400 dark:text-zinc-500 text-xs font-medium">
                 No tickets found in this view.
               </div>
             )}
@@ -598,15 +598,15 @@ export function TicketingTab() {
 
         {/* RIGHT COLUMN: DETAIL & CONVERSATION CANVAS */}
         {selectedTicket ? (
-          <div className="flex-1 flex flex-col min-w-0 bg-white">
+          <div className="flex-1 flex flex-col min-w-0 bg-white dark:bg-zinc-900">
             {/* Clean Detail Header */}
-            <div className="p-4 border-b border-zinc-200/80 bg-white flex justify-between items-start gap-4 shrink-0">
+            <div className="p-4 border-b border-zinc-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900 flex justify-between items-start gap-4 shrink-0">
               <div className="min-w-0">
                 <div className="flex items-center gap-2 mb-1 flex-wrap">
-                  <span className="font-mono text-xs font-bold text-zinc-600 bg-zinc-100 px-2 py-0.5 rounded-md border border-zinc-200">
+                  <span className="font-mono text-xs font-bold text-zinc-600 dark:text-zinc-300 bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 rounded-md border border-zinc-200 dark:border-zinc-700">
                     #{selectedTicket.id.slice(0, 8).toUpperCase()}
                   </span>
-                  <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-zinc-100 text-zinc-700 border border-zinc-200 uppercase">
+                  <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700 uppercase">
                     {selectedTicket.category}
                   </span>
                   {selectedTicket.is_archived && (
@@ -621,9 +621,9 @@ export function TicketingTab() {
                   )}
                 </div>
 
-                <h2 className="text-lg font-bold text-zinc-900 truncate mt-1">{selectedTicket.title}</h2>
-                <p className="text-xs text-zinc-500 mt-0.5">
-                  Issued by <span className="font-semibold text-zinc-700">{selectedTicket.profiles?.full_name || 'Unknown User'}</span> on {new Date(selectedTicket.created_at).toLocaleString()}
+                <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-100 truncate mt-1">{selectedTicket.title}</h2>
+                <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
+                  Issued by <span className="font-semibold text-zinc-700 dark:text-zinc-200">{selectedTicket.profiles?.full_name || 'Unknown User'}</span> on {new Date(selectedTicket.created_at).toLocaleString()}
                 </p>
               </div>
 
@@ -659,19 +659,19 @@ export function TicketingTab() {
                       ) : (
                         <div className="flex items-center gap-1.5">
                           {selectedTicket.status === 'resolved' ? (
-                            <div className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-50 text-emerald-800 border border-emerald-300">
+                            <div className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-50 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800">
                               <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
                               <span>Decision: Resolved</span>
                             </div>
                           ) : (
-                            <div className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold bg-rose-50 text-rose-800 border border-rose-300">
+                            <div className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold bg-rose-50 dark:bg-rose-950/50 text-rose-800 dark:text-rose-300 border border-rose-300 dark:border-rose-800">
                               <XCircle className="w-3.5 h-3.5 text-rose-600" />
                               <span>Decision: Refused</span>
                             </div>
                           )}
                           <button
                             onClick={() => handleStatusChange('open')}
-                            className="py-1 px-2.5 rounded-lg text-xs font-semibold text-zinc-600 hover:bg-zinc-100 border border-zinc-200 transition-colors cursor-pointer"
+                            className="py-1 px-2.5 rounded-lg text-xs font-semibold text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 transition-colors cursor-pointer"
                             title="Reopen ticket for reconsiderations"
                           >
                             Reopen
@@ -699,7 +699,7 @@ export function TicketingTab() {
                     <select 
                       value={selectedTicket.status}
                       onChange={(e) => handleStatusChange(e.target.value)}
-                      className="py-1.5 px-2.5 border border-zinc-200 rounded-lg text-xs font-semibold focus:ring-1 focus:ring-indigo-500 bg-white shadow-2xs text-zinc-800"
+                      className="py-1.5 px-2.5 border border-zinc-200 dark:border-zinc-700 rounded-lg text-xs font-semibold focus:ring-1 focus:ring-blue-500 bg-white dark:bg-zinc-800 shadow-2xs text-zinc-800 dark:text-zinc-200"
                     >
                       <option value="open">Status: Open</option>
                       <option value="in_progress">Status: In Progress</option>
@@ -713,7 +713,7 @@ export function TicketingTab() {
 
             {/* Cold Storage Information Banner (Single Source of Truth, No Button Echo) */}
             {selectedTicket.is_archived && (
-              <div className="px-4 py-2 bg-amber-50/80 border-b border-amber-200/70 flex items-center gap-2 text-xs font-semibold text-amber-800 shrink-0">
+              <div className="px-4 py-2 bg-amber-50/80 dark:bg-amber-950/40 border-b border-amber-200/70 dark:border-amber-800/50 flex items-center gap-2 text-xs font-semibold text-amber-800 dark:text-amber-300 shrink-0">
                 <Archive className="w-3.5 h-3.5 text-amber-600 shrink-0" />
                 <span>Ticket is preserved in cold archive. Automated AI loops and dispatches are halted.</span>
               </div>
@@ -721,26 +721,26 @@ export function TicketingTab() {
 
             {/* AI Summary Banner (Internal Only) */}
             {selectedTicket.admin_summary && (
-              <div className="px-4 py-2.5 bg-yellow-50/70 border-b border-yellow-200/60 flex gap-2.5 items-start shrink-0">
+              <div className="px-4 py-2.5 bg-amber-50/60 dark:bg-amber-950/30 border-b border-amber-200/60 dark:border-amber-800/40 flex gap-2.5 items-start shrink-0">
                 <Activity className="w-4 h-4 text-yellow-600 shrink-0 mt-0.5" />
                 <div>
-                  <h4 className="text-xs font-bold text-yellow-800">AI Internal Summary</h4>
-                  <p className="text-xs text-yellow-700 mt-0.5 leading-relaxed">{selectedTicket.admin_summary}</p>
+                  <h4 className="text-xs font-bold text-amber-800 dark:text-amber-300">AI Internal Summary</h4>
+                  <p className="text-xs text-amber-700 dark:text-amber-400 mt-0.5 leading-relaxed">{selectedTicket.admin_summary}</p>
                 </div>
               </div>
             )}
 
             {/* Chat Conversation Canvas */}
-            <div className="flex-1 overflow-y-auto p-5 bg-zinc-50/40 flex flex-col gap-3.5">
+            <div className="flex-1 overflow-y-auto p-5 bg-zinc-50/40 dark:bg-zinc-950/50 flex flex-col gap-3.5">
               {/* Original Issue Bubble (Only shown as fallback before formal submission or comments) */}
               {comments.length === 0 && selectedTicket.description && selectedTicket.description !== 'User initiated an AI support chat.' && (
                 <div className="flex justify-end">
-                  <div className="max-w-[75%] bg-indigo-600 text-white rounded-2xl rounded-tr-xs px-4 py-3 shadow-2xs">
+                  <div className="max-w-[75%] bg-blue-600 dark:bg-blue-600 text-white rounded-2xl rounded-tr-xs px-4 py-3 shadow-2xs">
                     <p className="text-xs whitespace-pre-wrap leading-relaxed">{selectedTicket.description}</p>
                     
                     {/* Attachment in Original Submission */}
                     {selectedTicket.attachment_url && (
-                      <div className="mt-2.5 pt-2 border-t border-indigo-500/50">
+                      <div className="mt-2.5 pt-2 border-t border-blue-500/50">
                         {isImageAttachment(selectedTicket.attachment_url, selectedTicket.attachment_type) ? (
                           <div 
                             onClick={() => setPreviewLightboxUrl(selectedTicket.attachment_url!)}
@@ -762,15 +762,15 @@ export function TicketingTab() {
                             rel="noopener noreferrer"
                             className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-xs font-medium text-white transition-colors"
                           >
-                            <FileText className="w-4 h-4 text-indigo-200 shrink-0" />
+                            <FileText className="w-4 h-4 text-blue-200 shrink-0" />
                             <span className="truncate max-w-[180px]">View Attachment Document</span>
-                            <ExternalLink className="w-3.5 h-3.5 text-indigo-200 ml-auto shrink-0" />
+                            <ExternalLink className="w-3.5 h-3.5 text-blue-200 ml-auto shrink-0" />
                           </a>
                         )}
                       </div>
                     )}
 
-                    <span className="text-[10px] text-indigo-200 mt-1.5 block text-right">Original Submission</span>
+                    <span className="text-[10px] text-blue-200 mt-1.5 block text-right">Original Submission</span>
                   </div>
                 </div>
               )}
@@ -782,7 +782,7 @@ export function TicketingTab() {
                   <div key={comment.id} className={`flex ${comment.sender_role === 'admin' || comment.sender_role === 'technician' ? 'justify-end' : 'justify-start'} ${comment.sender_role === 'system' ? 'justify-center' : ''}`}>
                     
                     {comment.sender_role === 'system' ? (
-                      <div className="bg-zinc-200/70 text-zinc-600 text-[11px] font-medium px-3.5 py-1 rounded-full my-1.5 flex items-center gap-1.5">
+                      <div className="bg-zinc-200/70 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 text-[11px] font-medium px-3.5 py-1 rounded-full my-1.5 flex items-center gap-1.5">
                         <ShieldAlert className="w-3 h-3" />
                         {comment.content}
                       </div>
@@ -802,8 +802,8 @@ export function TicketingTab() {
                                 ? 'bg-rose-700 text-white rounded-tr-xs border border-rose-500' 
                                 : 'bg-purple-600 text-white rounded-tr-xs'
                           ) :
-                          comment.sender_role === 'technician' ? 'bg-indigo-600 text-white rounded-tr-xs' :
-                          'bg-white border border-zinc-200/80 text-zinc-900 rounded-tl-xs'
+                          comment.sender_role === 'technician' ? 'bg-blue-600 text-white rounded-tr-xs' :
+                          'bg-white dark:bg-zinc-800 border border-zinc-200/80 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 rounded-tl-xs'
                         }`}>
                           {comment.sender_role === 'admin' && (
                             <div className="text-[9px] font-bold text-white/80 mb-0.5 uppercase tracking-wider">
@@ -813,7 +813,7 @@ export function TicketingTab() {
                             </div>
                           )}
                           {comment.sender_role === 'technician' && (
-                            <div className="text-[9px] font-bold text-indigo-200 mb-0.5 uppercase tracking-wider">
+                            <div className="text-[9px] font-bold text-blue-200 mb-0.5 uppercase tracking-wider">
                               {comment.content.startsWith('📋') ? 'Formal Submission' : 'Technician Message'}
                             </div>
                           )}
@@ -875,18 +875,18 @@ export function TicketingTab() {
             </div>
 
             {/* Streamlined Bottom Action Area */}
-            <div className="shrink-0 bg-white border-t border-zinc-200/80">
+            <div className="shrink-0 bg-white dark:bg-zinc-900 border-t border-zinc-200/80 dark:border-zinc-800">
               {selectedTicket.status === 'closed' || selectedTicket.status === 'resolved' ? (
-                <div className="p-3 bg-zinc-50/80 text-center text-xs text-zinc-500 font-medium flex items-center justify-center gap-1.5">
+                <div className="p-3 bg-zinc-50/80 dark:bg-zinc-800/60 text-center text-xs text-zinc-500 dark:text-zinc-400 font-medium flex items-center justify-center gap-1.5">
                   <ShieldAlert className="w-3.5 h-3.5 text-zinc-400" />
-                  <span>Ticket is marked as <strong className="uppercase text-zinc-700">{selectedTicket.status}</strong>. Chat is read-only.</span>
+                  <span>Ticket is marked as <strong className="uppercase text-zinc-700 dark:text-zinc-200">{selectedTicket.status}</strong>. Chat is read-only.</span>
                 </div>
               ) : selectedTicket.handling_mode !== 'ADMIN' ? (
-                <div className="p-3 bg-zinc-50/60 flex items-center justify-between gap-3">
+                <div className="p-3 bg-zinc-50/60 dark:bg-zinc-800/40 flex items-center justify-between gap-3">
                   <div className="flex items-center gap-2">
                     <Bot className="w-4 h-4 text-emerald-600" />
-                    <p className="text-xs text-zinc-600">
-                      <strong className="text-zinc-800">AI Assistant is active.</strong> Take over if human intervention is needed.
+                    <p className="text-xs text-zinc-600 dark:text-zinc-400">
+                      <strong className="text-zinc-800 dark:text-zinc-200">AI Assistant is active.</strong> Take over if human intervention is needed.
                     </p>
                   </div>
                   <button 
@@ -946,12 +946,12 @@ export function TicketingTab() {
                       <Paperclip className="w-4 h-4" />
                     </button>
 
-                    <div className="flex-1 bg-zinc-50 border border-zinc-200/80 rounded-xl overflow-hidden focus-within:ring-1 focus-within:ring-purple-500 focus-within:border-purple-500 focus-within:bg-white transition-all">
+                    <div className="flex-1 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200/80 dark:border-zinc-700 rounded-xl overflow-hidden focus-within:ring-1 focus-within:ring-purple-500 focus-within:border-purple-500 focus-within:bg-white dark:focus-within:bg-zinc-800 transition-all">
                       <textarea 
                         value={newComment}
                         onChange={(e) => setNewComment(e.target.value)}
                         placeholder="Type response to technician as HR Admin..."
-                        className="w-full bg-transparent p-2.5 text-xs focus:outline-none resize-none max-h-32 min-h-[38px] text-zinc-900"
+                        className="w-full bg-transparent p-2.5 text-xs focus:outline-none resize-none max-h-32 min-h-[38px] text-zinc-900 dark:text-zinc-100 placeholder-zinc-400"
                         rows={1}
                         onKeyDown={(e) => {
                           if (e.key === 'Enter' && !e.shiftKey) {
@@ -1025,7 +1025,7 @@ export function TicketingTab() {
       {/* HR Decision Modal (Approve / Refuse with Reason) */}
       {decisionModal.type && (
         <div className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150">
-          <div className="bg-white rounded-2xl border border-zinc-200 shadow-2xl max-w-md w-full p-5 flex flex-col gap-4 animate-in zoom-in-95 duration-150">
+          <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-2xl max-w-md w-full p-5 flex flex-col gap-4 animate-in zoom-in-95 duration-150">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2.5">
                 <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
@@ -1034,7 +1034,7 @@ export function TicketingTab() {
                   {decisionModal.type === 'resolve' ? <CheckCircle2 className="w-5 h-5" /> : <XCircle className="w-5 h-5" />}
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold text-zinc-900">{decisionModal.title}</h3>
+                  <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-100">{decisionModal.title}</h3>
                   <p className="text-[11px] text-zinc-500">Ticket #{selectedTicket?.id.slice(0, 8).toUpperCase()}</p>
                 </div>
               </div>
@@ -1047,7 +1047,7 @@ export function TicketingTab() {
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-zinc-700 mb-1.5">
+              <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1.5">
                 {decisionModal.type === 'resolve' ? 'Resolution Remarks / Approval Notes' : 'Reason for Refusal (Visible to Employee)'}
               </label>
               <textarea
@@ -1057,15 +1057,15 @@ export function TicketingTab() {
                   ? "e.g., Leave request approved and recorded. Stand by for HR coordinator confirmation." 
                   : "e.g., Refused due to conflicting schedule or missing attachment proof. Please re-submit."}
                 rows={4}
-                className="w-full text-xs p-3 rounded-xl border border-zinc-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-hidden resize-none placeholder:text-zinc-400 text-zinc-800"
+                className="w-full text-xs p-3 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-hidden resize-none placeholder:text-zinc-400 text-zinc-800 dark:text-zinc-100"
               />
             </div>
 
-            <div className="flex items-center justify-end gap-2 pt-2 border-t border-zinc-100">
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-zinc-100 dark:border-zinc-800">
               <button
                 type="button"
                 onClick={() => setDecisionModal({ type: null, title: '', remarks: '' })}
-                className="px-3 py-1.5 text-xs font-semibold text-zinc-600 hover:bg-zinc-100 rounded-lg transition-colors"
+                className="px-3 py-1.5 text-xs font-semibold text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors cursor-pointer"
               >
                 Cancel
               </button>

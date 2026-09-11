@@ -550,23 +550,23 @@ export default function AuditLogClient() {
   };
 
   return (
-    <div className="h-full flex flex-col bg-slate-50 overflow-hidden">
+    <div className="h-full flex flex-col bg-zinc-50 dark:bg-zinc-950 overflow-hidden">
       {/* Top Header */}
-      <div className="bg-white border-b border-gray-200 px-6 py-4 shrink-0 shadow-xs">
+      <div className="bg-white dark:bg-zinc-900 border-b border-zinc-200/80 dark:border-zinc-800 px-6 py-4 shrink-0 shadow-xs">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 max-w-7xl mx-auto">
           <div>
             <div className="flex items-center gap-2.5">
-              <div className="p-2 bg-indigo-50 text-indigo-600 rounded-lg">
+              <div className="p-2 bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 rounded-lg">
                 <FileSpreadsheet className="w-5 h-5" />
               </div>
               <div>
-                <h1 className="text-xl font-black text-gray-900 tracking-tight flex items-center gap-2">
+                <h1 className="text-xl font-black text-zinc-900 dark:text-zinc-100 tracking-tight flex items-center gap-2">
                   Accountant Attendance Audit Log
-                  <span className="text-[11px] font-bold tracking-wider px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200/60 uppercase">
+                  <span className="text-[11px] font-bold tracking-wider px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 border border-blue-200/60 dark:border-blue-800 uppercase">
                     Live Telemetry
                   </span>
                 </h1>
-                <p className="text-xs text-gray-500 mt-0.5 font-medium">
+                <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5 font-medium">
                   Review verified field attendance, late minutes, overtime, and night differentials for operations and time audit.
                 </p>
               </div>
@@ -585,7 +585,7 @@ export default function AuditLogClient() {
             <button 
               onClick={exportToCSV}
               disabled={loading || filteredRecords.length === 0}
-              className="flex items-center gap-2 px-3.5 py-2 bg-slate-800 hover:bg-slate-900 disabled:opacity-50 text-white text-xs font-bold rounded-lg transition-colors shadow-xs"
+              className="flex items-center gap-2 px-3.5 py-2 bg-zinc-800 hover:bg-zinc-900 dark:bg-zinc-700 dark:hover:bg-zinc-600 disabled:opacity-50 text-white text-xs font-bold rounded-lg transition-colors shadow-xs"
               title="Export formatted CSV file (.csv)"
             >
               <Download className="w-4 h-4" /> Export CSV
@@ -600,126 +600,126 @@ export default function AuditLogClient() {
 
           {/* 5 KPI Telemetry Cards */}
           <div className="grid grid-cols-2 md:grid-cols-5 gap-3 shrink-0">
-            <div className="bg-white p-3.5 rounded-xl border border-gray-200 shadow-2xs">
+            <div className="bg-white dark:bg-zinc-900 p-3.5 rounded-xl border border-zinc-200/80 dark:border-zinc-800 shadow-2xs">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Field Crew</span>
-                <Users className="w-4 h-4 text-gray-400" />
+                <span className="text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Field Crew</span>
+                <Users className="w-4 h-4 text-zinc-400 dark:text-zinc-500" />
               </div>
-              <div className="mt-2 text-2xl font-black text-gray-900">{telemetry.totCrew}</div>
-              <p className="text-[11px] text-gray-400 font-medium mt-0.5">Technicians & Helpers</p>
+              <div className="mt-2 text-2xl font-black text-zinc-900 dark:text-zinc-100">{telemetry.totCrew}</div>
+              <p className="text-[11px] text-zinc-400 dark:text-zinc-500 font-medium mt-0.5">Technicians & Helpers</p>
             </div>
 
-            <div className="bg-white p-3.5 rounded-xl border border-gray-200 shadow-2xs">
+            <div className="bg-white dark:bg-zinc-900 p-3.5 rounded-xl border border-zinc-200/80 dark:border-zinc-800 shadow-2xs">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-indigo-600 uppercase tracking-wider">Days Worked</span>
-                <Clock className="w-4 h-4 text-indigo-400" />
+                <span className="text-xs font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider">Days Worked</span>
+                <Clock className="w-4 h-4 text-blue-500 dark:text-blue-400" />
               </div>
-              <div className="mt-2 text-2xl font-black text-indigo-600">{telemetry.totDays} <span className="text-xs font-semibold text-gray-400">days</span></div>
-              <p className="text-[11px] text-gray-400 font-medium mt-0.5">{telemetry.totHours} net work hours</p>
+              <div className="mt-2 text-2xl font-black text-blue-600 dark:text-blue-400">{telemetry.totDays} <span className="text-xs font-semibold text-zinc-400 dark:text-zinc-500">days</span></div>
+              <p className="text-[11px] text-zinc-400 dark:text-zinc-500 font-medium mt-0.5">{telemetry.totHours} net work hours</p>
             </div>
 
-            <div className="bg-white p-3.5 rounded-xl border border-gray-200 shadow-2xs">
+            <div className="bg-white dark:bg-zinc-900 p-3.5 rounded-xl border border-zinc-200/80 dark:border-zinc-800 shadow-2xs">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-amber-600 uppercase tracking-wider">Tardiness</span>
+                <span className="text-xs font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider">Tardiness</span>
                 <AlertTriangle className="w-4 h-4 text-amber-500" />
               </div>
-              <div className="mt-2 text-2xl font-black text-amber-600">{telemetry.totLates} <span className="text-xs font-semibold text-gray-400">lates</span></div>
-              <p className="text-[11px] text-gray-400 font-medium mt-0.5">{telemetry.totLateMins} total late minutes</p>
+              <div className="mt-2 text-2xl font-black text-amber-600 dark:text-amber-400">{telemetry.totLates} <span className="text-xs font-semibold text-zinc-400 dark:text-zinc-500">lates</span></div>
+              <p className="text-[11px] text-zinc-400 dark:text-zinc-500 font-medium mt-0.5">{telemetry.totLateMins} total late minutes</p>
             </div>
 
-            <div className="bg-white p-3.5 rounded-xl border border-gray-200 shadow-2xs">
+            <div className="bg-white dark:bg-zinc-900 p-3.5 rounded-xl border border-zinc-200/80 dark:border-zinc-800 shadow-2xs">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-emerald-600 uppercase tracking-wider">Overtime</span>
+                <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">Overtime</span>
                 <Clock className="w-4 h-4 text-emerald-500" />
               </div>
-              <div className="mt-2 text-2xl font-black text-emerald-600">{telemetry.totOt} <span className="text-xs font-semibold text-gray-400">hrs</span></div>
-              <p className="text-[11px] text-gray-400 font-medium mt-0.5">Reg: {telemetry.totRegOt}h • Hol/Sun: {telemetry.totSunHolOt}h</p>
+              <div className="mt-2 text-2xl font-black text-emerald-600 dark:text-emerald-400">{telemetry.totOt} <span className="text-xs font-semibold text-zinc-400 dark:text-zinc-500">hrs</span></div>
+              <p className="text-[11px] text-zinc-400 dark:text-zinc-500 font-medium mt-0.5">Reg: {telemetry.totRegOt}h • Hol/Sun: {telemetry.totSunHolOt}h</p>
             </div>
 
-            <div className="bg-white p-3.5 rounded-xl border border-gray-200 shadow-2xs">
+            <div className="bg-white dark:bg-zinc-900 p-3.5 rounded-xl border border-zinc-200/80 dark:border-zinc-800 shadow-2xs">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-purple-600 uppercase tracking-wider">Night Diff</span>
+                <span className="text-xs font-bold text-purple-600 dark:text-purple-400 uppercase tracking-wider">Night Diff</span>
                 <Moon className="w-4 h-4 text-purple-400" />
               </div>
-              <div className="mt-2 text-2xl font-black text-purple-600">{telemetry.totNd} <span className="text-xs font-semibold text-gray-400">hrs</span></div>
-              <p className="text-[11px] text-gray-400 font-medium mt-0.5">Absences: {telemetry.totAbsences} • Leaves: {telemetry.totLeaves}d</p>
+              <div className="mt-2 text-2xl font-black text-purple-600 dark:text-purple-400">{telemetry.totNd} <span className="text-xs font-semibold text-zinc-400 dark:text-zinc-500">hrs</span></div>
+              <p className="text-[11px] text-zinc-400 dark:text-zinc-500 font-medium mt-0.5">Absences: {telemetry.totAbsences} • Leaves: {telemetry.totLeaves}d</p>
             </div>
           </div>
           
           {/* Controls Bar */}
-          <div className="bg-white p-3.5 rounded-t-xl border border-gray-200 border-b-0 flex flex-wrap items-center justify-between gap-3 shrink-0">
+          <div className="bg-white dark:bg-zinc-900 p-3.5 rounded-t-xl border border-zinc-200/80 dark:border-zinc-800 border-b-0 flex flex-wrap items-center justify-between gap-3 shrink-0">
             <div className="flex flex-wrap items-center gap-3">
               {/* Search */}
               <div className="relative w-64">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
                 <input 
                   type="text" 
                   placeholder="Search staff by name or level..." 
                   value={search}
                   onChange={e => setSearch(e.target.value)}
-                  className="w-full pl-9 pr-4 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 font-medium"
+                  className="w-full pl-9 pr-4 py-1.5 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-xs text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium"
                 />
               </div>
 
               {/* Kinsenas Period Selector */}
-              <div className="flex items-center gap-1.5 bg-gray-50 px-2.5 py-1 rounded-lg border border-gray-200">
-                <Calendar className="w-3.5 h-3.5 text-indigo-600" />
+              <div className="flex items-center gap-1.5 bg-zinc-50 dark:bg-zinc-800 px-2.5 py-1 rounded-lg border border-zinc-200 dark:border-zinc-700">
+                <Calendar className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
                 <select 
                   value={selectedPeriodId}
                   onChange={e => setSelectedPeriodId(e.target.value)}
-                  className="bg-transparent text-xs font-bold text-gray-800 outline-none cursor-pointer"
+                  className="bg-transparent text-xs font-bold text-zinc-800 dark:text-zinc-200 outline-none cursor-pointer"
                 >
                   {KINSENAS_PERIODS.map(p => (
-                    <option key={p.id} value={p.id}>{p.label}</option>
+                    <option key={p.id} value={p.id} className="bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100">{p.label}</option>
                   ))}
                 </select>
               </div>
 
               {/* Role Filter */}
-              <div className="flex items-center gap-1.5 bg-gray-50 px-2.5 py-1 rounded-lg border border-gray-200">
-                <Filter className="w-3.5 h-3.5 text-gray-500" />
+              <div className="flex items-center gap-1.5 bg-zinc-50 dark:bg-zinc-800 px-2.5 py-1 rounded-lg border border-zinc-200 dark:border-zinc-700">
+                <Filter className="w-3.5 h-3.5 text-zinc-500 dark:text-zinc-400" />
                 <select 
                   value={roleFilter}
                   onChange={e => setRoleFilter(e.target.value as any)}
-                  className="bg-transparent text-xs font-semibold text-gray-700 outline-none cursor-pointer"
+                  className="bg-transparent text-xs font-semibold text-zinc-700 dark:text-zinc-300 outline-none cursor-pointer"
                 >
-                  <option value="all">All Field Staff</option>
-                  <option value="technician">Technicians Only</option>
-                  <option value="helper">Helpers Only</option>
+                  <option value="all" className="bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100">All Field Staff</option>
+                  <option value="technician" className="bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100">Technicians Only</option>
+                  <option value="helper" className="bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100">Helpers Only</option>
                 </select>
               </div>
             </div>
 
             <div className="flex items-center gap-3">
-              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-300 text-xs font-semibold shadow-2xs">
-                <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 text-xs font-semibold shadow-2xs">
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                 <span>Live Attendance Audit</span>
               </div>
 
-              <div className="text-xs font-semibold text-zinc-500 hidden md:block">
-                Active Range: <span className="text-indigo-600 font-mono">{currentPeriod.startDate}</span> to <span className="text-indigo-600 font-mono">{currentPeriod.endDate}</span>
+              <div className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 hidden md:block">
+                Active Range: <span className="text-blue-600 dark:text-blue-400 font-mono">{currentPeriod.startDate}</span> to <span className="text-blue-600 dark:text-blue-400 font-mono">{currentPeriod.endDate}</span>
               </div>
             </div>
           </div>
 
           {/* Main Table */}
-          <div className="bg-white border border-zinc-200 border-b-0 rounded-b-none overflow-y-scroll flex-1 shadow-2xs [scrollbar-gutter:stable]">
+          <div className="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 border-b-0 rounded-b-none overflow-y-scroll flex-1 shadow-2xs [scrollbar-gutter:stable]">
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse whitespace-nowrap">
                 <thead>
-                  <tr className="bg-zinc-50 border-b border-zinc-200 text-[11px] font-semibold text-zinc-600 uppercase tracking-wider">
-                    <th className="px-3.5 py-2.5 sticky left-0 bg-zinc-50 border-r border-zinc-200 min-w-[220px] z-10">Employee / Spec</th>
-                    <th className="px-3 py-2.5 border-r border-zinc-200 text-center">Days Worked</th>
-                    <th className="px-3 py-2.5 border-r border-zinc-200 text-center">Tardiness</th>
-                    <th className="px-3 py-2.5 border-r border-zinc-200 text-center">Reg OT</th>
-                    <th className="px-3 py-2.5 border-r border-zinc-200 text-center">Sun/Hol OT</th>
-                    <th className="px-3 py-2.5 border-r border-zinc-200 text-center">Night Diff</th>
-                    <th className="px-3 py-2.5 border-r border-zinc-200 text-center">Absences</th>
-                    <th className="px-3 py-2.5 border-r border-zinc-200 text-center">Leaves</th>
+                  <tr className="bg-zinc-50 dark:bg-zinc-800/80 border-b border-zinc-200/80 dark:border-zinc-800 text-[11px] font-semibold text-zinc-600 dark:text-zinc-400 uppercase tracking-wider">
+                    <th className="px-3.5 py-2.5 sticky left-0 bg-zinc-50 dark:bg-zinc-800 border-r border-zinc-200/80 dark:border-zinc-800/80 dark:border-zinc-800 min-w-[220px] z-10">Employee / Spec</th>
+                    <th className="px-3 py-2.5 border-r border-zinc-200/80 dark:border-zinc-800 text-center">Days Worked</th>
+                    <th className="px-3 py-2.5 border-r border-zinc-200/80 dark:border-zinc-800 text-center">Tardiness</th>
+                    <th className="px-3 py-2.5 border-r border-zinc-200/80 dark:border-zinc-800 text-center">Reg OT</th>
+                    <th className="px-3 py-2.5 border-r border-zinc-200/80 dark:border-zinc-800 text-center">Sun/Hol OT</th>
+                    <th className="px-3 py-2.5 border-r border-zinc-200/80 dark:border-zinc-800 text-center">Night Diff</th>
+                    <th className="px-3 py-2.5 border-r border-zinc-200/80 dark:border-zinc-800 text-center">Absences</th>
+                    <th className="px-3 py-2.5 border-r border-zinc-200/80 dark:border-zinc-800 text-center">Leaves</th>
                     <th className="px-3.5 py-2.5 text-right">Audit</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-zinc-200 bg-white text-xs">
+                <tbody className="divide-y divide-zinc-200/80 dark:divide-zinc-800 bg-white dark:bg-zinc-900 text-xs">
                   {loading ? (
                     <tr>
                       <td colSpan={9} className="p-12 text-center text-zinc-400 font-medium">
@@ -745,9 +745,9 @@ export default function AuditLogClient() {
                       </td>
                     </tr>
                   ) : paginatedRecords.map((r) => (
-                    <tr key={r.id} className="hover:bg-zinc-50/75 transition-colors">
+                    <tr key={r.id} className="hover:bg-zinc-50/75 dark:hover:bg-zinc-800/50 transition-colors">
                       {/* Sticky Employee column */}
-                      <td className="px-3.5 py-2 sticky left-0 bg-white border-r border-zinc-200 z-10">
+                      <td className="px-3.5 py-2 sticky left-0 bg-white border-r border-zinc-200/80 dark:border-zinc-800 z-10">
                         <div className="flex items-center gap-2.5">
                           <div className={`w-7 h-7 rounded-lg flex items-center justify-center text-[10px] font-bold shrink-0 ${
                             r.role === 'helper' 
@@ -773,13 +773,13 @@ export default function AuditLogClient() {
                       </td>
 
                       {/* Days Worked */}
-                      <td className="px-3 py-2 border-r border-zinc-200 text-center whitespace-nowrap">
+                      <td className="px-3 py-2 border-r border-zinc-200/80 dark:border-zinc-800 text-center whitespace-nowrap">
                         <span className="font-bold text-zinc-900 text-xs">{r.daysWorked}</span>
                         <span className="text-[10px] text-zinc-400 ml-1 font-mono">({r.totalHours}h)</span>
                       </td>
 
                       {/* Tardiness */}
-                      <td className="px-3 py-2 border-r border-zinc-200 text-center whitespace-nowrap">
+                      <td className="px-3 py-2 border-r border-zinc-200/80 dark:border-zinc-800 text-center whitespace-nowrap">
                         {r.lateCount > 0 ? (
                           <span className="font-bold text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded text-[11px] inline-flex items-center gap-1">
                             {r.lateCount} ({r.totalLateMinutes}m)
@@ -790,7 +790,7 @@ export default function AuditLogClient() {
                       </td>
 
                       {/* Regular OT */}
-                      <td className="px-3 py-2 border-r border-zinc-200 text-center whitespace-nowrap">
+                      <td className="px-3 py-2 border-r border-zinc-200/80 dark:border-zinc-800 text-center whitespace-nowrap">
                         {r.regOtHours > 0 ? (
                           <span className="font-mono font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded text-[11px]">
                             {r.regOtHours}h
@@ -801,7 +801,7 @@ export default function AuditLogClient() {
                       </td>
 
                       {/* Sun/Holiday OT */}
-                      <td className="px-3 py-2 border-r border-zinc-200 text-center whitespace-nowrap">
+                      <td className="px-3 py-2 border-r border-zinc-200/80 dark:border-zinc-800 text-center whitespace-nowrap">
                         {r.sunHolidayOtHours > 0 ? (
                           <span className="font-mono font-bold text-emerald-800 bg-emerald-100 border border-emerald-300 px-1.5 py-0.5 rounded text-[11px]">
                             {r.sunHolidayOtHours}h
@@ -812,7 +812,7 @@ export default function AuditLogClient() {
                       </td>
 
                       {/* Night Diff */}
-                      <td className="px-3 py-2 border-r border-zinc-200 text-center whitespace-nowrap">
+                      <td className="px-3 py-2 border-r border-zinc-200/80 dark:border-zinc-800 text-center whitespace-nowrap">
                         {r.nightDiffHours > 0 ? (
                           <span className="font-mono font-bold text-purple-700 bg-purple-50 border border-purple-200 px-1.5 py-0.5 rounded text-[11px]">
                             {r.nightDiffHours}h
@@ -823,7 +823,7 @@ export default function AuditLogClient() {
                       </td>
 
                       {/* Absences */}
-                      <td className="px-3 py-2 border-r border-zinc-200 text-center whitespace-nowrap">
+                      <td className="px-3 py-2 border-r border-zinc-200/80 dark:border-zinc-800 text-center whitespace-nowrap">
                         {r.absences > 0 ? (
                           <span className="font-bold text-rose-700 bg-rose-50 border border-rose-200 px-1.5 py-0.5 rounded text-[11px]">
                             {r.absences}
@@ -834,7 +834,7 @@ export default function AuditLogClient() {
                       </td>
 
                       {/* Approved Leaves */}
-                      <td className="px-3 py-2 border-r border-zinc-200 text-center whitespace-nowrap">
+                      <td className="px-3 py-2 border-r border-zinc-200/80 dark:border-zinc-800 text-center whitespace-nowrap">
                         {r.approvedLeaves > 0 ? (
                           <span className="font-bold text-blue-700 bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded text-[11px]">
                             {r.approvedLeaves}d
@@ -848,7 +848,7 @@ export default function AuditLogClient() {
                       <td className="px-3.5 py-2 text-right whitespace-nowrap">
                         <button
                           onClick={() => setSelectedEmployee(r)}
-                          className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold text-zinc-700 bg-zinc-100 hover:bg-zinc-200 border border-zinc-300/80 rounded-lg transition-colors shadow-2xs"
+                          className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold text-zinc-700 bg-zinc-100 hover:bg-zinc-200 border border-zinc-200 dark:border-zinc-700/80 rounded-lg transition-colors shadow-2xs"
                         >
                           <Eye className="w-3.5 h-3.5 text-zinc-500" />
                           <span>Inspect DTR</span>
@@ -862,15 +862,15 @@ export default function AuditLogClient() {
           </div>
 
           {/* Bottom Pagination Bar */}
-          <div className="bg-white px-4 py-2.5 border border-zinc-200 rounded-b-xl flex items-center justify-between shrink-0 shadow-2xs">
-            <p className="text-xs font-semibold text-zinc-600">
-              Showing <span className="font-bold text-zinc-900">{filteredRecords.length === 0 ? 0 : Math.min((currentPage - 1) * ITEMS_PER_PAGE + 1, filteredRecords.length)}</span> to <span className="font-bold text-zinc-900">{Math.min(currentPage * ITEMS_PER_PAGE, filteredRecords.length)}</span> of <span className="font-bold text-zinc-900">{filteredRecords.length}</span> staff
+          <div className="bg-white dark:bg-zinc-900 px-4 py-2.5 border border-zinc-200/80 dark:border-zinc-800 rounded-b-xl flex items-center justify-between shrink-0 shadow-2xs">
+            <p className="text-xs font-semibold text-zinc-600 dark:text-zinc-400">
+              Showing <span className="font-bold text-zinc-900 dark:text-zinc-100">{filteredRecords.length === 0 ? 0 : Math.min((currentPage - 1) * ITEMS_PER_PAGE + 1, filteredRecords.length)}</span> to <span className="font-bold text-zinc-900 dark:text-zinc-100">{Math.min(currentPage * ITEMS_PER_PAGE, filteredRecords.length)}</span> of <span className="font-bold text-zinc-900 dark:text-zinc-100">{filteredRecords.length}</span> staff
             </p>
-            <nav className="inline-flex rounded-lg shadow-2xs overflow-hidden border border-zinc-300">
+            <nav className="inline-flex rounded-lg shadow-2xs overflow-hidden border border-zinc-200 dark:border-zinc-700">
               <button
                 onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                 disabled={currentPage === 1}
-                className="px-3 py-1 bg-white text-zinc-600 hover:bg-zinc-50 disabled:opacity-40 text-xs font-semibold transition-colors border-r border-zinc-300"
+                className="px-3 py-1 bg-white dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-700 disabled:opacity-40 text-xs font-semibold transition-colors border-r border-zinc-200 dark:border-zinc-700"
               >
                 Prev
               </button>
@@ -879,7 +879,7 @@ export default function AuditLogClient() {
                   key={i}
                   onClick={() => setCurrentPage(i + 1)}
                   className={`px-3 py-1 text-xs font-semibold border-r last:border-r-0 border-zinc-300 transition-colors ${
-                    currentPage === i + 1 ? 'bg-zinc-900 text-white font-bold' : 'bg-white text-zinc-600 hover:bg-zinc-50'
+                    currentPage === i + 1 ? 'bg-zinc-900 text-white font-bold' : 'bg-white dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-700'
                   }`}
                 >
                   {i + 1}
@@ -888,7 +888,7 @@ export default function AuditLogClient() {
               <button
                 onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                 disabled={currentPage === totalPages || totalPages === 0}
-                className="px-3 py-1 bg-white text-zinc-600 hover:bg-zinc-50 disabled:opacity-40 text-xs font-semibold transition-colors"
+                className="px-3 py-1 bg-white dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-700 disabled:opacity-40 text-xs font-semibold transition-colors"
               >
                 Next
               </button>
@@ -901,18 +901,18 @@ export default function AuditLogClient() {
       {/* 15-Day Kinsenas DTR Inspection Modal */}
       {selectedEmployee && (
         <div className="fixed inset-0 z-50 bg-zinc-900/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150">
-          <div className="bg-white rounded-2xl max-w-5xl w-full max-h-[88vh] flex flex-col shadow-2xl overflow-hidden border border-zinc-200">
+          <div className="bg-white dark:bg-zinc-900 rounded-2xl max-w-5xl w-full max-h-[88vh] flex flex-col shadow-2xl overflow-hidden border border-zinc-200/80 dark:border-zinc-800">
             {/* Modal Header */}
             <div className="px-6 py-4 bg-zinc-900 text-white flex items-center justify-between shrink-0">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center font-bold text-sm text-white shrink-0">
+                <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center font-bold text-sm text-white shrink-0">
                   {selectedEmployee.name.slice(0, 2).toUpperCase()}
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
                     <h2 className="text-base font-bold tracking-tight">{selectedEmployee.name}</h2>
                     <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full ${
-                      selectedEmployee.role === 'helper' ? 'bg-amber-400 text-zinc-900' : 'bg-indigo-400 text-zinc-900'
+                      selectedEmployee.role === 'helper' ? 'bg-amber-400 text-zinc-900' : 'bg-blue-400 text-zinc-900'
                     }`}>
                       {selectedEmployee.role}
                     </span>
@@ -926,7 +926,7 @@ export default function AuditLogClient() {
               <div className="flex items-center gap-3">
                 <div className="text-right hidden sm:block">
                   <div className="text-[11px] font-semibold text-zinc-400">Period</div>
-                  <div className="text-xs font-bold text-indigo-400">{currentPeriod.label}</div>
+                  <div className="text-xs font-bold text-blue-400">{currentPeriod.label}</div>
                 </div>
                 <button 
                   onClick={() => setSelectedEmployee(null)}
@@ -938,28 +938,28 @@ export default function AuditLogClient() {
             </div>
 
             {/* Modal Mini Telemetry Bar */}
-            <div className="px-6 py-2.5 bg-zinc-50 border-b border-zinc-200 grid grid-cols-2 sm:grid-cols-6 gap-2 text-center text-xs shrink-0">
-              <div className="bg-white p-2 rounded-lg border border-zinc-200 shadow-2xs">
+            <div className="px-6 py-2.5 bg-zinc-50 dark:bg-zinc-950 border-b border-zinc-200/80 dark:border-zinc-800 grid grid-cols-2 sm:grid-cols-6 gap-2 text-center text-xs shrink-0">
+              <div className="bg-white dark:bg-zinc-900 p-2 rounded-lg border border-zinc-200/80 dark:border-zinc-800 shadow-2xs">
                 <span className="text-zinc-500 block text-[10px] uppercase font-semibold">Days Worked</span>
                 <span className="font-bold text-zinc-900 text-sm">{selectedEmployee.daysWorked} <span className="text-xs font-normal text-zinc-500">({selectedEmployee.totalHours}h)</span></span>
               </div>
-              <div className="bg-white p-2 rounded-lg border border-zinc-200 shadow-2xs">
+              <div className="bg-white dark:bg-zinc-900 p-2 rounded-lg border border-zinc-200/80 dark:border-zinc-800 shadow-2xs">
                 <span className="text-zinc-500 block text-[10px] uppercase font-semibold">Tardiness</span>
                 <span className="font-bold text-amber-600 text-sm">{selectedEmployee.lateCount} <span className="text-xs font-normal text-zinc-500">({selectedEmployee.totalLateMinutes}m)</span></span>
               </div>
-              <div className="bg-white p-2 rounded-lg border border-zinc-200 shadow-2xs">
+              <div className="bg-white dark:bg-zinc-900 p-2 rounded-lg border border-zinc-200/80 dark:border-zinc-800 shadow-2xs">
                 <span className="text-zinc-500 block text-[10px] uppercase font-semibold">Reg OT</span>
                 <span className="font-bold text-emerald-600 text-sm">{selectedEmployee.regOtHours}h</span>
               </div>
-              <div className="bg-white p-2 rounded-lg border border-zinc-200 shadow-2xs">
+              <div className="bg-white dark:bg-zinc-900 p-2 rounded-lg border border-zinc-200/80 dark:border-zinc-800 shadow-2xs">
                 <span className="text-zinc-500 block text-[10px] uppercase font-semibold">Sun/Hol OT</span>
                 <span className="font-bold text-emerald-700 text-sm">{selectedEmployee.sunHolidayOtHours}h</span>
               </div>
-              <div className="bg-white p-2 rounded-lg border border-zinc-200 shadow-2xs">
+              <div className="bg-white dark:bg-zinc-900 p-2 rounded-lg border border-zinc-200/80 dark:border-zinc-800 shadow-2xs">
                 <span className="text-zinc-500 block text-[10px] uppercase font-semibold">Night Diff</span>
                 <span className="font-bold text-purple-600 text-sm">{selectedEmployee.nightDiffHours}h</span>
               </div>
-              <div className="bg-white p-2 rounded-lg border border-zinc-200 shadow-2xs">
+              <div className="bg-white dark:bg-zinc-900 p-2 rounded-lg border border-zinc-200/80 dark:border-zinc-800 shadow-2xs">
                 <span className="text-zinc-500 block text-[10px] uppercase font-semibold">Absences / Leaves</span>
                 <span className="font-bold text-red-600 text-sm">{selectedEmployee.absences} <span className="text-xs font-bold text-blue-600">/ {selectedEmployee.approvedLeaves}d</span></span>
               </div>
@@ -967,36 +967,36 @@ export default function AuditLogClient() {
 
             {/* Daily Chronological Breakdown Table */}
             <div className="flex-1 overflow-y-auto p-5 [scrollbar-gutter:stable]">
-              <div className="border border-zinc-200 rounded-xl overflow-hidden bg-white shadow-2xs">
+              <div className="border border-zinc-200/80 dark:border-zinc-800 rounded-xl overflow-hidden bg-white dark:bg-zinc-900 shadow-2xs">
                 <table className="w-full text-left border-collapse text-xs table-fixed">
                   <thead>
-                    <tr className="bg-zinc-50 border-b border-zinc-200">
-                      <th className="border-r border-zinc-200 px-3 py-2 text-[11px] font-semibold text-zinc-600 uppercase tracking-wider w-[10%]">Date</th>
-                      <th className="border-r border-zinc-200 px-3 py-2 text-[11px] font-semibold text-zinc-600 uppercase tracking-wider w-[11%]">Scheduled Shift</th>
-                      <th className="border-r border-zinc-200 px-3 py-2 text-[11px] font-semibold text-zinc-600 uppercase tracking-wider w-[13%]">Dispatch Site</th>
-                      <th className="border-r border-zinc-200 px-3 py-2 text-[11px] font-bold text-indigo-600 uppercase tracking-wider text-center w-[17%]">Actual In / Out</th>
-                      <th className="border-r border-zinc-200 px-2 py-2 text-[11px] font-semibold text-zinc-600 uppercase tracking-wider text-center w-[6%]">Hours</th>
-                      <th className="border-r border-zinc-200 px-2 py-2 text-[11px] font-semibold text-amber-600 uppercase tracking-wider text-center w-[6%]">Late</th>
-                      <th className="border-r border-zinc-200 px-2 py-2 text-[11px] font-semibold text-emerald-600 uppercase tracking-wider text-center w-[6%]">Reg OT</th>
-                      <th className="border-r border-zinc-200 px-2 py-2 text-[11px] font-semibold text-emerald-700 uppercase tracking-wider text-center w-[6%]">Sun/Hol</th>
-                      <th className="border-r border-zinc-200 px-2 py-2 text-[11px] font-semibold text-purple-600 uppercase tracking-wider text-center w-[5%]">ND</th>
-                      <th className="border-r border-zinc-200 px-3 py-2 text-[11px] font-semibold text-zinc-600 uppercase tracking-wider w-[12%]">Daily Status</th>
+                    <tr className="bg-zinc-50 dark:bg-zinc-800/80 border-b border-zinc-200/80 dark:border-zinc-800">
+                      <th className="border-r border-zinc-200/80 dark:border-zinc-800 px-3 py-2 text-[11px] font-semibold text-zinc-600 uppercase tracking-wider w-[10%]">Date</th>
+                      <th className="border-r border-zinc-200/80 dark:border-zinc-800 px-3 py-2 text-[11px] font-semibold text-zinc-600 uppercase tracking-wider w-[11%]">Scheduled Shift</th>
+                      <th className="border-r border-zinc-200/80 dark:border-zinc-800 px-3 py-2 text-[11px] font-semibold text-zinc-600 uppercase tracking-wider w-[13%]">Dispatch Site</th>
+                      <th className="border-r border-zinc-200/80 dark:border-zinc-800 px-3 py-2 text-[11px] font-bold text-blue-600 uppercase tracking-wider text-center w-[17%]">Actual In / Out</th>
+                      <th className="border-r border-zinc-200/80 dark:border-zinc-800 px-2 py-2 text-[11px] font-semibold text-zinc-600 uppercase tracking-wider text-center w-[6%]">Hours</th>
+                      <th className="border-r border-zinc-200/80 dark:border-zinc-800 px-2 py-2 text-[11px] font-semibold text-amber-600 uppercase tracking-wider text-center w-[6%]">Late</th>
+                      <th className="border-r border-zinc-200/80 dark:border-zinc-800 px-2 py-2 text-[11px] font-semibold text-emerald-600 uppercase tracking-wider text-center w-[6%]">Reg OT</th>
+                      <th className="border-r border-zinc-200/80 dark:border-zinc-800 px-2 py-2 text-[11px] font-semibold text-emerald-700 uppercase tracking-wider text-center w-[6%]">Sun/Hol</th>
+                      <th className="border-r border-zinc-200/80 dark:border-zinc-800 px-2 py-2 text-[11px] font-semibold text-purple-600 uppercase tracking-wider text-center w-[5%]">ND</th>
+                      <th className="border-r border-zinc-200/80 dark:border-zinc-800 px-3 py-2 text-[11px] font-semibold text-zinc-600 uppercase tracking-wider w-[12%]">Daily Status</th>
                       <th className="px-3 py-2 text-[11px] font-semibold text-zinc-600 uppercase tracking-wider text-right w-[8%]">Audit Action</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-zinc-200 bg-white">
+                  <tbody className="divide-y divide-zinc-200/80 dark:divide-zinc-800 bg-white dark:bg-zinc-900">
                     {selectedEmployee.dailyBreakdown.map((day) => (
-                      <tr key={day.date} className="hover:bg-zinc-50/70 transition-colors">
+                      <tr key={day.date} className="hover:bg-zinc-50/70 dark:hover:bg-zinc-800/50 transition-colors">
                         {/* Date */}
-                        <td className="border-r border-zinc-200 px-3 py-2 overflow-hidden truncate">
-                          <span className="font-semibold text-zinc-900">{day.date}</span>
+                        <td className="border-r border-zinc-200/80 dark:border-zinc-800 px-3 py-2 overflow-hidden truncate">
+                          <span className="font-semibold text-zinc-900 dark:text-zinc-100">{day.date}</span>
                           <span className={`ml-1.5 text-[10px] font-bold ${day.isSunday ? 'text-rose-500' : 'text-zinc-400'}`}>
                             ({day.dayOfWeek})
                           </span>
                         </td>
 
                         {/* Scheduled Shift */}
-                        <td className="border-r border-zinc-200 px-3 py-2 text-zinc-600 font-medium overflow-hidden truncate">
+                        <td className="border-r border-zinc-200/80 dark:border-zinc-800 px-3 py-2 text-zinc-600 font-medium overflow-hidden truncate">
                           {day.scheduledStart ? (
                             <span>{day.scheduledStart} - {day.scheduledEnd || '17:00'}</span>
                           ) : (
@@ -1005,7 +1005,7 @@ export default function AuditLogClient() {
                         </td>
 
                         {/* Dispatch Site */}
-                        <td className="border-r border-zinc-200 px-3 py-2 text-zinc-700 overflow-hidden truncate">
+                        <td className="border-r border-zinc-200/80 dark:border-zinc-800 px-3 py-2 text-zinc-700 overflow-hidden truncate">
                           {day.scheduleClient ? (
                             <span className="font-medium text-zinc-800" title={day.scheduleClient}>{day.scheduleClient}</span>
                           ) : (
@@ -1014,9 +1014,9 @@ export default function AuditLogClient() {
                         </td>
 
                         {/* Actual In / Out - Center Aligned */}
-                        <td className="border-r border-zinc-200 px-3 py-2 text-center whitespace-nowrap">
+                        <td className="border-r border-zinc-200/80 dark:border-zinc-800 px-3 py-2 text-center whitespace-nowrap">
                           {day.actualTimeIn ? (
-                            <div className="font-mono font-bold text-zinc-900 flex items-center justify-center gap-1.5">
+                            <div className="font-mono font-bold text-zinc-900 dark:text-zinc-100 flex items-center justify-center gap-1.5">
                               <span>{day.actualTimeIn}</span>
                               <span className="text-zinc-400 font-normal">&rarr;</span>
                               <span>{day.actualTimeOut || 'Open'}</span>
@@ -1029,12 +1029,12 @@ export default function AuditLogClient() {
                         </td>
 
                         {/* Hours */}
-                        <td className="border-r border-zinc-200 px-2 py-2 text-center font-mono font-bold text-zinc-800">
+                        <td className="border-r border-zinc-200/80 dark:border-zinc-800 px-2 py-2 text-center font-mono font-bold text-zinc-800">
                           {day.hoursWorked > 0 ? `${day.hoursWorked}h` : '-'}
                         </td>
 
                         {/* Late Mins */}
-                        <td className="border-r border-zinc-200 px-2 py-2 text-center">
+                        <td className="border-r border-zinc-200/80 dark:border-zinc-800 px-2 py-2 text-center">
                           {day.lateMinutes > 0 ? (
                             <span className="font-semibold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded text-[11px] border border-amber-200">
                               {day.lateMinutes}m
@@ -1045,7 +1045,7 @@ export default function AuditLogClient() {
                         </td>
 
                         {/* Reg OT */}
-                        <td className="border-r border-zinc-200 px-2 py-2 text-center font-mono">
+                        <td className="border-r border-zinc-200/80 dark:border-zinc-800 px-2 py-2 text-center font-mono">
                           {day.regOtHours > 0 ? (
                             <span className="font-semibold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded text-[11px] border border-emerald-200">
                               {day.regOtHours}h
@@ -1056,7 +1056,7 @@ export default function AuditLogClient() {
                         </td>
 
                         {/* Sun/Hol OT */}
-                        <td className="border-r border-zinc-200 px-2 py-2 text-center font-mono">
+                        <td className="border-r border-zinc-200/80 dark:border-zinc-800 px-2 py-2 text-center font-mono">
                           {day.sunHolidayOtHours > 0 ? (
                             <span className="font-semibold text-emerald-700 bg-emerald-100/70 px-1.5 py-0.5 rounded text-[11px] border border-emerald-300">
                               {day.sunHolidayOtHours}h
@@ -1067,7 +1067,7 @@ export default function AuditLogClient() {
                         </td>
 
                         {/* Night Diff */}
-                        <td className="border-r border-zinc-200 px-2 py-2 text-center font-mono">
+                        <td className="border-r border-zinc-200/80 dark:border-zinc-800 px-2 py-2 text-center font-mono">
                           {day.nightDiffHours > 0 ? (
                             <span className="font-semibold text-purple-700 bg-purple-50 px-1.5 py-0.5 rounded text-[11px] border border-purple-200">
                               {day.nightDiffHours}h
@@ -1078,7 +1078,7 @@ export default function AuditLogClient() {
                         </td>
 
                         {/* Daily Status Badge */}
-                        <td className="border-r border-zinc-200 px-3 py-2 overflow-hidden">
+                        <td className="border-r border-zinc-200/80 dark:border-zinc-800 px-3 py-2 overflow-hidden">
                           <div className="flex items-center gap-1 flex-wrap">
                             {day.status === 'present' && (
                               <span className="inline-flex items-center gap-1 font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded text-[10px]">
@@ -1091,8 +1091,8 @@ export default function AuditLogClient() {
                               </span>
                             )}
                             {day.status === 'overtime' && (
-                              <span className="inline-flex items-center gap-1 font-semibold text-indigo-700 bg-indigo-50 border border-indigo-200 px-1.5 py-0.5 rounded text-[10px]">
-                                <Clock className="w-3 h-3 text-indigo-600" /> Overtime
+                              <span className="inline-flex items-center gap-1 font-semibold text-blue-700 bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded text-[10px]">
+                                <Clock className="w-3 h-3 text-blue-600" /> Overtime
                               </span>
                             )}
                             {day.status === 'absent' && (
@@ -1150,7 +1150,7 @@ export default function AuditLogClient() {
                             )}
                             <button
                               onClick={() => openCorrectionModal(selectedEmployee, day)}
-                              className="inline-flex items-center gap-1 px-2 py-1 rounded text-[11px] font-semibold transition-colors shadow-2xs bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 cursor-pointer"
+                              className="inline-flex items-center gap-1 px-2 py-1 rounded text-[11px] font-semibold transition-colors shadow-2xs bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 cursor-pointer"
                             >
                               <Edit3 className="w-3 h-3" />
                               {day.actualTimeIn ? 'Correct' : 'Add Shift'}
@@ -1192,7 +1192,7 @@ export default function AuditLogClient() {
             {/* Modal Header */}
             <div className="px-5 py-4 bg-zinc-900 text-white flex items-center justify-between">
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white">
+                <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white">
                   <Clock className="w-4 h-4" />
                 </div>
                 <div>
@@ -1225,7 +1225,7 @@ export default function AuditLogClient() {
                     type="time"
                     value={editTimeIn}
                     onChange={(e) => setEditTimeIn(e.target.value)}
-                    className="w-full px-3 py-2 border border-zinc-200 rounded-lg font-mono text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                    className="w-full px-3 py-2 border border-zinc-200 rounded-lg font-mono text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   />
                 </div>
                 <div>
@@ -1234,7 +1234,7 @@ export default function AuditLogClient() {
                     type="time"
                     value={editTimeOut}
                     onChange={(e) => setEditTimeOut(e.target.value)}
-                    className="w-full px-3 py-2 border border-zinc-200 rounded-lg font-mono text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                    className="w-full px-3 py-2 border border-zinc-200 rounded-lg font-mono text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   />
                 </div>
               </div>
@@ -1246,7 +1246,7 @@ export default function AuditLogClient() {
                   id="isNextDay"
                   checked={isNextDay}
                   onChange={(e) => setIsNextDay(e.target.checked)}
-                  className="w-4 h-4 text-indigo-600 rounded border-zinc-300 focus:ring-indigo-500 cursor-pointer"
+                  className="w-4 h-4 text-blue-600 rounded border-zinc-300 focus:ring-blue-500 cursor-pointer"
                 />
                 <label htmlFor="isNextDay" className="text-zinc-700 font-medium cursor-pointer">
                   Shift crosses midnight (Clock-out occurs on the following day)
@@ -1257,7 +1257,7 @@ export default function AuditLogClient() {
               {correctionPreview ? (
                 <div className="bg-zinc-50 border border-zinc-200 rounded-xl p-3.5 space-y-2">
                   <div className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500 flex items-center gap-1.5">
-                    <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
+                    <Sparkles className="w-3.5 h-3.5 text-blue-600" />
                     Live DOLE Kinsenas Math Preview
                   </div>
                   <div className="grid grid-cols-4 gap-2 text-center">
@@ -1307,7 +1307,7 @@ export default function AuditLogClient() {
                   value={editReason}
                   onChange={(e) => setEditReason(e.target.value)}
                   placeholder="e.g., Technician completed off-grid field emergency at Makati Med; device battery depleted during sign-off. Verified with coordinator dispatch log."
-                  className="w-full px-3 py-2 border border-zinc-200 rounded-lg text-xs leading-relaxed focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  className="w-full px-3 py-2 border border-zinc-200 rounded-lg text-xs leading-relaxed focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
 
@@ -1333,7 +1333,7 @@ export default function AuditLogClient() {
                 type="button"
                 onClick={handleSaveCorrection}
                 disabled={savingCorrection || editReason.trim().length < 10 || !correctionPreview}
-                className="inline-flex items-center gap-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-semibold rounded-lg text-xs transition-colors shadow-xs cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-semibold rounded-lg text-xs transition-colors shadow-xs cursor-pointer"
               >
                 {savingCorrection ? (
                   <>
@@ -1358,7 +1358,7 @@ export default function AuditLogClient() {
           <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl overflow-hidden border border-zinc-200 flex flex-col">
             <div className="px-5 py-3.5 bg-zinc-900 text-white flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <History className="w-4 h-4 text-indigo-400" />
+                <History className="w-4 h-4 text-blue-400" />
                 <h3 className="text-xs font-bold uppercase tracking-wider">Audit Correction Trail</h3>
               </div>
               <button
@@ -1369,45 +1369,45 @@ export default function AuditLogClient() {
               </button>
             </div>
             <div className="p-4 space-y-3 overflow-y-auto max-h-[60vh] text-xs">
-              <div className="text-[11px] text-gray-500 font-medium">
+              <div className="text-[11px] text-zinc-500 dark:text-zinc-400 font-medium">
                 {viewingHistoryTech.employeeName} &bull; {viewingHistoryTech.targetDate}
               </div>
               {loadingHistory ? (
-                <div className="p-8 text-center text-gray-400">Loading audit history...</div>
+                <div className="p-8 text-center text-zinc-400">Loading audit history...</div>
               ) : historyRecords.length === 0 ? (
-                <div className="p-8 text-center text-gray-400">No correction history found for this date.</div>
+                <div className="p-8 text-center text-zinc-400">No correction history found for this date.</div>
               ) : (
                 historyRecords.map((h) => (
-                  <div key={h.id} className="p-3 bg-gray-50 border border-gray-200 rounded-xl space-y-1.5">
+                  <div key={h.id} className="p-3 bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-800 rounded-xl space-y-1.5">
                     <div className="flex items-center justify-between text-[11px]">
-                      <span className="font-bold text-gray-800">{h.actor_name} ({h.actor_role.toUpperCase()})</span>
-                      <span className="text-[10px] text-gray-400 font-mono">
+                      <span className="font-bold text-zinc-800 dark:text-zinc-200">{h.actor_name} ({h.actor_role.toUpperCase()})</span>
+                      <span className="text-[10px] text-zinc-400 font-mono">
                         {new Date(h.created_at).toLocaleString('en-US', { timeZone: 'Asia/Manila' })}
                       </span>
                     </div>
-                    <div className="text-gray-700 font-mono text-[11px] bg-white p-2 rounded border border-gray-200">
+                    <div className="text-zinc-700 dark:text-zinc-300 font-mono text-[11px] bg-white dark:bg-zinc-900 p-2 rounded border border-zinc-200 dark:border-zinc-800">
                       {h.original_time_in ? (
                         <div>
-                          <span className="text-gray-400">Original:</span> {new Date(h.original_time_in).toLocaleTimeString('en-US', { timeZone: 'Asia/Manila', hour: '2-digit', minute: '2-digit' })} &rarr; {h.original_time_out ? new Date(h.original_time_out).toLocaleTimeString('en-US', { timeZone: 'Asia/Manila', hour: '2-digit', minute: '2-digit' }) : 'Open'}
+                          <span className="text-zinc-400">Original:</span> {new Date(h.original_time_in).toLocaleTimeString('en-US', { timeZone: 'Asia/Manila', hour: '2-digit', minute: '2-digit' })} &rarr; {h.original_time_out ? new Date(h.original_time_out).toLocaleTimeString('en-US', { timeZone: 'Asia/Manila', hour: '2-digit', minute: '2-digit' }) : 'Open'}
                         </div>
                       ) : (
-                        <div className="text-gray-400 italic">Original: No mobile punch recorded</div>
+                        <div className="text-zinc-400 italic">Original: No mobile punch recorded</div>
                       )}
-                      <div className="text-indigo-700 font-bold">
-                        <span className="text-gray-400 font-normal">Corrected:</span> {new Date(h.corrected_time_in).toLocaleTimeString('en-US', { timeZone: 'Asia/Manila', hour: '2-digit', minute: '2-digit' })} &rarr; {new Date(h.corrected_time_out).toLocaleTimeString('en-US', { timeZone: 'Asia/Manila', hour: '2-digit', minute: '2-digit' })}
+                      <div className="text-blue-600 dark:text-blue-400 font-bold">
+                        <span className="text-zinc-400 font-normal">Corrected:</span> {new Date(h.corrected_time_in).toLocaleTimeString('en-US', { timeZone: 'Asia/Manila', hour: '2-digit', minute: '2-digit' })} &rarr; {new Date(h.corrected_time_out).toLocaleTimeString('en-US', { timeZone: 'Asia/Manila', hour: '2-digit', minute: '2-digit' })}
                       </div>
                     </div>
-                    <div className="text-gray-600 text-[11px] italic bg-amber-50/50 p-2 rounded border border-amber-100">
+                    <div className="text-zinc-600 dark:text-zinc-400 text-[11px] italic bg-amber-50/50 dark:bg-amber-950/20 p-2 rounded border border-amber-200/50 dark:border-amber-800/30">
                       "{h.reason}"
                     </div>
                   </div>
                 ))
               )}
             </div>
-            <div className="p-3 bg-gray-50 border-t border-gray-200 flex justify-end">
+            <div className="p-3 bg-zinc-50 dark:bg-zinc-800/60 border-t border-zinc-200 dark:border-zinc-800 flex justify-end">
               <button
                 onClick={() => setViewingHistoryTech(null)}
-                className="px-3.5 py-1.5 bg-slate-800 hover:bg-slate-900 text-white rounded-lg text-xs font-bold cursor-pointer"
+                className="px-3.5 py-1.5 bg-zinc-800 hover:bg-zinc-900 dark:bg-zinc-700 dark:hover:bg-zinc-600 text-white rounded-lg text-xs font-bold cursor-pointer"
               >
                 Close
               </button>

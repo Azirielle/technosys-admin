@@ -10,7 +10,7 @@ import { useDebounce } from 'use-debounce';
 
 const DynamicMap = dynamic(() => import('./DynamicLeafletMap'), { 
   ssr: false,
-  loading: () => <div className="w-full h-full bg-slate-100 animate-pulse flex items-center justify-center text-slate-400">Loading Map...</div>
+  loading: () => <div className="w-full h-full bg-zinc-100 dark:bg-zinc-800 animate-pulse flex items-center justify-center text-zinc-400 dark:text-zinc-500">Loading Map...</div>
 });
 
 interface Technician {
@@ -150,16 +150,16 @@ export default function CreateDispatchModal({
     <Dialog.Root open={isOpen} onOpenChange={onClose}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 animate-smooth-fade" />
-        <Dialog.Content className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-5xl bg-white rounded-2xl shadow-2xl z-50 p-0 overflow-hidden flex flex-col max-h-[90vh] animate-smooth-pop">
+        <Dialog.Content className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-5xl bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl border border-zinc-200/80 dark:border-zinc-800 z-50 p-0 overflow-hidden flex flex-col max-h-[90vh] animate-smooth-pop">
           
           {/* Header */}
-          <div className="flex items-center justify-between p-6 border-b border-border bg-slate-50">
+          <div className="flex items-center justify-between p-6 border-b border-border bg-zinc-50 dark:bg-zinc-800/60">
             <div>
-              <Dialog.Title className="text-xl font-bold text-slate-900">Create Dispatch</Dialog.Title>
-              <Dialog.Description className="text-sm text-slate-500 mt-1">Assign technicians to a new field operation.</Dialog.Description>
+              <Dialog.Title className="text-xl font-bold text-zinc-900 dark:text-zinc-100">Create Dispatch</Dialog.Title>
+              <Dialog.Description className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">Assign technicians to a new field operation.</Dialog.Description>
             </div>
-            <Dialog.Close className="p-2 hover:bg-slate-200 rounded-full transition-colors cursor-pointer">
-              <X className="w-5 h-5 text-slate-500" />
+            <Dialog.Close className="p-2 hover:bg-zinc-200 dark:bg-zinc-700 rounded-full transition-colors cursor-pointer">
+              <X className="w-5 h-5 text-zinc-500 dark:text-zinc-400" />
             </Dialog.Close>
           </div>
 
@@ -175,16 +175,16 @@ export default function CreateDispatchModal({
                 className={`w-full font-bold px-4 py-3 rounded-xl flex items-center justify-center gap-2 transition-all shadow-sm border ${
                   isPacitaHQ 
                     ? 'bg-blue-600 text-white border-blue-700 hover:bg-blue-700 shadow-blue-600/20' 
-                    : 'bg-white text-slate-600 border-border hover:bg-slate-50'
+                    : 'bg-white text-zinc-600 dark:text-zinc-400 border-border hover:bg-zinc-50 dark:bg-zinc-800/60'
                 }`}
               >
-                <MapPin className={`w-5 h-5 ${isPacitaHQ ? 'text-white' : 'text-slate-400'}`} />
+                <MapPin className={`w-5 h-5 ${isPacitaHQ ? 'text-white' : 'text-zinc-400 dark:text-zinc-500'}`} />
                 {isPacitaHQ ? 'Pacita HQ Deployment Active' : 'Deploy to Pacita HQ'}
               </button>
 
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-1.5">
+                  <label className="block text-sm font-bold text-zinc-700 dark:text-zinc-300 mb-1.5">
                     {isPacitaHQ ? 'Office Task / Department' : 'Job Title / Client Name'}
                   </label>
                   <input type="text" placeholder={isPacitaHQ ? "e.g. Inventory Audit" : "e.g. Server Maintenance"} className="w-full border border-border rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
@@ -192,10 +192,10 @@ export default function CreateDispatchModal({
                 
                 {!isPacitaHQ && (
                   <div>
-                    <label className="block text-sm font-bold text-slate-700 mb-1.5">Location Search</label>
+                    <label className="block text-sm font-bold text-zinc-700 dark:text-zinc-300 mb-1.5">Location Search</label>
                     <div className="relative mb-3 z-20">
                       <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <Search className="h-4 w-4 text-slate-400" />
+                        <Search className="h-4 w-4 text-zinc-400 dark:text-zinc-500" />
                       </div>
                       <input 
                         type="text" 
@@ -217,9 +217,9 @@ export default function CreateDispatchModal({
                             <div 
                               key={res.place_id} 
                               onClick={() => handleSelectLocation(res)}
-                              className="px-4 py-3 text-sm hover:bg-slate-50 cursor-pointer border-b border-border last:border-b-0 truncate flex items-center gap-2"
+                              className="px-4 py-3 text-sm hover:bg-zinc-50 dark:bg-zinc-800/60 cursor-pointer border-b border-border last:border-b-0 truncate flex items-center gap-2"
                             >
-                              <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                              <MapPin className="w-3.5 h-3.5 text-zinc-400 dark:text-zinc-500 shrink-0" />
                               {res.display_name}
                             </div>
                           ))}
@@ -235,7 +235,7 @@ export default function CreateDispatchModal({
                       <select 
                         value={radius} 
                         onChange={(e) => setRadius(Number(e.target.value))}
-                        className="text-sm border border-border rounded-md px-3 py-1.5 bg-white font-medium text-slate-700 cursor-pointer outline-none"
+                        className="text-sm border border-border rounded-md px-3 py-1.5 bg-white font-medium text-zinc-700 dark:text-zinc-300 cursor-pointer outline-none"
                       >
                         <option value={50}>Radius: 50m</option>
                         <option value={200}>Radius: 200m</option>
@@ -245,20 +245,20 @@ export default function CreateDispatchModal({
 
                       <button 
                         onClick={() => setShowManualCoords(!showManualCoords)}
-                        className="text-xs font-medium text-slate-500 hover:text-slate-900 cursor-pointer"
+                        className="text-xs font-medium text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:text-zinc-100 cursor-pointer"
                       >
                         {showManualCoords ? 'Hide Coordinates' : 'Advanced: Manual Coordinates'}
                       </button>
                     </div>
 
                     {showManualCoords && (
-                      <div className="flex gap-4 mt-3 bg-slate-50 p-3 rounded-lg border border-border">
+                      <div className="flex gap-4 mt-3 bg-zinc-50 dark:bg-zinc-800/60 p-3 rounded-lg border border-border">
                         <div className="flex-1">
-                          <label className="block text-xs font-bold text-slate-500 mb-1">Latitude</label>
+                          <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1">Latitude</label>
                           <input type="number" value={lat} onChange={e => setLat(Number(e.target.value))} className="w-full border border-border rounded px-2 py-1.5 text-sm outline-none focus:ring-1 focus:ring-blue-500" />
                         </div>
                         <div className="flex-1">
-                          <label className="block text-xs font-bold text-slate-500 mb-1">Longitude</label>
+                          <label className="block text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-1">Longitude</label>
                           <input type="number" value={lng} onChange={e => setLng(Number(e.target.value))} className="w-full border border-border rounded px-2 py-1.5 text-sm outline-none focus:ring-1 focus:ring-blue-500" />
                         </div>
                       </div>
@@ -269,13 +269,13 @@ export default function CreateDispatchModal({
             </div>
 
             {/* RIGHT COLUMN: Who & When */}
-            <div className="flex-1 p-6 bg-slate-50 flex flex-col z-10">
-              <h3 className="font-bold text-slate-900 mb-6">Who & When</h3>
+            <div className="flex-1 p-6 bg-zinc-50 dark:bg-zinc-800/60 flex flex-col z-10">
+              <h3 className="font-bold text-zinc-900 dark:text-zinc-100 mb-6">Who & When</h3>
               
               <div className="space-y-5 flex-1">
                 <div className="flex gap-4">
                   <div className="flex-1">
-                    <label className="block text-sm font-bold text-slate-700 mb-1.5">Start</label>
+                    <label className="block text-sm font-bold text-zinc-700 dark:text-zinc-300 mb-1.5">Start</label>
                     <div className="flex gap-2">
                       <input 
                         type="date" 
@@ -289,7 +289,7 @@ export default function CreateDispatchModal({
                     </div>
                   </div>
                   <div className="flex-1">
-                    <label className="block text-sm font-bold text-slate-700 mb-1.5">End</label>
+                    <label className="block text-sm font-bold text-zinc-700 dark:text-zinc-300 mb-1.5">End</label>
                     <div className="flex gap-2">
                       <input 
                         type="date" 
@@ -306,7 +306,7 @@ export default function CreateDispatchModal({
 
                 {!isPacitaHQ && (
                   <div>
-                    <label className="block text-sm font-bold text-slate-700 mb-1.5">Job Type</label>
+                    <label className="block text-sm font-bold text-zinc-700 dark:text-zinc-300 mb-1.5">Job Type</label>
                     <select className="w-full border border-border rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white cursor-pointer">
                       <option>Standard On-Site</option>
                       <option>Out of Town / VIP</option>
@@ -317,29 +317,29 @@ export default function CreateDispatchModal({
 
                 {/* Combobox: Multi-Select Personnel */}
                 <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-1.5">Assign Technicians</label>
+                  <label className="block text-sm font-bold text-zinc-700 dark:text-zinc-300 mb-1.5">Assign Technicians</label>
                   
                   <Popover.Root open={openCombobox} onOpenChange={setOpenCombobox}>
                     <Popover.Trigger asChild>
-                      <button className="w-full min-h-[44px] border border-border rounded-lg px-3 py-2 text-sm bg-white flex items-center justify-between hover:bg-slate-50 transition-colors text-left outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer">
+                      <button className="w-full min-h-[44px] border border-border rounded-lg px-3 py-2 text-sm bg-white flex items-center justify-between hover:bg-zinc-50 dark:bg-zinc-800/60 transition-colors text-left outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer">
                         <div className="flex flex-wrap gap-1.5">
                           {selectedTechs.length > 0 ? (
                             selectedTechs.map(tech => (
-                              <span key={tech.id} className="bg-slate-100 border border-border text-slate-800 text-xs font-bold px-2 py-1 rounded-md flex items-center gap-1">
+                              <span key={tech.id} className="bg-zinc-100 dark:bg-zinc-800 border border-border text-zinc-800 dark:text-zinc-200 text-xs font-bold px-2 py-1 rounded-md flex items-center gap-1">
                                 {tech.name}
                                 <div 
                                   onClick={(e) => { e.stopPropagation(); toggleTech(tech); }}
-                                  className="hover:bg-slate-200 rounded-full p-0.5 cursor-pointer"
+                                  className="hover:bg-zinc-200 dark:bg-zinc-700 rounded-full p-0.5 cursor-pointer"
                                 >
-                                  <X className="w-3 h-3 text-slate-500" />
+                                  <X className="w-3 h-3 text-zinc-500 dark:text-zinc-400" />
                                 </div>
                               </span>
                             ))
                           ) : (
-                            <span className="text-slate-400">Select technicians...</span>
+                            <span className="text-zinc-400 dark:text-zinc-500">Select technicians...</span>
                           )}
                         </div>
-                        <ChevronsUpDown className="w-4 h-4 text-slate-400 shrink-0 ml-2" />
+                        <ChevronsUpDown className="w-4 h-4 text-zinc-400 dark:text-zinc-500 shrink-0 ml-2" />
                       </button>
                     </Popover.Trigger>
                     
@@ -350,10 +350,10 @@ export default function CreateDispatchModal({
                             value={searchQuery}
                             onValueChange={setSearchQuery}
                             placeholder="Search by name or role..." 
-                            className="w-full px-4 py-3 text-sm border-b border-border outline-none placeholder:text-slate-400" 
+                            className="w-full px-4 py-3 text-sm border-b border-border outline-none placeholder:text-zinc-400 dark:text-zinc-500" 
                           />
                           <Command.List className="max-h-64 overflow-y-auto p-1">
-                            <Command.Empty className="py-6 text-center text-sm text-slate-500">No technician found.</Command.Empty>
+                            <Command.Empty className="py-6 text-center text-sm text-zinc-500 dark:text-zinc-400">No technician found.</Command.Empty>
                             {TECHNICIANS.map(tech => {
                               const isSelected = selectedTechs.some(t => t.id === tech.id);
                               return (
@@ -361,11 +361,11 @@ export default function CreateDispatchModal({
                                   key={tech.id} 
                                   value={`${tech.name} ${tech.role}`}
                                   onSelect={() => toggleTech(tech)}
-                                  className="flex items-center justify-between px-3 py-2 text-sm rounded-md hover:bg-slate-100 cursor-pointer aria-selected:bg-slate-100 data-[selected=true]:bg-slate-100 outline-none"
+                                  className="flex items-center justify-between px-3 py-2 text-sm rounded-md hover:bg-zinc-100 dark:bg-zinc-800 cursor-pointer aria-selected:bg-zinc-100 dark:bg-zinc-800 data-[selected=true]:bg-zinc-100 dark:bg-zinc-800 outline-none"
                                 >
                                   <div>
-                                    <p className="font-bold text-slate-900">{tech.name}</p>
-                                    <p className="text-xs text-slate-500">{tech.role}</p>
+                                    <p className="font-bold text-zinc-900 dark:text-zinc-100">{tech.name}</p>
+                                    <p className="text-xs text-zinc-500 dark:text-zinc-400">{tech.role}</p>
                                   </div>
                                   {isSelected && <Check className="w-4 h-4 text-blue-600" />}
                                 </Command.Item>

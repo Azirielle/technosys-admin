@@ -353,23 +353,23 @@ export default function BroadcasterClient({ currentRole, adminName, adminRoleLab
   })
 
   return (
-    <div className="flex flex-col h-full w-full max-w-full overflow-hidden p-6 bg-slate-50">
+    <div className="flex flex-col h-full w-full max-w-full overflow-hidden p-6 bg-zinc-50 dark:bg-zinc-950">
       {/* Toast Notification */}
       {notification && (
-        <div className="fixed top-5 right-5 z-[100] bg-indigo-900 text-white px-5 py-3 rounded-xl shadow-2xl border border-indigo-700 flex items-center gap-3 animate-slide-in">
-          <Sparkles className="w-5 h-5 text-indigo-300 shrink-0" />
+        <div className="fixed top-5 right-5 z-[100] bg-blue-900 text-white px-5 py-3 rounded-xl shadow-2xl border border-blue-700 flex items-center gap-3 animate-slide-in">
+          <Sparkles className="w-5 h-5 text-blue-300 shrink-0" />
           <span className="text-xs font-bold">{notification}</span>
         </div>
       )}
 
       {/* Header Bar */}
-      <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 shrink-0">
+      <div className="bg-white dark:bg-zinc-900 p-5 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 shrink-0">
         <div>
-          <h1 className="text-2xl font-black text-gray-900 tracking-tight flex items-center gap-2.5">
-            <Radio className="w-7 h-7 text-indigo-600 animate-pulse" />
+          <h1 className="text-2xl font-black text-zinc-900 dark:text-zinc-100 tracking-tight flex items-center gap-2.5">
+            <Radio className="w-7 h-7 text-blue-600 animate-pulse" />
             Announcement Broadcaster
           </h1>
-          <p className="text-xs text-gray-500 font-medium mt-1">
+          <p className="text-xs text-zinc-500 dark:text-zinc-400 font-medium mt-1">
             Broadcast, modify, or remove company-wide announcements. All posted announcements are synced live to technicians&apos; mobile devices.
           </p>
         </div>
@@ -377,7 +377,7 @@ export default function BroadcasterClient({ currentRole, adminName, adminRoleLab
         <button
           type="button"
           onClick={handleOpenCreate}
-          className="inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-black rounded-xl shadow-sm transition-all transform active:scale-95 shrink-0"
+          className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-black rounded-xl shadow-sm transition-all transform active:scale-95 shrink-0"
         >
           <Plus className="w-4 h-4 stroke-[3]" />
           New Broadcast Announcement
@@ -385,26 +385,26 @@ export default function BroadcasterClient({ currentRole, adminName, adminRoleLab
       </div>
 
       {/* Search & Filter Controls */}
-      <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex flex-wrap items-center justify-between gap-3 mb-6 shrink-0">
+      <div className="bg-white dark:bg-zinc-900 p-4 rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-sm flex flex-wrap items-center justify-between gap-3 mb-6 shrink-0">
         <div className="flex items-center gap-3 flex-1 min-w-[280px] max-w-md">
           <div className="relative w-full">
-            <Search className="w-4 h-4 text-gray-400 absolute left-3 top-2.5" />
+            <Search className="w-4 h-4 text-zinc-400 dark:text-zinc-500 absolute left-3 top-2.5" />
             <input
               type="text"
               placeholder="Search title, message, or author..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-xs font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500 text-gray-900"
+              className="w-full pl-9 pr-4 py-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-xs font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 text-zinc-900 dark:text-zinc-100"
             />
           </div>
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="text-xs font-bold text-gray-500">Filter Priority:</span>
+          <span className="text-xs font-bold text-zinc-500 dark:text-zinc-400">Filter Priority:</span>
           <select
             value={selectedPriority}
             onChange={(e) => setSelectedPriority(e.target.value)}
-            className="bg-gray-50 border border-gray-200 rounded-lg text-xs font-bold text-gray-700 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-xs font-bold text-zinc-700 dark:text-zinc-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value="all">All Priorities</option>
             <option value="urgent">🔴 Urgent Alerts</option>
@@ -417,37 +417,37 @@ export default function BroadcasterClient({ currentRole, adminName, adminRoleLab
       {/* Announcement Cards List */}
       <div className="flex-1 overflow-y-auto space-y-4 pr-1 [scrollbar-gutter:stable]">
         {loading ? (
-          <div className="p-12 text-center text-gray-400 font-medium text-xs">
+          <div className="p-12 text-center text-zinc-400 dark:text-zinc-500 font-medium text-xs">
             Loading company announcements...
           </div>
         ) : filtered.length === 0 ? (
-          <div className="p-12 text-center bg-white rounded-2xl border border-gray-200 shadow-sm">
-            <Megaphone className="w-10 h-10 text-gray-300 mx-auto mb-2" />
-            <p className="text-sm font-bold text-gray-700">No announcements match your search.</p>
-            <p className="text-xs text-gray-400 mt-1">Broadcast a new announcement using the top button.</p>
+          <div className="p-12 text-center bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm">
+            <Megaphone className="w-10 h-10 text-zinc-300 mx-auto mb-2" />
+            <p className="text-sm font-bold text-zinc-700 dark:text-zinc-300">No announcements match your search.</p>
+            <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-1">Broadcast a new announcement using the top button.</p>
           </div>
         ) : (
           filtered.map((item) => (
             <div
               key={item.id}
-              className="bg-white rounded-2xl p-5 border border-gray-200 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between relative group"
+              className="bg-white dark:bg-zinc-900 rounded-2xl p-5 border border-zinc-200 dark:border-zinc-800 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between relative group"
             >
               {/* Top Meta Bar */}
               <div className="flex items-start justify-between gap-4 mb-3">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-indigo-100 text-indigo-700 font-black flex items-center justify-center text-sm border border-indigo-200 shadow-xs">
+                  <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 font-black flex items-center justify-center text-sm border border-blue-200 dark:border-blue-800 shadow-xs">
                     {item.authorName.charAt(0)}
                   </div>
                   <div>
                     <div className="flex items-center gap-2">
-                      <span className="font-extrabold text-sm text-gray-900">{item.authorName}</span>
-                      <span className="text-[10px] font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-100">
+                      <span className="font-extrabold text-sm text-zinc-900 dark:text-zinc-100">{item.authorName}</span>
+                      <span className="text-[10px] font-bold text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/40 px-2 py-0.5 rounded border border-blue-100 dark:border-blue-800">
                         {item.authorRole}
                       </span>
                     </div>
-                    <div className="flex items-center gap-2 text-[11px] text-gray-400 font-medium mt-0.5">
+                    <div className="flex items-center gap-2 text-[11px] text-zinc-400 dark:text-zinc-500 font-medium mt-0.5">
                       <span className="flex items-center gap-1">
-                        <Clock className="w-3 h-3 text-gray-400" />
+                        <Clock className="w-3 h-3 text-zinc-400 dark:text-zinc-500" />
                         {formatRelativeTime(item.created_at)}
                       </span>
                       <span>&bull;</span>
@@ -459,28 +459,28 @@ export default function BroadcasterClient({ currentRole, adminName, adminRoleLab
                 {/* Priority Badge & Actions */}
                 <div className="flex items-center gap-3">
                   {item.priority === 'urgent' && (
-                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-black bg-red-100 text-red-800 border border-red-200">
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-black bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800">
                       <AlertTriangle className="w-3.5 h-3.5 text-red-600" /> URGENT ALERT
                     </span>
                   )}
                   {item.priority === 'policy' && (
-                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-black bg-blue-100 text-blue-800 border border-blue-200">
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-black bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
                       <ShieldCheck className="w-3.5 h-3.5 text-blue-600" /> POLICY NOTICE
                     </span>
                   )}
                   {item.priority === 'normal' && (
-                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-black bg-emerald-50 text-emerald-800 border border-emerald-200">
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-black bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
                       <Info className="w-3.5 h-3.5 text-emerald-600" /> GENERAL
                     </span>
                   )}
 
                   {/* Admin Edit & Delete Actions */}
-                  <div className="flex items-center gap-1 bg-gray-50 border border-gray-200 rounded-lg p-1">
+                  <div className="flex items-center gap-1 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg p-1">
                     <button
                       type="button"
                       onClick={() => handleOpenEdit(item)}
                       title="Edit Announcement"
-                      className="p-1.5 text-gray-500 hover:text-indigo-600 hover:bg-white rounded-md transition-colors"
+                      className="p-1.5 text-zinc-500 dark:text-zinc-400 hover:text-blue-600 hover:bg-zinc-100 dark:hover:bg-zinc-700 rounded-md transition-colors"
                     >
                       <Edit2 className="w-3.5 h-3.5" />
                     </button>
@@ -488,7 +488,7 @@ export default function BroadcasterClient({ currentRole, adminName, adminRoleLab
                       type="button"
                       onClick={() => setDeletingItem(item)}
                       title="Remove Announcement"
-                      className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-white rounded-md transition-colors"
+                      className="p-1.5 text-zinc-500 dark:text-zinc-400 hover:text-red-600 hover:bg-zinc-100 dark:hover:bg-zinc-700 rounded-md transition-colors"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
@@ -498,13 +498,13 @@ export default function BroadcasterClient({ currentRole, adminName, adminRoleLab
 
               {/* Title & Body */}
               <div className="mb-3">
-                <h2 className="text-base font-black text-gray-900 mb-1.5 tracking-tight">{item.title}</h2>
-                <p className="text-xs text-gray-600 font-medium leading-relaxed whitespace-pre-wrap">{item.content}</p>
+                <h2 className="text-base font-black text-zinc-900 dark:text-zinc-100 mb-1.5 tracking-tight">{item.title}</h2>
+                <p className="text-xs text-zinc-600 dark:text-zinc-300 font-medium leading-relaxed whitespace-pre-wrap">{item.content}</p>
               </div>
 
               {/* Edit History Badge */}
               {item.is_edited && (
-                <div className="pt-2 border-t border-gray-100 flex items-center gap-1.5 text-[11px] font-medium text-purple-700">
+                <div className="pt-2 border-t border-zinc-100 dark:border-zinc-800 flex items-center gap-1.5 text-[11px] font-medium text-purple-700 dark:text-purple-300">
                   <Edit2 className="w-3 h-3 text-purple-500" />
                   <span>
                     Edited by <strong className="font-extrabold">{item.editorName || 'Admin'}</strong> ({item.editorRole || 'Administrator'}) &bull; {item.updated_at ? formatRelativeTime(item.updated_at) : 'Recently'}
@@ -518,37 +518,37 @@ export default function BroadcasterClient({ currentRole, adminName, adminRoleLab
 
       {/* CREATE ANNOUNCEMENT MODAL */}
       {isCreateModalOpen && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[90] flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden border border-gray-200 animate-scale-in">
-            <div className="p-5 bg-gray-900 text-white flex items-center justify-between">
+        <div className="fixed inset-0 bg-zinc-900/60 backdrop-blur-sm z-[90] flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden border border-zinc-200 dark:border-zinc-800 animate-scale-in">
+            <div className="p-5 bg-zinc-900 dark:bg-zinc-950 text-white flex items-center justify-between border-b border-zinc-800">
               <div className="flex items-center gap-2.5">
-                <Radio className="w-5 h-5 text-indigo-400 animate-pulse" />
+                <Radio className="w-5 h-5 text-blue-400 animate-pulse" />
                 <h3 className="font-black text-base">New Broadcast Announcement</h3>
               </div>
-              <button onClick={() => setIsCreateModalOpen(false)} className="text-gray-400 hover:text-white p-1 rounded-lg">
+              <button onClick={() => setIsCreateModalOpen(false)} className="text-zinc-400 dark:text-zinc-500 hover:text-white p-1 rounded-lg">
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <form onSubmit={handleCreateSubmit} className="p-6 space-y-4 text-xs text-gray-700">
+            <form onSubmit={handleCreateSubmit} className="p-6 space-y-4 text-xs text-zinc-700 dark:text-zinc-300">
               <div>
-                <label className="block text-[11px] font-extrabold text-gray-700 uppercase mb-1">Announcement Title</label>
+                <label className="block text-[11px] font-extrabold text-zinc-700 dark:text-zinc-300 uppercase mb-1">Announcement Title</label>
                 <input
                   type="text"
                   required
                   placeholder="e.g., Mandatory Safety Verification Protocol"
                   value={formTitle}
                   onChange={(e) => setFormTitle(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-300 rounded-xl text-xs font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full px-3.5 py-2.5 bg-zinc-50 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded-xl text-xs font-bold text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
 
               <div>
-                <label className="block text-[11px] font-extrabold text-gray-700 uppercase mb-1">Priority / Tag</label>
+                <label className="block text-[11px] font-extrabold text-zinc-700 dark:text-zinc-300 uppercase mb-1">Priority / Tag</label>
                 <select
                   value={formPriority}
                   onChange={(e) => setFormPriority(e.target.value as any)}
-                  className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-300 rounded-xl text-xs font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full px-3.5 py-2.5 bg-zinc-50 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded-xl text-xs font-bold text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="normal">🟢 General Notice</option>
                   <option value="policy">🔵 Company Policy Notice</option>
@@ -557,27 +557,27 @@ export default function BroadcasterClient({ currentRole, adminName, adminRoleLab
               </div>
 
               <div>
-                <label className="block text-[11px] font-extrabold text-gray-700 uppercase mb-1">Announcement Content</label>
+                <label className="block text-[11px] font-extrabold text-zinc-700 dark:text-zinc-300 uppercase mb-1">Announcement Content</label>
                 <textarea
                   required
                   rows={4}
                   placeholder="Write clear instructions for field technicians and admin staff..."
                   value={formContent}
                   onChange={(e) => setFormContent(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-300 rounded-xl text-xs font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 leading-relaxed"
+                  className="w-full px-3.5 py-2.5 bg-zinc-50 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded-xl text-xs font-medium text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500 leading-relaxed"
                 />
               </div>
 
-              <div className="p-3 bg-indigo-50/60 rounded-xl border border-indigo-100 flex items-center justify-between">
+              <div className="p-3 bg-blue-50/60 rounded-xl border border-blue-100 flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Bell className="w-4 h-4 text-indigo-600" />
-                  <span className="font-bold text-indigo-900 text-xs">Send Push Notification to Mobile App</span>
+                  <Bell className="w-4 h-4 text-blue-600" />
+                  <span className="font-bold text-blue-900 text-xs">Send Push Notification to Mobile App</span>
                 </div>
                 <input
                   type="checkbox"
                   checked={resendPush}
                   onChange={(e) => setResendPush(e.target.checked)}
-                  className="w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500"
+                  className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
                 />
               </div>
 
@@ -585,14 +585,14 @@ export default function BroadcasterClient({ currentRole, adminName, adminRoleLab
                 <button
                   type="button"
                   onClick={() => setIsCreateModalOpen(false)}
-                  className="flex-1 py-2.5 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200 transition-colors"
+                  className="flex-1 py-2.5 bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 font-bold rounded-xl hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="flex-1 py-2.5 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 shadow-sm disabled:opacity-50 transition-colors"
+                  className="flex-1 py-2.5 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 shadow-sm disabled:opacity-50 transition-colors"
                 >
                   {isSubmitting ? 'Broadcasting...' : 'Broadcast Now'}
                 </button>
@@ -604,36 +604,36 @@ export default function BroadcasterClient({ currentRole, adminName, adminRoleLab
 
       {/* EDIT ANNOUNCEMENT MODAL */}
       {editingItem && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[90] flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden border border-gray-200 animate-scale-in">
-            <div className="p-5 bg-gray-900 text-white flex items-center justify-between">
+        <div className="fixed inset-0 bg-zinc-900/60 backdrop-blur-sm z-[90] flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden border border-zinc-200 dark:border-zinc-800 animate-scale-in">
+            <div className="p-5 bg-zinc-900 dark:bg-zinc-950 text-white flex items-center justify-between border-b border-zinc-800">
               <div className="flex items-center gap-2.5">
-                <Edit2 className="w-5 h-5 text-indigo-400" />
+                <Edit2 className="w-5 h-5 text-blue-400" />
                 <h3 className="font-black text-base">Edit Announcement</h3>
               </div>
-              <button onClick={() => setEditingItem(null)} className="text-gray-400 hover:text-white p-1 rounded-lg">
+              <button onClick={() => setEditingItem(null)} className="text-zinc-400 dark:text-zinc-500 hover:text-white p-1 rounded-lg">
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <form onSubmit={handleEditSubmit} className="p-6 space-y-4 text-xs text-gray-700">
+            <form onSubmit={handleEditSubmit} className="p-6 space-y-4 text-xs text-zinc-700 dark:text-zinc-300">
               <div>
-                <label className="block text-[11px] font-extrabold text-gray-700 uppercase mb-1">Announcement Title</label>
+                <label className="block text-[11px] font-extrabold text-zinc-700 dark:text-zinc-300 uppercase mb-1">Announcement Title</label>
                 <input
                   type="text"
                   required
                   value={formTitle}
                   onChange={(e) => setFormTitle(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-300 rounded-xl text-xs font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full px-3.5 py-2.5 bg-zinc-50 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded-xl text-xs font-bold text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
 
               <div>
-                <label className="block text-[11px] font-extrabold text-gray-700 uppercase mb-1">Priority / Tag</label>
+                <label className="block text-[11px] font-extrabold text-zinc-700 dark:text-zinc-300 uppercase mb-1">Priority / Tag</label>
                 <select
                   value={formPriority}
                   onChange={(e) => setFormPriority(e.target.value as any)}
-                  className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-300 rounded-xl text-xs font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full px-3.5 py-2.5 bg-zinc-50 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded-xl text-xs font-bold text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="normal">🟢 General Notice</option>
                   <option value="policy">🔵 Company Policy Notice</option>
@@ -642,13 +642,13 @@ export default function BroadcasterClient({ currentRole, adminName, adminRoleLab
               </div>
 
               <div>
-                <label className="block text-[11px] font-extrabold text-gray-700 uppercase mb-1">Announcement Content</label>
+                <label className="block text-[11px] font-extrabold text-zinc-700 dark:text-zinc-300 uppercase mb-1">Announcement Content</label>
                 <textarea
                   required
                   rows={4}
                   value={formContent}
                   onChange={(e) => setFormContent(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-300 rounded-xl text-xs font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 leading-relaxed"
+                  className="w-full px-3.5 py-2.5 bg-zinc-50 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded-xl text-xs font-medium text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500 leading-relaxed"
                 />
               </div>
 
@@ -669,14 +669,14 @@ export default function BroadcasterClient({ currentRole, adminName, adminRoleLab
                 <button
                   type="button"
                   onClick={() => setEditingItem(null)}
-                  className="flex-1 py-2.5 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200 transition-colors"
+                  className="flex-1 py-2.5 bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 font-bold rounded-xl hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="flex-1 py-2.5 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 shadow-sm disabled:opacity-50 transition-colors"
+                  className="flex-1 py-2.5 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 shadow-sm disabled:opacity-50 transition-colors"
                 >
                   {isSubmitting ? 'Saving Edit...' : 'Save Changes'}
                 </button>
@@ -688,23 +688,23 @@ export default function BroadcasterClient({ currentRole, adminName, adminRoleLab
 
       {/* DELETE CONFIRMATION MODAL */}
       {deletingItem && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden border border-gray-200 animate-scale-in">
+        <div className="fixed inset-0 bg-zinc-900/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden border border-zinc-200 dark:border-zinc-800 animate-scale-in">
             <div className="p-6 text-center space-y-4">
               <div className="w-14 h-14 bg-red-50 text-red-600 rounded-full flex items-center justify-center mx-auto border border-red-100 shadow-sm">
                 <Trash2 className="w-7 h-7 text-red-600" />
               </div>
               <div>
-                <h3 className="font-black text-gray-900 text-base">Remove Announcement?</h3>
-                <p className="text-xs text-gray-500 mt-1.5 font-medium leading-relaxed">
-                  Are you sure you want to delete <strong className="text-gray-900">&quot;{deletingItem.title}&quot;</strong>? This action will be recorded in CEO Audit Logs.
+                <h3 className="font-black text-zinc-900 dark:text-zinc-100 text-base">Remove Announcement?</h3>
+                <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1.5 font-medium leading-relaxed">
+                  Are you sure you want to delete <strong className="text-zinc-900 dark:text-zinc-100">&quot;{deletingItem.title}&quot;</strong>? This action will be recorded in CEO Audit Logs.
                 </p>
               </div>
               <div className="pt-2 flex gap-3">
                 <button
                   type="button"
                   onClick={() => setDeletingItem(null)}
-                  className="flex-1 py-2.5 bg-gray-100 text-gray-700 rounded-xl font-bold text-xs hover:bg-gray-200 transition-colors"
+                  className="flex-1 py-2.5 bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 rounded-xl font-bold text-xs hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors"
                 >
                   Cancel
                 </button>

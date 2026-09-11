@@ -62,30 +62,34 @@ export function LeavesTab() {
   const totalPages = Math.ceil(filteredLeaves.length / itemsPerPage)
   const paginatedLeaves = filteredLeaves.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
 
-  if (loading) return <div className="p-12 text-center text-gray-500 font-medium">Loading leave requests...</div>
+  if (loading) return (
+    <div className="p-12 text-center text-zinc-500 dark:text-zinc-400 font-medium">
+      Loading leave requests...
+    </div>
+  )
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-300 overflow-hidden flex-1 flex flex-col h-full">
-      {/* Toolbar - Search and Filter next to each other */}
-      <div className="p-4 border-b border-gray-300 bg-gray-50 flex flex-wrap gap-4 items-center justify-start shrink-0">
+    <div className="bg-white dark:bg-zinc-900 rounded-xl shadow-xs border border-zinc-200/80 dark:border-zinc-800 overflow-hidden flex-1 flex flex-col h-full">
+      {/* Toolbar - Search and Filter */}
+      <div className="p-3.5 border-b border-zinc-200/80 dark:border-zinc-800 bg-zinc-50/70 dark:bg-zinc-900/60 flex flex-wrap gap-3 items-center justify-start shrink-0">
         <div className="relative w-full sm:w-80">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <Search className="h-4 w-4 text-gray-400" />
+            <Search className="h-4 w-4 text-zinc-400" />
           </div>
           <input
             type="text"
             placeholder="Search leaves by name or reason..."
             value={searchQuery}
             onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
-            className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 sm:text-sm"
+            className="block w-full pl-9 pr-3 py-1.5 border border-zinc-200/80 dark:border-zinc-700 rounded-lg text-xs leading-5 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
           />
         </div>
         <div className="flex items-center gap-2 w-full sm:w-auto">
-          <Filter className="h-4 w-4 text-gray-500" />
+          <Filter className="h-3.5 w-3.5 text-zinc-400" />
           <select
             value={statusFilter}
             onChange={(e) => { setStatusFilter(e.target.value); setCurrentPage(1); }}
-            className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 sm:text-sm rounded-md"
+            className="block w-full pl-2.5 pr-8 py-1.5 text-xs font-semibold border border-zinc-200/80 dark:border-zinc-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200"
           >
             <option value="all">All Statuses</option>
             <option value="pending">Pending</option>
@@ -95,77 +99,79 @@ export function LeavesTab() {
         </div>
       </div>
       
-      {/* Data Table with strict grid borders and unified column widths */}
+      {/* Data Table */}
       <div className="overflow-y-scroll flex-1 [scrollbar-gutter:stable]">
-        <table className="w-full border-collapse border border-gray-300 table-fixed">
-          <thead className="bg-gray-100 sticky top-0 z-10">
+        <table className="w-full border-collapse table-fixed">
+          <thead className="bg-zinc-50 dark:bg-zinc-800/60 sticky top-0 z-10 border-b border-zinc-200 dark:border-zinc-800">
             <tr>
-              <th className="border border-gray-300 px-4 py-2.5 text-left text-xs font-bold text-gray-700 uppercase tracking-wider w-[32%]">Issuer & Reason</th>
-              <th className="border border-gray-300 px-4 py-2.5 text-left text-xs font-bold text-gray-700 uppercase tracking-wider w-[22%]">Leave Type</th>
-              <th className="border border-gray-300 px-4 py-2.5 text-left text-xs font-bold text-gray-700 uppercase tracking-wider w-[20%]">Duration</th>
-              <th className="border border-gray-300 px-4 py-2.5 text-left text-xs font-bold text-gray-700 uppercase tracking-wider w-[13%]">Status</th>
-              <th className="border border-gray-300 px-4 py-2.5 text-center text-xs font-bold text-gray-700 uppercase tracking-wider w-[13%]">Action</th>
+              <th className="border-r border-zinc-200/80 dark:border-zinc-800 px-4 py-2.5 text-left text-[11px] font-semibold text-zinc-600 dark:text-zinc-400 uppercase tracking-wider w-[32%]">Issuer & Reason</th>
+              <th className="border-r border-zinc-200/80 dark:border-zinc-800 px-4 py-2.5 text-left text-[11px] font-semibold text-zinc-600 dark:text-zinc-400 uppercase tracking-wider w-[22%]">Leave Type</th>
+              <th className="border-r border-zinc-200/80 dark:border-zinc-800 px-4 py-2.5 text-left text-[11px] font-semibold text-zinc-600 dark:text-zinc-400 uppercase tracking-wider w-[20%]">Duration</th>
+              <th className="border-r border-zinc-200/80 dark:border-zinc-800 px-4 py-2.5 text-left text-[11px] font-semibold text-zinc-600 dark:text-zinc-400 uppercase tracking-wider w-[13%]">Status</th>
+              <th className="px-4 py-2.5 text-center text-[11px] font-semibold text-zinc-600 dark:text-zinc-400 uppercase tracking-wider w-[13%]">Action</th>
             </tr>
           </thead>
-          <tbody className="bg-white">
+          <tbody className="bg-white dark:bg-zinc-900 divide-y divide-zinc-200/80 dark:divide-zinc-800">
             {paginatedLeaves.length === 0 ? (
               <tr>
-                <td colSpan={5} className="border border-gray-300 px-6 py-12 text-center text-gray-500">No leave requests match your filters.</td>
+                <td colSpan={5} className="px-6 py-12 text-center text-zinc-400 dark:text-zinc-500 text-xs">No leave requests match your filters.</td>
               </tr>
             ) : (
               paginatedLeaves.map((leave) => (
                 <tr 
                   key={leave.id} 
                   onClick={() => setSelectedLeave(leave)}
-                  className="hover:bg-indigo-50/50 transition-colors cursor-pointer"
+                  className="hover:bg-zinc-50/80 dark:hover:bg-zinc-800/50 transition-colors cursor-pointer"
                 >
-                  <td className="border border-gray-300 px-4 py-2.5 overflow-hidden">
+                  <td className="border-r border-zinc-200/80 dark:border-zinc-800 px-4 py-2.5 overflow-hidden">
                     <div className="flex flex-col min-w-0">
-                      <span className="text-sm font-bold text-gray-900 flex items-center gap-2 truncate">
-                        <User className="h-3.5 w-3.5 text-gray-400 shrink-0" />
+                      <span className="text-xs font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-1.5 truncate">
+                        <User className="h-3.5 w-3.5 text-zinc-400 shrink-0" />
                         <span className="truncate">{leave.profiles?.full_name || 'Unknown User'}</span>
                       </span>
-                      <span className="text-xs text-gray-500 truncate mt-0.5">{leave.reason}</span>
+                      <span className="text-[11px] text-zinc-500 dark:text-zinc-400 truncate mt-0.5">{leave.reason}</span>
                     </div>
                   </td>
-                  <td className="border border-gray-300 px-4 py-2.5 whitespace-nowrap">
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-bold bg-blue-100 text-blue-800 border border-blue-200">
+                  <td className="border-r border-zinc-200/80 dark:border-zinc-800 px-4 py-2.5 whitespace-nowrap">
+                    <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-950/50 dark:text-blue-300 dark:border-blue-800 uppercase tracking-wider">
                       {leave.leave_type.toUpperCase()}
                     </span>
                   </td>
-                  <td className="border border-gray-300 px-4 py-2.5 whitespace-nowrap">
-                    <div className="flex flex-col text-sm text-gray-900 font-medium">
+                  <td className="border-r border-zinc-200/80 dark:border-zinc-800 px-4 py-2.5 whitespace-nowrap">
+                    <div className="flex flex-col text-xs text-zinc-900 dark:text-zinc-100 font-medium">
                       <span>{new Date(leave.start_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span>
-                      <span className="text-xs text-gray-500">to {new Date(leave.end_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span>
+                      <span className="text-[11px] text-zinc-400 dark:text-zinc-500">to {new Date(leave.end_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span>
                     </div>
                   </td>
-                  <td className="border border-gray-300 px-4 py-2.5 whitespace-nowrap">
-                    <span className={`inline-flex items-center px-2.5 py-1 rounded border text-xs font-bold ${
-                      leave.status === 'approved' ? 'bg-green-100 text-green-800 border-green-200' :
-                      leave.status === 'rejected' ? 'bg-red-100 text-red-800 border-red-200' :
-                      'bg-yellow-100 text-yellow-800 border-yellow-200'
+                  <td className="border-r border-zinc-200/80 dark:border-zinc-800 px-4 py-2.5 whitespace-nowrap">
+                    <span className={`inline-flex items-center px-2 py-0.5 rounded border text-[10px] font-bold uppercase tracking-wider ${
+                      leave.status === 'approved' ? 'bg-emerald-50 text-emerald-800 border-emerald-300 dark:bg-emerald-950/50 dark:text-emerald-300 dark:border-emerald-800' :
+                      leave.status === 'rejected' ? 'bg-rose-50 text-rose-800 border-rose-300 dark:bg-rose-950/50 dark:text-rose-300 dark:border-rose-800' :
+                      'bg-amber-50 text-amber-800 border-amber-300 dark:bg-amber-950/50 dark:text-amber-300 dark:border-amber-800'
                     }`}>
                       {leave.status.toUpperCase()}
                     </span>
                   </td>
-                  <td className="border border-gray-300 px-4 py-2.5 whitespace-nowrap text-center">
+                  <td className="px-4 py-2.5 whitespace-nowrap text-center">
                     {leave.status === 'pending' ? (
-                      <div className="flex items-center justify-center gap-2">
+                      <div className="flex items-center justify-center gap-1.5">
                         <button 
                           onClick={(e) => updateLeaveStatus(leave.id, 'approved', e)}
-                          className="inline-flex items-center gap-1 bg-green-600 text-white hover:bg-green-700 px-3 py-1.5 rounded font-medium transition-colors shadow-sm text-xs"
+                          className="inline-flex items-center gap-1 bg-emerald-600 hover:bg-emerald-700 text-white dark:bg-emerald-600 dark:hover:bg-emerald-500 px-2.5 py-1 rounded-lg font-semibold transition-colors shadow-2xs text-[11px] cursor-pointer"
+                          title="Approve leave request"
                         >
                           <Check className="w-3.5 h-3.5" /> Approve
                         </button>
                         <button 
                           onClick={(e) => updateLeaveStatus(leave.id, 'rejected', e)}
-                          className="inline-flex items-center gap-1 bg-red-600 text-white hover:bg-red-700 px-3 py-1.5 rounded font-medium transition-colors shadow-sm text-xs"
+                          className="inline-flex items-center gap-1 bg-rose-600 hover:bg-rose-700 text-white dark:bg-rose-600 dark:hover:bg-rose-500 px-2.5 py-1 rounded-lg font-semibold transition-colors shadow-2xs text-[11px] cursor-pointer"
+                          title="Reject leave request"
                         >
                           <X className="w-3.5 h-3.5" /> Reject
                         </button>
                       </div>
                     ) : (
-                      <span className="text-gray-400 text-sm font-medium">Processed</span>
+                      <span className="text-zinc-400 dark:text-zinc-500 text-xs font-medium">Processed</span>
                     )}
                   </td>
                 </tr>
@@ -176,15 +182,15 @@ export function LeavesTab() {
       </div>
 
       {/* Pagination */}
-      <div className="bg-gray-50 px-4 py-3 border-t border-gray-300 flex items-center justify-between shrink-0">
-        <p className="text-sm text-gray-700">
-          Showing <span className="font-semibold">{Math.min((currentPage - 1) * itemsPerPage + 1, filteredLeaves.length)}</span> to <span className="font-semibold">{Math.min(currentPage * itemsPerPage, filteredLeaves.length)}</span> of <span className="font-semibold">{filteredLeaves.length}</span> results
+      <div className="bg-zinc-50/70 dark:bg-zinc-900/60 px-4 py-2.5 border-t border-zinc-200/80 dark:border-zinc-800 flex items-center justify-between shrink-0 shadow-2xs">
+        <p className="text-xs text-zinc-600 dark:text-zinc-400 font-medium">
+          Showing <span className="font-bold text-zinc-900 dark:text-zinc-100">{Math.min((currentPage - 1) * itemsPerPage + 1, filteredLeaves.length) || 0}</span> to <span className="font-bold text-zinc-900 dark:text-zinc-100">{Math.min(currentPage * itemsPerPage, filteredLeaves.length)}</span> of <span className="font-bold text-zinc-900 dark:text-zinc-100">{filteredLeaves.length}</span> results
         </p>
-        <nav className="inline-flex rounded-md shadow-sm">
+        <nav className="inline-flex rounded-lg shadow-2xs overflow-hidden border border-zinc-200 dark:border-zinc-700">
           <button
             onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
             disabled={currentPage === 1}
-            className="px-3 py-2 rounded-l-md border border-gray-300 bg-white text-gray-500 hover:bg-gray-50 disabled:opacity-50 text-sm font-medium"
+            className="px-3 py-1 bg-white dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-700 disabled:opacity-40 text-xs font-semibold transition-colors border-r border-zinc-200 dark:border-zinc-700"
           >
             Prev
           </button>
@@ -192,7 +198,11 @@ export function LeavesTab() {
             <button
               key={i}
               onClick={() => setCurrentPage(i + 1)}
-              className={`px-3 py-2 border-t border-b border-gray-300 text-sm font-medium ${currentPage === i + 1 ? 'bg-indigo-50 text-indigo-600 border-indigo-200 z-10' : 'bg-white text-gray-500 hover:bg-gray-50'} -ml-px`}
+              className={`px-3 py-1 text-xs font-semibold border-r last:border-r-0 border-zinc-200 dark:border-zinc-700 transition-colors ${
+                currentPage === i + 1 
+                  ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 font-bold' 
+                  : 'bg-white dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-700'
+              }`}
             >
               {i + 1}
             </button>
@@ -200,7 +210,7 @@ export function LeavesTab() {
           <button
             onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
             disabled={currentPage === totalPages || totalPages === 0}
-            className="px-3 py-2 rounded-r-md border border-gray-300 border-l bg-white text-gray-500 hover:bg-gray-50 disabled:opacity-50 -ml-px text-sm font-medium"
+            className="px-3 py-1 bg-white dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-700 disabled:opacity-40 text-xs font-semibold transition-colors"
           >
             Next
           </button>
@@ -209,64 +219,64 @@ export function LeavesTab() {
 
       {/* Detail Modal */}
       {selectedLeave && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-gray-900/50 backdrop-blur-sm p-4" onClick={() => setSelectedLeave(null)}>
-          <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()}>
-            <div className="p-6 border-b border-gray-100 flex justify-between items-start">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-zinc-900/60 backdrop-blur-xs p-4" onClick={() => setSelectedLeave(null)}>
+          <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-xl max-w-lg w-full flex flex-col max-h-[90vh] border border-zinc-200 dark:border-zinc-800 overflow-hidden" onClick={e => e.stopPropagation()}>
+            <div className="p-5 border-b border-zinc-200/80 dark:border-zinc-800 flex justify-between items-start">
               <div>
-                <h2 className="text-xl font-bold text-gray-900">Leave Request Details</h2>
-                <p className="text-sm text-gray-500 font-mono mt-1">ID: {selectedLeave.id}</p>
+                <h2 className="text-base font-bold text-zinc-900 dark:text-zinc-100">Leave Request Details</h2>
+                <p className="text-xs text-zinc-500 dark:text-zinc-400 font-mono mt-0.5">ID: #{selectedLeave.id.slice(0, 8).toUpperCase()}</p>
               </div>
-              <button onClick={() => setSelectedLeave(null)} className="p-2 text-gray-400 hover:bg-gray-100 rounded-full">
+              <button onClick={() => setSelectedLeave(null)} className="p-1 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors">
                 <X className="w-5 h-5" />
               </button>
             </div>
             
-            <div className="p-6 overflow-y-auto">
-              <div className="grid grid-cols-2 gap-6 mb-6">
+            <div className="p-5 overflow-y-auto space-y-4">
+              <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Employee</p>
-                  <p className="text-base font-medium text-gray-900">{selectedLeave.profiles?.full_name || 'Unknown User'}</p>
+                  <p className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-1">Employee</p>
+                  <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{selectedLeave.profiles?.full_name || 'Unknown User'}</p>
                 </div>
                 <div>
-                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Leave Type</p>
-                  <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-blue-100 text-blue-800 border border-blue-200">
-                    {selectedLeave.leave_type.toUpperCase()}
+                  <p className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-1">Leave Type</p>
+                  <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-950/50 dark:text-blue-300 dark:border-blue-800 uppercase">
+                    {selectedLeave.leave_type}
                   </span>
                 </div>
                 <div>
-                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Start Date</p>
-                  <p className="text-base font-medium text-gray-900">{new Date(selectedLeave.start_date).toLocaleDateString()}</p>
+                  <p className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-1">Start Date</p>
+                  <p className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">{new Date(selectedLeave.start_date).toLocaleDateString()}</p>
                 </div>
                 <div>
-                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">End Date</p>
-                  <p className="text-base font-medium text-gray-900">{new Date(selectedLeave.end_date).toLocaleDateString()}</p>
+                  <p className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-1">End Date</p>
+                  <p className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">{new Date(selectedLeave.end_date).toLocaleDateString()}</p>
                 </div>
                 <div>
-                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Status</p>
-                  <span className={`inline-flex items-center px-2.5 py-1 rounded border text-sm font-bold ${
-                    selectedLeave.status === 'approved' ? 'bg-green-100 text-green-800 border-green-200' :
-                    selectedLeave.status === 'rejected' ? 'bg-red-100 text-red-800 border-red-200' :
-                    'bg-yellow-100 text-yellow-800 border-yellow-200'
+                  <p className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-1">Status</p>
+                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded border text-xs font-bold uppercase tracking-wider ${
+                    selectedLeave.status === 'approved' ? 'bg-emerald-50 text-emerald-800 border-emerald-300 dark:bg-emerald-950/50 dark:text-emerald-300 dark:border-emerald-800' :
+                    selectedLeave.status === 'rejected' ? 'bg-rose-50 text-rose-800 border-rose-300 dark:bg-rose-950/50 dark:text-rose-300 dark:border-rose-800' :
+                    'bg-amber-50 text-amber-800 border-amber-300 dark:bg-amber-950/50 dark:text-amber-300 dark:border-amber-800'
                   }`}>
-                    {selectedLeave.status.toUpperCase()}
+                    {selectedLeave.status}
                   </span>
                 </div>
                 <div>
-                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Date Requested</p>
-                  <p className="text-base font-medium text-gray-900">{new Date(selectedLeave.created_at).toLocaleDateString()}</p>
+                  <p className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-1">Date Requested</p>
+                  <p className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">{new Date(selectedLeave.created_at).toLocaleDateString()}</p>
                 </div>
               </div>
               
-              <div className="bg-gray-50 rounded-lg p-5 border border-gray-100">
-                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Reason Provided</p>
-                <p className="text-gray-800 whitespace-pre-wrap leading-relaxed">{selectedLeave.reason}</p>
+              <div className="bg-zinc-50 dark:bg-zinc-800/60 rounded-xl p-4 border border-zinc-200/80 dark:border-zinc-800">
+                <p className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-2">Reason Provided</p>
+                <p className="text-xs text-zinc-800 dark:text-zinc-200 whitespace-pre-wrap leading-relaxed">{selectedLeave.reason}</p>
               </div>
             </div>
 
-            <div className="p-6 border-t border-gray-100 bg-gray-50 rounded-b-2xl flex justify-end gap-3">
+            <div className="p-4 border-t border-zinc-200/80 dark:border-zinc-800 bg-zinc-50/70 dark:bg-zinc-900/60 flex justify-end gap-2.5">
               <button 
                 onClick={() => setSelectedLeave(null)}
-                className="px-5 py-2.5 bg-white border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50"
+                className="px-3.5 py-1.5 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 rounded-lg text-xs font-semibold hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-colors cursor-pointer"
               >
                 Close Window
               </button>
@@ -274,15 +284,15 @@ export function LeavesTab() {
                 <>
                   <button 
                     onClick={() => updateLeaveStatus(selectedLeave.id, 'rejected')}
-                    className="px-5 py-2.5 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 flex items-center gap-2"
+                    className="px-3.5 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
                   >
-                    <X className="w-5 h-5" /> Reject
+                    <X className="w-4 h-4" /> Reject
                   </button>
                   <button 
                     onClick={() => updateLeaveStatus(selectedLeave.id, 'approved')}
-                    className="px-5 py-2.5 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 flex items-center gap-2"
+                    className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
                   >
-                    <Check className="w-5 h-5" /> Approve
+                    <Check className="w-4 h-4" /> Approve
                   </button>
                 </>
               )}

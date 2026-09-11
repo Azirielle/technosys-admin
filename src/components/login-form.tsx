@@ -45,11 +45,11 @@ export default function LoginForm() {
       <Card className="border-white/50 bg-white/60 backdrop-blur-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-3xl overflow-hidden relative border w-full max-w-md mx-auto ring-1 ring-black/5">
         
         <CardHeader className="space-y-1 pb-5 pt-8 px-8">
-          <CardTitle className="text-xl font-bold text-slate-800 tracking-tight flex items-center gap-2">
+          <CardTitle className="text-xl font-bold text-zinc-800 tracking-tight flex items-center gap-2">
             {isTechnicianPortal ? <User className="w-5 h-5 text-blue-600" /> : <ShieldCheck className="w-5 h-5 text-emerald-600" />}
             {isTechnicianPortal ? "Employee Verification" : "Operator Verification"}
           </CardTitle>
-          <CardDescription className="text-slate-500 text-xs leading-relaxed font-medium">
+          <CardDescription className="text-zinc-500 text-xs leading-relaxed font-medium">
             {isTechnicianPortal 
               ? "Please sign in with your employee credentials to access the internal app download portal."
               : "Sign in to access secure corporate configurations. Standard Admins and Super Admins share this authentication gateway."}
@@ -93,7 +93,7 @@ export default function LoginForm() {
           {(!isTechnicianPortal || useEmailFallback) ? (
             <>
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-slate-500 text-[10px] font-extrabold uppercase tracking-widest ml-1">
+                <Label htmlFor="email" className="text-zinc-500 text-[10px] font-extrabold uppercase tracking-widest ml-1">
                   Email Address
                 </Label>
                 <Input 
@@ -104,12 +104,12 @@ export default function LoginForm() {
                   required 
                   value={email}
                   onChange={e => setEmail(e.target.value)}
-                  className="bg-white/50 backdrop-blur-sm border-white/40 text-slate-900 placeholder:text-slate-400 focus-visible:ring-emerald-500/30 focus-visible:border-emerald-500/50 rounded-2xl h-12 px-4 shadow-[0_2px_10px_rgb(0,0,0,0.02)] transition-all duration-300"
+                  className="bg-white/50 backdrop-blur-sm border-white/40 text-zinc-900 placeholder:text-zinc-400 focus-visible:ring-emerald-500/30 focus-visible:border-emerald-500/50 rounded-2xl h-12 px-4 shadow-[0_2px_10px_rgb(0,0,0,0.02)] transition-all duration-300"
                 />
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="password" className="text-slate-500 text-[10px] font-extrabold uppercase tracking-widest ml-1">
+                <Label htmlFor="password" className="text-zinc-500 text-[10px] font-extrabold uppercase tracking-widest ml-1">
                   Password
                 </Label>
                 <div className="relative">
@@ -121,12 +121,12 @@ export default function LoginForm() {
                     required 
                     value={password}
                     onChange={e => setPassword(e.target.value)}
-                    className="bg-white/50 backdrop-blur-sm border-white/40 text-slate-900 focus-visible:ring-emerald-500/30 focus-visible:border-emerald-500/50 rounded-2xl h-12 px-4 pr-10 shadow-[0_2px_10px_rgb(0,0,0,0.02)] transition-all duration-300"
+                    className="bg-white/50 backdrop-blur-sm border-white/40 text-zinc-900 focus-visible:ring-emerald-500/30 focus-visible:border-emerald-500/50 rounded-2xl h-12 px-4 pr-10 shadow-[0_2px_10px_rgb(0,0,0,0.02)] transition-all duration-300"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400 hover:text-slate-600 cursor-pointer"
+                    className="absolute inset-y-0 right-0 flex items-center pr-3 text-zinc-400 hover:text-zinc-600 cursor-pointer"
                     title={showPassword ? "Hide password" : "Show password"}
                   >
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -137,11 +137,11 @@ export default function LoginForm() {
           ) : (
             <>
               <div className="space-y-2">
-                <Label htmlFor="phone" className="text-slate-500 text-[10px] font-extrabold uppercase tracking-widest ml-1">
+                <Label htmlFor="phone" className="text-zinc-500 text-[10px] font-extrabold uppercase tracking-widest ml-1">
                   Phone Number
                 </Label>
                 <div className="flex bg-white/50 backdrop-blur-sm border border-white/40 rounded-2xl shadow-[0_2px_10px_rgb(0,0,0,0.02)] transition-all duration-300 focus-within:ring-2 focus-within:ring-blue-500/30 focus-within:border-blue-500/50 overflow-hidden">
-                  <span className="flex items-center px-4 bg-white/40 border-r border-white/40 text-slate-500 text-sm font-bold">
+                  <span className="flex items-center px-4 bg-white/40 border-r border-white/40 text-zinc-500 text-sm font-bold">
                     +63
                   </span>
                   <Input 
@@ -155,7 +155,7 @@ export default function LoginForm() {
                     value={phone}
                     disabled={otpSent}
                     onChange={e => setPhone(e.target.value.replace(/\D/g, ''))}
-                    className="bg-transparent border-0 text-slate-900 placeholder:text-slate-400 focus-visible:ring-0 rounded-none h-12 px-4 font-mono shadow-none"
+                    className="bg-transparent border-0 text-zinc-900 placeholder:text-zinc-400 focus-visible:ring-0 rounded-none h-12 px-4 font-mono shadow-none"
                   />
                 </div>
               </div>
@@ -167,7 +167,7 @@ export default function LoginForm() {
                   className="space-y-4"
                 >
                   <div className="space-y-1.5">
-                    <Label htmlFor="otp" className="text-slate-500 text-[10px] font-extrabold uppercase tracking-widest ml-1">
+                    <Label htmlFor="otp" className="text-zinc-500 text-[10px] font-extrabold uppercase tracking-widest ml-1">
                       6-Digit OTP Code
                     </Label>
                     <Input 
@@ -180,7 +180,7 @@ export default function LoginForm() {
                       pattern="[0-9]{6}"
                       value={otp}
                       onChange={e => setOtp(e.target.value.replace(/\D/g, ''))}
-                      className="bg-white/50 backdrop-blur-sm border-white/40 text-slate-900 focus-visible:ring-blue-500/30 focus-visible:border-blue-500/50 rounded-2xl h-12 px-4 shadow-[0_2px_10px_rgb(0,0,0,0.02)] transition-all duration-300 font-mono tracking-widest text-center text-lg"
+                      className="bg-white/50 backdrop-blur-sm border-white/40 text-zinc-900 focus-visible:ring-blue-500/30 focus-visible:border-blue-500/50 rounded-2xl h-12 px-4 shadow-[0_2px_10px_rgb(0,0,0,0.02)] transition-all duration-300 font-mono tracking-widest text-center text-lg"
                     />
                   </div>
                   <div className="text-center">
@@ -213,7 +213,7 @@ export default function LoginForm() {
           <motion.div className="w-full" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
             <Button 
               type="submit" 
-              className={`w-full text-white font-bold py-6 rounded-2xl text-[13px] tracking-wide transition-all duration-300 disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2 shadow-lg border border-white/20 ${isTechnicianPortal ? 'bg-gradient-to-r from-blue-500 to-indigo-500 hover:shadow-blue-500/25' : 'bg-gradient-to-r from-emerald-500 to-teal-500 hover:shadow-emerald-500/25'}`}
+              className={`w-full text-white font-bold py-6 rounded-2xl text-[13px] tracking-wide transition-all duration-300 disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2 shadow-lg border border-white/20 ${isTechnicianPortal ? 'bg-gradient-to-r from-blue-500 to-blue-500 hover:shadow-blue-500/25' : 'bg-gradient-to-r from-emerald-500 to-teal-500 hover:shadow-emerald-500/25'}`}
               disabled={isLoading}
             >
               {isLoading ? (
@@ -238,7 +238,7 @@ export default function LoginForm() {
                 {useEmailFallback ? 'Login with OTP Instead' : 'Login with Email Instead'}
               </button>
               <div 
-                className="mt-4 text-[9px] text-slate-300 hover:text-slate-400 font-mono tracking-widest select-none transition-colors duration-300"
+                className="mt-4 text-[9px] text-zinc-300 hover:text-zinc-400 font-mono tracking-widest select-none transition-colors duration-300"
                 title="v0.1.0-build"
               >
                 v0.1.0-build

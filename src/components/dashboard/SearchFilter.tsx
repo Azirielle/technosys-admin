@@ -31,11 +31,11 @@ export default function SearchFilter({ placeholder = 'Search...' }: { placeholde
   return (
     <div className="relative w-full sm:max-w-xs">
       <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-        <Search className={`w-4 h-4 ${isPending ? 'text-emerald-500 animate-pulse' : 'text-slate-400'}`} />
+        <Search className={`w-4 h-4 ${isPending ? 'text-emerald-500 animate-pulse' : 'text-zinc-400'}`} />
       </div>
       <input
         type="text"
-        className="block w-full pl-10 pr-3 py-2.5 border border-slate-200 rounded-lg leading-5 bg-slate-50 placeholder-slate-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm transition-colors shadow-sm"
+        className="block w-full pl-10 pr-3 py-2 border border-zinc-200/80 dark:border-zinc-700 rounded-xl leading-5 bg-zinc-50 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none focus:bg-white dark:focus:bg-zinc-800 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-xs transition-colors shadow-2xs"
         placeholder={placeholder}
         onChange={(e) => handleSearch(e.target.value)}
         defaultValue={searchParams.get('query')?.toString()}

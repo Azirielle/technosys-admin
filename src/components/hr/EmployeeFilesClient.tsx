@@ -322,16 +322,16 @@ export default function EmployeeFilesClient() {
   }, [search, filterRole, filterStatus, filterWarnings]);
 
   return (
-    <div className="h-full flex flex-col bg-slate-50 overflow-hidden">
+    <div className="h-full flex flex-col bg-zinc-50 dark:bg-zinc-950 overflow-hidden">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200 px-6 py-4 shrink-0">
+      <div className="bg-white dark:bg-zinc-900 border-b border-zinc-200/80 dark:border-zinc-800 px-6 py-4 shrink-0">
         <div className="flex justify-between items-center max-w-7xl mx-auto">
           <div>
-            <h1 className="text-xl font-black text-gray-900 tracking-tight flex items-center gap-2">
-              <FolderOpen className="w-5 h-5 text-indigo-600" />
+            <h1 className="text-xl font-black text-zinc-900 dark:text-zinc-100 dark:text-zinc-100 tracking-tight flex items-center gap-2">
+              <FolderOpen className="w-5 h-5 text-blue-600 dark:text-blue-400" />
               201 Employee Files & Warnings
             </h1>
-            <p className="text-xs text-gray-500 mt-0.5 font-medium">
+            <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5 font-medium">
               Manage operational documents, salaries, and disciplinary actions.
             </p>
           </div>
@@ -343,31 +343,31 @@ export default function EmployeeFilesClient() {
         <div className="max-w-7xl mx-auto w-full flex-1 flex flex-col overflow-hidden">
           
           {/* Controls */}
-          <div className="bg-white p-4 rounded-t-xl border border-gray-200 border-b-0 flex items-center justify-between relative">
+          <div className="bg-white dark:bg-zinc-900 p-4 rounded-t-xl border border-zinc-200/80 dark:border-zinc-800 border-b-0 flex items-center justify-between relative">
             <div className="flex items-center gap-3">
               <div className="relative w-80">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
                 <input 
                   type="text" 
                   placeholder="Search by name..." 
                   value={search}
                   onChange={e => setSearch(e.target.value)}
-                  className="w-full pl-9 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 font-medium"
+                  className="w-full pl-9 pr-4 py-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-sm text-zinc-900 dark:text-zinc-100 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium"
                 />
               </div>
               <button 
                 onClick={() => setShowFilters(!showFilters)}
-                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-bold border transition-colors ${showFilters ? 'bg-indigo-50 border-indigo-200 text-indigo-700' : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'}`}
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-bold border transition-colors ${showFilters ? 'bg-blue-50 dark:bg-blue-950/50 border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300' : 'bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-700'}`}
               >
                 <Filter className="w-4 h-4" /> Filters
               </button>
 
               {/* Filter Popover */}
               {showFilters && (
-                <div className="absolute top-16 left-0 bg-white shadow-xl rounded-xl border border-gray-200 p-4 z-10 flex gap-4 w-[500px]">
+                <div className="absolute top-16 left-0 bg-white dark:bg-zinc-900 shadow-xl rounded-xl border border-zinc-200 dark:border-zinc-800 p-4 z-10 flex gap-4 w-[500px]">
                   <div className="flex-1">
-                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Role</label>
-                    <select value={filterRole} onChange={e => setFilterRole(e.target.value)} className="w-full border border-gray-200 rounded-md p-1.5 text-sm outline-none focus:ring-1 focus:ring-indigo-500">
+                    <label className="block text-xs font-bold text-zinc-500 uppercase mb-1">Role</label>
+                    <select value={filterRole} onChange={e => setFilterRole(e.target.value)} className="w-full border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 dark:text-zinc-100 rounded-md p-1.5 text-sm outline-none focus:ring-1 focus:ring-blue-500">
                       <option value="all">All Roles</option>
                       <option value="technician">Technician</option>
                       <option value="coordinator">Coordinator</option>
@@ -376,8 +376,8 @@ export default function EmployeeFilesClient() {
                     </select>
                   </div>
                   <div className="flex-1">
-                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Status</label>
-                    <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} className="w-full border border-gray-200 rounded-md p-1.5 text-sm outline-none focus:ring-1 focus:ring-indigo-500">
+                    <label className="block text-xs font-bold text-zinc-500 uppercase mb-1">Status</label>
+                    <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} className="w-full border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 dark:text-zinc-100 rounded-md p-1.5 text-sm outline-none focus:ring-1 focus:ring-blue-500">
                       <option value="all">All Status</option>
                       <option value="regular">Regular</option>
                       <option value="ojt">OJT</option>
@@ -385,8 +385,8 @@ export default function EmployeeFilesClient() {
                     </select>
                   </div>
                   <div className="flex-1">
-                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Warnings</label>
-                    <select value={filterWarnings} onChange={e => setFilterWarnings(e.target.value)} className="w-full border border-gray-200 rounded-md p-1.5 text-sm outline-none focus:ring-1 focus:ring-indigo-500">
+                    <label className="block text-xs font-bold text-zinc-500 uppercase mb-1">Warnings</label>
+                    <select value={filterWarnings} onChange={e => setFilterWarnings(e.target.value)} className="w-full border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 dark:text-zinc-100 rounded-md p-1.5 text-sm outline-none focus:ring-1 focus:ring-blue-500">
                       <option value="all">All Records</option>
                       <option value="has_warnings">Has Warnings</option>
                       <option value="no_warnings">Clean Record</option>
@@ -398,18 +398,18 @@ export default function EmployeeFilesClient() {
           </div>
 
           {/* Table */}
-          <div className="bg-white border border-zinc-200 border-b-0 rounded-b-none overflow-y-scroll flex-1 shadow-xs [scrollbar-gutter:stable]">
+          <div className="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 border-b-0 rounded-b-none overflow-y-scroll flex-1 shadow-xs [scrollbar-gutter:stable]">
             <table className="w-full text-left border-collapse table-fixed">
               <thead>
-                <tr className="bg-zinc-50 border-b border-zinc-200 sticky top-0 z-10 text-[11px] font-semibold text-zinc-600 uppercase tracking-wider">
-                  <th className="px-3.5 py-2.5 border-r border-zinc-200 w-[28%]">Employee</th>
-                  <th className="px-3.5 py-2.5 border-r border-zinc-200 w-[22%]">Role & Level</th>
-                  <th className="px-3.5 py-2.5 border-r border-zinc-200 w-[20%]">Employment Status</th>
-                  <th className="px-3.5 py-2.5 border-r border-zinc-200 w-[16%]">Base Compensation</th>
+                <tr className="bg-zinc-50 dark:bg-zinc-800/80 border-b border-zinc-200/80 dark:border-zinc-800 sticky top-0 z-10 text-[11px] font-semibold text-zinc-600 dark:text-zinc-400 uppercase tracking-wider">
+                  <th className="px-3.5 py-2.5 border-r border-zinc-200 dark:border-zinc-800 dark:border-zinc-800 w-[28%]">Employee</th>
+                  <th className="px-3.5 py-2.5 border-r border-zinc-200 dark:border-zinc-800 dark:border-zinc-800 w-[22%]">Role & Level</th>
+                  <th className="px-3.5 py-2.5 border-r border-zinc-200 dark:border-zinc-800 dark:border-zinc-800 w-[20%]">Employment Status</th>
+                  <th className="px-3.5 py-2.5 border-r border-zinc-200 dark:border-zinc-800 dark:border-zinc-800 w-[16%]">Base Compensation</th>
                   <th className="px-3.5 py-2.5 w-[14%]">Record</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-zinc-200">
+              <tbody className="divide-y divide-zinc-200/80 dark:divide-zinc-800">
                 {loading ? (
                   <tr><td colSpan={5} className="p-8 text-center text-zinc-400 font-medium text-xs">Loading records...</td></tr>
                 ) : paginatedEmployees.length === 0 ? (
@@ -419,9 +419,9 @@ export default function EmployeeFilesClient() {
                   const isMonthly = (emp.base_salary || 0) >= 3000;
                   
                   return (
-                    <tr key={emp.id} className="hover:bg-zinc-50/80 transition-colors group cursor-pointer" onClick={() => handleSelectEmp(emp)}>
-                      <td className="px-3.5 py-2 border-r border-zinc-200">
-                        <div className="font-semibold text-zinc-900 text-xs">{emp.full_name}</div>
+                    <tr key={emp.id} className="hover:bg-zinc-50/80 dark:hover:bg-zinc-800/50 transition-colors group cursor-pointer" onClick={() => handleSelectEmp(emp)}>
+                      <td className="px-3.5 py-2 border-r border-zinc-200 dark:border-zinc-800">
+                        <div className="font-semibold text-zinc-900 dark:text-zinc-100 dark:text-zinc-100 text-xs">{emp.full_name}</div>
                         <div className="text-[11px] text-zinc-500 font-medium mt-0.5">
                           {emp.lifecycle_status === 'active' ? (
                             <span className="text-emerald-600 font-medium">Active</span>
@@ -430,33 +430,33 @@ export default function EmployeeFilesClient() {
                           )}
                         </div>
                       </td>
-                      <td className="px-3.5 py-2 border-r border-zinc-200">
-                        <div className="text-xs font-semibold text-zinc-800 capitalize">{emp.role}</div>
+                      <td className="px-3.5 py-2 border-r border-zinc-200 dark:border-zinc-800">
+                        <div className="text-xs font-semibold text-zinc-800 dark:text-zinc-200 capitalize">{emp.role}</div>
                         {emp.technician_level && (
-                          <div className="text-[10px] font-bold uppercase tracking-wider text-indigo-700 bg-indigo-50 inline-block px-1.5 py-0.2 rounded mt-0.5 border border-indigo-150">
+                          <div className="text-[10px] font-bold uppercase tracking-wider text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/50 inline-block px-1.5 py-0.2 rounded mt-0.5 border border-blue-200 dark:border-blue-800">
                             {emp.technician_level}
                           </div>
                         )}
                       </td>
-                      <td className="px-3.5 py-2 border-r border-zinc-200">
+                      <td className="px-3.5 py-2 border-r border-zinc-200 dark:border-zinc-800">
                         <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider
-                          ${emp.employment_status === 'regular' ? 'bg-blue-50 text-blue-700 border border-blue-200' : 'bg-zinc-100 text-zinc-600 border border-zinc-200'}
+                          ${emp.employment_status === 'regular' ? 'bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-700'}
                         `}>
                           {emp.employment_status}
                         </span>
                       </td>
-                      <td className="px-3.5 py-2 border-r border-zinc-200">
-                        <span className="font-mono font-bold text-xs text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 inline-block">
+                      <td className="px-3.5 py-2 border-r border-zinc-200 dark:border-zinc-800">
+                        <span className="font-mono font-bold text-xs text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/50 px-2 py-0.5 rounded border border-emerald-200 dark:border-emerald-800 inline-block">
                           ₱{Number(emp.base_salary || 0).toLocaleString()}{isMonthly ? '/mo' : '/day'}
                         </span>
                       </td>
                       <td className="px-3.5 py-2">
                         {warnCount > 0 ? (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-bold bg-red-50 text-red-700 px-2 py-0.5 rounded border border-red-200">
+                          <span className="inline-flex items-center gap-1 text-[10px] font-bold bg-rose-50 dark:bg-rose-950/50 text-rose-700 dark:text-rose-300 px-2 py-0.5 rounded border border-rose-200 dark:border-rose-800">
                             <AlertTriangle className="w-3 h-3" /> {warnCount} WARNING{warnCount > 1 ? 'S' : ''}
                           </span>
                         ) : (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-bold bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded border border-emerald-200">
+                          <span className="inline-flex items-center gap-1 text-[10px] font-bold bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 px-2 py-0.5 rounded border border-emerald-200 dark:border-emerald-800">
                             <CheckCircle2 className="w-3 h-3" /> CLEAN
                           </span>
                         )}
@@ -469,15 +469,15 @@ export default function EmployeeFilesClient() {
           </div>
 
           {/* Standardized Bottom Pagination Bar */}
-          <div className="bg-gray-50 px-4 py-3 border border-gray-200 rounded-b-xl flex items-center justify-between shrink-0">
-            <p className="text-sm text-gray-700">
+          <div className="bg-zinc-50 dark:bg-zinc-900 px-4 py-3 border border-zinc-200/80 dark:border-zinc-800 rounded-b-xl flex items-center justify-between shrink-0">
+            <p className="text-sm text-zinc-700 dark:text-zinc-300 dark:text-zinc-300">
               Showing <span className="font-semibold">{filteredEmployees.length === 0 ? 0 : Math.min((currentPage - 1) * ITEMS_PER_PAGE + 1, filteredEmployees.length)}</span> to <span className="font-semibold">{Math.min(currentPage * ITEMS_PER_PAGE, filteredEmployees.length)}</span> of <span className="font-semibold">{filteredEmployees.length}</span> results
             </p>
             <nav className="inline-flex rounded-md shadow-sm">
               <button
                 onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                 disabled={currentPage === 1}
-                className="px-3 py-1.5 rounded-l-md border border-gray-300 bg-white text-gray-500 hover:bg-gray-50 disabled:opacity-50 text-sm font-medium transition-colors"
+                className="px-3 py-1.5 rounded-l-md border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-700 disabled:opacity-50 text-sm font-medium transition-colors"
               >
                 Prev
               </button>
@@ -485,7 +485,7 @@ export default function EmployeeFilesClient() {
                 <button
                   key={i}
                   onClick={() => setCurrentPage(i + 1)}
-                  className={`px-3 py-1.5 border-t border-b border-r border-gray-300 text-sm font-medium ${currentPage === i + 1 ? 'bg-indigo-50 text-indigo-600 font-bold border-indigo-200 z-10' : 'bg-white text-gray-500 hover:bg-gray-50'} -ml-px transition-colors`}
+                  className={`px-3 py-1.5 border-t border-b border-r border-zinc-300 text-sm font-medium ${currentPage === i + 1 ? 'bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 font-bold border-blue-200 dark:border-blue-800 z-10' : 'bg-white dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-700 border-zinc-300 dark:border-zinc-700'} -ml-px transition-colors`}
                 >
                   {i + 1}
                 </button>
@@ -493,7 +493,7 @@ export default function EmployeeFilesClient() {
               <button
                 onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                 disabled={currentPage === totalPages || totalPages === 0}
-                className="px-3 py-1.5 rounded-r-md border border-gray-300 border-l bg-white text-gray-500 hover:bg-gray-50 disabled:opacity-50 -ml-px text-sm font-medium transition-colors"
+                className="px-3 py-1.5 rounded-r-md border border-zinc-300 dark:border-zinc-700 border-l bg-white dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-700 disabled:opacity-50 -ml-px text-sm font-medium transition-colors"
               >
                 Next
               </button>
@@ -504,60 +504,60 @@ export default function EmployeeFilesClient() {
 
       {/* Profile Modal */}
       {selectedEmp && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl h-[560px] flex flex-col overflow-hidden border border-gray-200">
+        <div className="fixed inset-0 bg-zinc-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-3xl h-[560px] flex flex-col overflow-hidden border border-zinc-200 dark:border-zinc-800">
             
             {/* Modal Header */}
-            <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50 shrink-0">
+            <div className="px-6 py-4 border-b border-zinc-200 dark:border-zinc-800 flex justify-between items-center bg-zinc-50/50 dark:bg-zinc-900/80 shrink-0">
               <div className="flex items-center gap-4">
-                <div className="w-11 h-11 bg-indigo-100 text-indigo-700 rounded-full flex items-center justify-center text-lg font-black shrink-0 border-2 border-indigo-200 shadow-sm">
+                <div className="w-11 h-11 bg-blue-100 text-blue-700 rounded-full flex items-center justify-center text-lg font-black shrink-0 border-2 border-blue-200 shadow-sm">
                   {selectedEmp.full_name?.charAt(0)}
                 </div>
                 <div>
-                  <h2 className="text-lg font-black text-gray-900 flex items-center gap-2 leading-none">
+                  <h2 className="text-lg font-black text-zinc-900 dark:text-zinc-100 dark:text-zinc-100 flex items-center gap-2 leading-none">
                     {selectedEmp.full_name}
                     <span className="font-mono text-xs text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full font-bold">
                       ₱{Number(selectedEmp.base_salary || 0).toLocaleString()}{(selectedEmp.base_salary || 0) >= 3000 ? '/mo' : '/day'}
                     </span>
                   </h2>
-                  <p className="text-[11px] font-bold text-gray-500 uppercase tracking-wider mt-1">
+                  <p className="text-[11px] font-bold text-zinc-500 uppercase tracking-wider mt-1">
                     {selectedEmp.role} &bull; {selectedEmp.employment_status} &bull; {selectedEmp.technician_level}
                   </p>
                 </div>
               </div>
-              <button onClick={() => setSelectedEmp(null)} className="p-2 text-gray-400 hover:bg-gray-200 hover:text-gray-900 rounded-full transition-colors">
+              <button onClick={() => setSelectedEmp(null)} className="p-2 text-zinc-400 dark:text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:text-zinc-100 dark:hover:text-zinc-100 rounded-full transition-colors">
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             {/* Tabs */}
-            <div className="flex border-b border-gray-200 bg-white px-6 shrink-0">
+            <div className="flex border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 px-6 shrink-0">
               <button 
                 onClick={() => setActiveTab('docs')}
-                className={`py-3 px-4 text-sm font-bold border-b-2 transition-colors flex items-center gap-2 ${activeTab === 'docs' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
+                className={`py-3 px-4 text-sm font-bold border-b-2 transition-colors flex items-center gap-2 ${activeTab === 'docs' ? 'border-blue-600 text-blue-600' : 'border-transparent text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:text-zinc-300 dark:hover:text-zinc-200'}`}
               >
                 <FileText className="w-4 h-4" /> 201 Documents
               </button>
               <button 
                 onClick={() => setActiveTab('warnings')}
-                className={`py-3 px-4 text-sm font-bold border-b-2 transition-colors flex items-center gap-2 ${activeTab === 'warnings' ? 'border-red-600 text-red-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
+                className={`py-3 px-4 text-sm font-bold border-b-2 transition-colors flex items-center gap-2 ${activeTab === 'warnings' ? 'border-rose-600 text-rose-600 dark:text-rose-400 dark:border-rose-400' : 'border-transparent text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:text-zinc-300 dark:hover:text-zinc-200'}`}
               >
                 <AlertTriangle className="w-4 h-4" /> Issue Warning
               </button>
               <button 
                 onClick={() => setActiveTab('settings')}
-                className={`py-3 px-4 text-sm font-bold border-b-2 transition-colors flex items-center gap-2 ${activeTab === 'settings' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
+                className={`py-3 px-4 text-sm font-bold border-b-2 transition-colors flex items-center gap-2 ${activeTab === 'settings' ? 'border-blue-600 text-blue-600' : 'border-transparent text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:text-zinc-300 dark:hover:text-zinc-200'}`}
               >
                 <Settings className="w-4 h-4" /> Profile Editor & Salary
               </button>
             </div>
 
             {/* Modal Body */}
-            <div className="flex-1 overflow-hidden p-6 bg-white flex flex-col justify-between">
+            <div className="flex-1 overflow-hidden p-6 bg-white dark:bg-zinc-900 flex flex-col justify-between">
               
               {activeTab === 'docs' && (
                 <div className="space-y-2">
-                  <p className="text-xs text-gray-500 font-medium mb-2">Click "Upload" to attach a digital file. Checkmarks appear automatically upon successful upload.</p>
+                  <p className="text-xs text-zinc-500 font-medium mb-2">Click "Upload" to attach a digital file. Checkmarks appear automatically upon successful upload.</p>
                   
                   {uploadNotification && (
                     <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs px-3.5 py-2 rounded-xl flex items-center justify-between font-bold shadow-sm animate-fade-in">
@@ -581,25 +581,25 @@ export default function EmployeeFilesClient() {
                     const isUploading = uploadingDoc === doc.label;
 
                     return (
-                      <div key={doc.key} className={`flex items-center justify-between py-2 px-3.5 rounded-xl border transition-colors ${isUploaded ? 'bg-emerald-50/40 border-emerald-200' : 'bg-gray-50/60 border-gray-200'}`}>
+                      <div key={doc.key} className={`flex items-center justify-between py-2 px-3.5 rounded-xl border transition-colors ${isUploaded ? 'bg-emerald-50/40 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-800/40' : 'bg-zinc-50/60 dark:bg-zinc-800/40 border-zinc-200 dark:border-zinc-700'}`}>
                         <div className="flex items-center gap-3">
                           {isUploaded ? (
                             <div className="w-5 h-5 rounded-full bg-emerald-500 text-white flex items-center justify-center shrink-0 shadow-sm">
                               <CheckCircle2 className="w-3.5 h-3.5" />
                             </div>
                           ) : (
-                            <div className="w-5 h-5 rounded-full border-2 border-gray-300 flex items-center justify-center shrink-0 bg-white" />
+                            <div className="w-5 h-5 rounded-full border-2 border-zinc-300 dark:border-zinc-600 flex items-center justify-center shrink-0 bg-white dark:bg-zinc-800" />
                           )}
                           <div>
                             <div className="flex items-center gap-2">
-                              <span className={`text-xs font-bold ${isUploaded ? 'text-gray-900' : 'text-gray-600'}`}>{doc.label}</span>
+                              <span className={`text-xs font-bold ${isUploaded ? 'text-zinc-900 dark:text-zinc-100 dark:text-zinc-100' : 'text-zinc-600 dark:text-zinc-400'}`}>{doc.label}</span>
                               {uploadedInfo && (
                                 <span className="text-[10px] font-mono text-emerald-700 bg-emerald-100 px-1.5 py-0.2 rounded max-w-[140px] truncate">
                                   {uploadedInfo.fileName}
                                 </span>
                               )}
                             </div>
-                            <div className="text-[10px] text-gray-500 font-medium">{doc.desc}</div>
+                            <div className="text-[10px] text-zinc-500 font-medium">{doc.desc}</div>
                           </div>
                         </div>
                         
@@ -607,9 +607,9 @@ export default function EmployeeFilesClient() {
                           <button 
                             onClick={() => handleFileUpload(doc.label, doc.key)}
                             disabled={isUploading}
-                            className="flex items-center gap-1.5 px-3 py-1 bg-white border border-indigo-200 text-indigo-700 text-xs font-bold rounded-lg hover:bg-indigo-50 shadow-sm disabled:opacity-50 transition-colors"
+                            className="flex items-center gap-1.5 px-3 py-1 bg-white dark:bg-zinc-800 border border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300 text-xs font-bold rounded-lg hover:bg-blue-50 dark:hover:bg-blue-950/40 shadow-sm disabled:opacity-50 transition-colors"
                           >
-                            <UploadCloud className="w-3.5 h-3.5 text-indigo-600" />
+                            <UploadCloud className="w-3.5 h-3.5 text-blue-600" />
                             {isUploading ? 'Uploading...' : 'Upload'}
                           </button>
                         ) : (
@@ -622,21 +622,21 @@ export default function EmployeeFilesClient() {
                                   setPreviewingDoc({ title: doc.label, fileName: uploadedInfo?.fileName || `${doc.label}.pdf`, fileUrl: '' });
                                 }
                               }}
-                              className="text-[10px] font-bold text-indigo-600 hover:text-indigo-800 uppercase tracking-wider bg-indigo-50 hover:bg-indigo-100 px-2.5 py-1 rounded border border-indigo-100 transition-colors"
+                              className="text-[10px] font-bold text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 uppercase tracking-wider bg-blue-50 dark:bg-blue-950/50 hover:bg-blue-100 dark:hover:bg-blue-900/50 px-2.5 py-1 rounded border border-blue-100 dark:border-blue-800 transition-colors"
                             >
                               View File
                             </button>
                             <button 
                               onClick={() => handleFileUpload(doc.label, doc.key)}
                               title="Re-upload or replace file"
-                              className="p-1 text-gray-400 hover:text-indigo-600 rounded transition-colors"
+                              className="p-1 text-zinc-400 hover:text-blue-600 rounded transition-colors"
                             >
                               <UploadCloud className="w-3.5 h-3.5" />
                             </button>
                             <button 
                               onClick={() => setDeletingDoc({ docType: doc.label, dbField: doc.key })}
                               title="Remove file from 201 record"
-                              className="p-1 text-gray-400 hover:text-red-600 rounded transition-colors"
+                              className="p-1 text-zinc-400 hover:text-rose-600 dark:text-rose-400 rounded transition-colors"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
                             </button>
@@ -651,14 +651,14 @@ export default function EmployeeFilesClient() {
               {activeTab === 'warnings' && (
                 <form onSubmit={submitWarning} className="max-w-xl mx-auto space-y-3 py-1">
                   {/* Explicit Target Technician Banner */}
-                  <div className="flex items-center gap-3 p-3 bg-zinc-50 border border-zinc-200 rounded-xl">
-                    <div className="w-8 h-8 rounded-lg bg-zinc-200 text-zinc-700 font-bold flex items-center justify-center text-xs shrink-0">
+                  <div className="flex items-center gap-3 p-3 bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-700 rounded-xl">
+                    <div className="w-8 h-8 rounded-lg bg-zinc-200 text-zinc-700 dark:text-zinc-300 font-bold flex items-center justify-center text-xs shrink-0">
                       {selectedEmp.full_name?.slice(0, 2).toUpperCase()}
                     </div>
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
-                        <span className="text-xs font-bold text-zinc-900">{selectedEmp.full_name}</span>
-                        <span className="text-[9px] font-bold uppercase px-1.5 py-0.2 bg-zinc-100 text-zinc-700 border border-zinc-200 rounded">
+                        <span className="text-xs font-bold text-zinc-900 dark:text-zinc-100">{selectedEmp.full_name}</span>
+                        <span className="text-[9px] font-bold uppercase px-1.5 py-0.2 bg-zinc-100 text-zinc-700 dark:text-zinc-300 border border-zinc-200 rounded">
                           {selectedEmp.role}
                         </span>
                         <span className="text-[10px] text-zinc-400 font-medium uppercase truncate">
@@ -669,33 +669,33 @@ export default function EmployeeFilesClient() {
                     </div>
                   </div>
 
-                  <div className="bg-red-50 border border-red-100 p-3 rounded-xl flex gap-3">
-                    <AlertTriangle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
+                  <div className="bg-rose-50 dark:bg-rose-950/30 border border-rose-100 dark:border-rose-900/50 p-3 rounded-xl flex gap-3">
+                    <AlertTriangle className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
                     <div>
-                      <h4 className="text-xs font-bold text-red-900">Disciplinary Action Notice</h4>
-                      <p className="text-[11px] text-red-700 mt-0.5 font-medium leading-tight">This warning will be recorded in the employee's 201 file with optional SMS and App Push Notification.</p>
+                      <h4 className="text-xs font-bold text-rose-900 dark:text-rose-200">Disciplinary Action Notice</h4>
+                      <p className="text-[11px] text-rose-700 dark:text-rose-300 mt-0.5 font-medium leading-tight">This warning will be recorded in the employee's 201 file with optional SMS and App Push Notification.</p>
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-[10px] font-bold text-gray-700 uppercase tracking-wider mb-1">Warning Subject</label>
+                    <label className="block text-[10px] font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider mb-1">Warning Subject</label>
                     <input 
                       required type="text" 
                       placeholder="e.g. Tardiness, Safety Violation, No-show"
                       value={warningSubject}
                       onChange={e => setWarningSubject(e.target.value)}
-                      className="w-full border border-gray-300 rounded-lg py-2 px-3 text-xs focus:ring-2 focus:ring-red-500 outline-none font-medium text-gray-900"
+                      className="w-full border border-zinc-300 rounded-lg py-2 px-3 text-xs focus:ring-2 focus:ring-red-500 outline-none font-medium text-zinc-900 dark:text-zinc-100"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-[10px] font-bold text-gray-700 uppercase tracking-wider mb-1">Incident Details & Action Plan</label>
+                    <label className="block text-[10px] font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider mb-1">Incident Details & Action Plan</label>
                     <textarea 
                       required rows={2}
                       placeholder="Describe what happened and the required corrective action..."
                       value={warningDetails}
                       onChange={e => setWarningDetails(e.target.value)}
-                      className="w-full border border-gray-300 rounded-lg p-2.5 text-xs focus:ring-2 focus:ring-red-500 outline-none font-medium text-gray-900 resize-none"
+                      className="w-full border border-zinc-300 rounded-lg p-2.5 text-xs focus:ring-2 focus:ring-red-500 outline-none font-medium text-zinc-900 dark:text-zinc-100 resize-none"
                     />
                   </div>
 
@@ -705,10 +705,10 @@ export default function EmployeeFilesClient() {
                         type="checkbox" 
                         checked={sendPush}
                         onChange={e => setSendPush(e.target.checked)}
-                        className="w-3.5 h-3.5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600 focus:ring-offset-0 cursor-pointer"
+                        className="w-3.5 h-3.5 rounded border-zinc-300 text-blue-600 focus:ring-blue-600 focus:ring-offset-0 cursor-pointer"
                       />
-                      <span className="flex items-center gap-1.5 text-xs font-bold text-gray-700 group-hover:text-gray-900">
-                        <Send className="w-3.5 h-3.5 text-indigo-500" /> Send App Push
+                      <span className="flex items-center gap-1.5 text-xs font-bold text-zinc-700 dark:text-zinc-300 group-hover:text-zinc-900 dark:text-zinc-100">
+                        <Send className="w-3.5 h-3.5 text-blue-500" /> Send App Push
                       </span>
                     </label>
                     
@@ -717,10 +717,10 @@ export default function EmployeeFilesClient() {
                         type="checkbox" 
                         checked={sendSms}
                         onChange={e => setSendSms(e.target.checked)}
-                        className="w-3.5 h-3.5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600 focus:ring-offset-0 cursor-pointer"
+                        className="w-3.5 h-3.5 rounded border-zinc-300 text-blue-600 focus:ring-blue-600 focus:ring-offset-0 cursor-pointer"
                       />
-                      <span className="flex items-center gap-1.5 text-xs font-bold text-gray-700 group-hover:text-gray-900">
-                        <Phone className="w-3.5 h-3.5 text-indigo-500" /> Send SMS Alert
+                      <span className="flex items-center gap-1.5 text-xs font-bold text-zinc-700 dark:text-zinc-300 group-hover:text-zinc-900 dark:text-zinc-100">
+                        <Phone className="w-3.5 h-3.5 text-blue-500" /> Send SMS Alert
                       </span>
                     </label>
                   </div>
@@ -729,7 +729,7 @@ export default function EmployeeFilesClient() {
                     <button 
                       type="submit"
                       disabled={isSubmittingWarning}
-                      className="w-full py-2.5 bg-red-600 text-white text-xs rounded-xl font-bold hover:bg-red-700 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      className="w-full py-2.5 bg-rose-600 text-white text-xs rounded-xl font-bold hover:bg-rose-700 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                     >
                       {isSubmittingWarning ? 'Recording Warning...' : 'Issue Official Warning'}
                     </button>
@@ -740,25 +740,25 @@ export default function EmployeeFilesClient() {
               {activeTab === 'settings' && (
                 <form onSubmit={saveSettings} className="space-y-3.5 py-1">
                   {/* Top Context Banner */}
-                  <div className="bg-indigo-50/70 border border-indigo-150 p-3 rounded-xl flex items-center justify-between">
+                  <div className="bg-blue-50/70 dark:bg-blue-950/30 border border-blue-100 dark:border-blue-900/50 p-3 rounded-xl flex items-center justify-between">
                     <div className="flex items-center gap-2.5">
-                      <div className="w-7 h-7 rounded-lg bg-indigo-600 text-white flex items-center justify-center shrink-0 shadow-2xs">
+                      <div className="w-7 h-7 rounded-lg bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-2xs">
                         <Settings className="w-3.5 h-3.5" />
                       </div>
                       <div>
-                        <h4 className="text-xs font-bold text-zinc-900">Profile & Individual Compensation</h4>
+                        <h4 className="text-xs font-bold text-zinc-900 dark:text-zinc-100">Profile & Individual Compensation</h4>
                         <p className="text-[11px] text-zinc-500 font-medium">
                           Editing <span className="font-semibold text-zinc-800">{selectedEmp.full_name}</span> &bull; Base compensation is negotiated individually per technician.
                         </p>
                       </div>
                     </div>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-700 bg-indigo-100/70 px-2 py-0.5 rounded-full border border-indigo-200">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-blue-700 bg-blue-100/70 px-2 py-0.5 rounded-full border border-blue-200">
                       201 File Profile
                     </span>
                   </div>
 
                   {settingsError && (
-                    <div className="text-xs font-semibold text-red-700 bg-red-50 border border-red-200 p-2.5 rounded-xl flex items-center gap-2 animate-in fade-in duration-150">
+                    <div className="text-xs font-semibold text-rose-700 dark:text-rose-300 bg-red-50 border border-red-200 p-2.5 rounded-xl flex items-center gap-2 animate-in fade-in duration-150">
                       <AlertTriangle className="w-4 h-4 text-red-500 shrink-0" />
                       <span>{settingsError}</span>
                     </div>
@@ -766,7 +766,7 @@ export default function EmployeeFilesClient() {
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
                     {/* Card 1: Operational Placement */}
-                    <div className="bg-zinc-50/70 border border-zinc-200 rounded-xl p-3.5 space-y-2.5">
+                    <div className="bg-zinc-50/70 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700 rounded-xl p-3.5 space-y-2.5">
                       <div className="flex items-center justify-between pb-1.5 border-b border-zinc-200/60">
                         <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-600">Operational Placement</span>
                         <span className="text-[10px] text-zinc-500 font-medium">Role & Level</span>
@@ -774,11 +774,11 @@ export default function EmployeeFilesClient() {
 
                       <div className="space-y-2">
                         <div>
-                          <label className="block text-[10px] font-bold text-zinc-700 uppercase tracking-wider mb-1">System Role</label>
+                          <label className="block text-[10px] font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider mb-1">System Role</label>
                           <select 
                             value={editForm.role}
                             onChange={e => setEditForm({...editForm, role: e.target.value})}
-                            className="w-full border border-zinc-200 rounded-lg px-2.5 py-1.5 text-xs bg-white focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 outline-none font-medium text-zinc-900 shadow-2xs"
+                            className="w-full border border-zinc-200 rounded-lg px-2.5 py-1.5 text-xs bg-white focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none font-medium text-zinc-900 dark:text-zinc-100 shadow-2xs"
                           >
                             <option value="technician">Technician</option>
                             <option value="coordinator">Coordinator</option>
@@ -789,7 +789,7 @@ export default function EmployeeFilesClient() {
                         </div>
 
                         <div>
-                          <label className="block text-[10px] font-bold text-zinc-700 uppercase tracking-wider mb-1">Technician Level</label>
+                          <label className="block text-[10px] font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider mb-1">Technician Level</label>
                           <select 
                             value={editForm.technician_level}
                             onChange={e => {
@@ -801,7 +801,7 @@ export default function EmployeeFilesClient() {
                                 setSettingsError(null);
                               }
                             }}
-                            className="w-full border border-zinc-200 rounded-lg px-2.5 py-1.5 text-xs bg-white focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 outline-none font-medium text-zinc-900 shadow-2xs"
+                            className="w-full border border-zinc-200 rounded-lg px-2.5 py-1.5 text-xs bg-white focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none font-medium text-zinc-900 dark:text-zinc-100 shadow-2xs"
                           >
                             <option value="helper">Helper</option>
                             <option value="technician">Technician</option>
@@ -810,7 +810,7 @@ export default function EmployeeFilesClient() {
                         </div>
 
                         <div>
-                          <label className="block text-[10px] font-bold text-zinc-700 uppercase tracking-wider mb-1">Employment Status</label>
+                          <label className="block text-[10px] font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider mb-1">Employment Status</label>
                           <select 
                             value={editForm.employment_status}
                             onChange={e => {
@@ -822,7 +822,7 @@ export default function EmployeeFilesClient() {
                                 setSettingsError(null);
                               }
                             }}
-                            className="w-full border border-zinc-200 rounded-lg px-2.5 py-1.5 text-xs bg-white focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 outline-none font-medium text-zinc-900 shadow-2xs"
+                            className="w-full border border-zinc-200 rounded-lg px-2.5 py-1.5 text-xs bg-white focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none font-medium text-zinc-900 dark:text-zinc-100 shadow-2xs"
                           >
                             <option value="ojt">OJT (Trainee)</option>
                             <option value="contractual">Contractual</option>
@@ -834,7 +834,7 @@ export default function EmployeeFilesClient() {
                     </div>
 
                     {/* Card 2: Individual Base Compensation */}
-                    <div className="bg-zinc-50/70 border border-zinc-200 rounded-xl p-3.5 space-y-2.5 flex flex-col justify-between">
+                    <div className="bg-zinc-50/70 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700 rounded-xl p-3.5 space-y-2.5 flex flex-col justify-between">
                       <div>
                         <div className="flex items-center justify-between pb-1.5 border-b border-zinc-200/60">
                           <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-600">Individual Compensation</span>
@@ -846,7 +846,7 @@ export default function EmployeeFilesClient() {
                         <div className="mt-2 space-y-2">
                           <div>
                             <div className="flex items-center justify-between mb-1">
-                              <label className="text-[10px] font-bold text-zinc-700 uppercase tracking-wider">
+                              <label className="text-[10px] font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider">
                                 {editForm.base_salary >= 3000 ? 'Monthly Base Salary (₱)' : 'Daily Base Rate (₱)'}
                               </label>
                               <span className="text-[10px] font-mono text-zinc-500">
@@ -862,13 +862,13 @@ export default function EmployeeFilesClient() {
                                 required
                                 value={editForm.base_salary}
                                 onChange={e => setEditForm({...editForm, base_salary: Number(e.target.value)})}
-                                className="w-full font-mono font-bold text-xs text-emerald-800 bg-white border border-zinc-200 rounded-lg pl-7 pr-3 py-1.5 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 outline-none shadow-2xs"
+                                className="w-full font-mono font-bold text-xs text-emerald-800 dark:text-emerald-300 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg pl-7 pr-3 py-1.5 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 outline-none shadow-2xs"
                               />
                             </div>
                           </div>
 
                           {/* Reference equivalence helper */}
-                          <div className="bg-white border border-zinc-200 rounded-lg p-2 space-y-1 text-xs">
+                          <div className="bg-white dark:bg-zinc-800/70 border border-zinc-200 dark:border-zinc-700 rounded-lg p-2 space-y-1 text-xs">
                             <div className="flex items-center justify-between text-[11px]">
                               <span className="text-zinc-500 font-medium">Recorded Rate:</span>
                               <span className="font-bold text-emerald-700 font-mono">
@@ -877,7 +877,7 @@ export default function EmployeeFilesClient() {
                             </div>
                             <div className="flex items-center justify-between text-[10px] text-zinc-500 pt-1 border-t border-zinc-100">
                               <span>Estimated Equivalent:</span>
-                              <span className="font-mono font-semibold text-zinc-700">
+                              <span className="font-mono font-semibold text-zinc-700 dark:text-zinc-300">
                                 {editForm.base_salary >= 3000 
                                   ? `≈ ₱${(editForm.base_salary / 26).toFixed(2)}/day (26-day basis)`
                                   : `≈ ₱${(editForm.base_salary * 26).toLocaleString()}/mo (26-day basis)`}
@@ -897,7 +897,7 @@ export default function EmployeeFilesClient() {
                     <button 
                       type="submit"
                       disabled={isSavingSettings || (editForm.employment_status === 'ojt' && editForm.technician_level === 'senior')}
-                      className="w-full py-2.5 bg-zinc-900 hover:bg-zinc-800 text-white rounded-xl font-bold text-xs shadow-xs disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-xs shadow-xs disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                     >
                       {isSavingSettings ? 'Saving Profile & Compensation...' : 'Save Profile & Individual Compensation'}
                     </button>
@@ -912,9 +912,9 @@ export default function EmployeeFilesClient() {
 
       {/* Document Viewer Modal */}
       {previewingDoc && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden border border-gray-200 animate-scale-in">
-            <div className="px-6 py-4 bg-indigo-600 text-white flex justify-between items-center">
+        <div className="fixed inset-0 bg-zinc-900/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden border border-zinc-200 dark:border-zinc-800 animate-scale-in">
+            <div className="px-6 py-4 bg-blue-600 text-white flex justify-between items-center">
               <div className="flex items-center gap-2">
                 <FileText className="w-5 h-5" />
                 <h3 className="font-bold text-base">{previewingDoc.title}</h3>
@@ -924,32 +924,32 @@ export default function EmployeeFilesClient() {
               </button>
             </div>
             <div className="p-6 text-center space-y-4">
-              <div className="w-16 h-16 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center mx-auto border border-indigo-100 shadow-sm">
+              <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mx-auto border border-blue-100 shadow-sm">
                 <FileText className="w-8 h-8" />
               </div>
               <div>
-                <h4 className="font-bold text-gray-900 text-sm">{previewingDoc.fileName}</h4>
-                <p className="text-xs text-gray-500 mt-1 font-medium">Digital copy attached to 201 Employee File</p>
+                <h4 className="font-bold text-zinc-900 dark:text-zinc-100 text-sm">{previewingDoc.fileName}</h4>
+                <p className="text-xs text-zinc-500 mt-1 font-medium">Digital copy attached to 201 Employee File</p>
               </div>
               <div className="pt-2 flex gap-3">
                 {previewingDoc.fileUrl ? (
                   <button 
                     onClick={() => window.open(previewingDoc.fileUrl, '_blank')}
-                    className="flex-1 py-2.5 bg-indigo-600 text-white rounded-xl font-bold text-xs hover:bg-indigo-700 shadow-sm transition-colors"
+                    className="flex-1 py-2.5 bg-blue-600 text-white rounded-xl font-bold text-xs hover:bg-blue-700 shadow-sm transition-colors"
                   >
                     Open Document
                   </button>
                 ) : (
                   <button 
                     onClick={() => alert(`Downloading copy of ${previewingDoc.fileName}...`)}
-                    className="flex-1 py-2.5 bg-indigo-600 text-white rounded-xl font-bold text-xs hover:bg-indigo-700 shadow-sm transition-colors"
+                    className="flex-1 py-2.5 bg-blue-600 text-white rounded-xl font-bold text-xs hover:bg-blue-700 shadow-sm transition-colors"
                   >
                     Download File
                   </button>
                 )}
                 <button 
                   onClick={() => setPreviewingDoc(null)}
-                  className="px-4 py-2.5 bg-gray-100 text-gray-700 rounded-xl font-bold text-xs hover:bg-gray-200 transition-colors"
+                  className="px-4 py-2.5 bg-zinc-100 text-zinc-700 dark:text-zinc-300 rounded-xl font-bold text-xs hover:bg-zinc-200 transition-colors"
                 >
                   Close
                 </button>
@@ -961,22 +961,22 @@ export default function EmployeeFilesClient() {
 
       {/* Remove File Confirmation Modal */}
       {deletingDoc && selectedEmp && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[70] flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden border border-gray-200 animate-scale-in">
+        <div className="fixed inset-0 bg-zinc-900/60 backdrop-blur-sm z-[70] flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden border border-zinc-200 dark:border-zinc-800 animate-scale-in">
             <div className="p-6 text-center space-y-4">
-              <div className="w-14 h-14 bg-red-50 text-red-600 rounded-full flex items-center justify-center mx-auto border border-red-100 shadow-sm">
-                <AlertTriangle className="w-7 h-7 text-red-600" />
+              <div className="w-14 h-14 bg-red-50 text-rose-600 dark:text-rose-400 rounded-full flex items-center justify-center mx-auto border border-red-100 shadow-sm">
+                <AlertTriangle className="w-7 h-7 text-rose-600 dark:text-rose-400" />
               </div>
               <div>
-                <h3 className="font-black text-gray-900 text-base">Remove Document?</h3>
-                <p className="text-xs text-gray-500 mt-1.5 font-medium leading-relaxed">
-                  Are you sure you want to remove <span className="font-bold text-gray-800">{deletingDoc.docType}</span> from <span className="font-bold text-gray-800">{selectedEmp.full_name}</span>'s 201 file?
+                <h3 className="font-black text-zinc-900 dark:text-zinc-100 text-base">Remove Document?</h3>
+                <p className="text-xs text-zinc-500 mt-1.5 font-medium leading-relaxed">
+                  Are you sure you want to remove <span className="font-bold text-zinc-800">{deletingDoc.docType}</span> from <span className="font-bold text-zinc-800">{selectedEmp.full_name}</span>'s 201 file?
                 </p>
               </div>
               <div className="pt-2 flex gap-3">
                 <button 
                   onClick={() => setDeletingDoc(null)}
-                  className="flex-1 py-2.5 bg-gray-100 text-gray-700 rounded-xl font-bold text-xs hover:bg-gray-200 transition-colors"
+                  className="flex-1 py-2.5 bg-zinc-100 text-zinc-700 dark:text-zinc-300 rounded-xl font-bold text-xs hover:bg-zinc-200 transition-colors"
                 >
                   Cancel
                 </button>
@@ -985,7 +985,7 @@ export default function EmployeeFilesClient() {
                     confirmRemoveFile(deletingDoc.docType, deletingDoc.dbField);
                     setDeletingDoc(null);
                   }}
-                  className="flex-1 py-2.5 bg-red-600 text-white rounded-xl font-bold text-xs hover:bg-red-700 shadow-sm transition-colors"
+                  className="flex-1 py-2.5 bg-rose-600 text-white rounded-xl font-bold text-xs hover:bg-rose-700 shadow-sm transition-colors"
                 >
                   Yes, Remove
                 </button>
@@ -998,20 +998,20 @@ export default function EmployeeFilesClient() {
       {/* In-App Styled Warning Confirmation Modal */}
       {warningConfirmation?.isOpen && (
         <div className="fixed inset-0 bg-zinc-900/60 backdrop-blur-xs z-[75] flex items-center justify-center p-4 animate-in fade-in duration-150">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden border border-zinc-200 text-center flex flex-col items-center p-6">
+          <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden border border-zinc-200 dark:border-zinc-800 text-center flex flex-col items-center p-6">
             <div className="w-12 h-12 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-200 flex items-center justify-center mb-3 shadow-2xs">
               <CheckCircle2 className="w-6 h-6" />
             </div>
 
-            <h3 className="text-base font-bold text-zinc-900">Disciplinary Warning Issued</h3>
+            <h3 className="text-base font-bold text-zinc-900 dark:text-zinc-100">Disciplinary Warning Issued</h3>
             <p className="text-xs text-zinc-500 mt-1">
               Notice has been recorded and officially filed in <span className="font-semibold text-zinc-800">{warningConfirmation.employeeName}</span>'s 201 record.
             </p>
 
-            <div className="w-full bg-zinc-50 border border-zinc-200/80 rounded-xl p-3 my-4 text-left space-y-2 text-xs">
+            <div className="w-full bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-200/80 dark:border-zinc-700 rounded-xl p-3 my-4 text-left space-y-2 text-xs">
               <div className="flex items-center justify-between">
                 <span className="text-zinc-500 font-medium">Target Technician:</span>
-                <span className="font-bold text-zinc-900">{warningConfirmation.employeeName}</span>
+                <span className="font-bold text-zinc-900 dark:text-zinc-100">{warningConfirmation.employeeName}</span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-zinc-500 font-medium">Warning Subject:</span>
@@ -1031,7 +1031,7 @@ export default function EmployeeFilesClient() {
               </div>
               <div className="flex items-center justify-between pt-1.5 border-t border-zinc-200/60">
                 <span className="text-zinc-500 font-medium">201 Dossier:</span>
-                <span className="font-semibold text-indigo-600">Updated in Database</span>
+                <span className="font-semibold text-blue-600">Updated in Database</span>
               </div>
             </div>
 
@@ -1040,7 +1040,7 @@ export default function EmployeeFilesClient() {
                 setWarningConfirmation(null);
                 setActiveTab('docs');
               }}
-              className="w-full py-2.5 bg-zinc-900 hover:bg-zinc-800 text-white rounded-xl text-xs font-semibold shadow-xs transition-colors"
+              className="w-full py-2.5 bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-700 dark:hover:bg-zinc-600 text-white rounded-xl text-xs font-semibold shadow-xs transition-colors"
             >
               Done & Return to 201 File
             </button>
@@ -1051,22 +1051,22 @@ export default function EmployeeFilesClient() {
       {/* In-App Styled Profile & Compensation Save Confirmation Modal */}
       {settingsConfirmation?.isOpen && (
         <div className="fixed inset-0 bg-zinc-900/60 backdrop-blur-xs z-[75] flex items-center justify-center p-4 animate-in fade-in duration-150">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden border border-zinc-200 text-center flex flex-col items-center p-6">
+          <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden border border-zinc-200 dark:border-zinc-800 text-center flex flex-col items-center p-6">
             <div className="w-12 h-12 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-200 flex items-center justify-center mb-3 shadow-2xs">
               <CheckCircle2 className="w-6 h-6" />
             </div>
 
-            <h3 className="text-base font-bold text-zinc-900">
+            <h3 className="text-base font-bold text-zinc-900 dark:text-zinc-100">
               {settingsConfirmation.isPromotion ? 'Promotion & Compensation Updated' : 'Profile & Compensation Saved'}
             </h3>
             <p className="text-xs text-zinc-500 mt-1">
               Changes to <span className="font-semibold text-zinc-800">{settingsConfirmation.employeeName}</span> have been committed to their 201 profile.
             </p>
 
-            <div className="w-full bg-zinc-50 border border-zinc-200/80 rounded-xl p-3 my-4 text-left space-y-2 text-xs">
+            <div className="w-full bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-200/80 dark:border-zinc-700 rounded-xl p-3 my-4 text-left space-y-2 text-xs">
               <div className="flex items-center justify-between">
                 <span className="text-zinc-500 font-medium">Technician:</span>
-                <span className="font-bold text-zinc-900">{settingsConfirmation.employeeName}</span>
+                <span className="font-bold text-zinc-900 dark:text-zinc-100">{settingsConfirmation.employeeName}</span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-zinc-500 font-medium">Operational Placement:</span>
@@ -1099,7 +1099,7 @@ export default function EmployeeFilesClient() {
                 setSettingsConfirmation(null);
                 setActiveTab('docs');
               }}
-              className="w-full py-2.5 bg-zinc-900 hover:bg-zinc-800 text-white rounded-xl text-xs font-semibold shadow-xs transition-colors"
+              className="w-full py-2.5 bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-700 dark:hover:bg-zinc-600 text-white rounded-xl text-xs font-semibold shadow-xs transition-colors"
             >
               Done & Return to 201 File
             </button>

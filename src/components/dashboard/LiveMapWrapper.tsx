@@ -53,8 +53,8 @@ export default function LiveMapWrapper({ locations, selectedTechId }: LiveMapWra
     const isOnline = tech.isOnline;
     const isSelected = tech.id === selectedTechId;
     const initial = tech.name.charAt(0).toUpperCase();
-    const colorClass = isOnline ? 'bg-emerald-500' : tech.status === 'stale' ? 'bg-amber-500' : 'bg-slate-400';
-    const borderClass = isSelected ? 'border-4 border-indigo-600 shadow-2xl scale-125 z-30 ring-4 ring-indigo-300' : 'border-2 border-white shadow-lg';
+    const colorClass = isOnline ? 'bg-emerald-500' : tech.status === 'stale' ? 'bg-amber-500' : 'bg-zinc-400';
+    const borderClass = isSelected ? 'border-4 border-blue-600 shadow-2xl scale-125 z-30 ring-4 ring-blue-300' : 'border-2 border-white shadow-lg';
     
     const html = renderToStaticMarkup(
       <div className={`relative group flex flex-col items-center transition-all duration-300 ${isSelected ? 'scale-110 z-30' : ''}`}>
@@ -62,9 +62,9 @@ export default function LiveMapWrapper({ locations, selectedTechId }: LiveMapWra
           {initial}
         </div>
         {(isOnline || isSelected) && (
-          <div className={`absolute top-0 w-10 h-10 ${isSelected ? 'bg-indigo-500' : 'bg-emerald-500'} rounded-full animate-ping opacity-60 z-0`} />
+          <div className={`absolute top-0 w-10 h-10 ${isSelected ? 'bg-blue-500' : 'bg-emerald-500'} rounded-full animate-ping opacity-60 z-0`} />
         )}
-        <div className={`mt-1 ${isSelected ? 'bg-indigo-900 text-white border-indigo-700 font-black scale-110 shadow-md' : 'bg-white/95 text-slate-900 font-bold border-slate-200'} text-[10px] px-2 py-0.5 rounded backdrop-blur-sm border whitespace-nowrap z-10 transition-all flex items-center gap-1`}>
+        <div className={`mt-1 ${isSelected ? 'bg-blue-900 text-white border-blue-700 font-black scale-110 shadow-md' : 'bg-white/95 text-zinc-900 font-bold border-zinc-200'} text-[10px] px-2 py-0.5 rounded backdrop-blur-sm border whitespace-nowrap z-10 transition-all flex items-center gap-1`}>
           <span>{tech.name}</span>
           {isOnline && tech.shiftDuration && (
             <span className="text-[9px] text-emerald-600 font-black">({tech.shiftDuration})</span>
@@ -93,7 +93,7 @@ export default function LiveMapWrapper({ locations, selectedTechId }: LiveMapWra
   return (
     <div className="absolute inset-0 z-0">
       {locations.length === 0 && (
-        <div className="absolute top-6 left-1/2 -translate-x-1/2 z-[400] bg-white/95 backdrop-blur-md px-4 py-2.5 rounded-xl border border-gray-200 shadow-lg flex items-center gap-2.5 text-xs font-semibold text-gray-600 pointer-events-none">
+        <div className="absolute top-6 left-1/2 -translate-x-1/2 z-[400] bg-white/95 backdrop-blur-md px-4 py-2.5 rounded-xl border border-zinc-200 shadow-lg flex items-center gap-2.5 text-xs font-semibold text-zinc-600 pointer-events-none">
           <div className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
           <span>No technicians currently on active duty</span>
         </div>
@@ -125,9 +125,9 @@ export default function LiveMapWrapper({ locations, selectedTechId }: LiveMapWra
             <Popup>
               <div className="p-1 min-w-[170px]">
                 <div className="flex items-center justify-between gap-2 mb-1">
-                  <p className="font-extrabold text-slate-900 text-sm">{tech.name}</p>
+                  <p className="font-extrabold text-zinc-900 text-sm">{tech.name}</p>
                   <span className={`text-[9px] font-black px-1.5 py-0.5 rounded border uppercase ${
-                    tech.isOnline ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-gray-100 text-gray-600 border-gray-200'
+                    tech.isOnline ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-zinc-100 text-zinc-600 border-zinc-200'
                   }`}>
                     {tech.isOnline ? 'On Duty' : 'Offline'}
                   </span>
@@ -140,8 +140,8 @@ export default function LiveMapWrapper({ locations, selectedTechId }: LiveMapWra
                   </p>
                 )}
 
-                <div className="flex items-center gap-1.5 text-xs text-slate-500 mb-2">
-                  <Clock className="w-3.5 h-3.5 text-slate-400" />
+                <div className="flex items-center gap-1.5 text-xs text-zinc-500 mb-2">
+                  <Clock className="w-3.5 h-3.5 text-zinc-400" />
                   <span>Last GPS Ping: {tech.time}</span>
                 </div>
 

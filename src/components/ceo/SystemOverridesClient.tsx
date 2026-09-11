@@ -269,14 +269,14 @@ export default function SystemOverridesClient() {
   return (
     <div className="flex flex-col h-full w-full max-w-full overflow-hidden p-6">
       {/* Header Bar */}
-      <div className="bg-white p-4 rounded-xl border border-zinc-200 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4 shrink-0">
+      <div className="bg-white dark:bg-zinc-900 p-4 rounded-xl border border-zinc-200/80 dark:border-zinc-800 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4 shrink-0">
         <div>
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-indigo-600 text-white flex items-center justify-center shrink-0 shadow-2xs">
+            <div className="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-2xs">
               <ShieldCheck className="w-4 h-4" />
             </div>
             <div>
-              <h1 className="text-base font-black text-zinc-900 tracking-tight flex items-center gap-2">
+              <h1 className="text-base font-black text-zinc-900 dark:text-zinc-100 tracking-tight flex items-center gap-2">
                 System Overrides & Access Matrix
                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-[10px] font-bold">
                   <span className="relative flex h-1.5 w-1.5">
@@ -297,9 +297,9 @@ export default function SystemOverridesClient() {
           <button
             onClick={handleGrantAll}
             disabled={isSyncing || loading}
-            className="inline-flex items-center gap-1.5 bg-indigo-50 border border-indigo-200 text-indigo-700 hover:bg-indigo-100 disabled:opacity-50 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors shadow-2xs cursor-pointer"
+            className="inline-flex items-center gap-1.5 bg-blue-50 border border-blue-200 text-blue-700 hover:bg-blue-100 disabled:opacity-50 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors shadow-2xs cursor-pointer"
           >
-            {isSyncing ? <Loader2 className="w-3.5 h-3.5 animate-spin text-indigo-600" /> : <Zap className="w-3.5 h-3.5 text-indigo-600" />}
+            {isSyncing ? <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-600" /> : <Zap className="w-3.5 h-3.5 text-blue-600" />}
             Grant All Overrides
           </button>
           <button
@@ -337,19 +337,19 @@ export default function SystemOverridesClient() {
       <div className="bg-white border border-zinc-200 rounded-xl overflow-hidden shadow-xs flex-1 flex flex-col">
         <div className="p-3 bg-zinc-50 border-b border-zinc-200 flex items-center justify-between shrink-0 text-xs">
           <div className="flex items-center gap-1.5 font-bold text-zinc-700 uppercase tracking-wider text-[11px]">
-            <Info className="w-3.5 h-3.5 text-indigo-600" />
+            <Info className="w-3.5 h-3.5 text-blue-600" />
             Live Access Governance Matrix (Overrides dynamically unlock modules for cross-functional staff)
           </div>
           <div className="flex items-center gap-3 text-[11px] font-medium text-zinc-500">
             <span className="flex items-center gap-1"><Lock className="w-3 h-3 text-zinc-400" /> Default Access</span>
-            <span className="flex items-center gap-1"><Unlock className="w-3 h-3 text-indigo-600" /> CEO Time-Limited Override</span>
+            <span className="flex items-center gap-1"><Unlock className="w-3 h-3 text-blue-600" /> CEO Time-Limited Override</span>
           </div>
         </div>
 
         <div className="overflow-auto flex-1">
           {loading ? (
             <div className="flex flex-col items-center justify-center h-64 gap-2.5">
-              <Loader2 className="w-7 h-7 animate-spin text-indigo-600" />
+              <Loader2 className="w-7 h-7 animate-spin text-blue-600" />
               <span className="text-xs font-semibold text-zinc-500">Connecting to PostgreSQL permissions table...</span>
             </div>
           ) : (
@@ -399,8 +399,8 @@ export default function SystemOverridesClient() {
                             </span>
                           ) : isActive ? (
                             <div className="flex flex-col items-center justify-center gap-1">
-                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200 shadow-2xs">
-                                <Unlock className="w-3 h-3 text-indigo-600" />
+                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200 shadow-2xs">
+                                <Unlock className="w-3 h-3 text-blue-600" />
                                 {itemMeta?.duration === 'indefinite' ? 'Indefinite' : (itemMeta?.duration?.replace('_', ' ') || 'Active')}
                               </span>
                               <span className="text-[10px] font-mono text-zinc-500">
@@ -426,7 +426,7 @@ export default function SystemOverridesClient() {
                                   selectedDuration: '1_day'
                                 })}
                                 disabled={isSyncing}
-                                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-semibold bg-zinc-100 hover:bg-indigo-50 hover:text-indigo-700 hover:border-indigo-200 border border-zinc-200 text-zinc-600 transition-colors shadow-2xs cursor-pointer disabled:opacity-50"
+                                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-semibold bg-zinc-100 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-200 border border-zinc-200 text-zinc-600 transition-colors shadow-2xs cursor-pointer disabled:opacity-50"
                               >
                                 <Lock className="w-3 h-3 text-zinc-400" />
                                 Restricted
@@ -449,7 +449,7 @@ export default function SystemOverridesClient() {
         {/* Footer info bar */}
         <div className="p-3 bg-zinc-50 border-t border-zinc-200 flex items-center justify-between text-xs text-zinc-500 shrink-0">
           <span className="flex items-center gap-1.5 font-medium text-[11px]">
-            <ShieldCheck className="w-3.5 h-3.5 text-indigo-600" />
+            <ShieldCheck className="w-3.5 h-3.5 text-blue-600" />
             Overrides persist in PostgreSQL and automatically expire according to designated CEO duration boundaries.
           </span>
           <span className="font-mono text-[10px] text-zinc-500 uppercase tracking-wider font-semibold">
@@ -464,7 +464,7 @@ export default function SystemOverridesClient() {
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden border border-zinc-200 p-6">
             <div className="flex items-center justify-between pb-3 border-b border-zinc-200">
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-indigo-600 text-white flex items-center justify-center shrink-0">
+                <div className="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center shrink-0">
                   <Clock className="w-4 h-4" />
                 </div>
                 <div>
@@ -488,7 +488,7 @@ export default function SystemOverridesClient() {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-zinc-500 font-medium">Module Access:</span>
-                  <span className="font-bold text-indigo-600">{durationModal.moduleName}</span>
+                  <span className="font-bold text-blue-600">{durationModal.moduleName}</span>
                 </div>
               </div>
 
@@ -509,7 +509,7 @@ export default function SystemOverridesClient() {
                       onClick={() => setDurationModal({ ...durationModal, selectedDuration: tier.key })}
                       className={`p-2.5 rounded-xl border text-left transition-colors cursor-pointer ${
                         durationModal.selectedDuration === tier.key
-                          ? 'border-indigo-600 bg-indigo-50/70 text-indigo-900 shadow-2xs'
+                          ? 'border-blue-600 bg-blue-50/70 text-blue-900 shadow-2xs'
                           : 'border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-700'
                       }`}
                     >

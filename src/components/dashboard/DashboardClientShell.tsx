@@ -156,7 +156,7 @@ export default function DashboardClientShell({ children, profile }: { children: 
   const getRoleBadgeStyle = (role: string) => {
     switch (role) {
       case 'super_admin':
-        return 'bg-indigo-50 border-indigo-100 text-indigo-700'
+        return 'bg-blue-50 border-blue-100 text-blue-700'
       case 'ceo':
       case 'coo':
       case 'svp':
@@ -181,15 +181,15 @@ export default function DashboardClientShell({ children, profile }: { children: 
   return (
     <AlertConfirmProvider>
       <GlobalRealtimeSync />
-      <div className="flex h-screen bg-zinc-50 overflow-hidden">
+      <div className="flex h-screen bg-zinc-50 dark:bg-zinc-950 overflow-hidden text-zinc-900 dark:text-zinc-100">
       {/* Premium Light Sidebar */}
-      <aside className="w-64 bg-white text-slate-900 border-r border-slate-200 flex flex-col z-20">
-        <div className="py-4 flex items-center px-6 border-b border-slate-100 justify-center">
+      <aside className="w-64 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 border-r border-zinc-200/80 dark:border-zinc-800 flex flex-col z-20">
+        <div className="py-4 flex items-center px-6 border-b border-zinc-200/80 dark:border-zinc-800 justify-center">
           <img src="/logo.png" alt="Technocycle" className="h-16 w-auto object-contain" />
         </div>
         
         <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
-          <p className="px-3 text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2 mt-4">Menu</p>
+          <p className="px-3 text-xs font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider mb-2 mt-4">Menu</p>
           
           {
             allowedNavItems.map((item) => {
@@ -206,11 +206,11 @@ export default function DashboardClientShell({ children, profile }: { children: 
                   className={`flex items-center justify-between px-3 py-2 rounded-md transition-all duration-200 group ${
                     active
                       ? 'bg-emerald-50 text-emerald-700 font-medium'
-                      : 'text-slate-500 hover:text-emerald-700 hover:bg-slate-50'
+                      : 'text-zinc-500 dark:text-zinc-400 hover:text-emerald-700 hover:bg-zinc-50 dark:hover:bg-zinc-800'
                   }`}
                 >
                   <div className="flex items-center gap-3">
-                    <Icon className={`w-5 h-5 transition-colors ${active ? 'text-emerald-600' : 'text-slate-400 group-hover:text-emerald-600'}`} />
+                    <Icon className={`w-5 h-5 transition-colors ${active ? 'text-emerald-600' : 'text-zinc-400 dark:text-zinc-500 group-hover:text-emerald-600'}`} />
                       <span className="truncate">{item.label}</span>
                       {item.isBorrowed && (
                         <span className="ml-auto text-[10px] uppercase font-bold tracking-wider text-amber-500 bg-amber-50 px-1.5 py-0.5 rounded-sm border border-amber-200">
@@ -243,16 +243,16 @@ export default function DashboardClientShell({ children, profile }: { children: 
           {/* Removed legacy System settings link since it's now in the System pillar */}
         </nav>
 
-        <div className="p-4 border-t border-slate-100 space-y-4">
+        <div className="p-4 border-t border-zinc-200/80 dark:border-zinc-800 space-y-4">
           {profile && (
-            <div className="flex items-center gap-3 px-3 py-1.5 bg-zinc-50 rounded-xl border border-zinc-100">
+            <div className="flex items-center gap-3 px-3 py-1.5 bg-zinc-50 dark:bg-zinc-800 rounded-xl border border-zinc-200 dark:border-zinc-700">
               <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-extrabold text-xs shadow-sm shrink-0 ${
-                profile.role === "super_admin" ? "bg-gradient-to-tr from-purple-600 to-indigo-600" : "bg-gradient-to-tr from-zinc-700 to-zinc-900"
+                profile.role === "super_admin" ? "bg-gradient-to-tr from-purple-600 to-blue-600" : "bg-gradient-to-tr from-zinc-700 to-zinc-900"
               }`}>
                 {profile.full_name.charAt(0).toUpperCase()}
               </div>
               <div className="min-w-0">
-                <p className="text-xs font-bold text-slate-900 truncate">{profile.full_name}</p>
+                <p className="text-xs font-bold text-zinc-900 dark:text-zinc-100 truncate">{profile.full_name}</p>
                 <div className="mt-0.5">
                   <span className={`text-[8px] px-1.5 py-0.5 rounded-full border font-extrabold uppercase tracking-wider ${
                     getRoleBadgeStyle(profile.role)
@@ -265,8 +265,8 @@ export default function DashboardClientShell({ children, profile }: { children: 
           )}
           
           <form action="/auth/signout" method="post">
-             <button type="submit" className="flex items-center gap-3 px-3 py-2 w-full rounded-md text-slate-500 hover:text-red-600 hover:bg-red-50 transition-colors group cursor-pointer text-sm">
-              <LogOut className="w-5 h-5 text-slate-400 group-hover:text-red-600 transition-colors" /> Sign Out
+             <button type="submit" className="flex items-center gap-3 px-3 py-2 w-full rounded-md text-zinc-500 dark:text-zinc-400 hover:text-red-600 hover:bg-red-50 transition-colors group cursor-pointer text-sm">
+              <LogOut className="w-5 h-5 text-zinc-400 dark:text-zinc-500 group-hover:text-red-600 transition-colors" /> Sign Out
             </button>
           </form>
         </div>

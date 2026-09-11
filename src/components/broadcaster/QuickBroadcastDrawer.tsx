@@ -99,22 +99,22 @@ export function QuickBroadcastDrawer({ isOpen, onClose }: QuickBroadcastDrawerPr
 
   return (
     <>
-      <div className="fixed inset-0 bg-slate-900/20 backdrop-blur-sm z-40 transition-opacity" onClick={onClose} />
+      <div className="fixed inset-0 bg-zinc-900/60 backdrop-blur-sm z-40 transition-opacity" onClick={onClose} />
       
-      <div className="fixed inset-y-0 right-0 w-full max-w-md bg-white shadow-2xl z-50 flex flex-col animate-in slide-in-from-right duration-300 border-l border-zinc-200">
-        <div className="p-6 border-b border-zinc-100 flex items-center justify-between bg-zinc-50/50">
+      <div className="fixed inset-y-0 right-0 w-full max-w-md bg-white dark:bg-zinc-900 shadow-2xl z-50 flex flex-col animate-in slide-in-from-right duration-300 border-l border-zinc-200/80 dark:border-zinc-700/80 dark:border-zinc-800">
+        <div className="p-6 border-b border-zinc-200/80 dark:border-zinc-700/80 dark:border-zinc-800 flex items-center justify-between bg-zinc-50/50 dark:bg-zinc-800 dark:bg-zinc-800/50">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-500 to-purple-500 text-white flex items-center justify-center shadow-md">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-500 to-purple-500 text-white flex items-center justify-center shadow-md">
               <Megaphone className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-lg font-black tracking-tight text-zinc-900">Quick Broadcast</h2>
-              <p className="text-xs font-semibold text-zinc-500">Send an urgent notice via SMS</p>
+              <h2 className="text-lg font-black tracking-tight text-zinc-900 dark:text-zinc-100">Quick Broadcast</h2>
+              <p className="text-xs font-semibold text-zinc-500 dark:text-zinc-400">Send an urgent notice via SMS</p>
             </div>
           </div>
           <button 
             onClick={onClose}
-            className="p-2 hover:bg-zinc-200 text-zinc-400 hover:text-zinc-800 rounded-xl transition-colors"
+            className="p-2 hover:bg-zinc-200 text-zinc-400 hover:text-zinc-800 dark:text-zinc-200 rounded-xl transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -140,7 +140,7 @@ export function QuickBroadcastDrawer({ isOpen, onClose }: QuickBroadcastDrawerPr
               <select 
                 value={departmentTag}
                 onChange={(e) => setDepartmentTag(e.target.value)}
-                className="w-full px-4 py-3 rounded-xl border border-zinc-200 bg-zinc-50/50 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-4 py-3 rounded-xl border border-zinc-200/80 dark:border-zinc-700 bg-zinc-50/50 dark:bg-zinc-800 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="HR">HR Department (Pink)</option>
                 <option value="CEO">CEO Office (Purple)</option>
@@ -154,29 +154,29 @@ export function QuickBroadcastDrawer({ isOpen, onClose }: QuickBroadcastDrawerPr
               <div className="flex items-center justify-between mb-2">
                 <label className="block text-[10px] font-black uppercase tracking-wider text-zinc-400">Recipients ({selectedRecipientIds.length})</label>
                 <div className="flex items-center gap-2 text-xs font-bold">
-                  <button type="button" onClick={selectAll} className="text-indigo-600 hover:text-indigo-800">All</button>
+                  <button type="button" onClick={selectAll} className="text-blue-600 hover:text-blue-800">All</button>
                   <span className="text-zinc-300">|</span>
-                  <button type="button" onClick={clearAll} className="text-zinc-500 hover:text-zinc-800">Clear</button>
+                  <button type="button" onClick={clearAll} className="text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:text-zinc-200">Clear</button>
                 </div>
               </div>
-              <div className="border border-zinc-200 rounded-xl overflow-hidden max-h-[200px] overflow-y-auto bg-zinc-50/30">
+              <div className="border border-zinc-200/80 dark:border-zinc-700 rounded-xl overflow-hidden max-h-[200px] overflow-y-auto bg-zinc-50/30 dark:bg-zinc-800/40">
                 {loading ? (
                   <div className="p-6 flex justify-center"><Loader2 className="w-5 h-5 animate-spin text-zinc-400" /></div>
                 ) : contacts.length === 0 ? (
-                  <div className="p-6 text-center text-xs font-medium text-zinc-500">No contacts found. Add them in the Directory.</div>
+                  <div className="p-6 text-center text-xs font-medium text-zinc-500 dark:text-zinc-400">No contacts found. Add them in the Directory.</div>
                 ) : (
                   <div className="divide-y divide-zinc-100">
                     {contacts.map(contact => (
-                      <label key={contact.id} className="flex items-center p-3 hover:bg-white cursor-pointer transition-colors group">
+                      <label key={contact.id} className="flex items-center p-3 hover:bg-white dark:hover:bg-zinc-800 cursor-pointer transition-colors group">
                         <input 
                           type="checkbox" 
                           checked={selectedRecipientIds.includes(contact.id)}
                           onChange={() => toggleRecipient(contact.id)}
-                          className="w-4 h-4 rounded border-zinc-300 text-indigo-600 focus:ring-indigo-500"
+                          className="w-4 h-4 rounded border-zinc-300 text-blue-600 focus:ring-blue-500"
                         />
                         <div className="ml-3">
-                          <p className="text-xs font-bold text-zinc-800 group-hover:text-indigo-700 transition-colors">{contact.full_name}</p>
-                          <p className="text-[10px] text-zinc-500 font-medium">{contact.role || 'No Role'} • {contact.phone_number}</p>
+                          <p className="text-xs font-bold text-zinc-800 dark:text-zinc-200 group-hover:text-blue-700 transition-colors">{contact.full_name}</p>
+                          <p className="text-[10px] text-zinc-500 dark:text-zinc-400 font-medium">{contact.role || 'No Role'} • {contact.phone_number}</p>
                         </div>
                       </label>
                     ))}
@@ -192,7 +192,7 @@ export function QuickBroadcastDrawer({ isOpen, onClose }: QuickBroadcastDrawerPr
                 onChange={(e) => setMessage(e.target.value)}
                 rows={5}
                 placeholder="Type your announcement here..."
-                className="w-full px-4 py-3 rounded-xl border border-zinc-200 bg-zinc-50/50 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
+                className="w-full px-4 py-3 rounded-xl border border-zinc-200/80 dark:border-zinc-700 bg-zinc-50/50 dark:bg-zinc-800 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
               />
               <div className="flex justify-between items-center mt-2">
                 <p className="text-[10px] text-zinc-400 font-medium">{message.length} characters ({(Math.ceil(message.length / 160) || 1)} SMS part{Math.ceil(message.length / 160) > 1 ? 's' : ''})</p>
@@ -207,7 +207,7 @@ export function QuickBroadcastDrawer({ isOpen, onClose }: QuickBroadcastDrawerPr
             type="submit" 
             form="broadcast-form"
             disabled={isPending || loading}
-            className="w-full py-3.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-xl font-bold text-sm shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-70"
+            className="w-full py-3.5 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl font-bold text-sm shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-70"
           >
             {isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : <><Megaphone className="w-4 h-4" /> Send Broadcast (Mock)</>}
           </button>

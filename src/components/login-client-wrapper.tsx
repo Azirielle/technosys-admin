@@ -49,9 +49,9 @@ export default function LoginClientWrapper({
             <Image src="/logo.png" alt="Technocycle" width={200} height={64} priority className="h-16 w-auto object-contain drop-shadow-sm" />
           </motion.div>
           
-          <h1 className="text-4xl font-black tracking-tight text-slate-900 flex items-center gap-1.5 mb-2">
+          <h1 className="text-4xl font-black tracking-tight text-zinc-900 flex items-center gap-1.5 mb-2">
             <span className="text-emerald-600 bg-clip-text">TechnoCycle</span> 
-            <span className="font-medium text-slate-400">Hub</span>
+            <span className="font-medium text-zinc-400">Hub</span>
           </h1>
           
           <motion.div 
@@ -65,7 +65,7 @@ export default function LoginClientWrapper({
                 App Download Portal
               </span>
             ) : (
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 border border-slate-200 text-slate-600 text-[10px] font-bold uppercase tracking-widest shadow-sm">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-zinc-100 border border-zinc-200 text-zinc-600 text-[10px] font-bold uppercase tracking-widest shadow-sm">
                 Unified Employee Access
               </span>
             )}

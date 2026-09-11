@@ -238,19 +238,19 @@ export function AlertConfirmProvider({ children }: { children: React.ReactNode }
     <AlertConfirmContext.Provider value={{ alert, confirm }}>
       {children}
       {mounted && state.isOpen && createPortal(
-        <div className="fixed inset-0 bg-slate-900/40 z-[9999] flex items-center justify-center p-4 sm:p-6 backdrop-blur-xs animate-in fade-in duration-200">
-          <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-zinc-150 overflow-hidden animate-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 bg-zinc-900/60 z-[9999] flex items-center justify-center p-4 sm:p-6 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-zinc-900 rounded-2xl max-w-md w-full shadow-2xl border border-zinc-200/80 dark:border-zinc-800 overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="p-6 flex items-start gap-4">
               <div className={`p-2.5 rounded-xl shrink-0 ${styles.iconBg}`}>
                 {styles.icon}
               </div>
               <div className="flex-1 min-w-0">
-                <h3 className="text-base font-extrabold text-zinc-950 leading-tight">{state.title}</h3>
-                <p className="mt-2 text-xs text-zinc-500 leading-normal whitespace-pre-wrap">{state.message}</p>
+                <h3 className="text-base font-extrabold text-zinc-950 dark:text-zinc-100 leading-tight">{state.title}</h3>
+                <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400 leading-normal whitespace-pre-wrap">{state.message}</p>
                 
                 {/* Collapsible Monospace Details Accordion */}
                 {state.rawMessage && (
-                  <div className="mt-4 border-t border-zinc-100 pt-3">
+                  <div className="mt-4 border-t border-zinc-100 dark:border-zinc-800 pt-3">
                     <button
                       type="button"
                       onClick={() => setShowDetails(!showDetails)}
@@ -268,7 +268,7 @@ export function AlertConfirmProvider({ children }: { children: React.ReactNode }
                       </svg>
                     </button>
                     {showDetails && (
-                      <div className="mt-2 p-2.5 bg-zinc-50 rounded-lg border border-zinc-200 max-h-36 overflow-y-auto">
+                      <div className="mt-2 p-2.5 bg-zinc-50 dark:bg-zinc-800/80 rounded-lg border border-zinc-200 dark:border-zinc-700 max-h-36 overflow-y-auto">
                         <code className="text-[10px] text-zinc-650 font-mono break-all whitespace-pre-wrap leading-normal">
                           {state.rawMessage}
                         </code>
@@ -279,12 +279,12 @@ export function AlertConfirmProvider({ children }: { children: React.ReactNode }
               </div>
             </div>
             
-            <div className="p-4 bg-zinc-50 border-t border-zinc-100 flex items-center justify-end gap-2.5">
+            <div className="p-4 bg-zinc-50 dark:bg-zinc-900/90 border-t border-zinc-100 dark:border-zinc-800 flex items-center justify-end gap-2.5">
               {state.type === 'confirm' && (
                 <button
                   type="button"
                   onClick={handleCancel}
-                  className="px-4 py-2 border border-zinc-200 hover:bg-zinc-100 text-zinc-700 text-xs font-bold rounded-xl transition-all cursor-pointer outline-none focus:ring-2 focus:ring-zinc-350"
+                  className="px-4 py-2 border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 text-xs font-bold rounded-xl transition-all cursor-pointer outline-none focus:ring-2 focus:ring-zinc-500"
                 >
                   Cancel
                 </button>
