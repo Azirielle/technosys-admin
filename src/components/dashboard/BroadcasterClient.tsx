@@ -1,5 +1,7 @@
 'use client'
 
+import PageHeader from '@/components/ui/PageHeader'
+
 import { useState, useEffect } from 'react'
 import {
   MessageSquare,
@@ -363,26 +365,22 @@ export default function BroadcasterClient({ currentRole, adminName, adminRoleLab
       )}
 
       {/* Header Bar */}
-      <div className="bg-white dark:bg-zinc-900 p-5 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 shrink-0">
-        <div>
-          <h1 className="text-2xl font-black text-zinc-900 dark:text-zinc-100 tracking-tight flex items-center gap-2.5">
-            <Radio className="w-7 h-7 text-blue-600 animate-pulse" />
-            Announcement Broadcaster
-          </h1>
-          <p className="text-xs text-zinc-500 dark:text-zinc-400 font-medium mt-1">
-            Broadcast, modify, or remove company-wide announcements. All posted announcements are synced live to technicians&apos; mobile devices.
-          </p>
-        </div>
-
-        <button
-          type="button"
-          onClick={handleOpenCreate}
-          className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-black rounded-xl shadow-sm transition-all transform active:scale-95 shrink-0"
-        >
-          <Plus className="w-4 h-4 stroke-[3]" />
-          New Broadcast Announcement
-        </button>
-      </div>
+      <PageHeader
+        title="Announcement Broadcaster"
+        subtitle="Broadcast, modify, or remove company-wide announcements. All posted announcements are synced live to technicians' mobile devices."
+        icon={Radio}
+        className="rounded-2xl mb-6 shadow-sm"
+        actions={
+          <button
+            type="button"
+            onClick={handleOpenCreate}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl shadow-xs transition-colors cursor-pointer shrink-0"
+          >
+            <Plus className="w-4 h-4 stroke-[3]" />
+            New Broadcast Announcement
+          </button>
+        }
+      />
 
       {/* Search & Filter Controls */}
       <div className="bg-white dark:bg-zinc-900 p-4 rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-sm flex flex-wrap items-center justify-between gap-3 mb-6 shrink-0">

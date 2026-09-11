@@ -1,4 +1,8 @@
-"use client";
+'use client'
+
+import PageHeader from '@/components/ui/PageHeader'
+import { KpiCard } from '@/components/ui/KpiCard'
+import Pagination from '@/components/ui/Pagination'
 
 import { useState, useEffect, useMemo } from 'react';
 import { 
@@ -552,32 +556,21 @@ export default function AuditLogClient() {
   return (
     <div className="h-full flex flex-col bg-zinc-50 dark:bg-zinc-950 overflow-hidden">
       {/* Top Header */}
-      <div className="bg-white dark:bg-zinc-900 border-b border-zinc-200/80 dark:border-zinc-800 px-6 py-4 shrink-0 shadow-xs">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 max-w-7xl mx-auto">
-          <div>
-            <div className="flex items-center gap-2.5">
-              <div className="p-2 bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 rounded-lg">
-                <FileSpreadsheet className="w-5 h-5" />
-              </div>
-              <div>
-                <h1 className="text-xl font-black text-zinc-900 dark:text-zinc-100 tracking-tight flex items-center gap-2">
-                  Accountant Attendance Audit Log
-                  <span className="text-[11px] font-bold tracking-wider px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 border border-blue-200/60 dark:border-blue-800 uppercase">
-                    Live Telemetry
-                  </span>
-                </h1>
-                <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5 font-medium">
-                  Review verified field attendance, late minutes, overtime, and night differentials for operations and time audit.
-                </p>
-              </div>
-            </div>
-          </div>
-          
-          <div className="flex items-center gap-2 self-end md:self-auto">
+      <PageHeader
+        title="Accountant Attendance Audit Log"
+        subtitle="Review verified field attendance, late minutes, overtime, and night differentials for operations and time audit."
+        icon={FileSpreadsheet}
+        badge={
+          <span className="text-[11px] font-bold tracking-wider px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 border border-blue-200/60 dark:border-blue-800 uppercase">
+            Live Telemetry
+          </span>
+        }
+        actions={
+          <>
             <button 
               onClick={exportToExcel}
               disabled={loading || filteredRecords.length === 0}
-              className="flex items-center gap-2 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-xs font-bold rounded-lg transition-colors shadow-xs"
+              className="flex items-center gap-2 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-xs font-bold rounded-lg transition-colors shadow-xs cursor-pointer"
               title="Export formatted Excel spreadsheet (.xlsx)"
             >
               <Download className="w-4 h-4" /> Export Excel (.xlsx)
@@ -585,65 +578,56 @@ export default function AuditLogClient() {
             <button 
               onClick={exportToCSV}
               disabled={loading || filteredRecords.length === 0}
-              className="flex items-center gap-2 px-3.5 py-2 bg-zinc-800 hover:bg-zinc-900 dark:bg-zinc-700 dark:hover:bg-zinc-600 disabled:opacity-50 text-white text-xs font-bold rounded-lg transition-colors shadow-xs"
+              className="flex items-center gap-2 px-3.5 py-2 bg-zinc-800 hover:bg-zinc-900 dark:bg-zinc-700 dark:hover:bg-zinc-600 disabled:opacity-50 text-white text-xs font-bold rounded-lg transition-colors shadow-xs cursor-pointer"
               title="Export formatted CSV file (.csv)"
             >
               <Download className="w-4 h-4" /> Export CSV
             </button>
-          </div>
-        </div>
-      </div>
+          </>
+        }
+      />
 
       {/* Main Container */}
       <div className="flex-1 p-6 overflow-hidden flex flex-col">
         <div className="max-w-7xl mx-auto w-full flex-1 flex flex-col overflow-hidden gap-4">
 
           {/* 5 KPI Telemetry Cards */}
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-3 shrink-0">
-            <div className="bg-white dark:bg-zinc-900 p-3.5 rounded-xl border border-zinc-200/80 dark:border-zinc-800 shadow-2xs">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Field Crew</span>
-                <Users className="w-4 h-4 text-zinc-400 dark:text-zinc-500" />
-              </div>
-              <div className="mt-2 text-2xl font-black text-zinc-900 dark:text-zinc-100">{telemetry.totCrew}</div>
-              <p className="text-[11px] text-zinc-400 dark:text-zinc-500 font-medium mt-0.5">Technicians & Helpers</p>
-            </div>
-
-            <div className="bg-white dark:bg-zinc-900 p-3.5 rounded-xl border border-zinc-200/80 dark:border-zinc-800 shadow-2xs">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider">Days Worked</span>
-                <Clock className="w-4 h-4 text-blue-500 dark:text-blue-400" />
-              </div>
-              <div className="mt-2 text-2xl font-black text-blue-600 dark:text-blue-400">{telemetry.totDays} <span className="text-xs font-semibold text-zinc-400 dark:text-zinc-500">days</span></div>
-              <p className="text-[11px] text-zinc-400 dark:text-zinc-500 font-medium mt-0.5">{telemetry.totHours} net work hours</p>
-            </div>
-
-            <div className="bg-white dark:bg-zinc-900 p-3.5 rounded-xl border border-zinc-200/80 dark:border-zinc-800 shadow-2xs">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider">Tardiness</span>
-                <AlertTriangle className="w-4 h-4 text-amber-500" />
-              </div>
-              <div className="mt-2 text-2xl font-black text-amber-600 dark:text-amber-400">{telemetry.totLates} <span className="text-xs font-semibold text-zinc-400 dark:text-zinc-500">lates</span></div>
-              <p className="text-[11px] text-zinc-400 dark:text-zinc-500 font-medium mt-0.5">{telemetry.totLateMins} total late minutes</p>
-            </div>
-
-            <div className="bg-white dark:bg-zinc-900 p-3.5 rounded-xl border border-zinc-200/80 dark:border-zinc-800 shadow-2xs">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">Overtime</span>
-                <Clock className="w-4 h-4 text-emerald-500" />
-              </div>
-              <div className="mt-2 text-2xl font-black text-emerald-600 dark:text-emerald-400">{telemetry.totOt} <span className="text-xs font-semibold text-zinc-400 dark:text-zinc-500">hrs</span></div>
-              <p className="text-[11px] text-zinc-400 dark:text-zinc-500 font-medium mt-0.5">Reg: {telemetry.totRegOt}h • Hol/Sun: {telemetry.totSunHolOt}h</p>
-            </div>
-
-            <div className="bg-white dark:bg-zinc-900 p-3.5 rounded-xl border border-zinc-200/80 dark:border-zinc-800 shadow-2xs">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-purple-600 dark:text-purple-400 uppercase tracking-wider">Night Diff</span>
-                <Moon className="w-4 h-4 text-purple-400" />
-              </div>
-              <div className="mt-2 text-2xl font-black text-purple-600 dark:text-purple-400">{telemetry.totNd} <span className="text-xs font-semibold text-zinc-400 dark:text-zinc-500">hrs</span></div>
-              <p className="text-[11px] text-zinc-400 dark:text-zinc-500 font-medium mt-0.5">Absences: {telemetry.totAbsences} • Leaves: {telemetry.totLeaves}d</p>
-            </div>
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3.5 shrink-0">
+            <KpiCard
+              label="Field Crew"
+              value={telemetry.totCrew}
+              icon={Users}
+              subtext="Technicians & Helpers"
+              variant="default"
+            />
+            <KpiCard
+              label="Days Worked"
+              value={`${telemetry.totDays}d`}
+              icon={Clock}
+              subtext={`${telemetry.totHours} net work hours`}
+              variant="blue"
+            />
+            <KpiCard
+              label="Tardiness"
+              value={`${telemetry.totLates}`}
+              icon={AlertTriangle}
+              subtext={`${telemetry.totLateMins} total late mins`}
+              variant="amber"
+            />
+            <KpiCard
+              label="Overtime"
+              value={`${telemetry.totOt}h`}
+              icon={Clock}
+              subtext={`Reg: ${telemetry.totRegOt}h • Sun: ${telemetry.totSunHolOt}h`}
+              variant="emerald"
+            />
+            <KpiCard
+              label="Night Diff"
+              value={`${telemetry.totNd}h`}
+              icon={Moon}
+              subtext={`Absences: ${telemetry.totAbsences} • Leaves: ${telemetry.totLeaves}d`}
+              variant="default"
+            />
           </div>
           
           {/* Controls Bar */}
@@ -862,37 +846,15 @@ export default function AuditLogClient() {
           </div>
 
           {/* Bottom Pagination Bar */}
-          <div className="bg-white dark:bg-zinc-900 px-4 py-2.5 border border-zinc-200/80 dark:border-zinc-800 rounded-b-xl flex items-center justify-between shrink-0 shadow-2xs">
-            <p className="text-xs font-semibold text-zinc-600 dark:text-zinc-400">
-              Showing <span className="font-bold text-zinc-900 dark:text-zinc-100">{filteredRecords.length === 0 ? 0 : Math.min((currentPage - 1) * ITEMS_PER_PAGE + 1, filteredRecords.length)}</span> to <span className="font-bold text-zinc-900 dark:text-zinc-100">{Math.min(currentPage * ITEMS_PER_PAGE, filteredRecords.length)}</span> of <span className="font-bold text-zinc-900 dark:text-zinc-100">{filteredRecords.length}</span> staff
-            </p>
-            <nav className="inline-flex rounded-lg shadow-2xs overflow-hidden border border-zinc-200 dark:border-zinc-700">
-              <button
-                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                disabled={currentPage === 1}
-                className="px-3 py-1 bg-white dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-700 disabled:opacity-40 text-xs font-semibold transition-colors border-r border-zinc-200 dark:border-zinc-700"
-              >
-                Prev
-              </button>
-              {Array.from({ length: totalPages }).map((_, i) => (
-                <button
-                  key={i}
-                  onClick={() => setCurrentPage(i + 1)}
-                  className={`px-3 py-1 text-xs font-semibold border-r last:border-r-0 border-zinc-300 transition-colors ${
-                    currentPage === i + 1 ? 'bg-zinc-900 text-white font-bold' : 'bg-white dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-700'
-                  }`}
-                >
-                  {i + 1}
-                </button>
-              ))}
-              <button
-                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                disabled={currentPage === totalPages || totalPages === 0}
-                className="px-3 py-1 bg-white dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-700 disabled:opacity-40 text-xs font-semibold transition-colors"
-              >
-                Next
-              </button>
-            </nav>
+          <div className="rounded-b-xl overflow-hidden border border-zinc-200/80 dark:border-zinc-800 border-t-0 shadow-2xs shrink-0">
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={filteredRecords.length}
+              itemsPerPage={ITEMS_PER_PAGE}
+              onPageChange={setCurrentPage}
+              itemNamePlural="staff"
+            />
           </div>
 
         </div>

@@ -1,4 +1,8 @@
-'use client';
+'use client'
+
+import PageHeader from '@/components/ui/PageHeader'
+import { KpiCard, KpiGrid } from '@/components/ui/KpiCard'
+import Pagination from '@/components/ui/Pagination'
 
 import { useEffect, useState, useRef } from "react";
 import dynamic from "next/dynamic";
@@ -558,22 +562,20 @@ export default function DispatchBoardClient() {
 
   return (
     <div className="flex flex-col h-full w-full max-w-full">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 bg-white dark:bg-zinc-900 p-4 rounded-xl border border-zinc-200/80 dark:border-zinc-800 shadow-sm gap-4">
-        <div>
-          <h1 className="text-xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100 leading-none mb-1">
-            {viewTab === 'dispatches' ? 'Scheduling & Dispatch' : 'Casual Helpers Register'}
-          </h1>
-          <p className="text-xs text-zinc-500 dark:text-zinc-400">
-            {viewTab === 'dispatches' 
-              ? 'Manage daily field assignments, crew hierarchy, and geofences.' 
-              : 'Register and manage on-demand casual support crew with daily-wage tracking.'}
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          {viewTab === 'dispatches' ? (
+      <PageHeader
+        title={viewTab === 'dispatches' ? 'Scheduling & Dispatch' : 'Casual Helpers Register'}
+        subtitle={
+          viewTab === 'dispatches'
+            ? 'Manage daily field assignments, crew hierarchy, and geofences.'
+            : 'Register and manage on-demand casual support crew with daily-wage tracking.'
+        }
+        icon={CalendarIcon}
+        className="rounded-xl mb-4 shadow-sm"
+        actions={
+          viewTab === 'dispatches' ? (
             <button 
               onClick={() => setIsModalOpen(true)}
-              className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm font-medium text-sm cursor-pointer"
+              className="flex items-center justify-center gap-2 px-3.5 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors shadow-xs font-semibold text-xs cursor-pointer"
             >
               <Plus className="w-4 h-4" />
               Create Dispatch
@@ -581,14 +583,14 @@ export default function DispatchBoardClient() {
           ) : (
             <button 
               onClick={() => openRegisterCasualModal()}
-              className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm font-medium text-sm cursor-pointer"
+              className="flex items-center justify-center gap-2 px-3.5 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors shadow-xs font-semibold text-xs cursor-pointer"
             >
               <UserPlus className="w-4 h-4" />
               Register Casual Worker
             </button>
-          )}
-        </div>
-      </div>
+          )
+        }
+      />
 
       {/* Top View Switcher Tabs */}
       <div className="flex items-center gap-2 mb-4">
@@ -801,35 +803,15 @@ export default function DispatchBoardClient() {
         </div>
 
         {/* Pagination */}
-        <div className="bg-zinc-50/70 dark:bg-zinc-900/60 px-4 py-3 border-t border-zinc-200/80 dark:border-zinc-800 flex items-center justify-between mt-auto">
-          <p className="text-sm text-zinc-700 dark:text-zinc-300">
-            Showing <span className="font-semibold">{Math.min((currentPage - 1) * itemsPerPage + 1, filtered.length) || 0}</span> to <span className="font-semibold">{Math.min(currentPage * itemsPerPage, filtered.length)}</span> of <span className="font-semibold">{filtered.length}</span> results
-          </p>
-          <nav className="inline-flex rounded-md shadow-sm">
-            <button
-              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-              disabled={currentPage === 1}
-              className="px-3 py-2 rounded-l-md border border-zinc-200/80 dark:border-zinc-700 bg-white text-zinc-500 dark:text-zinc-400 hover:bg-zinc-50 dark:bg-zinc-800/60 disabled:opacity-50 text-sm font-medium"
-            >
-              Prev
-            </button>
-            {Array.from({ length: totalPages }).map((_, i) => (
-              <button
-                key={i}
-                onClick={() => setCurrentPage(i + 1)}
-                className={`px-3 py-2 border-t border-b border-zinc-200/80 dark:border-zinc-800 text-sm font-medium ${currentPage === i + 1 ? 'bg-blue-50 text-blue-600 border-blue-200 z-10' : 'bg-white text-zinc-500 dark:text-zinc-400 hover:bg-zinc-50 dark:bg-zinc-800/60'} -ml-px`}
-              >
-                {i + 1}
-              </button>
-            ))}
-            <button
-              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-              disabled={currentPage === totalPages || totalPages === 0}
-              className="px-3 py-2 rounded-r-md border border-zinc-200/80 dark:border-zinc-700 border-l bg-white text-zinc-500 dark:text-zinc-400 hover:bg-zinc-50 dark:bg-zinc-800/60 disabled:opacity-50 -ml-px text-sm font-medium"
-            >
-              Next
-            </button>
-          </nav>
+        <div className="mt-auto">
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={filtered.length}
+            itemsPerPage={itemsPerPage}
+            onPageChange={setCurrentPage}
+            itemNamePlural="dispatches"
+          />
         </div>
       </div>
       )}
@@ -838,55 +820,36 @@ export default function DispatchBoardClient() {
       {viewTab === 'casual_helpers' && (
         <div className="flex flex-col flex-1 gap-5 overflow-y-auto">
           {/* 4 KPI Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="bg-white dark:bg-zinc-900 p-4 rounded-xl border border-zinc-200/80 dark:border-zinc-800 shadow-sm flex items-center justify-between">
-              <div>
-                <p className="text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Total Helpers</p>
-                <p className="text-2xl font-black text-zinc-900 dark:text-zinc-100 mt-1">{casualHelpers.length}</p>
-                <span className="text-[10px] text-zinc-400 dark:text-zinc-500 font-medium">On-demand registered roster</span>
-              </div>
-              <div className="p-3 rounded-xl bg-blue-50 text-blue-600 border border-blue-100">
-                <Users className="w-5 h-5" />
-              </div>
-            </div>
-
-            <div className="bg-white dark:bg-zinc-900 p-4 rounded-xl border border-zinc-200/80 dark:border-zinc-800 shadow-sm flex items-center justify-between">
-              <div>
-                <p className="text-xs font-bold text-emerald-600 uppercase tracking-wider">Active on Roster</p>
-                <p className="text-2xl font-black text-emerald-700 mt-1">
-                  {casualHelpers.filter(c => c.status === 'active').length}
-                </p>
-                <span className="text-[10px] text-emerald-600/80 font-medium">Ready for deployment</span>
-              </div>
-              <div className="p-3 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-100">
-                <ShieldCheck className="w-5 h-5" />
-              </div>
-            </div>
-
-            <div className="bg-white dark:bg-zinc-900 p-4 rounded-xl border border-zinc-200/80 dark:border-zinc-800 shadow-sm flex items-center justify-between">
-              <div>
-                <p className="text-xs font-bold text-amber-600 uppercase tracking-wider">Dispatches Handled</p>
-                <p className="text-2xl font-black text-amber-700 mt-1">
-                  {casualHelpers.reduce((sum, c) => sum + (c.dispatch_count || 0), 0)}
-                </p>
-                <span className="text-[10px] text-amber-600/80 font-medium">Total missions completed</span>
-              </div>
-              <div className="p-3 rounded-xl bg-amber-50 text-amber-600 border border-amber-100">
-                <Award className="w-5 h-5" />
-              </div>
-            </div>
-
-            <div className="bg-white dark:bg-zinc-900 p-4 rounded-xl border border-zinc-200/80 dark:border-zinc-800 shadow-sm flex items-center justify-between">
-              <div>
-                <p className="text-xs font-bold text-blue-600 uppercase tracking-wider">NCR Daily Baseline</p>
-                <p className="text-2xl font-black text-blue-700 mt-1">₱610.00</p>
-                <span className="text-[10px] text-blue-600/80 font-medium">DOLE Statutory baseline</span>
-              </div>
-              <div className="p-3 rounded-xl bg-blue-50 text-blue-600 border border-blue-100">
-                <DollarSign className="w-5 h-5" />
-              </div>
-            </div>
-          </div>
+          <KpiGrid columns={4}>
+            <KpiCard
+              label="Total Helpers"
+              value={casualHelpers.length}
+              subtext="On-demand registered roster"
+              icon={Users}
+              variant="default"
+            />
+            <KpiCard
+              label="Active on Roster"
+              value={casualHelpers.filter(c => c.status === 'active').length}
+              subtext="Ready for deployment"
+              icon={ShieldCheck}
+              variant="emerald"
+            />
+            <KpiCard
+              label="Dispatches Handled"
+              value={casualHelpers.reduce((sum, c) => sum + (c.dispatch_count || 0), 0)}
+              subtext="Total missions completed"
+              icon={Award}
+              variant="amber"
+            />
+            <KpiCard
+              label="NCR Daily Baseline"
+              value="₱610.00"
+              subtext="DOLE Statutory baseline"
+              icon={DollarSign}
+              variant="blue"
+            />
+          </KpiGrid>
 
           {/* Casual Helpers Catalog Table */}
           <div className="bg-white rounded-xl shadow-sm border border-zinc-200/80 dark:border-zinc-700 overflow-hidden flex flex-col flex-1 pb-4">

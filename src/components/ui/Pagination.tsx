@@ -1,6 +1,6 @@
 "use client"
-import React from 'react'
-import { ChevronRight } from 'lucide-react'
+import React from "react"
+import { ChevronLeft, ChevronRight } from "lucide-react"
 
 interface PaginationProps {
   currentPage: number
@@ -9,6 +9,7 @@ interface PaginationProps {
   itemsPerPage: number
   onPageChange: (page: number) => void
   itemNamePlural?: string
+  className?: string
 }
 
 export default function Pagination({
@@ -17,17 +18,18 @@ export default function Pagination({
   totalItems,
   itemsPerPage,
   onPageChange,
-  itemNamePlural = 'items'
+  itemNamePlural = "records",
+  className = ""
 }: PaginationProps) {
-  if (totalPages <= 1) return null
-
-  const startIndex = (currentPage - 1) * itemsPerPage
+  const safeTotalPages = Math.max(1, totalPages)
+  const startIndex = totalItems === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1
+  const endIndex = Math.min(currentPage * itemsPerPage, totalItems)
 
   // Generate page numbers, handle ellipsis for large page sizes
-  const pages = []
+  const pages: number[] = []
   const maxVisiblePages = 5
   let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2))
-  let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1)
+  let endPage = Math.min(safeTotalPages, startPage + maxVisiblePages - 1)
 
   if (endPage - startPage + 1 < maxVisiblePages) {
     startPage = Math.max(1, endPage - maxVisiblePages + 1)
@@ -38,80 +40,88 @@ export default function Pagination({
   }
 
   return (
-    <div className="px-6 py-4 bg-zinc-50/50 border-t border-zinc-100 flex flex-col sm:flex-row items-center justify-between gap-4">
-      <p className="text-xs text-zinc-500 font-medium">
-        Showing <span className="font-semibold text-zinc-900">{totalItems === 0 ? 0 : startIndex + 1}</span> to{" "}
-        <span className="font-semibold text-zinc-900">
-          {Math.min(startIndex + itemsPerPage, totalItems)}
-        </span>{" "}
-        of <span className="font-semibold text-zinc-900">{totalItems}</span> {itemNamePlural}
+    <div
+      className={`px-4 py-3 bg-zinc-50 dark:bg-zinc-900 border-t border-zinc-200/80 dark:border-zinc-800 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs transition-colors ${className}`}
+    >
+      <p className="text-zinc-500 dark:text-zinc-400 font-medium">
+        Showing <span className="font-semibold text-zinc-900 dark:text-zinc-100">{totalItems === 0 ? 0 : startIndex}</span> to{" "}
+        <span className="font-semibold text-zinc-900 dark:text-zinc-100">{endIndex}</span> of{" "}
+        <span className="font-semibold text-zinc-900 dark:text-zinc-100">{totalItems}</span> {itemNamePlural}
       </p>
-      
-      <div className="flex items-center gap-1.5 font-sans">
+
+      <div className="flex items-center gap-1 font-sans select-none">
         {/* Previous Button */}
         <button
           type="button"
           onClick={() => onPageChange(Math.max(currentPage - 1, 1))}
           disabled={currentPage === 1}
-          className="p-2 rounded-xl border border-zinc-200 bg-white text-zinc-650 hover:bg-zinc-50 hover:text-zinc-900 disabled:opacity-40 disabled:hover:bg-white disabled:hover:text-zinc-600 transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-95 cursor-pointer flex items-center justify-center disabled:cursor-not-allowed"
+          className="p-1.5 rounded-lg border border-zinc-200/80 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700 disabled:opacity-40 disabled:hover:bg-white dark:disabled:hover:bg-zinc-800 disabled:cursor-not-allowed transition-colors cursor-pointer flex items-center justify-center shadow-2xs"
           title="Previous Page"
         >
-          <ChevronRight className="w-4 h-4 rotate-180" />
+          <ChevronLeft className="w-4 h-4" />
         </button>
 
-        {/* Page Numbers */}
-        <div className="flex items-center gap-1">
-          {startPage > 1 && (
-            <>
-              <button
-                type="button"
-                onClick={() => onPageChange(1)}
-                className="min-w-9 h-9 px-2.5 rounded-xl text-xs font-bold transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-95 cursor-pointer flex items-center justify-center border bg-white border-zinc-200 text-zinc-650 hover:bg-zinc-50 hover:text-zinc-900"
-              >
-                1
-              </button>
-              {startPage > 2 && <span className="text-zinc-400 text-xs px-1 select-none font-extrabold">...</span>}
-            </>
-          )}
+        {/* First Page if far away */}
+        {startPage > 1 && (
+          <>
+            <button
+              type="button"
+              onClick={() => onPageChange(1)}
+              className="min-w-8 h-8 px-2 rounded-lg text-xs font-semibold border border-zinc-200/80 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors cursor-pointer shadow-2xs"
+            >
+              1
+            </button>
+            {startPage > 2 && (
+              <span className="text-zinc-400 dark:text-zinc-500 text-xs px-1 select-none font-bold">
+                ...
+              </span>
+            )}
+          </>
+        )}
 
-          {pages.map((page) => {
-            const isCurrent = page === currentPage;
-            return (
-              <button
-                key={page}
-                type="button"
-                onClick={() => onPageChange(page)}
-                className={`min-w-9 h-9 px-2.5 rounded-xl text-xs font-bold transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-95 cursor-pointer flex items-center justify-center border ${
-                  isCurrent
-                    ? "bg-blue-650 border-blue-650 text-white shadow-sm"
-                    : "bg-white border-zinc-200 text-zinc-650 hover:bg-zinc-50 hover:text-zinc-900"
-                }`}
-              >
-                {page}
-              </button>
-            )
-          })}
+        {/* Visible Page Numbers */}
+        {pages.map((page) => {
+          const isCurrent = page === currentPage
+          return (
+            <button
+              key={page}
+              type="button"
+              onClick={() => onPageChange(page)}
+              className={`min-w-8 h-8 px-2 rounded-lg text-xs font-bold border transition-colors cursor-pointer shadow-2xs ${
+                isCurrent
+                  ? "bg-blue-50 dark:bg-blue-950/50 border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400"
+                  : "bg-white dark:bg-zinc-800 border-zinc-200/80 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700"
+              }`}
+            >
+              {page}
+            </button>
+          )
+        })}
 
-          {endPage < totalPages && (
-            <>
-              {endPage < totalPages - 1 && <span className="text-zinc-400 text-xs px-1 select-none font-extrabold">...</span>}
-              <button
-                type="button"
-                onClick={() => onPageChange(totalPages)}
-                className="min-w-9 h-9 px-2.5 rounded-xl text-xs font-bold transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-95 cursor-pointer flex items-center justify-center border bg-white border-zinc-200 text-zinc-650 hover:bg-zinc-50 hover:text-zinc-900"
-              >
-                {totalPages}
-              </button>
-            </>
-          )}
-        </div>
+        {/* Last Page if far away */}
+        {endPage < safeTotalPages && (
+          <>
+            {endPage < safeTotalPages - 1 && (
+              <span className="text-zinc-400 dark:text-zinc-500 text-xs px-1 select-none font-bold">
+                ...
+              </span>
+            )}
+            <button
+              type="button"
+              onClick={() => onPageChange(safeTotalPages)}
+              className="min-w-8 h-8 px-2 rounded-lg text-xs font-semibold border border-zinc-200/80 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors cursor-pointer shadow-2xs"
+            >
+              {safeTotalPages}
+            </button>
+          </>
+        )}
 
         {/* Next Button */}
         <button
           type="button"
-          onClick={() => onPageChange(Math.min(currentPage + 1, totalPages))}
-          disabled={currentPage === totalPages}
-          className="p-2 rounded-xl border border-zinc-200 bg-white text-zinc-650 hover:bg-zinc-50 hover:text-zinc-900 disabled:opacity-40 disabled:hover:bg-white disabled:hover:text-zinc-605 transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-95 cursor-pointer flex items-center justify-center disabled:cursor-not-allowed"
+          onClick={() => onPageChange(Math.min(currentPage + 1, safeTotalPages))}
+          disabled={currentPage === safeTotalPages || totalItems === 0}
+          className="p-1.5 rounded-lg border border-zinc-200/80 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700 disabled:opacity-40 disabled:hover:bg-white dark:disabled:hover:bg-zinc-800 disabled:cursor-not-allowed transition-colors cursor-pointer flex items-center justify-center shadow-2xs"
           title="Next Page"
         >
           <ChevronRight className="w-4 h-4" />

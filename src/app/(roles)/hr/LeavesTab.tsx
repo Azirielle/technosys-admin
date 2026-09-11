@@ -1,5 +1,7 @@
 'use client'
 
+import Pagination from '@/components/ui/Pagination'
+
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Check, X, Search, Filter, ChevronLeft, ChevronRight, User } from 'lucide-react'
@@ -182,40 +184,14 @@ export function LeavesTab() {
       </div>
 
       {/* Pagination */}
-      <div className="bg-zinc-50/70 dark:bg-zinc-900/60 px-4 py-2.5 border-t border-zinc-200/80 dark:border-zinc-800 flex items-center justify-between shrink-0 shadow-2xs">
-        <p className="text-xs text-zinc-600 dark:text-zinc-400 font-medium">
-          Showing <span className="font-bold text-zinc-900 dark:text-zinc-100">{Math.min((currentPage - 1) * itemsPerPage + 1, filteredLeaves.length) || 0}</span> to <span className="font-bold text-zinc-900 dark:text-zinc-100">{Math.min(currentPage * itemsPerPage, filteredLeaves.length)}</span> of <span className="font-bold text-zinc-900 dark:text-zinc-100">{filteredLeaves.length}</span> results
-        </p>
-        <nav className="inline-flex rounded-lg shadow-2xs overflow-hidden border border-zinc-200 dark:border-zinc-700">
-          <button
-            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-            disabled={currentPage === 1}
-            className="px-3 py-1 bg-white dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-700 disabled:opacity-40 text-xs font-semibold transition-colors border-r border-zinc-200 dark:border-zinc-700"
-          >
-            Prev
-          </button>
-          {Array.from({ length: totalPages }).map((_, i) => (
-            <button
-              key={i}
-              onClick={() => setCurrentPage(i + 1)}
-              className={`px-3 py-1 text-xs font-semibold border-r last:border-r-0 border-zinc-200 dark:border-zinc-700 transition-colors ${
-                currentPage === i + 1 
-                  ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 font-bold' 
-                  : 'bg-white dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-700'
-              }`}
-            >
-              {i + 1}
-            </button>
-          ))}
-          <button
-            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-            disabled={currentPage === totalPages || totalPages === 0}
-            className="px-3 py-1 bg-white dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-700 disabled:opacity-40 text-xs font-semibold transition-colors"
-          >
-            Next
-          </button>
-        </nav>
-      </div>
+      <Pagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        totalItems={filteredLeaves.length}
+        itemsPerPage={itemsPerPage}
+        onPageChange={setCurrentPage}
+        itemNamePlural="leave requests"
+      />
 
       {/* Detail Modal */}
       {selectedLeave && (

@@ -1,6 +1,8 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useTransition } from 'react'
+import PageHeader from '@/components/ui/PageHeader'
+import { KpiCard, KpiGrid } from '@/components/ui/KpiCard'
 import {
   ShieldCheck,
   RefreshCw,
@@ -269,49 +271,73 @@ export default function SystemOverridesClient() {
   return (
     <div className="flex flex-col h-full w-full max-w-full overflow-hidden p-6">
       {/* Header Bar */}
-      <div className="bg-white dark:bg-zinc-900 p-4 rounded-xl border border-zinc-200/80 dark:border-zinc-800 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4 shrink-0">
-        <div>
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-2xs">
-              <ShieldCheck className="w-4 h-4" />
-            </div>
-            <div>
-              <h1 className="text-base font-black text-zinc-900 dark:text-zinc-100 tracking-tight flex items-center gap-2">
-                System Overrides & Access Matrix
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-[10px] font-bold">
-                  <span className="relative flex h-1.5 w-1.5">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                    <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500" />
-                  </span>
-                  {isSyncing ? 'Syncing...' : 'Realtime Sync Active'}
-                </span>
-              </h1>
-              <p className="text-[11px] text-zinc-500 font-medium">
-                Pinnacle Chief Executive Officer access control. Persisted globally with auto-expiring time limits.
-              </p>
-            </div>
+      <PageHeader
+        title="System Overrides & Access Matrix"
+        subtitle="Pinnacle Chief Executive Officer access control. Persisted globally with auto-expiring time limits."
+        icon={ShieldCheck}
+        className="rounded-xl mb-4 shadow-xs"
+        badge={
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 text-[10px] font-bold">
+            <span className="relative flex h-1.5 w-1.5">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+              <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500" />
+            </span>
+            {isSyncing ? 'Syncing...' : 'Realtime Sync Active'}
+          </span>
+        }
+        actions={
+          <div className="flex items-center gap-2 self-start md:self-auto">
+            <button
+              onClick={handleGrantAll}
+              disabled={isSyncing || loading}
+              className="inline-flex items-center gap-1.5 bg-blue-50 dark:bg-blue-950/50 border border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/50 disabled:opacity-50 px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors shadow-2xs cursor-pointer"
+            >
+              {isSyncing ? <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-600" /> : <Zap className="w-3.5 h-3.5 text-blue-600" />}
+              Grant All Overrides
+            </button>
+            <button
+              onClick={handleResetDefaults}
+              disabled={isSyncing || loading}
+              className="inline-flex items-center gap-1.5 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-700 disabled:opacity-50 px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors shadow-2xs cursor-pointer"
+            >
+              <RefreshCw className="w-3.5 h-3.5 text-zinc-500" />
+              Reset Defaults
+            </button>
           </div>
-        </div>
+        }
+      />
 
-        <div className="flex items-center gap-2 self-start md:self-auto">
-          <button
-            onClick={handleGrantAll}
-            disabled={isSyncing || loading}
-            className="inline-flex items-center gap-1.5 bg-blue-50 border border-blue-200 text-blue-700 hover:bg-blue-100 disabled:opacity-50 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors shadow-2xs cursor-pointer"
-          >
-            {isSyncing ? <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-600" /> : <Zap className="w-3.5 h-3.5 text-blue-600" />}
-            Grant All Overrides
-          </button>
-          <button
-            onClick={handleResetDefaults}
-            disabled={isSyncing || loading}
-            className="inline-flex items-center gap-1.5 bg-white border border-zinc-200 text-zinc-700 hover:bg-zinc-50 disabled:opacity-50 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors shadow-2xs cursor-pointer"
-          >
-            <RefreshCw className="w-3.5 h-3.5 text-zinc-500" />
-            Reset Defaults
-          </button>
-        </div>
-      </div>
+      {/* CEO Governance KPI Telemetry Strip */}
+      <KpiGrid columns={4}>
+        <KpiCard
+          label="Governance Scope"
+          value={`${SYSTEM_MODULES.length}`}
+          subtext="System modules managed"
+          icon={ShieldCheck}
+          variant="blue"
+        />
+        <KpiCard
+          label="Active Overrides"
+          value={`${Object.values(metadata).reduce((acc, roleMods) => acc + Object.values(roleMods).filter(m => isOverrideActive(m)).length, 0)}`}
+          subtext="Temporary unlocks"
+          icon={Unlock}
+          variant={Object.values(metadata).reduce((acc, roleMods) => acc + Object.values(roleMods).filter(m => isOverrideActive(m)).length, 0) > 0 ? "amber" : "default"}
+        />
+        <KpiCard
+          label="Standard Access"
+          value={`${SYSTEM_MODULES.reduce((acc, m) => acc + m.defaultRoles.length, 0)}`}
+          subtext="Role default permissions"
+          icon={Lock}
+          variant="emerald"
+        />
+        <KpiCard
+          label="Audit Sync Status"
+          value={isSyncing ? "Syncing..." : "Realtime"}
+          subtext="PostgreSQL WAL active"
+          icon={RefreshCw}
+          variant="default"
+        />
+      </KpiGrid>
 
       {/* Success Toast Notification */}
       {notification && (

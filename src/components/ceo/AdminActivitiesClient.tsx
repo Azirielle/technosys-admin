@@ -1,5 +1,8 @@
 'use client'
 
+import PageHeader from '@/components/ui/PageHeader'
+import Pagination from '@/components/ui/Pagination'
+
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import {
   ShieldAlert,
@@ -170,26 +173,22 @@ export default function AdminActivitiesClient() {
   return (
     <div className="flex flex-col h-full w-full max-w-full overflow-hidden p-6 space-y-4">
       {/* Header Bar */}
-      <div className="bg-white p-5 rounded-xl border border-zinc-200 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4 shrink-0">
-        <div>
-          <h1 className="text-xl font-bold text-zinc-900 tracking-tight flex items-center gap-2">
-            <ShieldAlert className="w-5 h-5 text-blue-600" />
-            Administrator Activity Audit Logs
-          </h1>
-          <p className="text-xs text-zinc-500 font-medium mt-0.5">
-            Pinnacle Chief Executive Officer oversight. Track and verify admin activities executed under standard scope vs. CEO-granted overrides.
-          </p>
-        </div>
-
-        <button
-          onClick={loadLogs}
-          disabled={isLoading}
-          className="inline-flex items-center gap-2 px-3 py-1.5 bg-zinc-50 hover:bg-zinc-100 text-zinc-700 text-xs font-semibold rounded-lg border border-zinc-200 transition-colors self-start md:self-auto disabled:opacity-50"
-        >
-          <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
-          <span>Refresh Logs</span>
-        </button>
-      </div>
+      <PageHeader
+        title="Administrator Activity Audit Logs"
+        subtitle="Pinnacle Chief Executive Officer oversight. Track and verify admin activities executed under standard scope vs. CEO-granted overrides."
+        icon={ShieldAlert}
+        className="rounded-xl shadow-xs"
+        actions={
+          <button
+            onClick={loadLogs}
+            disabled={isLoading}
+            className="inline-flex items-center gap-2 px-3.5 py-2 bg-zinc-50 dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 text-xs font-semibold rounded-xl border border-zinc-200 dark:border-zinc-700 transition-colors cursor-pointer disabled:opacity-50 shadow-2xs"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
+            <span>Refresh Logs</span>
+          </button>
+        }
+      />
 
       {/* Main Filter & Navigation Tabs Card */}
       <div className="bg-white border border-zinc-200 rounded-xl overflow-hidden shadow-xs flex-1 flex flex-col min-h-0">
@@ -404,37 +403,14 @@ export default function AdminActivitiesClient() {
         </div>
 
         {/* Pagination Footer */}
-        <div className="p-3 bg-zinc-50 border-t border-zinc-200 flex items-center justify-between shrink-0">
-          <div className="text-xs text-zinc-500 font-medium">
-            Showing <span className="font-semibold text-zinc-900">{filteredLogs.length === 0 ? 0 : (currentPage - 1) * ITEMS_PER_PAGE + 1}</span> to{' '}
-            <span className="font-semibold text-zinc-900">{Math.min(currentPage * ITEMS_PER_PAGE, filteredLogs.length)}</span> of{' '}
-            <span className="font-semibold text-zinc-900">{filteredLogs.length}</span> entries
-          </div>
-
-          <div className="flex items-center gap-1.5">
-            <button
-              onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-              disabled={currentPage === 1}
-              className="p-1 bg-white border border-zinc-200 rounded-md text-zinc-700 hover:bg-zinc-100 disabled:opacity-40 transition-colors"
-              title="Previous Page"
-            >
-              <ChevronLeft className="w-4 h-4" />
-            </button>
-
-            <span className="text-xs font-semibold text-zinc-700 px-2">
-              {currentPage} of {totalPages}
-            </span>
-
-            <button
-              onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-              disabled={currentPage === totalPages}
-              className="p-1 bg-white border border-zinc-200 rounded-md text-zinc-700 hover:bg-zinc-100 disabled:opacity-40 transition-colors"
-              title="Next Page"
-            >
-              <ChevronRight className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={filteredLogs.length}
+          itemsPerPage={ITEMS_PER_PAGE}
+          onPageChange={setCurrentPage}
+          itemNamePlural="entries"
+        />
       </div>
 
       {/* Log Details Security Audit Modal */}

@@ -1,4 +1,8 @@
-"use client";
+'use client'
+
+import PageHeader from '@/components/ui/PageHeader'
+import Pagination from '@/components/ui/Pagination'
+import ModalDialog from '@/components/ui/ModalDialog'
 
 import { useState, useEffect } from 'react';
 import { Search, FolderOpen, UploadCloud, AlertTriangle, FileText, CheckCircle2, X, Send, Phone, Settings, Filter, ChevronLeft, ChevronRight, Trash2 } from 'lucide-react';
@@ -324,19 +328,11 @@ export default function EmployeeFilesClient() {
   return (
     <div className="h-full flex flex-col bg-zinc-50 dark:bg-zinc-950 overflow-hidden">
       {/* Header */}
-      <div className="bg-white dark:bg-zinc-900 border-b border-zinc-200/80 dark:border-zinc-800 px-6 py-4 shrink-0">
-        <div className="flex justify-between items-center max-w-7xl mx-auto">
-          <div>
-            <h1 className="text-xl font-black text-zinc-900 dark:text-zinc-100 dark:text-zinc-100 tracking-tight flex items-center gap-2">
-              <FolderOpen className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-              201 Employee Files & Warnings
-            </h1>
-            <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5 font-medium">
-              Manage operational documents, salaries, and disciplinary actions.
-            </p>
-          </div>
-        </div>
-      </div>
+      <PageHeader
+        title="201 Employee Files & Warnings"
+        subtitle="Manage operational documents, salaries, and disciplinary actions."
+        icon={FolderOpen}
+      />
 
       {/* Main Content */}
       <div className="flex-1 p-6 overflow-hidden flex flex-col">
@@ -469,35 +465,15 @@ export default function EmployeeFilesClient() {
           </div>
 
           {/* Standardized Bottom Pagination Bar */}
-          <div className="bg-zinc-50 dark:bg-zinc-900 px-4 py-3 border border-zinc-200/80 dark:border-zinc-800 rounded-b-xl flex items-center justify-between shrink-0">
-            <p className="text-sm text-zinc-700 dark:text-zinc-300 dark:text-zinc-300">
-              Showing <span className="font-semibold">{filteredEmployees.length === 0 ? 0 : Math.min((currentPage - 1) * ITEMS_PER_PAGE + 1, filteredEmployees.length)}</span> to <span className="font-semibold">{Math.min(currentPage * ITEMS_PER_PAGE, filteredEmployees.length)}</span> of <span className="font-semibold">{filteredEmployees.length}</span> results
-            </p>
-            <nav className="inline-flex rounded-md shadow-sm">
-              <button
-                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                disabled={currentPage === 1}
-                className="px-3 py-1.5 rounded-l-md border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-700 disabled:opacity-50 text-sm font-medium transition-colors"
-              >
-                Prev
-              </button>
-              {Array.from({ length: totalPages }).map((_, i) => (
-                <button
-                  key={i}
-                  onClick={() => setCurrentPage(i + 1)}
-                  className={`px-3 py-1.5 border-t border-b border-r border-zinc-300 text-sm font-medium ${currentPage === i + 1 ? 'bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 font-bold border-blue-200 dark:border-blue-800 z-10' : 'bg-white dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-700 border-zinc-300 dark:border-zinc-700'} -ml-px transition-colors`}
-                >
-                  {i + 1}
-                </button>
-              ))}
-              <button
-                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                disabled={currentPage === totalPages || totalPages === 0}
-                className="px-3 py-1.5 rounded-r-md border border-zinc-300 dark:border-zinc-700 border-l bg-white dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-700 disabled:opacity-50 -ml-px text-sm font-medium transition-colors"
-              >
-                Next
-              </button>
-            </nav>
+          <div className="rounded-b-xl overflow-hidden border border-zinc-200/80 dark:border-zinc-800 border-t-0 shadow-2xs shrink-0">
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={filteredEmployees.length}
+              itemsPerPage={ITEMS_PER_PAGE}
+              onPageChange={setCurrentPage}
+              itemNamePlural="employees"
+            />
           </div>
         </div>
       </div>

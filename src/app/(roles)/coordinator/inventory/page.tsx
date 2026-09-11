@@ -1,5 +1,8 @@
 'use client'
 
+import PageHeader from '@/components/ui/PageHeader'
+import { KpiCard, KpiGrid } from '@/components/ui/KpiCard'
+
 import { useEffect, useState, useTransition } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import {
@@ -306,77 +309,65 @@ export default function InventoryLedgerPage() {
   return (
     <div className="flex flex-col h-full w-full max-w-full space-y-5">
       {/* Header Banner */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between bg-white dark:bg-zinc-900 p-5 rounded-2xl border border-zinc-200/80 dark:border-zinc-800 shadow-xs gap-4">
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <h1 className="text-xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100 leading-none">Tool Inventory & Custody Vault</h1>
-            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
-              Active Lifecycle
-            </span>
+      <PageHeader
+        title="Tool Inventory & Custody Vault"
+        subtitle="Track equipment availability, issue tools to crews, and audit returns with condition verification."
+        badge={
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+            Active Lifecycle
+          </span>
+        }
+        actions={
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleOpenAddTool}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+            >
+              <Plus className="w-4 h-4" />
+              <span>+ Add Equipment</span>
+            </button>
+            <button
+              onClick={fetchInitialData}
+              className="p-2 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 rounded-xl transition-colors cursor-pointer"
+              title="Refresh Ledger"
+            >
+              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+            </button>
           </div>
-          <p className="text-xs text-zinc-500 dark:text-zinc-400">Track equipment availability, issue tools to crews, and audit returns with condition verification.</p>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <button
-            onClick={handleOpenAddTool}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold shadow-xs transition-colors"
-          >
-            <Plus className="w-4 h-4" />
-            <span>+ Add Equipment</span>
-          </button>
-          <button
-            onClick={fetchInitialData}
-            className="p-2 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 rounded-xl transition-colors"
-            title="Refresh Ledger"
-          >
-            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-          </button>
-        </div>
-      </div>
+        }
+      />
 
       {/* KPI Telemetry Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
-        <div className="bg-white dark:bg-zinc-900 p-4 rounded-xl border border-zinc-200/80 dark:border-zinc-800 shadow-xs flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
-            <Package className="w-5 h-5" />
-          </div>
-          <div>
-            <p className="text-[11px] font-medium text-zinc-500">Total Tool Assets</p>
-            <p className="text-lg font-bold text-zinc-900 dark:text-zinc-100">{totalAssets} <span className="text-xs font-normal text-zinc-400 dark:text-zinc-500">units</span></p>
-          </div>
-        </div>
-
-        <div className="bg-white dark:bg-zinc-900 p-4 rounded-xl border border-zinc-200/80 dark:border-zinc-800 shadow-xs flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
-            <Box className="w-5 h-5" />
-          </div>
-          <div>
-            <p className="text-[11px] font-medium text-zinc-500">In Warehouse (Available)</p>
-            <p className="text-lg font-bold text-blue-600">{availableUnits} <span className="text-xs font-normal text-zinc-400">ready</span></p>
-          </div>
-        </div>
-
-        <div className="bg-white dark:bg-zinc-900 p-4 rounded-xl border border-zinc-200/80 dark:border-zinc-800 shadow-xs flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center">
-            <Wrench className="w-5 h-5" />
-          </div>
-          <div>
-            <p className="text-[11px] font-medium text-zinc-500">In Field / Deployed</p>
-            <p className="text-lg font-bold text-amber-600">{activeLoans} <span className="text-xs font-normal text-zinc-400">deployed</span></p>
-          </div>
-        </div>
-
-        <div className="bg-white dark:bg-zinc-900 p-4 rounded-xl border border-zinc-200/80 dark:border-zinc-800 shadow-xs flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center">
-            <ShieldAlert className="w-5 h-5" />
-          </div>
-          <div>
-            <p className="text-[11px] font-medium text-zinc-500">Damaged / In Repair</p>
-            <p className="text-lg font-bold text-purple-600">{damagedUnits} <span className="text-xs font-normal text-zinc-400">units</span></p>
-          </div>
-        </div>
-      </div>
+      <KpiGrid columns={4}>
+        <KpiCard
+          label="Total Tool Assets"
+          value={`${totalAssets}`}
+          subtext="units registered"
+          icon={Package}
+          variant="emerald"
+        />
+        <KpiCard
+          label="In Warehouse (Available)"
+          value={`${availableUnits}`}
+          subtext="ready for dispatch"
+          icon={Box}
+          variant="blue"
+        />
+        <KpiCard
+          label="In Field / Deployed"
+          value={`${activeLoans}`}
+          subtext="currently issued"
+          icon={Wrench}
+          variant="amber"
+        />
+        <KpiCard
+          label="Damaged / In Repair"
+          value={`${damagedUnits}`}
+          subtext="flagged units"
+          icon={ShieldAlert}
+          variant="rose"
+        />
+      </KpiGrid>
 
       {/* Main Content Container */}
       <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-xs border border-zinc-200/80 dark:border-zinc-800 overflow-hidden flex flex-col flex-1">
