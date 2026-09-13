@@ -29,6 +29,9 @@ export interface DailyAuditRecord {
   leaveType?: string | null;
   notes?: string;
   isManualEntry?: boolean;
+  isMocked?: boolean;
+  gpsAccuracy?: number | null;
+  isSuspicious?: boolean;
   isCorrected?: boolean;
   correctionDetails?: {
     id: string;
@@ -196,7 +199,7 @@ export async function getAuditPayrollRecords(
     // 3. Batch Fetch Time Logs for the period
     const { data: timeLogs, error: logsErr } = await supabaseAdmin
       .from('time_logs')
-      .select('id, technician_id, app_time_in, app_time_out, total_hours, status, is_manual_entry')
+      .select('id, technician_id, app_time_in, app_time_out, total_hours, status, is_manual_entry, is_mocked, gps_accuracy, is_suspicious')
       .in('technician_id', profileIds)
       .gte('app_time_in', utcStart)
       .lte('app_time_in', utcEnd)
@@ -342,6 +345,9 @@ export async function getAuditPayrollRecords(
               status: 'unclosed',
               notes: 'Shift currently ongoing or missing clock-out',
               isManualEntry: !!log.is_manual_entry,
+              isMocked: !!log.is_mocked,
+              gpsAccuracy: log.gps_accuracy ?? null,
+              isSuspicious: !!log.is_suspicious,
               isCorrected,
               correctionDetails,
             });
@@ -423,6 +429,9 @@ export async function getAuditPayrollRecords(
             holidayName: holiday?.name,
             status,
             isManualEntry: !!log.is_manual_entry,
+            isMocked: !!log.is_mocked,
+            gpsAccuracy: log.gps_accuracy ?? null,
+            isSuspicious: !!log.is_suspicious,
             isCorrected,
             correctionDetails,
           });

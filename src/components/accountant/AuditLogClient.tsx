@@ -1062,6 +1062,26 @@ export default function AuditLogClient() {
                             {day.status === 'off_duty' && <StatusDot status="neutral" label="Standby" />}
                             {day.status === 'unclosed' && <StatusDot status="danger" label="Incomplete" />}
 
+                            {day.isMocked && (
+                              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-400 border border-rose-300 dark:border-rose-800 text-[10px] font-bold" title="Spoofed/Mock GPS provider intercepted during punch">
+                                <AlertTriangle className="w-3 h-3 text-rose-600 dark:text-rose-400" />
+                                MOCK GPS
+                              </span>
+                            )}
+
+                            {day.isSuspicious && (
+                              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 border border-amber-300 dark:border-amber-800 text-[10px] font-bold" title="Flagged as suspicious punch (rooted device or clock skew)">
+                                <ShieldAlert className="w-3 h-3 text-amber-600 dark:text-amber-400" />
+                                SUSPICIOUS
+                              </span>
+                            )}
+
+                            {day.gpsAccuracy && day.gpsAccuracy > 65 && (
+                              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border border-zinc-300 dark:border-zinc-700 text-[10px] font-mono" title={`GPS Accuracy degraded: ±${Math.round(day.gpsAccuracy)}m`}>
+                                ±{Math.round(day.gpsAccuracy)}m
+                              </span>
+                            )}
+
                             {day.isCorrected && (
                               <span className="inline-flex items-center gap-1 font-semibold text-amber-700 dark:text-amber-400 text-[10px]" title={day.correctionDetails?.reason}>
                                 <History className="w-3 h-3 text-amber-500" />
