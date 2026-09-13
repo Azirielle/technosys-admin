@@ -2,6 +2,7 @@
 
 import PageHeader from '@/components/ui/PageHeader'
 import Pagination from '@/components/ui/Pagination'
+import ModalDialog from '@/components/ui/ModalDialog'
 import {
   TableContainer,
   Table,
@@ -414,73 +415,80 @@ export default function AdminActivitiesClient() {
       </div>
 
       {/* Log Details Security Audit Modal */}
-      {selectedLog && (
-        <div className="fixed inset-0 bg-zinc-900/60 backdrop-blur-xs z-[70] flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden border border-zinc-200 animate-in fade-in zoom-in-95 duration-150">
-            <div className="p-4 bg-zinc-900 text-white flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <ShieldAlert className="w-4 h-4 text-blue-400" />
-                <h3 className="font-bold text-sm tracking-tight">Security Audit Detail</h3>
+      <ModalDialog
+        isOpen={!!selectedLog}
+        onClose={() => setSelectedLog(null)}
+        title="Security Audit Detail"
+        subtitle={selectedLog ? `Log ID: ${selectedLog.id}` : undefined}
+        icon={ShieldAlert}
+        maxWidth="lg"
+        footer={
+          <button
+            type="button"
+            onClick={() => setSelectedLog(null)}
+            className="px-3.5 py-1.5 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-200 rounded-md text-xs font-medium hover:bg-zinc-50 dark:hover:bg-zinc-700/60 transition-colors cursor-pointer"
+          >
+            Close Audit Sheet
+          </button>
+        }
+      >
+        {selectedLog && (
+          <div className="space-y-3.5 text-xs text-zinc-700 dark:text-zinc-300">
+            {/* Scope / Authorization Banner */}
+            <div className="flex items-center justify-between p-3 bg-zinc-50/70 dark:bg-zinc-800/40 rounded-lg border border-zinc-200/80 dark:border-zinc-800">
+              <div>
+                <span className="text-[10px] font-mono text-zinc-400 uppercase tracking-wider block">Scope Authorization</span>
+                <span className="text-xs font-medium text-zinc-700 dark:text-zinc-300">
+                  {selectedLog.is_override ? 'Elevated Permission Active' : 'Normal Access Boundary'}
+                </span>
               </div>
-              <button
-                onClick={() => setSelectedLog(null)}
-                className="text-zinc-400 hover:text-white p-1 rounded-lg transition-colors"
-              >
-                <X className="w-4 h-4" />
-              </button>
+              {selectedLog.is_override ? (
+                <MutedBadge className="gap-1.5 px-2.5 py-1 font-mono text-[11px] font-bold text-amber-800 dark:text-amber-300 bg-amber-50/80 dark:bg-amber-950/40 border-amber-200/80 dark:border-amber-800/60">
+                  <Unlock className="w-3 h-3" /> CEO OVERRIDE
+                </MutedBadge>
+              ) : (
+                <MutedBadge className="gap-1.5 px-2.5 py-1 font-mono text-[11px]">
+                  <Lock className="w-3 h-3" /> STANDARD SCOPE
+                </MutedBadge>
+              )}
             </div>
 
-            <div className="p-5 space-y-3.5 text-xs text-zinc-700">
-              <div className="flex items-center justify-between p-3 bg-zinc-50 rounded-xl border border-zinc-200">
-                <div>
-                  <span className="text-[10px] font-mono text-zinc-400 uppercase tracking-wider block">Log ID</span>
-                  <span className="font-mono font-bold text-zinc-900 text-xs">{selectedLog.id}</span>
-                </div>
-                {selectedLog.is_override ? (
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-purple-100 text-purple-900 border border-purple-300">
-                    <Unlock className="w-3.5 h-3.5 text-purple-700" /> CEO OVERRIDE
-                  </span>
-                ) : (
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
-                    <Lock className="w-3.5 h-3.5 text-emerald-600" /> STANDARD SCOPE
-                  </span>
-                )}
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div className="p-3 bg-zinc-50 rounded-xl border border-zinc-200">
-                  <span className="text-[10px] font-semibold text-zinc-500 uppercase tracking-wider">Administrator</span>
-                  <p className="font-bold text-zinc-900 text-xs mt-0.5">{selectedLog.performed_by_name || 'System'}</p>
-                  <span className="text-[10px] font-semibold text-blue-700">{ROLE_LABELS[selectedLog.performed_by_role || ''] || selectedLog.performed_by_role || 'Staff'}</span>
-                </div>
-                <div className="p-3 bg-zinc-50 rounded-xl border border-zinc-200">
-                  <span className="text-[10px] font-semibold text-zinc-500 uppercase tracking-wider">Module & Department</span>
-                  <p className="font-bold text-zinc-900 text-xs mt-0.5">{MODULE_MAP[selectedLog.category]?.label || selectedLog.category}</p>
-                  <span className="text-[10px] text-zinc-500 font-medium">{MODULE_MAP[selectedLog.category]?.department || 'System'}</span>
+            {/* Administrator & Module Cards */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="p-3 bg-zinc-50/70 dark:bg-zinc-800/40 rounded-lg border border-zinc-200/80 dark:border-zinc-800">
+                <span className="text-[10px] font-medium text-zinc-400 uppercase tracking-wider">Administrator</span>
+                <p className="font-semibold text-zinc-900 dark:text-zinc-100 text-xs mt-0.5">
+                  {selectedLog.performed_by_name || 'System'}
+                </p>
+                <div className="mt-1">
+                  <MutedBadge className="text-[10px] font-mono">
+                    {ROLE_LABELS[selectedLog.performed_by_role || ''] || selectedLog.performed_by_role || 'Staff'}
+                  </MutedBadge>
                 </div>
               </div>
-
-              <div className="p-3.5 bg-zinc-900 text-zinc-100 rounded-xl space-y-1.5 font-mono text-[11px]">
-                <div className="text-zinc-400 font-semibold uppercase text-[10px] tracking-wider">Action Payload Description</div>
-                <div className="text-emerald-400 font-bold">{formatActionType(selectedLog.action)}</div>
-                <div className="text-zinc-300 font-sans text-xs">{selectedLog.description}</div>
-                <div className="text-zinc-400 text-[10px] pt-1.5 border-t border-zinc-800 font-mono">
-                  Executive Timestamp: {formatExecutiveDateDetailed(selectedLog.created_at)}
-                </div>
+              <div className="p-3 bg-zinc-50/70 dark:bg-zinc-800/40 rounded-lg border border-zinc-200/80 dark:border-zinc-800">
+                <span className="text-[10px] font-medium text-zinc-400 uppercase tracking-wider">Module & Department</span>
+                <p className="font-semibold text-zinc-900 dark:text-zinc-100 text-xs mt-0.5">
+                  {MODULE_MAP[selectedLog.category]?.label || selectedLog.category}
+                </p>
+                <span className="text-[10px] text-zinc-400 font-medium block mt-0.5">
+                  {MODULE_MAP[selectedLog.category]?.department || 'System'}
+                </span>
               </div>
+            </div>
 
-              <div className="pt-2 flex justify-end">
-                <button
-                  onClick={() => setSelectedLog(null)}
-                  className="px-4 py-2 bg-zinc-900 text-white rounded-lg text-xs font-semibold hover:bg-zinc-800 transition-colors"
-                >
-                  Close Audit Sheet
-                </button>
+            {/* Action Payload Description */}
+            <div className="p-3.5 bg-zinc-950 text-zinc-100 rounded-lg space-y-1.5 font-mono text-[11px] border border-zinc-800">
+              <div className="text-zinc-400 font-medium uppercase text-[10px] tracking-wider">Action Payload Description</div>
+              <div className="text-emerald-400 font-semibold">{formatActionType(selectedLog.action)}</div>
+              <div className="text-zinc-300 font-sans text-xs pt-0.5">{selectedLog.description}</div>
+              <div className="text-zinc-400 text-[10px] pt-2 border-t border-zinc-800/80 font-mono">
+                Executive Timestamp: {formatExecutiveDateDetailed(selectedLog.created_at)}
               </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </ModalDialog>
     </div>
   )
 }

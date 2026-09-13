@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useTransition } from 'react'
 import PageHeader from '@/components/ui/PageHeader'
+import ModalDialog from '@/components/ui/ModalDialog'
 import { KpiCard, KpiGrid } from '@/components/ui/KpiCard'
 import {
   TableContainer,
@@ -496,92 +497,88 @@ export default function SystemOverridesClient() {
       </div>
 
       {/* Override Duration Selector Modal */}
-      {durationModal?.isOpen && (
-        <div className="fixed inset-0 bg-zinc-900/60 backdrop-blur-xs z-[75] flex items-center justify-center p-4 animate-in fade-in duration-150">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden border border-zinc-200 p-6">
-            <div className="flex items-center justify-between pb-3 border-b border-zinc-200">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center shrink-0">
-                  <Clock className="w-4 h-4" />
-                </div>
-                <div>
-                  <h3 className="text-sm font-bold text-zinc-900">Grant System Override</h3>
-                  <p className="text-[11px] text-zinc-500">Configure time limit for cross-departmental access</p>
-                </div>
+      <ModalDialog
+        isOpen={!!durationModal?.isOpen}
+        onClose={() => setDurationModal(null)}
+        title="Grant System Override"
+        subtitle="Configure duration limit for cross-departmental access"
+        icon={Clock}
+        maxWidth="md"
+        footer={
+          <div className="flex items-center gap-2 w-full justify-end">
+            <button
+              type="button"
+              onClick={() => setDurationModal(null)}
+              className="px-3.5 py-1.5 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-700/60 rounded-md text-xs font-medium transition-colors cursor-pointer"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={confirmGrantOverride}
+              disabled={isSyncing}
+              className="px-3.5 py-1.5 bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-white text-white rounded-md text-xs font-medium shadow-xs transition-colors disabled:opacity-50 cursor-pointer flex items-center gap-1.5"
+            >
+              {isSyncing && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+              {isSyncing ? 'Granting...' : 'Grant Override Access'}
+            </button>
+          </div>
+        }
+      >
+        {durationModal && (
+          <div className="space-y-3.5 text-xs text-zinc-700 dark:text-zinc-300">
+            {/* Target Scope Card */}
+            <div className="p-3 bg-zinc-50/70 dark:bg-zinc-800/40 border border-zinc-200/80 dark:border-zinc-800 rounded-lg space-y-1.5">
+              <div className="flex justify-between items-center">
+                <span className="text-zinc-400 font-medium text-[11px]">Target Role:</span>
+                <span className="font-semibold text-zinc-900 dark:text-zinc-100 text-xs">{durationModal.roleLabel}</span>
               </div>
-              <button
-                onClick={() => setDurationModal(null)}
-                className="p-1.5 text-zinc-400 hover:text-zinc-700 rounded-lg transition-colors"
-              >
-                <X className="w-4 h-4" />
-              </button>
+              <div className="flex justify-between items-center">
+                <span className="text-zinc-400 font-medium text-[11px]">Module Access:</span>
+                <span className="font-mono text-xs font-semibold text-zinc-800 dark:text-zinc-200">{durationModal.moduleName}</span>
+              </div>
             </div>
 
-            <div className="my-4 space-y-3 text-xs">
-              <div className="p-3 bg-zinc-50 border border-zinc-200 rounded-xl space-y-1.5">
-                <div className="flex justify-between">
-                  <span className="text-zinc-500 font-medium">Target Role:</span>
-                  <span className="font-bold text-zinc-900">{durationModal.roleLabel}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-zinc-500 font-medium">Module Access:</span>
-                  <span className="font-bold text-blue-600">{durationModal.moduleName}</span>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-[11px] font-bold text-zinc-700 uppercase tracking-wider mb-2">
-                  Override Duration Limit
-                </label>
-                <div className="grid grid-cols-2 gap-2">
-                  {[
-                    { key: '1_day' as OverrideDuration, label: '1 Day', sub: '24 Hours' },
-                    { key: '2_days' as OverrideDuration, label: '2 Days', sub: '48 Hours' },
-                    { key: '7_days' as OverrideDuration, label: '7 Days', sub: '1 Week' },
-                    { key: 'indefinite' as OverrideDuration, label: 'Indefinite', sub: 'Until Revoked' },
-                  ].map((tier) => (
+            {/* Duration Selector */}
+            <div>
+              <label className="block text-[11px] font-medium text-zinc-400 uppercase tracking-wider mb-2">
+                Override Duration Limit
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                {[
+                  { key: '1_day' as OverrideDuration, label: '1 Day', sub: '24 Hours' },
+                  { key: '2_days' as OverrideDuration, label: '2 Days', sub: '48 Hours' },
+                  { key: '7_days' as OverrideDuration, label: '7 Days', sub: '1 Week' },
+                  { key: 'indefinite' as OverrideDuration, label: 'Indefinite', sub: 'Until Revoked' },
+                ].map((tier) => {
+                  const isSelected = durationModal.selectedDuration === tier.key
+                  return (
                     <button
                       key={tier.key}
                       type="button"
                       onClick={() => setDurationModal({ ...durationModal, selectedDuration: tier.key })}
-                      className={`p-2.5 rounded-xl border text-left transition-colors cursor-pointer ${
-                        durationModal.selectedDuration === tier.key
-                          ? 'border-blue-600 bg-blue-50/70 text-blue-900 shadow-2xs'
-                          : 'border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-700'
+                      className={`p-2.5 rounded-lg border text-left transition-colors cursor-pointer ${
+                        isSelected
+                          ? 'border-zinc-900 dark:border-zinc-100 bg-zinc-900/5 dark:bg-zinc-100/5 ring-1 ring-zinc-900/15 dark:ring-zinc-100/20 text-zinc-900 dark:text-zinc-100'
+                          : 'border-zinc-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-zinc-50 dark:hover:bg-zinc-800/60 text-zinc-700 dark:text-zinc-300'
                       }`}
                     >
-                      <div className="font-bold text-xs">{tier.label}</div>
-                      <div className="text-[10px] text-zinc-500 font-medium">{tier.sub}</div>
+                      <div className="font-semibold text-xs">{tier.label}</div>
+                      <div className={`text-[10px] font-mono mt-0.5 ${isSelected ? 'text-zinc-600 dark:text-zinc-400' : 'text-zinc-400 dark:text-zinc-500'}`}>
+                        {tier.sub}
+                      </div>
                     </button>
-                  ))}
-                </div>
+                  )
+                })}
               </div>
-
-              <p className="text-[10px] text-zinc-500 italic">
-                Note: When the designated duration expires, the module will automatically revert to Restricted mode across all staff devices.
-              </p>
             </div>
 
-            <div className="flex items-center gap-2 pt-2 border-t border-zinc-200">
-              <button
-                type="button"
-                onClick={() => setDurationModal(null)}
-                className="flex-1 py-2 bg-white border border-zinc-200 text-zinc-700 hover:bg-zinc-50 rounded-xl text-xs font-semibold transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={confirmGrantOverride}
-                disabled={isSyncing}
-                className="flex-1 py-2 bg-zinc-900 hover:bg-zinc-800 text-white rounded-xl text-xs font-semibold shadow-xs transition-colors disabled:opacity-50"
-              >
-                {isSyncing ? 'Granting...' : 'Grant Override Access'}
-              </button>
-            </div>
+            <p className="text-[11px] text-zinc-400 dark:text-zinc-500 leading-relaxed">
+              When the designated duration expires, module permissions automatically revert to Restricted mode across all staff devices.
+            </p>
           </div>
-        </div>
-      )}
+        )}
+      </ModalDialog>
     </div>
   )
 }
