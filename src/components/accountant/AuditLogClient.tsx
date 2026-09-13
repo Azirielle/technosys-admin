@@ -3,6 +3,18 @@
 import PageHeader from '@/components/ui/PageHeader'
 import { KpiCard } from '@/components/ui/KpiCard'
 import Pagination from '@/components/ui/Pagination'
+import { 
+  TableContainer, 
+  Table, 
+  TableHead, 
+  TableHeaderCell, 
+  TableBody, 
+  TableRow, 
+  TableCell, 
+  TableEmptyState, 
+  StatusDot, 
+  MutedBadge 
+} from '@/components/ui/DataTable'
 
 import { useState, useEffect, useMemo } from 'react';
 import { 
@@ -695,174 +707,166 @@ export default function AuditLogClient() {
             </div>
           </div>
 
-          {/* Main Table */}
-          <div className="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 border-b-0 rounded-b-none overflow-y-scroll flex-1 shadow-2xs [scrollbar-gutter:stable]">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse whitespace-nowrap">
-                <thead>
-                  <tr className="bg-zinc-50 dark:bg-zinc-800/80 border-b border-zinc-200/80 dark:border-zinc-800 text-[11px] font-semibold text-zinc-600 dark:text-zinc-400 uppercase tracking-wider">
-                    <th className="px-3.5 py-2.5 sticky left-0 bg-zinc-50 dark:bg-zinc-800 border-r border-zinc-200/80 dark:border-zinc-800/80 dark:border-zinc-800 min-w-[220px] z-10">Employee / Spec</th>
-                    <th className="px-3 py-2.5 border-r border-zinc-200/80 dark:border-zinc-800 text-center">Days Worked</th>
-                    <th className="px-3 py-2.5 border-r border-zinc-200/80 dark:border-zinc-800 text-center">Tardiness</th>
-                    <th className="px-3 py-2.5 border-r border-zinc-200/80 dark:border-zinc-800 text-center">Reg OT</th>
-                    <th className="px-3 py-2.5 border-r border-zinc-200/80 dark:border-zinc-800 text-center">Sun/Hol OT</th>
-                    <th className="px-3 py-2.5 border-r border-zinc-200/80 dark:border-zinc-800 text-center">Night Diff</th>
-                    <th className="px-3 py-2.5 border-r border-zinc-200/80 dark:border-zinc-800 text-center">Absences</th>
-                    <th className="px-3 py-2.5 border-r border-zinc-200/80 dark:border-zinc-800 text-center">Leaves</th>
-                    <th className="px-3.5 py-2.5 text-right">Audit</th>
+                    {/* Main Table - Linear Density & Alignment Standard */}
+          <TableContainer className="border-b-0 rounded-b-none flex-1">
+            <Table fixed={false} className="whitespace-nowrap">
+              <TableHead sticky>
+                <tr>
+                  <TableHeaderCell className="sticky left-0 bg-zinc-50 dark:bg-zinc-800/90 z-10 min-w-[220px]">Employee / Spec</TableHeaderCell>
+                  <TableHeaderCell numeric>Days Worked</TableHeaderCell>
+                  <TableHeaderCell numeric>Tardiness</TableHeaderCell>
+                  <TableHeaderCell numeric>Reg OT</TableHeaderCell>
+                  <TableHeaderCell numeric>Sun/Hol OT</TableHeaderCell>
+                  <TableHeaderCell numeric>Night Diff</TableHeaderCell>
+                  <TableHeaderCell numeric>Absences</TableHeaderCell>
+                  <TableHeaderCell numeric>Leaves</TableHeaderCell>
+                  <TableHeaderCell align="right">Audit</TableHeaderCell>
+                </tr>
+              </TableHead>
+              <TableBody>
+                {loading ? (
+                  <tr>
+                    <td colSpan={9} className="p-12 text-center text-zinc-400 font-medium">
+                      <div className="flex flex-col items-center justify-center gap-2">
+                        <Clock className="w-5 h-5 animate-spin text-zinc-500" />
+                        <span className="text-xs font-medium">Computing live Kinsenas attendance & time logs...</span>
+                      </div>
+                    </td>
                   </tr>
-                </thead>
-                <tbody className="divide-y divide-zinc-200/80 dark:divide-zinc-800 bg-white dark:bg-zinc-900 text-xs">
-                  {loading ? (
-                    <tr>
-                      <td colSpan={9} className="p-12 text-center text-zinc-400 font-medium">
-                        <div className="flex flex-col items-center justify-center gap-2">
-                          <Clock className="w-5 h-5 animate-spin text-zinc-500" />
-                          <span>Computing live Kinsenas attendance & time logs...</span>
+                ) : errorMsg ? (
+                  <tr>
+                    <td colSpan={9} className="p-8 text-center text-rose-500 font-semibold bg-rose-50/50 dark:bg-rose-950/20">
+                      <div className="flex flex-col items-center justify-center gap-2.5">
+                        <div className="flex items-center gap-2 text-rose-600 dark:text-rose-400 text-xs">
+                          <AlertCircle className="w-5 h-5 shrink-0" />
+                          <span>{errorMsg}</span>
                         </div>
-                      </td>
-                    </tr>
-                  ) : errorMsg ? (
-                    <tr>
-                      <td colSpan={9} className="p-8 text-center text-rose-500 font-semibold bg-rose-50/50 dark:bg-rose-950/20">
-                        <div className="flex flex-col items-center justify-center gap-2.5">
-                          <div className="flex items-center gap-2 text-rose-600 dark:text-rose-400">
-                            <AlertCircle className="w-5 h-5 shrink-0" />
-                            <span>{errorMsg}</span>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => loadAuditData(true)}
-                            className="mt-1 px-3 py-1.5 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-2xs transition-colors flex items-center gap-1.5 cursor-pointer"
-                          >
-                            <RefreshCw className="w-3.5 h-3.5" />
-                            Retry Loading Attendance
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ) : paginatedRecords.length === 0 ? (
-                    <tr>
-                      <td colSpan={9} className="p-12 text-center text-zinc-400 font-medium">
-                        No field crew or attendance records found for this period.
-                      </td>
-                    </tr>
-                  ) : paginatedRecords.map((r) => (
-                    <tr key={r.id} className="hover:bg-zinc-50/75 dark:hover:bg-zinc-800/50 transition-colors">
+                        <button
+                          type="button"
+                          onClick={() => loadAuditData(true)}
+                          className="mt-1 px-3 py-1.5 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-md shadow-none transition-colors flex items-center gap-1.5 cursor-pointer"
+                        >
+                          <RefreshCw className="w-3.5 h-3.5" />
+                          Retry Loading Attendance
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ) : paginatedRecords.length === 0 ? (
+                  <TableEmptyState 
+                    colSpan={9} 
+                    title="No field crew or attendance records found" 
+                    description="No records match your filters for this Kinsenas period." 
+                  />
+                ) : (
+                  paginatedRecords.map((r) => (
+                    <TableRow key={r.id}>
                       {/* Sticky Employee column */}
-                      <td className="px-3.5 py-2 sticky left-0 bg-white border-r border-zinc-200/80 dark:border-zinc-800 z-10">
+                      <TableCell className="sticky left-0 bg-white dark:bg-zinc-900 z-10">
                         <div className="flex items-center gap-2.5">
-                          <div className={`w-7 h-7 rounded-lg flex items-center justify-center text-[10px] font-bold shrink-0 ${
-                            r.role === 'helper' 
-                              ? 'bg-amber-100 text-amber-800 border border-amber-200' 
-                              : 'bg-emerald-100 text-emerald-800 border border-emerald-200'
-                          }`}>
+                          <div className="w-6 h-6 rounded-md flex items-center justify-center text-[10px] font-bold shrink-0 bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200/80 dark:border-zinc-700">
                             {r.name.slice(0, 2).toUpperCase()}
                           </div>
                           <div className="min-w-0">
-                            <div className="font-bold text-zinc-900 leading-tight truncate">{r.name}</div>
+                            <div className="font-bold text-zinc-900 dark:text-zinc-100 leading-tight truncate text-[12px]">{r.name}</div>
                             <div className="flex items-center gap-1.5 mt-0.5">
-                              <span className={`text-[9px] font-bold uppercase px-1.5 py-0.2 rounded border ${
-                                r.role === 'helper' ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                              }`}>
-                                {r.role}
-                              </span>
+                              <MutedBadge>{r.role}</MutedBadge>
                               <span className="text-[10px] text-zinc-400 font-medium uppercase truncate">
                                 {r.level} &bull; {r.status}
                               </span>
                             </div>
                           </div>
                         </div>
-                      </td>
+                      </TableCell>
 
-                      {/* Days Worked */}
-                      <td className="px-3 py-2 border-r border-zinc-200/80 dark:border-zinc-800 text-center whitespace-nowrap">
-                        <span className="font-bold text-zinc-900 text-xs">{r.daysWorked}</span>
-                        <span className="text-[10px] text-zinc-400 ml-1 font-mono">({r.totalHours}h)</span>
-                      </td>
+                      {/* Days Worked (Numeric, Tabular) */}
+                      <TableCell numeric>
+                        <span className="font-bold text-zinc-900 dark:text-zinc-100 text-[12px]">{r.daysWorked}</span>
+                        <span className="text-[11px] text-zinc-400 ml-1 font-mono">({r.totalHours}h)</span>
+                      </TableCell>
 
-                      {/* Tardiness */}
-                      <td className="px-3 py-2 border-r border-zinc-200/80 dark:border-zinc-800 text-center whitespace-nowrap">
+                      {/* Tardiness (Numeric, Tabular) */}
+                      <TableCell numeric>
                         {r.lateCount > 0 ? (
-                          <span className="font-bold text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded text-[11px] inline-flex items-center gap-1">
-                            {r.lateCount} ({r.totalLateMinutes}m)
+                          <span className="font-bold text-amber-600 dark:text-amber-400 text-[11px]">
+                            {r.lateCount} <span className="text-zinc-400 font-normal">({r.totalLateMinutes}m)</span>
                           </span>
                         ) : (
-                          <span className="font-mono text-zinc-300 text-xs">0</span>
+                          <span className="text-zinc-300 dark:text-zinc-600 font-mono text-[11px]">0</span>
                         )}
-                      </td>
+                      </TableCell>
 
-                      {/* Regular OT */}
-                      <td className="px-3 py-2 border-r border-zinc-200/80 dark:border-zinc-800 text-center whitespace-nowrap">
+                      {/* Regular OT (Numeric, Tabular) */}
+                      <TableCell numeric>
                         {r.regOtHours > 0 ? (
-                          <span className="font-mono font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded text-[11px]">
+                          <span className="font-mono font-bold text-zinc-900 dark:text-zinc-100 text-[11px]">
                             {r.regOtHours}h
                           </span>
                         ) : (
-                          <span className="font-mono text-zinc-300 text-xs">0.0</span>
+                          <span className="font-mono text-zinc-300 dark:text-zinc-600 text-[11px]">0.0</span>
                         )}
-                      </td>
+                      </TableCell>
 
-                      {/* Sun/Holiday OT */}
-                      <td className="px-3 py-2 border-r border-zinc-200/80 dark:border-zinc-800 text-center whitespace-nowrap">
+                      {/* Sun/Holiday OT (Numeric, Tabular) */}
+                      <TableCell numeric>
                         {r.sunHolidayOtHours > 0 ? (
-                          <span className="font-mono font-bold text-emerald-800 bg-emerald-100 border border-emerald-300 px-1.5 py-0.5 rounded text-[11px]">
+                          <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400 text-[11px]">
                             {r.sunHolidayOtHours}h
                           </span>
                         ) : (
-                          <span className="font-mono text-zinc-300 text-xs">0.0</span>
+                          <span className="font-mono text-zinc-300 dark:text-zinc-600 text-[11px]">0.0</span>
                         )}
-                      </td>
+                      </TableCell>
 
-                      {/* Night Diff */}
-                      <td className="px-3 py-2 border-r border-zinc-200/80 dark:border-zinc-800 text-center whitespace-nowrap">
+                      {/* Night Diff (Numeric, Tabular) */}
+                      <TableCell numeric>
                         {r.nightDiffHours > 0 ? (
-                          <span className="font-mono font-bold text-purple-700 bg-purple-50 border border-purple-200 px-1.5 py-0.5 rounded text-[11px]">
+                          <span className="font-mono font-bold text-purple-600 dark:text-purple-400 text-[11px]">
                             {r.nightDiffHours}h
                           </span>
                         ) : (
-                          <span className="font-mono text-zinc-300 text-xs">0.0</span>
+                          <span className="font-mono text-zinc-300 dark:text-zinc-600 text-[11px]">0.0</span>
                         )}
-                      </td>
+                      </TableCell>
 
-                      {/* Absences */}
-                      <td className="px-3 py-2 border-r border-zinc-200/80 dark:border-zinc-800 text-center whitespace-nowrap">
+                      {/* Absences (Numeric, Tabular) */}
+                      <TableCell numeric>
                         {r.absences > 0 ? (
-                          <span className="font-bold text-rose-700 bg-rose-50 border border-rose-200 px-1.5 py-0.5 rounded text-[11px]">
+                          <span className="font-bold text-rose-600 dark:text-rose-400 text-[11px]">
                             {r.absences}
                           </span>
                         ) : (
-                          <span className="font-mono text-zinc-300 text-xs">0</span>
+                          <span className="font-mono text-zinc-300 dark:text-zinc-600 text-[11px]">0</span>
                         )}
-                      </td>
+                      </TableCell>
 
-                      {/* Approved Leaves */}
-                      <td className="px-3 py-2 border-r border-zinc-200/80 dark:border-zinc-800 text-center whitespace-nowrap">
+                      {/* Approved Leaves (Numeric, Tabular) */}
+                      <TableCell numeric>
                         {r.approvedLeaves > 0 ? (
-                          <span className="font-bold text-blue-700 bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded text-[11px]">
+                          <span className="font-bold text-blue-600 dark:text-blue-400 text-[11px]">
                             {r.approvedLeaves}d
                           </span>
                         ) : (
-                          <span className="font-mono text-zinc-300 text-xs">0</span>
+                          <span className="font-mono text-zinc-300 dark:text-zinc-600 text-[11px]">0</span>
                         )}
-                      </td>
+                      </TableCell>
 
                       {/* Action Button: Inspect DTR */}
-                      <td className="px-3.5 py-2 text-right whitespace-nowrap">
+                      <TableCell align="right">
                         <button
                           onClick={() => setSelectedEmployee(r)}
-                          className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold text-zinc-700 bg-zinc-100 hover:bg-zinc-200 border border-zinc-200 dark:border-zinc-700/80 rounded-lg transition-colors shadow-2xs"
+                          className="inline-flex items-center gap-1 px-2 py-1 text-[11px] font-semibold text-zinc-700 dark:text-zinc-300 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 border border-zinc-200 dark:border-zinc-700 rounded-md transition-colors shadow-none cursor-pointer"
                         >
-                          <Eye className="w-3.5 h-3.5 text-zinc-500" />
+                          <Eye className="w-3.5 h-3.5 text-zinc-500 dark:text-zinc-400" />
                           <span>Inspect DTR</span>
                         </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </TableContainer>
 
           {/* Bottom Pagination Bar */}
           <div className="rounded-b-xl overflow-hidden border border-zinc-200/80 dark:border-zinc-800 border-t-0 shadow-2xs shrink-0">
@@ -946,203 +950,165 @@ export default function AuditLogClient() {
               </div>
             </div>
 
-            {/* Daily Chronological Breakdown Table */}
+                        {/* Daily Chronological Breakdown Table - Linear Density & Precision Alignment */}
             <div className="flex-1 overflow-y-auto p-5 [scrollbar-gutter:stable]">
-              <div className="border border-zinc-200/80 dark:border-zinc-800 rounded-xl overflow-hidden bg-white dark:bg-zinc-900 shadow-2xs">
-                <table className="w-full text-left border-collapse text-xs table-fixed">
-                  <thead>
-                    <tr className="bg-zinc-50 dark:bg-zinc-800/80 border-b border-zinc-200/80 dark:border-zinc-800">
-                      <th className="border-r border-zinc-200/80 dark:border-zinc-800 px-3 py-2 text-[11px] font-semibold text-zinc-600 uppercase tracking-wider w-[10%]">Date</th>
-                      <th className="border-r border-zinc-200/80 dark:border-zinc-800 px-3 py-2 text-[11px] font-semibold text-zinc-600 uppercase tracking-wider w-[11%]">Scheduled Shift</th>
-                      <th className="border-r border-zinc-200/80 dark:border-zinc-800 px-3 py-2 text-[11px] font-semibold text-zinc-600 uppercase tracking-wider w-[13%]">Dispatch Site</th>
-                      <th className="border-r border-zinc-200/80 dark:border-zinc-800 px-3 py-2 text-[11px] font-bold text-blue-600 uppercase tracking-wider text-center w-[17%]">Actual In / Out</th>
-                      <th className="border-r border-zinc-200/80 dark:border-zinc-800 px-2 py-2 text-[11px] font-semibold text-zinc-600 uppercase tracking-wider text-center w-[6%]">Hours</th>
-                      <th className="border-r border-zinc-200/80 dark:border-zinc-800 px-2 py-2 text-[11px] font-semibold text-amber-600 uppercase tracking-wider text-center w-[6%]">Late</th>
-                      <th className="border-r border-zinc-200/80 dark:border-zinc-800 px-2 py-2 text-[11px] font-semibold text-emerald-600 uppercase tracking-wider text-center w-[6%]">Reg OT</th>
-                      <th className="border-r border-zinc-200/80 dark:border-zinc-800 px-2 py-2 text-[11px] font-semibold text-emerald-700 uppercase tracking-wider text-center w-[6%]">Sun/Hol</th>
-                      <th className="border-r border-zinc-200/80 dark:border-zinc-800 px-2 py-2 text-[11px] font-semibold text-purple-600 uppercase tracking-wider text-center w-[5%]">ND</th>
-                      <th className="border-r border-zinc-200/80 dark:border-zinc-800 px-3 py-2 text-[11px] font-semibold text-zinc-600 uppercase tracking-wider w-[12%]">Daily Status</th>
-                      <th className="px-3 py-2 text-[11px] font-semibold text-zinc-600 uppercase tracking-wider text-right w-[8%]">Audit Action</th>
+              <TableContainer className="rounded-lg shadow-none">
+                <Table fixed={true} className="text-xs">
+                  <TableHead sticky>
+                    <tr>
+                      <TableHeaderCell width="10%">Date</TableHeaderCell>
+                      <TableHeaderCell width="11%">Scheduled Shift</TableHeaderCell>
+                      <TableHeaderCell width="13%">Dispatch Site</TableHeaderCell>
+                      <TableHeaderCell width="17%" align="center">Actual In / Out</TableHeaderCell>
+                      <TableHeaderCell width="6%" numeric>Hours</TableHeaderCell>
+                      <TableHeaderCell width="6%" numeric>Late</TableHeaderCell>
+                      <TableHeaderCell width="6%" numeric>Reg OT</TableHeaderCell>
+                      <TableHeaderCell width="6%" numeric>Sun/Hol</TableHeaderCell>
+                      <TableHeaderCell width="5%" numeric>ND</TableHeaderCell>
+                      <TableHeaderCell width="12%">Daily Status</TableHeaderCell>
+                      <TableHeaderCell width="8%" align="right">Audit Action</TableHeaderCell>
                     </tr>
-                  </thead>
-                  <tbody className="divide-y divide-zinc-200/80 dark:divide-zinc-800 bg-white dark:bg-zinc-900">
+                  </TableHead>
+                  <TableBody>
                     {selectedEmployee.dailyBreakdown.map((day) => (
-                      <tr key={day.date} className="hover:bg-zinc-50/70 dark:hover:bg-zinc-800/50 transition-colors">
+                      <TableRow key={day.date} className="h-[32px]">
                         {/* Date */}
-                        <td className="border-r border-zinc-200/80 dark:border-zinc-800 px-3 py-2 overflow-hidden truncate">
+                        <TableCell className="overflow-hidden truncate">
                           <span className="font-semibold text-zinc-900 dark:text-zinc-100">{day.date}</span>
-                          <span className={`ml-1.5 text-[10px] font-bold ${day.isSunday ? 'text-rose-500' : 'text-zinc-400'}`}>
+                          <span className={`ml-1 text-[10px] font-bold ${day.isSunday ? 'text-rose-500' : 'text-zinc-400'}`}>
                             ({day.dayOfWeek})
                           </span>
-                        </td>
+                        </TableCell>
 
                         {/* Scheduled Shift */}
-                        <td className="border-r border-zinc-200/80 dark:border-zinc-800 px-3 py-2 text-zinc-600 font-medium overflow-hidden truncate">
+                        <TableCell className="text-zinc-600 dark:text-zinc-400 font-medium overflow-hidden truncate">
                           {day.scheduledStart ? (
                             <span>{day.scheduledStart} - {day.scheduledEnd || '17:00'}</span>
                           ) : (
                             <span className="text-zinc-400 italic">Unscheduled</span>
                           )}
-                        </td>
+                        </TableCell>
 
                         {/* Dispatch Site */}
-                        <td className="border-r border-zinc-200/80 dark:border-zinc-800 px-3 py-2 text-zinc-700 overflow-hidden truncate">
+                        <TableCell className="text-zinc-700 dark:text-zinc-300 overflow-hidden truncate">
                           {day.scheduleClient ? (
-                            <span className="font-medium text-zinc-800" title={day.scheduleClient}>{day.scheduleClient}</span>
+                            <span className="font-medium" title={day.scheduleClient}>{day.scheduleClient}</span>
                           ) : (
-                            <span className="text-zinc-300">-</span>
+                            <span className="text-zinc-300 dark:text-zinc-600">-</span>
                           )}
-                        </td>
+                        </TableCell>
 
-                        {/* Actual In / Out - Center Aligned */}
-                        <td className="border-r border-zinc-200/80 dark:border-zinc-800 px-3 py-2 text-center whitespace-nowrap">
+                        {/* Actual In / Out - Center Aligned Monospace */}
+                        <TableCell align="center" className="whitespace-nowrap">
                           {day.actualTimeIn ? (
-                            <div className="font-mono font-bold text-zinc-900 dark:text-zinc-100 flex items-center justify-center gap-1.5">
+                            <div className="font-mono font-bold text-zinc-900 dark:text-zinc-100 flex items-center justify-center gap-1.5 text-[11px]">
                               <span>{day.actualTimeIn}</span>
                               <span className="text-zinc-400 font-normal">&rarr;</span>
                               <span>{day.actualTimeOut || 'Open'}</span>
                             </div>
                           ) : (
-                            <div className="flex justify-center">
-                              <span className="text-zinc-300 font-mono">-</span>
-                            </div>
+                            <span className="text-zinc-300 dark:text-zinc-600 font-mono text-[11px]">-</span>
                           )}
-                        </td>
+                        </TableCell>
 
-                        {/* Hours */}
-                        <td className="border-r border-zinc-200/80 dark:border-zinc-800 px-2 py-2 text-center font-mono font-bold text-zinc-800">
+                        {/* Hours (Numeric, Tabular) */}
+                        <TableCell numeric className="font-bold text-zinc-800 dark:text-zinc-200">
                           {day.hoursWorked > 0 ? `${day.hoursWorked}h` : '-'}
-                        </td>
+                        </TableCell>
 
-                        {/* Late Mins */}
-                        <td className="border-r border-zinc-200/80 dark:border-zinc-800 px-2 py-2 text-center">
+                        {/* Late Mins (Numeric, Tabular) */}
+                        <TableCell numeric>
                           {day.lateMinutes > 0 ? (
-                            <span className="font-semibold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded text-[11px] border border-amber-200">
+                            <span className="font-bold text-amber-600 dark:text-amber-400 text-[11px]">
                               {day.lateMinutes}m
                             </span>
                           ) : (
-                            <span className="text-zinc-300">-</span>
+                            <span className="text-zinc-300 dark:text-zinc-600">-</span>
                           )}
-                        </td>
+                        </TableCell>
 
-                        {/* Reg OT */}
-                        <td className="border-r border-zinc-200/80 dark:border-zinc-800 px-2 py-2 text-center font-mono">
+                        {/* Reg OT (Numeric, Tabular) */}
+                        <TableCell numeric>
                           {day.regOtHours > 0 ? (
-                            <span className="font-semibold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded text-[11px] border border-emerald-200">
+                            <span className="font-bold text-zinc-900 dark:text-zinc-100 text-[11px]">
                               {day.regOtHours}h
                             </span>
                           ) : (
-                            <span className="text-zinc-300">-</span>
+                            <span className="text-zinc-300 dark:text-zinc-600">-</span>
                           )}
-                        </td>
+                        </TableCell>
 
-                        {/* Sun/Hol OT */}
-                        <td className="border-r border-zinc-200/80 dark:border-zinc-800 px-2 py-2 text-center font-mono">
+                        {/* Sun/Hol OT (Numeric, Tabular) */}
+                        <TableCell numeric>
                           {day.sunHolidayOtHours > 0 ? (
-                            <span className="font-semibold text-emerald-700 bg-emerald-100/70 px-1.5 py-0.5 rounded text-[11px] border border-emerald-300">
+                            <span className="font-bold text-emerald-600 dark:text-emerald-400 text-[11px]">
                               {day.sunHolidayOtHours}h
                             </span>
                           ) : (
-                            <span className="text-zinc-300">-</span>
+                            <span className="text-zinc-300 dark:text-zinc-600">-</span>
                           )}
-                        </td>
+                        </TableCell>
 
-                        {/* Night Diff */}
-                        <td className="border-r border-zinc-200/80 dark:border-zinc-800 px-2 py-2 text-center font-mono">
+                        {/* Night Diff (Numeric, Tabular) */}
+                        <TableCell numeric>
                           {day.nightDiffHours > 0 ? (
-                            <span className="font-semibold text-purple-700 bg-purple-50 px-1.5 py-0.5 rounded text-[11px] border border-purple-200">
+                            <span className="font-bold text-purple-600 dark:text-purple-400 text-[11px]">
                               {day.nightDiffHours}h
                             </span>
                           ) : (
-                            <span className="text-zinc-300">-</span>
+                            <span className="text-zinc-300 dark:text-zinc-600">-</span>
                           )}
-                        </td>
+                        </TableCell>
 
-                        {/* Daily Status Badge */}
-                        <td className="border-r border-zinc-200/80 dark:border-zinc-800 px-3 py-2 overflow-hidden">
-                          <div className="flex items-center gap-1 flex-wrap">
-                            {day.status === 'present' && (
-                              <span className="inline-flex items-center gap-1 font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded text-[10px]">
-                                <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Present
-                              </span>
-                            )}
-                            {day.status === 'late' && (
-                              <span className="inline-flex items-center gap-1 font-semibold text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded text-[10px]">
-                                <AlertTriangle className="w-3 h-3 text-amber-600" /> Late ({day.lateMinutes}m)
-                              </span>
-                            )}
-                            {day.status === 'overtime' && (
-                              <span className="inline-flex items-center gap-1 font-semibold text-blue-700 bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded text-[10px]">
-                                <Clock className="w-3 h-3 text-blue-600" /> Overtime
-                              </span>
-                            )}
-                            {day.status === 'absent' && (
-                              <span className="inline-flex items-center gap-1 font-semibold text-red-700 bg-red-50 border border-red-200 px-1.5 py-0.5 rounded text-[10px]" title={day.notes}>
-                                <ShieldAlert className="w-3 h-3 text-red-600" /> Missed
-                              </span>
-                            )}
-                            {day.status === 'approved_leave' && (
-                              <span className="inline-flex items-center gap-1 font-semibold text-blue-700 bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded text-[10px]">
-                                <Briefcase className="w-3 h-3 text-blue-600" /> Leave ({day.leaveType})
-                              </span>
-                            )}
-                            {day.status === 'rest_day' && (
-                              <span className="font-semibold text-zinc-500 bg-zinc-100 border border-zinc-200 px-1.5 py-0.5 rounded text-[10px]">
-                                Rest Day
-                              </span>
-                            )}
-                            {day.status === 'holiday' && (
-                              <span className="font-semibold text-cyan-700 bg-cyan-50 border border-cyan-200 px-1.5 py-0.5 rounded text-[10px]" title={day.holidayName || ''}>
-                                Holiday
-                              </span>
-                            )}
-                            {day.status === 'off_duty' && (
-                              <span className="font-medium text-zinc-400 text-[10px]">
-                                Standby
-                              </span>
-                            )}
-                            {day.status === 'unclosed' && (
-                              <span className="font-semibold text-rose-700 bg-rose-50 border border-rose-200 px-1.5 py-0.5 rounded text-[10px]">
-                                Incomplete
-                              </span>
-                            )}
+                        {/* Daily Status - StatusDot Implementation (Purging Rainbow Skittles) */}
+                        <TableCell className="overflow-hidden">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            {day.status === 'present' && <StatusDot status="active" label="Present" />}
+                            {day.status === 'late' && <StatusDot status="warning" label={`Late (${day.lateMinutes}m)`} />}
+                            {day.status === 'overtime' && <StatusDot status="info" label="Overtime" />}
+                            {day.status === 'absent' && <StatusDot status="danger" label="Missed" title={day.notes} />}
+                            {day.status === 'approved_leave' && <StatusDot status="info" label={`Leave (${day.leaveType})`} />}
+                            {day.status === 'rest_day' && <StatusDot status="neutral" label="Rest Day" />}
+                            {day.status === 'holiday' && <StatusDot status="info" label="Holiday" title={day.holidayName || ''} />}
+                            {day.status === 'off_duty' && <StatusDot status="neutral" label="Standby" />}
+                            {day.status === 'unclosed' && <StatusDot status="danger" label="Incomplete" />}
 
                             {day.isCorrected && (
-                              <span className="inline-flex items-center gap-1 font-semibold text-amber-800 bg-amber-50 border border-amber-300 px-1 py-0.5 rounded text-[9px]" title={day.correctionDetails?.reason}>
-                                <History className="w-2.5 h-2.5 text-amber-600" />
+                              <span className="inline-flex items-center gap-1 font-semibold text-amber-700 dark:text-amber-400 text-[10px]" title={day.correctionDetails?.reason}>
+                                <History className="w-3 h-3 text-amber-500" />
                                 Audited
                               </span>
                             )}
                           </div>
-                        </td>
+                        </TableCell>
 
                         {/* Audit Action Buttons */}
-                        <td className="px-3 py-2 text-right whitespace-nowrap">
+                        <TableCell align="right" className="whitespace-nowrap">
                           <div className="flex items-center justify-end gap-1">
                             {day.isCorrected && (
                               <button
                                 onClick={() => openHistoryModal(selectedEmployee.id, selectedEmployee.name, day.date)}
                                 title="Inspect compliance audit trail for this date"
-                                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-300 text-[10px] font-semibold hover:bg-amber-100 transition-colors cursor-pointer"
+                                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-800 text-[10px] font-semibold hover:bg-amber-100 dark:hover:bg-amber-900/60 transition-colors cursor-pointer shadow-none"
                               >
-                                <History className="w-3 h-3 text-amber-600" />
+                                <History className="w-3 h-3 text-amber-600 dark:text-amber-400" />
                                 Trail
                               </button>
                             )}
                             <button
                               onClick={() => openCorrectionModal(selectedEmployee, day)}
-                              className="inline-flex items-center gap-1 px-2 py-1 rounded text-[11px] font-semibold transition-colors shadow-2xs bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 cursor-pointer"
+                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold transition-colors shadow-none bg-blue-50 dark:bg-blue-950/50 hover:bg-blue-100 dark:hover:bg-blue-900/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 cursor-pointer"
                             >
                               <Edit3 className="w-3 h-3" />
                               {day.actualTimeIn ? 'Correct' : 'Add Shift'}
                             </button>
                           </div>
-                        </td>
-                      </tr>
+                        </TableCell>
+                      </TableRow>
                     ))}
-                  </tbody>
-                </table>
-              </div>
+                  </TableBody>
+                </Table>
+              </TableContainer>
             </div>
 
             {/* Modal Footer */}
