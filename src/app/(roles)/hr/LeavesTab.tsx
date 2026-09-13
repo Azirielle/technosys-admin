@@ -13,6 +13,7 @@ import {
   StatusDot,
   MutedBadge
 } from '@/components/ui/DataTable'
+import ModalDialog from '@/components/ui/ModalDialog'
 
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
@@ -215,83 +216,80 @@ export function LeavesTab() {
       </div>
 
       {/* Detail Modal */}
-      {selectedLeave && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-zinc-900/60 backdrop-blur-xs p-4" onClick={() => setSelectedLeave(null)}>
-          <div className="bg-white dark:bg-zinc-900 rounded-xl shadow-xl max-w-lg w-full flex flex-col max-h-[90vh] border border-zinc-200 dark:border-zinc-800 overflow-hidden" onClick={e => e.stopPropagation()}>
-            <div className="p-4 border-b border-zinc-200/80 dark:border-zinc-800 flex justify-between items-start">
+      <ModalDialog
+        isOpen={!!selectedLeave}
+        onClose={() => setSelectedLeave(null)}
+        title="Leave Request Details"
+        subtitle={selectedLeave ? `ID: #${selectedLeave.id.slice(0, 8).toUpperCase()}` : undefined}
+        icon={CalendarOff}
+        iconVariant="blue"
+        maxWidth="lg"
+        footer={
+          <div className="flex items-center justify-end gap-2 w-full">
+            <button
+              onClick={() => setSelectedLeave(null)}
+              className="px-3.5 py-1.5 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 rounded-lg text-xs font-semibold hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-colors cursor-pointer"
+            >
+              Close Window
+            </button>
+            {selectedLeave?.status === 'pending' && (
+              <>
+                <button
+                  onClick={() => updateLeaveStatus(selectedLeave.id, 'rejected')}
+                  className="px-3.5 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+                >
+                  <X className="w-3.5 h-3.5" /> Reject
+                </button>
+                <button
+                  onClick={() => updateLeaveStatus(selectedLeave.id, 'approved')}
+                  className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+                >
+                  <Check className="w-3.5 h-3.5" /> Approve
+                </button>
+              </>
+            )}
+          </div>
+        }
+      >
+        {selectedLeave && (
+          <div className="space-y-4 text-xs">
+            <div className="grid grid-cols-2 gap-3">
               <div>
-                <h2 className="text-sm font-bold text-zinc-900 dark:text-zinc-100">Leave Request Details</h2>
-                <p className="text-[11px] text-zinc-500 dark:text-zinc-400 font-mono mt-0.5">ID: #{selectedLeave.id.slice(0, 8).toUpperCase()}</p>
+                <p className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-1">Employee</p>
+                <p className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">{selectedLeave.profiles?.full_name || 'Unknown User'}</p>
               </div>
-              <button onClick={() => setSelectedLeave(null)} className="p-1 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded transition-colors">
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-            
-            <div className="p-4 overflow-y-auto space-y-4">
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <p className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-1">Employee</p>
-                  <p className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">{selectedLeave.profiles?.full_name || 'Unknown User'}</p>
-                </div>
-                <div>
-                  <p className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-1">Leave Type</p>
-                  <MutedBadge>{selectedLeave.leave_type}</MutedBadge>
-                </div>
-                <div>
-                  <p className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-1">Start Date</p>
-                  <p className="text-xs font-mono text-zinc-800 dark:text-zinc-200">{new Date(selectedLeave.start_date).toLocaleDateString()}</p>
-                </div>
-                <div>
-                  <p className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-1">End Date</p>
-                  <p className="text-xs font-mono text-zinc-800 dark:text-zinc-200">{new Date(selectedLeave.end_date).toLocaleDateString()}</p>
-                </div>
-                <div>
-                  <p className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-1">Status</p>
-                  <StatusDot
-                    status={selectedLeave.status === 'approved' ? 'active' : selectedLeave.status === 'rejected' ? 'danger' : 'warning'}
-                    label={selectedLeave.status.charAt(0).toUpperCase() + selectedLeave.status.slice(1)}
-                  />
-                </div>
-                <div>
-                  <p className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-1">Date Requested</p>
-                  <p className="text-xs font-mono text-zinc-800 dark:text-zinc-200">{new Date(selectedLeave.created_at).toLocaleDateString()}</p>
-                </div>
+              <div>
+                <p className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-1">Leave Type</p>
+                <MutedBadge>{selectedLeave.leave_type}</MutedBadge>
               </div>
-              
-              <div className="bg-zinc-50 dark:bg-zinc-800/60 rounded-lg p-3 border border-zinc-200/80 dark:border-zinc-800">
-                <p className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-1.5">Reason Provided</p>
-                <p className="text-xs text-zinc-800 dark:text-zinc-200 whitespace-pre-wrap leading-relaxed">{selectedLeave.reason}</p>
+              <div>
+                <p className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-1">Start Date</p>
+                <p className="text-xs font-mono text-zinc-800 dark:text-zinc-200">{new Date(selectedLeave.start_date).toLocaleDateString()}</p>
+              </div>
+              <div>
+                <p className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-1">End Date</p>
+                <p className="text-xs font-mono text-zinc-800 dark:text-zinc-200">{new Date(selectedLeave.end_date).toLocaleDateString()}</p>
+              </div>
+              <div>
+                <p className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-1">Status</p>
+                <StatusDot
+                  status={selectedLeave.status === 'approved' ? 'active' : selectedLeave.status === 'rejected' ? 'danger' : 'warning'}
+                  label={selectedLeave.status.charAt(0).toUpperCase() + selectedLeave.status.slice(1)}
+                />
+              </div>
+              <div>
+                <p className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-1">Date Requested</p>
+                <p className="text-xs font-mono text-zinc-800 dark:text-zinc-200">{new Date(selectedLeave.created_at).toLocaleDateString()}</p>
               </div>
             </div>
 
-            <div className="p-4 border-t border-zinc-200/80 dark:border-zinc-800 bg-zinc-50/70 dark:bg-zinc-900/60 flex justify-end gap-2.5">
-              <button 
-                onClick={() => setSelectedLeave(null)}
-                className="px-3.5 py-1.5 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 rounded-lg text-xs font-semibold hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-colors cursor-pointer"
-              >
-                Close Window
-              </button>
-              {selectedLeave.status === 'pending' && (
-                <>
-                  <button 
-                    onClick={() => updateLeaveStatus(selectedLeave.id, 'rejected')}
-                    className="px-3.5 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
-                  >
-                    <X className="w-4 h-4" /> Reject
-                  </button>
-                  <button 
-                    onClick={() => updateLeaveStatus(selectedLeave.id, 'approved')}
-                    className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
-                  >
-                    <Check className="w-4 h-4" /> Approve
-                  </button>
-                </>
-              )}
+            <div className="bg-zinc-50 dark:bg-zinc-800/60 rounded-lg p-3 border border-zinc-200/80 dark:border-zinc-800">
+              <p className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-1.5">Reason Provided</p>
+              <p className="text-xs text-zinc-800 dark:text-zinc-200 whitespace-pre-wrap leading-relaxed">{selectedLeave.reason}</p>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </ModalDialog>
     </div>
   )
 }

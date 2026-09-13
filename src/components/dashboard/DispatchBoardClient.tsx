@@ -15,6 +15,7 @@ import {
   StatusDot,
   MutedBadge
 } from '@/components/ui/DataTable'
+import ModalDialog from '@/components/ui/ModalDialog'
 
 import { useEffect, useState, useRef } from "react";
 import dynamic from "next/dynamic";
@@ -1607,266 +1608,251 @@ export default function DispatchBoardClient() {
       )}
 
       {/* Edit Dispatch Modal */}
-      {isEditModalOpen && editFormData && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-zinc-900/50 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full flex flex-col max-h-[90vh] overflow-hidden border border-zinc-200/80 dark:border-zinc-800 transition-all duration-300 max-w-5xl">
-            {/* Modal Header */}
-            <div className="px-6 py-4 border-b border-zinc-100 flex justify-between items-center bg-zinc-50 dark:bg-zinc-800/60">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-blue-100 text-blue-700">
-                  <Edit3 className="w-5 h-5" />
+      <ModalDialog
+        isOpen={Boolean(isEditModalOpen && editFormData)}
+        onClose={() => setIsEditModalOpen(false)}
+        title="Edit Field Dispatch"
+        subtitle="Update assignment details, timing, and site geofence."
+        icon={Edit3}
+        iconVariant="blue"
+        maxWidth="5xl"
+        contentHeight="max-h-[90vh]"
+        footer={
+          <div className="flex items-center justify-end gap-2 w-full">
+            <button
+              type="button"
+              onClick={() => setIsEditModalOpen(false)}
+              className="px-3.5 py-1.5 border border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 rounded-lg text-xs font-semibold hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleEditSubmit}
+              disabled={isSubmitting || !editFormData?.client_name}
+              className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold shadow-xs disabled:opacity-50 transition-colors cursor-pointer"
+            >
+              {isSubmitting ? 'Saving Changes...' : 'Save Dispatch Updates'}
+            </button>
+          </div>
+        }
+      >
+        {editFormData && (
+          <div className="-mx-5 -my-5 flex flex-col lg:flex-row divide-y lg:divide-y-0 lg:divide-x divide-zinc-200 dark:divide-zinc-800 min-h-[500px]">
+            {/* Left Pane - Form Fields */}
+            <div className="w-full lg:w-[45%] p-5 space-y-3.5 overflow-y-auto max-h-[580px]">
+              <div>
+                <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">Client / Assignment *</label>
+                <input
+                  type="text"
+                  required
+                  value={editFormData.client_name}
+                  onChange={(e) => setEditFormData({ ...editFormData, client_name: e.target.value })}
+                  className="w-full border border-zinc-200 dark:border-zinc-700 rounded-lg px-3 py-1.5 text-xs bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-hidden focus:ring-1 focus:ring-zinc-400 dark:focus:ring-zinc-500"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">Date *</label>
+                  <input
+                    type="date"
+                    required
+                    value={editFormData.date}
+                    onChange={(e) => setEditFormData({ ...editFormData, date: e.target.value })}
+                    className="w-full border border-zinc-200 dark:border-zinc-700 rounded-lg px-3 py-1.5 text-xs bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-hidden focus:ring-1 focus:ring-zinc-400 dark:focus:ring-zinc-500"
+                  />
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold text-zinc-900 dark:text-zinc-100 leading-tight">Edit Field Dispatch</h2>
-                  <p className="text-xs text-zinc-500 dark:text-zinc-400 font-medium">Update assignment details, timing, and site geofence.</p>
+                  <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">Attendance Mode</label>
+                  <select
+                    value={editFormData.attendance_mode}
+                    onChange={(e) => setEditFormData({ ...editFormData, attendance_mode: e.target.value })}
+                    className="w-full border border-zinc-200 dark:border-zinc-700 rounded-lg px-3 py-1.5 text-xs bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-hidden focus:ring-1 focus:ring-zinc-400 dark:focus:ring-zinc-500"
+                  >
+                    <option value="direct_dispatch">Direct Dispatch</option>
+                    <option value="hq">Office / HQ</option>
+                    <option value="out_of_town">Out of Town</option>
+                  </select>
                 </div>
               </div>
-              <button 
-                onClick={() => setIsEditModalOpen(false)}
-                className="p-2 rounded-lg hover:bg-zinc-200 dark:bg-zinc-700 text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:text-zinc-300 transition-colors cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">Start Time *</label>
+                  <input
+                    type="time"
+                    required
+                    value={editFormData.start_time}
+                    onChange={(e) => setEditFormData({ ...editFormData, start_time: e.target.value })}
+                    className="w-full border border-zinc-200 dark:border-zinc-700 rounded-lg px-3 py-1.5 text-xs bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-hidden focus:ring-1 focus:ring-zinc-400 dark:focus:ring-zinc-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">End Time *</label>
+                  <input
+                    type="time"
+                    required
+                    value={editFormData.end_time}
+                    onChange={(e) => setEditFormData({ ...editFormData, end_time: e.target.value })}
+                    className="w-full border border-zinc-200 dark:border-zinc-700 rounded-lg px-3 py-1.5 text-xs bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-hidden focus:ring-1 focus:ring-zinc-400 dark:focus:ring-zinc-500"
+                  />
+                </div>
+              </div>
+
+              {/* Location Search */}
+              <div>
+                <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">Site Address / Search</label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    placeholder="Type landmark or search address..."
+                    value={editAddressQuery}
+                    onChange={(e) => searchEditAddress(e.target.value)}
+                    className="w-full border border-zinc-200 dark:border-zinc-700 rounded-lg px-3 py-1.5 text-xs bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-hidden focus:ring-1 focus:ring-zinc-400 dark:focus:ring-zinc-500"
+                  />
+                  {editAddressResults.length > 0 && (
+                    <div className="absolute top-full left-0 right-0 z-[500] bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 rounded-lg shadow-xl mt-1 max-h-48 overflow-y-auto divide-y divide-zinc-100 dark:divide-zinc-800">
+                      {editAddressResults.map((r: any, idx: number) => (
+                        <div
+                          key={idx}
+                          onClick={() => selectEditAddress(r)}
+                          className="p-2.5 hover:bg-zinc-50 dark:hover:bg-zinc-800 cursor-pointer text-xs text-zinc-700 dark:text-zinc-300 flex items-start gap-2"
+                        >
+                          <MapPin className="w-3.5 h-3.5 text-rose-500 shrink-0 mt-0.5" />
+                          <span className="line-clamp-2 text-[11px]">{r.display_name}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Radius Slider */}
+              <div>
+                <div className="flex justify-between items-center mb-1">
+                  <label className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">Geofence Radius</label>
+                  <span className="text-[11px] font-semibold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40 px-2 py-0.5 rounded border border-blue-200/60 dark:border-blue-900/60 font-mono">
+                    {editFormData.geofence_radius}m
+                  </span>
+                </div>
+                <input
+                  type="range"
+                  min="50"
+                  max="2000"
+                  step="25"
+                  value={editFormData.geofence_radius}
+                  onChange={(e) => setEditFormData({ ...editFormData, geofence_radius: parseInt(e.target.value) })}
+                  className="w-full accent-blue-600 cursor-pointer"
+                />
+                <div className="flex justify-between text-[10px] text-zinc-400 dark:text-zinc-500 font-medium mt-0.5">
+                  <span>50m (Strict)</span>
+                  <span>500m (Standard)</span>
+                  <span>2000m (Wide Area)</span>
+                </div>
+              </div>
             </div>
 
-            {/* Modal Body */}
-            <div className="flex-1 overflow-y-auto flex flex-col lg:flex-row divide-y lg:divide-y-0 lg:divide-x divide-zinc-200">
-              {/* Left Pane - Form Fields */}
-              <div className="w-full lg:w-[45%] p-6 space-y-4 overflow-y-auto max-h-[600px]">
-                <div>
-                  <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider mb-1">Client / Assignment</label>
-                  <input 
-                    type="text" required
-                    value={editFormData.client_name}
-                    onChange={(e) => setEditFormData({ ...editFormData, client_name: e.target.value })}
-                    className="w-full border border-zinc-200/80 dark:border-zinc-700 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none font-medium text-zinc-900 dark:text-zinc-100"
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider mb-1">Date</label>
-                    <input 
-                      type="date" required
-                      value={editFormData.date}
-                      onChange={(e) => setEditFormData({ ...editFormData, date: e.target.value })}
-                      className="w-full border border-zinc-200/80 dark:border-zinc-700 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none font-medium text-zinc-900 dark:text-zinc-100"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider mb-1">Attendance Mode</label>
-                    <select
-                      value={editFormData.attendance_mode}
-                      onChange={(e) => setEditFormData({ ...editFormData, attendance_mode: e.target.value })}
-                      className="w-full border border-zinc-200/80 dark:border-zinc-700 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none font-medium text-zinc-900 dark:text-zinc-100"
-                    >
-                      <option value="direct_dispatch">Direct Dispatch</option>
-                      <option value="hq">Office / HQ</option>
-                      <option value="out_of_town">Out of Town</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider mb-1">Start Time</label>
-                    <input 
-                      type="time" required
-                      value={editFormData.start_time}
-                      onChange={(e) => setEditFormData({ ...editFormData, start_time: e.target.value })}
-                      className="w-full border border-zinc-200/80 dark:border-zinc-700 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none font-medium text-zinc-900 dark:text-zinc-100"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider mb-1">End Time</label>
-                    <input 
-                      type="time" required
-                      value={editFormData.end_time}
-                      onChange={(e) => setEditFormData({ ...editFormData, end_time: e.target.value })}
-                      className="w-full border border-zinc-200/80 dark:border-zinc-700 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none font-medium text-zinc-900 dark:text-zinc-100"
-                    />
-                  </div>
-                </div>
-
-                {/* Location Search */}
-                <div>
-                  <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider mb-1">Site Address / Search</label>
-                  <div className="relative">
-                    <input 
-                      type="text"
-                      placeholder="Type landmark or search address..."
-                      value={editAddressQuery}
-                      onChange={(e) => searchEditAddress(e.target.value)}
-                      className="w-full border border-zinc-200/80 dark:border-zinc-700 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none font-medium text-zinc-900 dark:text-zinc-100"
-                    />
-                    {editAddressResults.length > 0 && (
-                      <div className="absolute top-full left-0 right-0 z-[500] bg-white border border-zinc-200/80 dark:border-zinc-800 rounded-lg shadow-xl mt-1 max-h-48 overflow-y-auto divide-y divide-zinc-100">
-                        {editAddressResults.map((r: any, idx: number) => (
-                          <div 
-                            key={idx}
-                            onClick={() => selectEditAddress(r)}
-                            className="p-2.5 hover:bg-blue-50 cursor-pointer text-xs text-zinc-700 dark:text-zinc-300 flex items-start gap-2"
-                          >
-                            <MapPin className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
-                            <span className="line-clamp-2">{r.display_name}</span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Radius Slider */}
-                <div>
-                  <div className="flex justify-between items-center mb-1">
-                    <label className="text-xs font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider">Geofence Radius</label>
-                    <span className="text-xs font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-100">
-                      {editFormData.geofence_radius}m
-                    </span>
-                  </div>
-                  <input 
-                    type="range" min="50" max="2000" step="25"
-                    value={editFormData.geofence_radius}
-                    onChange={(e) => setEditFormData({ ...editFormData, geofence_radius: parseInt(e.target.value) })}
-                    className="w-full accent-blue-600 cursor-pointer"
-                  />
-                  <div className="flex justify-between text-[10px] text-zinc-400 dark:text-zinc-500 font-medium mt-0.5">
-                    <span>50m (Strict)</span>
-                    <span>500m (Standard)</span>
-                    <span>2000m (Wide Area)</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Right Pane - Visual Map */}
-              <div className="hidden lg:block lg:w-[55%] relative bg-zinc-100 dark:bg-zinc-800 h-full min-h-[500px]">
-                <GeofenceMap 
-                  lat={editFormData.geofence_lat}
-                  lon={editFormData.geofence_lon}
-                  radius={editFormData.geofence_radius}
-                  onPositionChange={(pos) => setEditFormData({
+            {/* Right Pane - Visual Map */}
+            <div className="hidden lg:block lg:w-[55%] relative bg-zinc-100 dark:bg-zinc-800 h-full min-h-[500px]">
+              <GeofenceMap
+                lat={editFormData.geofence_lat}
+                lon={editFormData.geofence_lon}
+                radius={editFormData.geofence_radius}
+                onPositionChange={(pos) =>
+                  setEditFormData({
                     ...editFormData,
                     geofence_lat: pos[0],
                     geofence_lon: pos[1],
-                    coordinate_override: `${pos[0].toFixed(5)}, ${pos[1].toFixed(5)}`
-                  })}
-                />
-                <div className="absolute top-4 left-4 z-[400] bg-white/90 backdrop-blur shadow-md border border-zinc-200/80 dark:border-zinc-800 p-3 rounded-lg text-xs max-w-xs pointer-events-none">
-                  <p className="font-bold text-zinc-900 dark:text-zinc-100 mb-0.5">Drag to Adjust Location</p>
-                  <p className="text-zinc-600">The blue circle is the geofence perimeter. Coordinates update automatically.</p>
-                </div>
+                    coordinate_override: `${pos[0].toFixed(5)}, ${pos[1].toFixed(5)}`,
+                  })
+                }
+              />
+              <div className="absolute top-3 left-3 z-[400] bg-white/90 dark:bg-zinc-900/90 backdrop-blur shadow-md border border-zinc-200/80 dark:border-zinc-800 p-2.5 rounded-lg text-xs max-w-xs pointer-events-none">
+                <p className="font-semibold text-zinc-900 dark:text-zinc-100 text-xs mb-0.5">Drag to Adjust Location</p>
+                <p className="text-[11px] text-zinc-500 dark:text-zinc-400 leading-tight">Blue circle is the geofence perimeter. Coordinates update automatically.</p>
               </div>
             </div>
-
-            {/* Modal Footer */}
-            <div className="px-6 py-4 border-t border-zinc-200 bg-zinc-50 dark:bg-zinc-800/60 flex justify-end gap-3 rounded-b-2xl">
-              <button 
-                type="button"
-                onClick={() => setIsEditModalOpen(false)}
-                className="px-5 py-2.5 bg-white border border-zinc-200/80 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 rounded-lg font-medium hover:bg-zinc-50 dark:bg-zinc-800/60 shadow-sm cursor-pointer"
-              >
-                Cancel
-              </button>
-              <button 
-                onClick={handleEditSubmit}
-                disabled={isSubmitting || !editFormData.client_name}
-                className="px-5 py-2.5 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 cursor-pointer"
-              >
-                {isSubmitting ? 'Saving Changes...' : 'Save Dispatch Updates'}
-              </button>
-            </div>
           </div>
-        </div>
-      )}
+        )}
+      </ModalDialog>
 
       {/* Reassign Technician Modal */}
-      {isReassignModalOpen && reassigningSchedule && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-zinc-900/50 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden border border-zinc-200/80 dark:border-zinc-800 animate-in fade-in zoom-in-95 duration-150">
-            <div className="px-6 py-4 border-b border-zinc-100 flex justify-between items-center bg-amber-50/50">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-amber-100 text-amber-700">
-                  <UserCheck className="w-5 h-5" />
-                </div>
-                <div>
-                  <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-100 leading-tight">Reassign Technician</h2>
-                  <p className="text-xs text-zinc-500 dark:text-zinc-400 font-medium">Transfer assignment to replacement personnel.</p>
-                </div>
+      <ModalDialog
+        isOpen={Boolean(isReassignModalOpen && reassigningSchedule)}
+        onClose={() => setIsReassignModalOpen(false)}
+        title="Reassign Technician"
+        subtitle="Transfer assignment to replacement personnel."
+        icon={UserCheck}
+        iconVariant="amber"
+        maxWidth="md"
+        footer={
+          <div className="flex items-center justify-end gap-2 w-full">
+            <button
+              type="button"
+              onClick={() => setIsReassignModalOpen(false)}
+              className="px-3.5 py-1.5 border border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 rounded-lg text-xs font-semibold hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleReassignSubmit}
+              disabled={isSubmitting || !newTechnicianId}
+              className="px-3.5 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-xs font-semibold shadow-xs disabled:opacity-50 transition-colors cursor-pointer"
+            >
+              {isSubmitting ? 'Reassigning...' : 'Confirm Reassignment'}
+            </button>
+          </div>
+        }
+      >
+        {reassigningSchedule && (
+          <div className="space-y-4 text-xs">
+            <div className="p-3 bg-zinc-50 dark:bg-zinc-800/60 rounded-lg border border-zinc-200 dark:border-zinc-700/60 space-y-1.5">
+              <div className="flex justify-between">
+                <span className="text-zinc-500 dark:text-zinc-400">Client:</span>
+                <span className="font-semibold text-zinc-900 dark:text-zinc-100">{reassigningSchedule.client_name}</span>
               </div>
-              <button 
-                onClick={() => setIsReassignModalOpen(false)}
-                className="p-2 rounded-lg hover:bg-zinc-200 dark:bg-zinc-700 text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:text-zinc-300 transition-colors cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="p-6 space-y-4">
-              <div className="p-3 bg-zinc-50 dark:bg-zinc-800/60 rounded-xl border border-zinc-200/80 dark:border-zinc-800 text-xs space-y-1">
-                <div className="flex justify-between">
-                  <span className="text-zinc-500 dark:text-zinc-400">Client:</span>
-                  <span className="font-bold text-zinc-900 dark:text-zinc-100">{reassigningSchedule.client_name}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-zinc-500 dark:text-zinc-400">Current Assignee:</span>
-                  <span className="font-bold text-zinc-900 dark:text-zinc-100">{reassigningSchedule.profiles?.full_name || 'Unassigned'}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-zinc-500 dark:text-zinc-400">Schedule Date:</span>
-                  <span className="font-medium text-zinc-700 dark:text-zinc-300">{new Date(reassigningSchedule.start_time).toLocaleDateString()}</span>
-                </div>
+              <div className="flex justify-between">
+                <span className="text-zinc-500 dark:text-zinc-400">Current Assignee:</span>
+                <span className="font-semibold text-zinc-900 dark:text-zinc-100">{reassigningSchedule.profiles?.full_name || 'Unassigned'}</span>
               </div>
-
-              <div>
-                <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider mb-1.5">Select Replacement Technician</label>
-                <select
-                  value={newTechnicianId}
-                  onChange={(e) => setNewTechnicianId(e.target.value)}
-                  className="w-full border border-zinc-200/80 dark:border-zinc-700 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none font-medium text-zinc-900 dark:text-zinc-100 bg-white"
-                >
-                  <option value="">-- Choose Active Field Technician --</option>
-                  {profiles
-                    .filter(p => p.role === 'technician')
-                    .filter(p => p.id !== reassigningSchedule.technician_id)
-                    .map(p => (
-                      <option key={p.id} value={p.id} disabled={p.lifecycle_status === 'on_leave'}>
-                        {p.full_name} ({p.technician_level === 'senior' ? 'Senior Tech' : 'Technician'}){p.lifecycle_status === 'on_leave' ? ' - ON LEAVE' : ''}
-                      </option>
-                    ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider mb-1">Transfer Note / Reason (Optional)</label>
-                <input
-                  type="text"
-                  placeholder="e.g. Assigned tech reported illness"
-                  value={reassignReason}
-                  onChange={(e) => setReassignReason(e.target.value)}
-                  className="w-full border border-zinc-200/80 dark:border-zinc-700 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none font-medium text-zinc-900 dark:text-zinc-100"
-                />
+              <div className="flex justify-between">
+                <span className="text-zinc-500 dark:text-zinc-400">Schedule Date:</span>
+                <span className="font-medium text-zinc-700 dark:text-zinc-300">{new Date(reassigningSchedule.start_time).toLocaleDateString()}</span>
               </div>
             </div>
 
-            <div className="px-6 py-4 border-t border-zinc-200 bg-zinc-50 dark:bg-zinc-800/60 flex justify-end gap-3 rounded-b-2xl">
-              <button 
-                type="button"
-                onClick={() => setIsReassignModalOpen(false)}
-                className="px-4 py-2 bg-white border border-zinc-200/80 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 rounded-lg font-medium hover:bg-zinc-50 dark:bg-zinc-800/60 text-xs cursor-pointer"
+            <div>
+              <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">Select Replacement Technician *</label>
+              <select
+                value={newTechnicianId}
+                onChange={(e) => setNewTechnicianId(e.target.value)}
+                className="w-full border border-zinc-200 dark:border-zinc-700 rounded-lg px-3 py-1.5 text-xs bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-hidden focus:ring-1 focus:ring-zinc-400 dark:focus:ring-zinc-500"
               >
-                Cancel
-              </button>
-              <button 
-                onClick={handleReassignSubmit}
-                disabled={isSubmitting || !newTechnicianId}
-                className="px-4 py-2 bg-amber-600 text-white rounded-lg font-medium hover:bg-amber-700 text-xs shadow-sm disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-              >
-                {isSubmitting ? 'Reassigning...' : 'Confirm Reassignment'}
-              </button>
+                <option value="">-- Choose Active Field Technician --</option>
+                {profiles
+                  .filter((p) => p.role === 'technician')
+                  .filter((p) => p.id !== reassigningSchedule.technician_id)
+                  .map((p) => (
+                    <option key={p.id} value={p.id} disabled={p.lifecycle_status === 'on_leave'}>
+                      {p.full_name} ({p.technician_level === 'senior' ? 'Senior Tech' : 'Technician'}){p.lifecycle_status === 'on_leave' ? ' - ON LEAVE' : ''}
+                    </option>
+                  ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">Transfer Note / Reason (Optional)</label>
+              <input
+                type="text"
+                placeholder="e.g. Assigned tech reported illness"
+                value={reassignReason}
+                onChange={(e) => setReassignReason(e.target.value)}
+                className="w-full border border-zinc-200 dark:border-zinc-700 rounded-lg px-3 py-1.5 text-xs bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-hidden focus:ring-1 focus:ring-zinc-400 dark:focus:ring-zinc-500"
+              />
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </ModalDialog>
 
       {/* Cancel Dispatch Modal */}
       {isCancelModalOpen && cancellingSchedule && (

@@ -3,6 +3,7 @@
 import PageHeader from '@/components/ui/PageHeader'
 import { KpiCard } from '@/components/ui/KpiCard'
 import Pagination from '@/components/ui/Pagination'
+import ModalDialog from '@/components/ui/ModalDialog'
 import { 
   TableContainer, 
   Table, 
@@ -884,43 +885,31 @@ export default function AuditLogClient() {
       </div>
 
       {/* 15-Day Kinsenas DTR Inspection Modal */}
-      {selectedEmployee && (
-        <div className="fixed inset-0 z-50 bg-zinc-900/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150">
-          <div className="bg-white dark:bg-zinc-900 rounded-2xl max-w-5xl w-full max-h-[88vh] flex flex-col shadow-2xl overflow-hidden border border-zinc-200/80 dark:border-zinc-800">
-            {/* Modal Header */}
-            <div className="px-6 py-4 bg-zinc-900 text-white flex items-center justify-between shrink-0">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center font-bold text-sm text-white shrink-0">
-                  {selectedEmployee.name.slice(0, 2).toUpperCase()}
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h2 className="text-base font-bold tracking-tight">{selectedEmployee.name}</h2>
-                    <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full ${
-                      selectedEmployee.role === 'helper' ? 'bg-amber-400 text-zinc-900' : 'bg-blue-400 text-zinc-900'
-                    }`}>
-                      {selectedEmployee.role}
-                    </span>
-                  </div>
-                  <div className="text-xs text-zinc-300 mt-0.5">
-                    {selectedEmployee.level || 'Technician'} &bull; {selectedEmployee.status.toUpperCase()} &bull; Field Operations
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-3">
-                <div className="text-right hidden sm:block">
-                  <div className="text-[11px] font-semibold text-zinc-400">Period</div>
-                  <div className="text-xs font-bold text-blue-400">{currentPeriod.label}</div>
-                </div>
-                <button 
-                  onClick={() => setSelectedEmployee(null)}
-                  className="p-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white transition-colors cursor-pointer"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-            </div>
+      <ModalDialog
+        isOpen={!!selectedEmployee}
+        onClose={() => setSelectedEmployee(null)}
+        title={selectedEmployee?.name}
+        subtitle={selectedEmployee ? `${selectedEmployee.level || 'Technician'} • ${selectedEmployee.status.toUpperCase()} • Field Operations` : undefined}
+        maxWidth="5xl"
+        headerExtra={
+          <div className="flex items-center gap-2 mr-2">
+            <MutedBadge className="text-[10px] font-mono">
+              {currentPeriod.label}
+            </MutedBadge>
+          </div>
+        }
+        footer={
+          <button
+            type="button"
+            onClick={() => setSelectedEmployee(null)}
+            className="px-3.5 py-1.5 bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-white text-white text-xs font-medium rounded-md transition-colors cursor-pointer"
+          >
+            Done Auditing
+          </button>
+        }
+      >
+        {selectedEmployee && (
+          <div className="flex flex-col space-y-3">
 
             {/* Modal Mini Telemetry Bar */}
             <div className="px-6 py-2.5 bg-zinc-50 dark:bg-zinc-950 border-b border-zinc-200/80 dark:border-zinc-800 grid grid-cols-2 sm:grid-cols-6 gap-2 text-center text-xs shrink-0">
@@ -1110,19 +1099,9 @@ export default function AuditLogClient() {
                 </Table>
               </TableContainer>
             </div>
-
-            {/* Modal Footer */}
-            <div className="px-6 py-3 bg-zinc-50 border-t border-zinc-200 flex justify-end shrink-0">
-              <button
-                onClick={() => setSelectedEmployee(null)}
-                className="px-4 py-2 bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-semibold rounded-lg transition-colors shadow-2xs cursor-pointer"
-              >
-                Done Auditing
-              </button>
-            </div>
           </div>
-        </div>
-      )}
+        )}
+      </ModalDialog>
 
       {/* Floating Success Toast Banner */}
       {toastMessage && (
@@ -1133,36 +1112,54 @@ export default function AuditLogClient() {
       )}
 
       {/* Punch Correction Modal */}
-      {editingDay && (
-        <div className="fixed inset-0 z-[60] bg-zinc-900/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150">
-          <div className="bg-white rounded-2xl max-w-lg w-full shadow-2xl overflow-hidden border border-zinc-200 flex flex-col">
-            {/* Modal Header */}
-            <div className="px-5 py-4 bg-zinc-900 text-white flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white">
-                  <Clock className="w-4 h-4" />
-                </div>
-                <div>
-                  <h3 className="text-sm font-bold tracking-tight">DTR Punch Correction</h3>
-                  <p className="text-[11px] text-zinc-300">{editingDay.employee.name} &bull; {editingDay.day.date} ({editingDay.day.dayOfWeek})</p>
-                </div>
+      <ModalDialog
+        isOpen={!!editingDay}
+        onClose={() => setEditingDay(null)}
+        title="DTR Punch Correction"
+        subtitle={editingDay ? `${editingDay.employee.name} • ${editingDay.day.date} (${editingDay.day.dayOfWeek})` : undefined}
+        icon={Clock}
+        iconVariant="blue"
+        maxWidth="lg"
+        footer={
+          <div className="flex items-center justify-end gap-2 w-full">
+            <button
+              type="button"
+              onClick={() => setEditingDay(null)}
+              disabled={savingCorrection}
+              className="px-3 py-1.5 border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 rounded-md font-medium hover:bg-zinc-50 dark:hover:bg-zinc-700/60 disabled:opacity-50 text-xs transition-colors cursor-pointer"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={handleSaveCorrection}
+              disabled={savingCorrection || editReason.trim().length < 10 || !correctionPreview}
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-white text-white font-medium rounded-md text-xs transition-colors shadow-xs disabled:opacity-50 cursor-pointer"
+            >
+              {savingCorrection ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  Recording Audit...
+                </>
+              ) : (
+                <>
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  Save Auditable Correction
+                </>
+              )}
+            </button>
+          </div>
+        }
+      >
+        {editingDay && (
+          <div className="space-y-4 text-xs">
+            {/* Compliance Warning */}
+            <div className="p-3 bg-zinc-50/80 dark:bg-zinc-800/40 border border-zinc-200/80 dark:border-zinc-700/80 rounded-lg text-zinc-700 dark:text-zinc-300 flex items-start gap-2.5">
+              <ShieldAlert className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+              <div className="leading-relaxed text-[11px]">
+                <span className="font-semibold text-zinc-900 dark:text-zinc-100">DOLE Audit Requirement:</span> All punch modifications are permanently logged into the compliance register under your administrator credentials. Raw punch history is preserved.
               </div>
-              <button
-                onClick={() => setEditingDay(null)}
-                className="p-1 rounded-md text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
             </div>
-
-            <div className="p-5 space-y-4 text-xs overflow-y-auto max-h-[75vh]">
-              {/* Compliance Warning */}
-              <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-amber-900 flex items-start gap-2.5">
-                <ShieldAlert className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-                <div className="leading-relaxed">
-                  <span className="font-bold">DOLE Audit Requirement:</span> All punch modifications are permanently logged into the compliance register under your administrator credentials. Raw punch history is preserved.
-                </div>
-              </div>
 
               {/* Input Fields */}
               <div className="grid grid-cols-2 gap-3">
@@ -1259,45 +1256,14 @@ export default function AuditLogClient() {
               </div>
 
               {correctionError && (
-                <div className="p-2.5 bg-red-50 border border-red-200 rounded-lg text-red-700 text-xs flex items-center gap-2">
+                <div className="p-2.5 bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-800/40 rounded-lg text-rose-700 dark:text-rose-400 text-xs flex items-center gap-2">
                   <AlertCircle className="w-4 h-4 shrink-0" />
                   <span>{correctionError}</span>
                 </div>
               )}
             </div>
-
-            {/* Modal Actions */}
-            <div className="px-5 py-3 bg-zinc-50 border-t border-zinc-200 flex items-center justify-end gap-2.5">
-              <button
-                type="button"
-                onClick={() => setEditingDay(null)}
-                disabled={savingCorrection}
-                className="px-3.5 py-2 border border-zinc-200 rounded-lg text-zinc-700 font-semibold hover:bg-zinc-100 disabled:opacity-50 text-xs transition-colors cursor-pointer"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={handleSaveCorrection}
-                disabled={savingCorrection || editReason.trim().length < 10 || !correctionPreview}
-                className="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-semibold rounded-lg text-xs transition-colors shadow-xs cursor-pointer"
-              >
-                {savingCorrection ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    Recording Audit...
-                  </>
-                ) : (
-                  <>
-                    <CheckCircle2 className="w-4 h-4" />
-                    Save Auditable Correction
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+        )}
+      </ModalDialog>
 
       {/* History Inspector Modal */}
       {viewingHistoryTech && (

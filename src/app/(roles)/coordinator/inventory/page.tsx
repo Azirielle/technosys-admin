@@ -41,7 +41,9 @@ import {
   Calendar,
   ChevronRight,
   RefreshCw,
+  RotateCcw,
 } from 'lucide-react'
+import ModalDialog from '@/components/ui/ModalDialog'
 import {
   createOrUpdateInventoryItem,
   deleteInventoryItem,
@@ -983,279 +985,269 @@ export default function InventoryLedgerPage() {
       )}
 
       {/* MODAL 2: CHECKOUT / HANDOVER */}
-      {isCheckoutModalOpen && checkoutTool && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-900/60 backdrop-blur-xs p-4">
-          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full overflow-hidden border border-zinc-200">
-            <div className="px-6 py-4 border-b border-zinc-200 flex items-center justify-between">
-              <div>
-                <h3 className="text-base font-bold text-zinc-900 dark:text-zinc-100">Issue Equipment to Crew</h3>
-                <p className="text-xs text-zinc-500">Assign equipment custody to field personnel.</p>
+      <ModalDialog
+        isOpen={Boolean(isCheckoutModalOpen && checkoutTool)}
+        onClose={() => setIsCheckoutModalOpen(false)}
+        title="Issue Equipment to Crew"
+        subtitle="Assign equipment custody to field personnel."
+        icon={Wrench}
+        iconVariant="emerald"
+        maxWidth="md"
+        footer={
+          <div className="flex items-center justify-end gap-2 w-full">
+            <button
+              type="button"
+              onClick={() => setIsCheckoutModalOpen(false)}
+              className="px-3.5 py-1.5 border border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 rounded-lg text-xs font-semibold hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              form="checkout-form"
+              disabled={isPending}
+              className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold shadow-xs disabled:opacity-50 transition-colors"
+            >
+              {isPending ? 'Confirming...' : 'Confirm Handover'}
+            </button>
+          </div>
+        }
+      >
+        {checkoutTool && (
+          <form id="checkout-form" onSubmit={handleCheckoutSubmit} className="space-y-4">
+            {formError && (
+              <div className="p-3 bg-rose-50 border border-rose-200 text-rose-700 rounded-lg text-xs font-medium dark:bg-rose-950/40 dark:border-rose-900/60 dark:text-rose-400">
+                {formError}
               </div>
-              <button
-                onClick={() => setIsCheckoutModalOpen(false)}
-                className="p-1 rounded-lg text-zinc-400 hover:bg-zinc-100"
-              >
-                <XCircle className="w-5 h-5" />
-              </button>
+            )}
+
+            <div className="p-3 bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-700/60 rounded-lg flex items-center gap-3">
+              <div className="w-10 h-10 rounded-md bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 overflow-hidden flex items-center justify-center shrink-0">
+                {checkoutTool.image_url ? (
+                  <img src={checkoutTool.image_url} alt="" className="w-full h-full object-cover" />
+                ) : (
+                  <Wrench className="w-4 h-4 text-zinc-400" />
+                )}
+              </div>
+              <div>
+                <p className="font-semibold text-zinc-900 dark:text-zinc-100 text-xs leading-snug">{checkoutTool.name}</p>
+                <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
+                  Available: <span className="font-semibold text-emerald-600 dark:text-emerald-400">{checkoutTool.available_stock}</span>{' '}
+                  units
+                </p>
+              </div>
             </div>
 
-            <form onSubmit={handleCheckoutSubmit} className="p-6 space-y-4">
-              {formError && (
-                <div className="p-3 bg-rose-50 border border-rose-200 text-rose-700 rounded-xl text-xs font-medium">
-                  {formError}
-                </div>
-              )}
+            <div>
+              <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">Assign to Field Crew *</label>
+              <select
+                required
+                value={checkoutTechId}
+                onChange={(e) => setCheckoutTechId(e.target.value)}
+                className="w-full px-3 py-1.5 border border-zinc-200 dark:border-zinc-700 rounded-lg text-xs bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-hidden focus:ring-1 focus:ring-zinc-400 dark:focus:ring-zinc-500"
+              >
+                <option value="">Select Technician or Helper...</option>
+                {technicians.map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.full_name} ({t.role.toUpperCase()})
+                  </option>
+                ))}
+              </select>
+            </div>
 
-              <div className="p-3.5 bg-zinc-50 border border-zinc-200/80 rounded-xl flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-white border border-zinc-200 overflow-hidden flex items-center justify-center shrink-0">
-                  {checkoutTool.image_url ? (
-                    <img src={checkoutTool.image_url} alt="" className="w-full h-full object-cover" />
-                  ) : (
-                    <Wrench className="w-5 h-5 text-zinc-400" />
-                  )}
-                </div>
-                <div>
-                  <p className="font-bold text-zinc-900 leading-snug">{checkoutTool.name}</p>
-                  <p className="text-[11px] text-zinc-500">
-                    Available: <span className="font-semibold text-emerald-600">{checkoutTool.available_stock}</span>{' '}
-                    units
-                  </p>
-                </div>
-              </div>
+            <div>
+              <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">Quantity *</label>
+              <input
+                type="number"
+                min="1"
+                max={checkoutTool.available_stock}
+                required
+                value={checkoutQty}
+                onChange={(e) => setCheckoutQty(Math.max(1, parseInt(e.target.value) || 1))}
+                className="w-full px-3 py-1.5 border border-zinc-200 dark:border-zinc-700 rounded-lg text-xs bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-hidden focus:ring-1 focus:ring-zinc-400 dark:focus:ring-zinc-500"
+              />
+            </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">Assign to Field Crew *</label>
-                <select
-                  required
-                  value={checkoutTechId}
-                  onChange={(e) => setCheckoutTechId(e.target.value)}
-                  className="w-full px-3 py-2 border border-zinc-300 rounded-xl text-xs focus:ring-2 focus:ring-emerald-500"
-                >
-                  <option value="">Select Technician or Helper...</option>
-                  {technicians.map((t) => (
-                    <option key={t.id} value={t.id}>
-                      {t.full_name} ({t.role.toUpperCase()})
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">Quantity *</label>
-                <input
-                  type="number"
-                  min="1"
-                  max={checkoutTool.available_stock}
-                  required
-                  value={checkoutQty}
-                  onChange={(e) => setCheckoutQty(Math.max(1, parseInt(e.target.value) || 1))}
-                  className="w-full px-3 py-2 border border-zinc-300 rounded-xl text-xs focus:ring-2 focus:ring-emerald-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">Deployment / Site Notes</label>
-                <input
-                  type="text"
-                  placeholder="e.g. Dispatched for SM Mall HVAC retrofit"
-                  value={checkoutNotes}
-                  onChange={(e) => setCheckoutNotes(e.target.value)}
-                  className="w-full px-3 py-2 border border-zinc-300 rounded-xl text-xs focus:ring-2 focus:ring-emerald-500"
-                />
-              </div>
-
-              <div className="pt-3 border-t border-zinc-200 flex justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={() => setIsCheckoutModalOpen(false)}
-                  className="px-4 py-2 border border-zinc-300 text-zinc-700 rounded-xl text-xs font-semibold hover:bg-zinc-50"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={isPending}
-                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold shadow-xs disabled:opacity-50"
-                >
-                  {isPending ? 'Confirming...' : 'Confirm Handover'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+            <div>
+              <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">Deployment / Site Notes</label>
+              <input
+                type="text"
+                placeholder="e.g. Dispatched for SM Mall HVAC retrofit"
+                value={checkoutNotes}
+                onChange={(e) => setCheckoutNotes(e.target.value)}
+                className="w-full px-3 py-1.5 border border-zinc-200 dark:border-zinc-700 rounded-lg text-xs bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-hidden focus:ring-1 focus:ring-zinc-400 dark:focus:ring-zinc-500"
+              />
+            </div>
+          </form>
+        )}
+      </ModalDialog>
 
       {/* MODAL 3: RETURN & CONDITION AUDIT */}
-      {isReturnModalOpen && returningAssignment && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-900/60 backdrop-blur-xs p-4">
-          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full overflow-hidden border border-zinc-200">
-            <div className="px-6 py-4 border-b border-zinc-200 flex items-center justify-between">
-              <div>
-                <h3 className="text-base font-bold text-zinc-900 dark:text-zinc-100">Equipment Return & Condition Audit</h3>
-                <p className="text-xs text-zinc-500">Inspect tool state before returning to warehouse stock.</p>
+      <ModalDialog
+        isOpen={Boolean(isReturnModalOpen && returningAssignment)}
+        onClose={() => setIsReturnModalOpen(false)}
+        title="Equipment Return & Condition Audit"
+        subtitle="Inspect tool state before returning to warehouse stock."
+        icon={RotateCcw}
+        iconVariant="blue"
+        maxWidth="md"
+        footer={
+          <div className="flex items-center justify-end gap-2 w-full">
+            <button
+              type="button"
+              onClick={() => setIsReturnModalOpen(false)}
+              className="px-3.5 py-1.5 border border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 rounded-lg text-xs font-semibold hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              form="return-form"
+              disabled={isPending}
+              className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold shadow-xs disabled:opacity-50 transition-colors"
+            >
+              {isPending ? 'Processing...' : 'Complete Check-In'}
+            </button>
+          </div>
+        }
+      >
+        {returningAssignment && (
+          <form id="return-form" onSubmit={handleReturnSubmit} className="space-y-4">
+            {formError && (
+              <div className="p-3 bg-rose-50 border border-rose-200 text-rose-700 rounded-lg text-xs font-medium dark:bg-rose-950/40 dark:border-rose-900/60 dark:text-rose-400">
+                {formError}
               </div>
-              <button
-                onClick={() => setIsReturnModalOpen(false)}
-                className="p-1 rounded-lg text-zinc-400 hover:bg-zinc-100"
-              >
-                <XCircle className="w-5 h-5" />
-              </button>
+            )}
+
+            <div className="p-3 bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-700/60 rounded-lg space-y-1 text-xs">
+              <p className="font-semibold text-zinc-900 dark:text-zinc-100">{returningAssignment.tool_catalog?.name}</p>
+              <p className="text-zinc-500 dark:text-zinc-400">
+                Technician:{' '}
+                <span className="font-medium text-zinc-800 dark:text-zinc-200">{returningAssignment.profiles?.full_name}</span> •{' '}
+                {returningAssignment.quantity || 1} unit(s)
+              </p>
+              <p className="text-zinc-500 dark:text-zinc-400">
+                Days in Custody:{' '}
+                <span className="font-medium text-zinc-800 dark:text-zinc-200">
+                  {getDaysBorrowed(returningAssignment.handed_over_at, null)} days
+                </span>
+              </p>
             </div>
 
-            <form onSubmit={handleReturnSubmit} className="p-6 space-y-4">
-              {formError && (
-                <div className="p-3 bg-rose-50 border border-rose-200 text-rose-700 rounded-xl text-xs font-medium">
-                  {formError}
-                </div>
-              )}
-
-              <div className="p-3 bg-zinc-50 border border-zinc-200/80 rounded-xl space-y-1 text-xs">
-                <p className="font-bold text-zinc-900">{returningAssignment.tool_catalog?.name}</p>
-                <p className="text-zinc-500">
-                  Technician:{' '}
-                  <span className="font-semibold text-zinc-800">{returningAssignment.profiles?.full_name}</span> •{' '}
-                  {returningAssignment.quantity || 1} unit(s)
-                </p>
-                <p className="text-zinc-500">
-                  Days in Custody:{' '}
-                  <span className="font-semibold text-zinc-800">
-                    {getDaysBorrowed(returningAssignment.handed_over_at, null)} days
-                  </span>
-                </p>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-zinc-700 mb-2">Physical Condition Audit *</label>
-                <div className="grid grid-cols-2 gap-2">
-                  <label
-                    className={`p-2.5 rounded-xl border flex flex-col cursor-pointer transition-colors ${
-                      returnCondition === 'good'
-                        ? 'border-emerald-500 bg-emerald-50/50 text-emerald-900'
-                        : 'border-zinc-200 hover:bg-zinc-50 text-zinc-700'
-                    }`}
-                  >
-                    <input
-                      type="radio"
-                      name="condition"
-                      value="good"
-                      checked={returnCondition === 'good'}
-                      onChange={() => setReturnCondition('good')}
-                      className="sr-only"
-                    />
-                    <span className="text-xs font-bold">Good Condition</span>
-                    <span className="text-[10px] text-zinc-500 mt-0.5">Restocks directly to warehouse</span>
-                  </label>
-
-                  <label
-                    className={`p-2.5 rounded-xl border flex flex-col cursor-pointer transition-colors ${
-                      returnCondition === 'minor_wear'
-                        ? 'border-blue-500 bg-blue-50/50 text-blue-900'
-                        : 'border-zinc-200 hover:bg-zinc-50 text-zinc-700'
-                    }`}
-                  >
-                    <input
-                      type="radio"
-                      name="condition"
-                      value="minor_wear"
-                      checked={returnCondition === 'minor_wear'}
-                      onChange={() => setReturnCondition('minor_wear')}
-                      className="sr-only"
-                    />
-                    <span className="text-xs font-bold">Minor Wear</span>
-                    <span className="text-[10px] text-zinc-500 mt-0.5">Usable; log condition note</span>
-                  </label>
-
-                  <label
-                    className={`p-2.5 rounded-xl border flex flex-col cursor-pointer transition-colors ${
-                      returnCondition === 'damaged'
-                        ? 'border-purple-500 bg-purple-50/50 text-purple-900'
-                        : 'border-zinc-200 hover:bg-zinc-50 text-zinc-700'
-                    }`}
-                  >
-                    <input
-                      type="radio"
-                      name="condition"
-                      value="damaged"
-                      checked={returnCondition === 'damaged'}
-                      onChange={() => setReturnCondition('damaged')}
-                      className="sr-only"
-                    />
-                    <span className="text-xs font-bold text-purple-700">Damaged / Repair</span>
-                    <span className="text-[10px] text-zinc-500 mt-0.5">Deducts asset from available</span>
-                  </label>
-
-                  <label
-                    className={`p-2.5 rounded-xl border flex flex-col cursor-pointer transition-colors ${
-                      returnCondition === 'lost'
-                        ? 'border-rose-500 bg-rose-50/50 text-rose-900'
-                        : 'border-zinc-200 hover:bg-zinc-50 text-zinc-700'
-                    }`}
-                  >
-                    <input
-                      type="radio"
-                      name="condition"
-                      value="lost"
-                      checked={returnCondition === 'lost'}
-                      onChange={() => setReturnCondition('lost')}
-                      className="sr-only"
-                    />
-                    <span className="text-xs font-bold text-rose-700">Lost / Missing</span>
-                    <span className="text-[10px] text-zinc-500 mt-0.5">Permanent write-off liability</span>
-                  </label>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">Condition & Inspection Notes</label>
-                <textarea
-                  rows={2}
-                  value={returnNotes}
-                  onChange={(e) => setReturnNotes(e.target.value)}
-                  placeholder="e.g. Minor scratches on casing, calibration verified intact..."
-                  className="w-full px-3 py-2 border border-zinc-300 rounded-xl text-xs focus:ring-2 focus:ring-emerald-500"
-                />
-              </div>
-
-              {(returnCondition === 'damaged' || returnCondition === 'lost') && (
-                <div>
-                  <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
-                    Assessed Repair / Replacement Fee (₱)
-                  </label>
+            <div>
+              <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-2">Physical Condition Audit *</label>
+              <div className="grid grid-cols-2 gap-2">
+                <label
+                  className={`p-2.5 rounded-lg border flex flex-col cursor-pointer transition-colors ${
+                    returnCondition === 'good'
+                      ? 'border-emerald-500 bg-emerald-50/50 text-emerald-900 dark:border-emerald-500/80 dark:bg-emerald-950/30 dark:text-emerald-300'
+                      : 'border-zinc-200 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300'
+                  }`}
+                >
                   <input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={damageFee}
-                    onChange={(e) => setDamageFee(parseFloat(e.target.value) || 0)}
-                    placeholder="0.00"
-                    className="w-full px-3 py-2 border border-zinc-300 rounded-xl text-xs font-mono focus:ring-2 focus:ring-emerald-500"
+                    type="radio"
+                    name="condition"
+                    value="good"
+                    checked={returnCondition === 'good'}
+                    onChange={() => setReturnCondition('good')}
+                    className="sr-only"
                   />
-                  <p className="text-[10px] text-zinc-400 mt-1">
-                    Recorded in activity audit log and flaggable for coordinator review.
-                  </p>
-                </div>
-              )}
+                  <span className="text-xs font-semibold">Good Condition</span>
+                  <span className="text-[10px] text-zinc-500 dark:text-zinc-400 mt-0.5">Restocks directly to warehouse</span>
+                </label>
 
-              <div className="pt-3 border-t border-zinc-200 flex justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={() => setIsReturnModalOpen(false)}
-                  className="px-4 py-2 border border-zinc-300 text-zinc-700 rounded-xl text-xs font-semibold hover:bg-zinc-50"
+                <label
+                  className={`p-2.5 rounded-lg border flex flex-col cursor-pointer transition-colors ${
+                    returnCondition === 'minor_wear'
+                      ? 'border-blue-500 bg-blue-50/50 text-blue-900 dark:border-blue-500/80 dark:bg-blue-950/30 dark:text-blue-300'
+                      : 'border-zinc-200 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300'
+                  }`}
                 >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={isPending}
-                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold shadow-xs disabled:opacity-50"
+                  <input
+                    type="radio"
+                    name="condition"
+                    value="minor_wear"
+                    checked={returnCondition === 'minor_wear'}
+                    onChange={() => setReturnCondition('minor_wear')}
+                    className="sr-only"
+                  />
+                  <span className="text-xs font-semibold">Minor Wear</span>
+                  <span className="text-[10px] text-zinc-500 dark:text-zinc-400 mt-0.5">Usable; log condition note</span>
+                </label>
+
+                <label
+                  className={`p-2.5 rounded-lg border flex flex-col cursor-pointer transition-colors ${
+                    returnCondition === 'damaged'
+                      ? 'border-purple-500 bg-purple-50/50 text-purple-900 dark:border-purple-500/80 dark:bg-purple-950/30 dark:text-purple-300'
+                      : 'border-zinc-200 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300'
+                  }`}
                 >
-                  {isPending ? 'Processing...' : 'Complete Check-In'}
-                </button>
+                  <input
+                    type="radio"
+                    name="condition"
+                    value="damaged"
+                    checked={returnCondition === 'damaged'}
+                    onChange={() => setReturnCondition('damaged')}
+                    className="sr-only"
+                  />
+                  <span className="text-xs font-semibold text-purple-700 dark:text-purple-400">Damaged / Repair</span>
+                  <span className="text-[10px] text-zinc-500 dark:text-zinc-400 mt-0.5">Deducts asset from available</span>
+                </label>
+
+                <label
+                  className={`p-2.5 rounded-lg border flex flex-col cursor-pointer transition-colors ${
+                    returnCondition === 'lost'
+                      ? 'border-rose-500 bg-rose-50/50 text-rose-900 dark:border-rose-500/80 dark:bg-rose-950/30 dark:text-rose-300'
+                      : 'border-zinc-200 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300'
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="condition"
+                    value="lost"
+                    checked={returnCondition === 'lost'}
+                    onChange={() => setReturnCondition('lost')}
+                    className="sr-only"
+                  />
+                  <span className="text-xs font-semibold text-rose-700 dark:text-rose-400">Lost / Missing</span>
+                  <span className="text-[10px] text-zinc-500 dark:text-zinc-400 mt-0.5">Permanent write-off liability</span>
+                </label>
               </div>
-            </form>
-          </div>
-        </div>
-      )}
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">Condition & Inspection Notes</label>
+              <textarea
+                rows={2}
+                value={returnNotes}
+                onChange={(e) => setReturnNotes(e.target.value)}
+                placeholder="e.g. Minor scratches on casing, calibration verified intact..."
+                className="w-full px-3 py-1.5 border border-zinc-200 dark:border-zinc-700 rounded-lg text-xs bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-hidden focus:ring-1 focus:ring-zinc-400 dark:focus:ring-zinc-500"
+              />
+            </div>
+
+            {(returnCondition === 'damaged' || returnCondition === 'lost') && (
+              <div>
+                <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
+                  Assessed Repair / Replacement Fee (₱)
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={damageFee}
+                  onChange={(e) => setDamageFee(parseFloat(e.target.value) || 0)}
+                  placeholder="0.00"
+                  className="w-full px-3 py-1.5 border border-zinc-200 dark:border-zinc-700 rounded-lg text-xs font-mono bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-hidden focus:ring-1 focus:ring-zinc-400 dark:focus:ring-zinc-500"
+                />
+                <p className="text-[10px] text-zinc-400 mt-1">
+                  Recorded in activity audit log and flaggable for coordinator review.
+                </p>
+              </div>
+            )}
+          </form>
+        )}
+      </ModalDialog>
 
       {/* MODAL 4: ASSIGNMENT DETAILS */}
       {selectedAssignment && (
