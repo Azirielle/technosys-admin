@@ -1076,6 +1076,13 @@ export default function AuditLogClient() {
                               </span>
                             )}
 
+                            {day.hasLeaveCollision && (
+                              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-400 border border-purple-300 dark:border-purple-800 text-[10px] font-bold" title={`Attended shift on approved ${day.leaveType || 'paid'} leave. Payroll audit required.`}>
+                                <Briefcase className="w-3 h-3 text-purple-600 dark:text-purple-400" />
+                                LEAVE CONFLICT
+                              </span>
+                            )}
+
                             {day.gpsAccuracy && day.gpsAccuracy > 65 && (
                               <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border border-zinc-300 dark:border-zinc-700 text-[10px] font-mono" title={`GPS Accuracy degraded: ±${Math.round(day.gpsAccuracy)}m`}>
                                 ±{Math.round(day.gpsAccuracy)}m

@@ -32,6 +32,7 @@ export interface DailyAuditRecord {
   isMocked?: boolean;
   gpsAccuracy?: number | null;
   isSuspicious?: boolean;
+  hasLeaveCollision?: boolean;
   isCorrected?: boolean;
   correctionDetails?: {
     id: string;
@@ -343,11 +344,15 @@ export async function getAuditPayrollRecords(
               isHoliday,
               holidayName: holiday?.name,
               status: 'unclosed',
-              notes: 'Shift currently ongoing or missing clock-out',
+              notes: (log && leave) 
+                ? `Shift unclosed; Employee attended on approved ${leave.leave_type || 'paid'} leave`
+                : 'Shift currently ongoing or missing clock-out',
               isManualEntry: !!log.is_manual_entry,
               isMocked: !!log.is_mocked,
               gpsAccuracy: log.gps_accuracy ?? null,
               isSuspicious: !!log.is_suspicious,
+              hasLeaveCollision: !!(log && leave),
+              leaveType: leave?.leave_type || null,
               isCorrected,
               correctionDetails,
             });
@@ -432,6 +437,9 @@ export async function getAuditPayrollRecords(
             isMocked: !!log.is_mocked,
             gpsAccuracy: log.gps_accuracy ?? null,
             isSuspicious: !!log.is_suspicious,
+            hasLeaveCollision: !!(log && leave),
+            leaveType: leave?.leave_type || null,
+            notes: (log && leave) ? `Attended work on approved ${leave.leave_type || 'paid'} leave` : undefined,
             isCorrected,
             correctionDetails,
           });
