@@ -1017,595 +1017,559 @@ export default function DispatchBoardClient() {
       )}
 
       {/* Register / Edit Casual Worker Modal */}
-      {isCasualModalOpen && (
-        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-zinc-900/50 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden border border-zinc-200/80 dark:border-zinc-800 animate-in fade-in zoom-in-95 duration-150">
-            <div className="px-6 py-4 border-b border-zinc-100 flex justify-between items-center bg-blue-50/50">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-blue-100 text-blue-700">
-                  <UserPlus className="w-5 h-5" />
-                </div>
-                <div>
-                  <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-100 leading-tight">
-                    {editingCasualHelper ? 'Edit Casual Worker' : 'Register Casual Worker'}
-                  </h2>
-                  <p className="text-xs text-zinc-500 dark:text-zinc-400 font-medium">On-demand support crew without app accounts.</p>
-                </div>
-              </div>
-              <button 
-                type="button"
-                onClick={() => setIsCasualModalOpen(false)}
-                className="p-2 rounded-lg hover:bg-zinc-200 dark:bg-zinc-700 text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:text-zinc-300 transition-colors cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
+      <ModalDialog
+        isOpen={isCasualModalOpen}
+        onClose={() => setIsCasualModalOpen(false)}
+        title={editingCasualHelper ? 'Edit Casual Worker' : 'Register Casual Worker'}
+        subtitle="On-demand support crew without app accounts."
+        icon={UserPlus}
+        iconVariant="blue"
+        maxWidth="md"
+        footer={
+          <div className="flex items-center justify-end gap-2 w-full">
+            <button
+              type="button"
+              onClick={() => setIsCasualModalOpen(false)}
+              className="px-3.5 py-1.5 border border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 rounded-lg text-xs font-semibold hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              form="casual-worker-form"
+              disabled={isSubmitting}
+              className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold shadow-xs disabled:opacity-50 transition-colors cursor-pointer flex items-center gap-1.5"
+            >
+              <Check className="w-3.5 h-3.5" />
+              {isSubmitting ? 'Saving...' : editingCasualHelper ? 'Update Worker' : 'Register Worker'}
+            </button>
+          </div>
+        }
+      >
+        <form id="casual-worker-form" onSubmit={handleSaveCasualHelper} className="space-y-3.5">
+          <div>
+            <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">Full Legal Name *</label>
+            <input
+              type="text"
+              required
+              placeholder="e.g. Rommel Bautista"
+              value={casualForm.fullName}
+              onChange={(e) => setCasualForm({ ...casualForm, fullName: e.target.value })}
+              className="w-full border border-zinc-200 dark:border-zinc-700 rounded-lg px-3 py-1.5 text-xs bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-hidden focus:ring-1 focus:ring-zinc-400 dark:focus:ring-zinc-500 font-medium"
+            />
+          </div>
 
-            <form onSubmit={handleSaveCasualHelper} className="p-6 space-y-4">
-              <div>
-                <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider mb-1">Full Legal Name *</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Rommel Bautista"
-                  value={casualForm.fullName}
-                  onChange={(e) => setCasualForm({ ...casualForm, fullName: e.target.value })}
-                  className="w-full border border-zinc-200/80 dark:border-zinc-700 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none font-medium text-zinc-900 dark:text-zinc-100"
-                />
-              </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">Contact Phone *</label>
+              <input
+                type="text"
+                required
+                placeholder="0917-xxx-xxxx"
+                value={casualForm.contactNumber}
+                onChange={(e) => setCasualForm({ ...casualForm, contactNumber: e.target.value })}
+                className="w-full border border-zinc-200 dark:border-zinc-700 rounded-lg px-3 py-1.5 text-xs bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-hidden focus:ring-1 focus:ring-zinc-400 dark:focus:ring-zinc-500 font-mono"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">Daily Wage Rate (₱) *</label>
+              <input
+                type="number"
+                step="10"
+                min="500"
+                required
+                value={casualForm.dailyRate}
+                onChange={(e) => setCasualForm({ ...casualForm, dailyRate: parseFloat(e.target.value) || 610 })}
+                className="w-full border border-zinc-200 dark:border-zinc-700 rounded-lg px-3 py-1.5 text-xs bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-hidden focus:ring-1 focus:ring-zinc-400 dark:focus:ring-zinc-500 font-mono"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">Emergency Contact (Optional)</label>
+            <input
+              type="text"
+              placeholder="e.g. Elena Bautista (0918-xxx-xxxx)"
+              value={casualForm.emergencyContact}
+              onChange={(e) => setCasualForm({ ...casualForm, emergencyContact: e.target.value })}
+              className="w-full border border-zinc-200 dark:border-zinc-700 rounded-lg px-3 py-1.5 text-xs bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-hidden focus:ring-1 focus:ring-zinc-400 dark:focus:ring-zinc-500"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">Skills / Operational Notes (Optional)</label>
+            <textarea
+              rows={2}
+              placeholder="e.g. Certified for heavy lifting, grease trap cleaning, safety boots equipped"
+              value={casualForm.notes}
+              onChange={(e) => setCasualForm({ ...casualForm, notes: e.target.value })}
+              className="w-full border border-zinc-200 dark:border-zinc-700 rounded-lg px-3 py-1.5 text-xs bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-hidden focus:ring-1 focus:ring-zinc-400 dark:focus:ring-zinc-500"
+            />
+          </div>
+        </form>
+      </ModalDialog>
+
+      {/* Smart Dispatch Modal */}
+      <ModalDialog
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        title={isOfficeMode ? 'Schedule Office Hours' : 'Smart Dispatch'}
+        subtitle={isOfficeMode ? 'Assign tech to HQ' : 'Assign tech and configure geofence'}
+        icon={Navigation}
+        iconVariant={isOfficeMode ? 'emerald' : 'blue'}
+        maxWidth={isOfficeMode ? 'md' : '5xl'}
+        contentHeight="max-h-[90vh]"
+        headerExtra={
+          <div className="flex bg-zinc-100 dark:bg-zinc-800 p-0.5 rounded-lg border border-zinc-200/80 dark:border-zinc-700">
+            <button
+              type="button"
+              onClick={() => toggleOfficeMode(false)}
+              className={`text-xs font-semibold px-2.5 py-1 rounded-md transition-colors ${!isOfficeMode ? 'bg-white dark:bg-zinc-900 shadow-xs text-blue-700 dark:text-blue-400' : 'text-zinc-500 hover:text-zinc-700 dark:text-zinc-400'}`}
+            >
+              Dispatch
+            </button>
+            <button
+              type="button"
+              onClick={() => toggleOfficeMode(true)}
+              className={`text-xs font-semibold px-2.5 py-1 rounded-md transition-colors ${isOfficeMode ? 'bg-white dark:bg-zinc-900 shadow-xs text-emerald-700 dark:text-emerald-400' : 'text-zinc-500 hover:text-zinc-700 dark:text-zinc-400'}`}
+            >
+              HQ / Office
+            </button>
+          </div>
+        }
+        footer={
+          <div className="flex items-center justify-end gap-2 w-full">
+            <button 
+              type="button"
+              onClick={() => setIsModalOpen(false)}
+              className="px-3.5 py-1.5 border border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 rounded-lg text-xs font-semibold hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+            >
+              Cancel
+            </button>
+            <button 
+              type="button"
+              onClick={handleSubmit}
+              disabled={isSubmitting || (isOfficeMode ? !leadTechId : (!leadTechId || !formData.client_name))}
+              className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold shadow-xs disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5 cursor-pointer transition-colors"
+            >
+              {isSubmitting ? 'Creating...' : 'Create Dispatch & Geofence'}
+            </button>
+          </div>
+        }
+      >
+        <div className={`-mx-5 -my-5 flex flex-col ${isOfficeMode ? 'p-5' : 'lg:flex-row divide-y lg:divide-y-0 lg:divide-x divide-zinc-200 dark:divide-zinc-800 min-h-[500px]'}`}>
+          {/* Left Pane - Form */}
+          <div className={`w-full ${isOfficeMode ? 'space-y-4' : 'lg:w-[45%] p-5 overflow-y-auto max-h-[65vh] flex flex-col gap-4'}`}>
+            {/* Tech & Time */}
+            <div className="grid grid-cols-1 gap-4">
+              {isOfficeMode ? (
+                <div>
+                  <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
+                    HQ Duty Technician *
+                  </label>
+                  <select
+                    value={leadTechId}
+                    onChange={(e) => setLeadTechId(e.target.value)}
+                    className="w-full border border-zinc-200 dark:border-zinc-700 rounded-lg px-3 py-1.5 text-xs bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-hidden focus:ring-1 focus:ring-zinc-400 dark:focus:ring-zinc-500 font-medium"
+                  >
+                    <option value="">-- Choose Field Staff --</option>
+                    {profiles.map(p => (
+                      <option key={p.id} value={p.id} disabled={p.lifecycle_status === 'on_leave'}>
+                        {p.full_name} ({p.technician_level === 'senior' ? 'Senior Tech' : p.role === 'helper' ? 'Helper' : 'Technician'}){p.lifecycle_status === 'on_leave' ? ' - ON LEAVE' : ''}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {/* Section 1: Lead Technician */}
+                  <div>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <div className="flex items-center gap-1.5">
+                        <ShieldCheck className="w-3.5 h-3.5 text-blue-600" />
+                        <label className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">
+                          1. Lead Technician <span className="text-rose-500">*</span>
+                        </label>
+                      </div>
+                      <div className="flex gap-1 bg-zinc-100 dark:bg-zinc-800 p-0.5 rounded-md">
+                        <button
+                          type="button"
+                          onClick={() => setTechFilterTier('all')}
+                          className={`px-2 py-0.5 text-[10px] font-semibold rounded cursor-pointer ${techFilterTier === 'all' ? 'bg-white shadow-xs text-blue-700' : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:text-zinc-200'}`}
+                        >
+                          All Techs
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setTechFilterTier('senior')}
+                          className={`px-2 py-0.5 text-[10px] font-semibold rounded cursor-pointer ${techFilterTier === 'senior' ? 'bg-white shadow-xs text-amber-700' : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:text-zinc-200'}`}
+                        >
+                          Senior Only
+                        </button>
+                      </div>
+                    </div>
+                    
+                    <div className="border border-zinc-200 dark:border-zinc-700 rounded-lg overflow-hidden flex flex-col bg-white dark:bg-zinc-900">
+                      <div className="p-2 border-b border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/60 flex items-center gap-2">
+                        <Search className="w-3.5 h-3.5 text-zinc-400 dark:text-zinc-500" />
+                        <input 
+                          type="text" 
+                          placeholder="Search lead technician..." 
+                          value={techSearch}
+                          onChange={(e) => setTechSearch(e.target.value)}
+                          className="w-full bg-transparent text-xs outline-none placeholder-zinc-400 text-zinc-900 dark:text-zinc-100"
+                        />
+                      </div>
+                      <div className="max-h-36 overflow-y-auto p-1 bg-white dark:bg-zinc-900 divide-y divide-zinc-50 dark:divide-zinc-800">
+                        {profiles
+                          .filter(p => p.role === 'technician')
+                          .filter(p => techFilterTier === 'senior' ? p.technician_level === 'senior' : true)
+                          .filter(p => p.full_name.toLowerCase().includes(techSearch.toLowerCase()))
+                          .map(p => {
+                            const isSelected = leadTechId === p.id;
+                            const isBusy = busyTechIds.includes(p.id);
+                            const isOnLeave = p.lifecycle_status === 'on_leave';
+                            return (
+                              <div
+                                key={p.id}
+                                onClick={() => {
+                                  if (!isOnLeave) {
+                                    setLeadTechId(p.id);
+                                    setSelectedHelperIds(prev => prev.filter(id => id !== p.id));
+                                  }
+                                }}
+                                className={`flex items-center justify-between p-2 rounded-md cursor-pointer transition-all ${
+                                  isOnLeave ? 'opacity-40 cursor-not-allowed bg-zinc-50 dark:bg-zinc-800/60' : isSelected ? 'bg-blue-50/60 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 shadow-xs' : 'hover:bg-zinc-50 dark:hover:bg-zinc-800/60'
+                                }`}
+                              >
+                                <div className="flex items-center gap-2.5 min-w-0">
+                                  <div className={`h-6 w-6 rounded-full flex items-center justify-center shrink-0 border ${isSelected ? 'bg-blue-600 text-white border-blue-600' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 border-zinc-200 dark:border-zinc-700'}`}>
+                                    {isSelected ? <Check className="w-3 h-3" /> : <User className="w-3 h-3" />}
+                                  </div>
+                                  <div className="flex flex-col min-w-0">
+                                    <span className={`text-xs font-semibold truncate ${isSelected ? 'text-blue-900 dark:text-blue-200' : 'text-zinc-800 dark:text-zinc-200'}`}>
+                                      {p.full_name}
+                                    </span>
+                                    <div className="flex items-center gap-1 mt-0.5">
+                                      {p.technician_level === 'senior' ? (
+                                        <span className="text-[8px] font-semibold bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400 px-1 py-0.2 rounded border border-amber-200 dark:border-amber-800 uppercase">SENIOR</span>
+                                      ) : (
+                                        <span className="text-[8px] font-semibold bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-400 px-1 py-0.2 rounded border border-blue-200 dark:border-blue-800 uppercase">TECH</span>
+                                      )}
+                                      {isOnLeave ? (
+                                        <span className="text-[8px] font-semibold text-rose-600 dark:text-rose-400">ON LEAVE</span>
+                                      ) : isBusy ? (
+                                        <span className="text-[8px] font-semibold text-amber-600 dark:text-amber-400">BUSY</span>
+                                      ) : (
+                                        <span className="text-[8px] font-semibold text-emerald-600 dark:text-emerald-400">AVAILABLE</span>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                                {isSelected && (
+                                  <span className="text-[10px] font-semibold bg-blue-600 text-white px-2 py-0.5 rounded-full uppercase tracking-wider">
+                                    Lead
+                                  </span>
+                                )}
+                              </div>
+                            );
+                          })}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Section 2: Support Crew - Regular Helpers */}
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
+                        2. Company Helpers ({selectedHelperIds.length} selected)
+                      </label>
+                      <span className="text-[10px] text-zinc-400 dark:text-zinc-500 font-medium">Regular field assistants</span>
+                    </div>
+                    <div className="border border-zinc-200 dark:border-zinc-700 rounded-lg p-1.5 max-h-28 overflow-y-auto bg-white dark:bg-zinc-900 space-y-1">
+                      {profiles
+                        .filter(p => (p.role === 'helper' || p.technician_level === 'helper') && p.id !== leadTechId)
+                        .map(p => {
+                          const isChecked = selectedHelperIds.includes(p.id);
+                          const isOnLeave = p.lifecycle_status === 'on_leave';
+                          return (
+                            <label key={p.id} className={`flex items-center gap-2.5 p-1.5 rounded cursor-pointer transition-colors ${isChecked ? 'bg-blue-50/70 dark:bg-blue-950/30' : 'hover:bg-zinc-50 dark:hover:bg-zinc-800/60'}`}>
+                              <input
+                                type="checkbox"
+                                disabled={isOnLeave}
+                                checked={isChecked}
+                                onChange={(e) => {
+                                  if (e.target.checked) {
+                                    setSelectedHelperIds([...selectedHelperIds, p.id]);
+                                  } else {
+                                    setSelectedHelperIds(selectedHelperIds.filter(id => id !== p.id));
+                                  }
+                                }}
+                                className="w-3.5 h-3.5 rounded border-zinc-300 dark:border-zinc-700 text-blue-600 focus:ring-blue-600 cursor-pointer disabled:opacity-50"
+                              />
+                              <div className="flex items-center justify-between flex-1 min-w-0">
+                                <span className={`text-xs font-medium truncate ${isOnLeave ? 'text-zinc-400 dark:text-zinc-500 line-through' : isChecked ? 'text-blue-900 dark:text-blue-200 font-semibold' : 'text-zinc-700 dark:text-zinc-300'}`}>
+                                  {p.full_name}
+                                </span>
+                                <span className="text-[8px] font-semibold bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 px-1.5 py-0.2 rounded uppercase border border-zinc-200 dark:border-zinc-700">
+                                  {isOnLeave ? 'ON LEAVE' : 'HELPER'}
+                                </span>
+                              </div>
+                            </label>
+                          );
+                        })}
+                    </div>
+                  </div>
+
+                  {/* Section 3: Support Crew - Casual Helpers */}
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
+                        3. Casual Helpers ({selectedCasualHelperIds.length} selected)
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => openRegisterCasualModal()}
+                        className="text-[10px] font-semibold text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 uppercase tracking-wider cursor-pointer"
+                      >
+                        + Quick Register
+                      </button>
+                    </div>
+                    <div className="border border-zinc-200 dark:border-zinc-700 rounded-lg p-1.5 max-h-28 overflow-y-auto bg-white dark:bg-zinc-900 space-y-1">
+                      {casualHelpers.filter(ch => ch.status === 'active').length === 0 ? (
+                        <div className="p-2 text-center text-xs text-zinc-400 dark:text-zinc-500">No active casual helpers registered</div>
+                      ) : (
+                        casualHelpers.filter(ch => ch.status === 'active').map(ch => {
+                          const isChecked = selectedCasualHelperIds.includes(ch.id);
+                          return (
+                            <label key={ch.id} className={`flex items-center gap-2.5 p-1.5 rounded cursor-pointer transition-colors ${isChecked ? 'bg-blue-50/70 dark:bg-blue-950/30' : 'hover:bg-zinc-50 dark:hover:bg-zinc-800/60'}`}>
+                              <input
+                                type="checkbox"
+                                checked={isChecked}
+                                onChange={(e) => {
+                                  if (e.target.checked) {
+                                    setSelectedCasualHelperIds([...selectedCasualHelperIds, ch.id]);
+                                  } else {
+                                    setSelectedCasualHelperIds(selectedCasualHelperIds.filter(id => id !== ch.id));
+                                  }
+                                }}
+                                className="w-3.5 h-3.5 rounded border-zinc-300 dark:border-zinc-700 text-blue-600 focus:ring-blue-600 cursor-pointer"
+                              />
+                              <div className="flex items-center justify-between flex-1 min-w-0">
+                                <div className="flex flex-col min-w-0">
+                                  <span className={`text-xs font-medium truncate ${isChecked ? 'text-blue-900 dark:text-blue-200 font-semibold' : 'text-zinc-700 dark:text-zinc-300'}`}>
+                                    {ch.full_name}
+                                  </span>
+                                  <span className="text-[10px] text-zinc-400 dark:text-zinc-500 font-mono">{ch.contact_number}</span>
+                                </div>
+                                <span className="text-[9px] font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30 px-1.5 py-0.5 rounded border border-emerald-200 dark:border-emerald-800">
+                                  ₱{Number(ch.daily_rate).toFixed(0)}/day
+                                </span>
+                              </div>
+                            </label>
+                          );
+                        })
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Hierarchy Alert Banner */}
+                  {!leadTechId && (selectedHelperIds.length > 0 || selectedCasualHelperIds.length > 0) && (
+                    <div className="p-2.5 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/60 rounded-lg flex items-start gap-2 text-xs text-rose-800 dark:text-rose-300">
+                      <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+                      <div>
+                        <span className="font-semibold">Hierarchy Rule: </span>
+                        A Lead Technician must be selected. Support crew cannot be dispatched without a Senior or Standard Technician.
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {!isOfficeMode && (
+                <div>
+                  <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">Client / Assignment *</label>
+                  <input 
+                    type="text" required placeholder="e.g. Ayala Malls Routine Inspect"
+                    value={formData.client_name}
+                    onChange={(e) => setFormData({...formData, client_name: e.target.value})}
+                    className="w-full border border-zinc-200 dark:border-zinc-700 rounded-lg px-3 py-1.5 text-xs bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-hidden focus:ring-1 focus:ring-zinc-400 dark:focus:ring-zinc-500 font-medium"
+                  />
+                </div>
+              )}
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider mb-1">Contact Phone *</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="0917-xxx-xxxx"
-                    value={casualForm.contactNumber}
-                    onChange={(e) => setCasualForm({ ...casualForm, contactNumber: e.target.value })}
-                    className="w-full border border-zinc-200/80 dark:border-zinc-700 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none font-medium text-zinc-900 dark:text-zinc-100 font-mono"
+                  <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">Date *</label>
+                  <input 
+                    type="date" required
+                    value={formData.date}
+                    onChange={(e) => setFormData({...formData, date: e.target.value})}
+                    className="w-full border border-zinc-200 dark:border-zinc-700 rounded-lg px-3 py-1.5 text-xs bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-hidden focus:ring-1 focus:ring-zinc-400 dark:focus:ring-zinc-500 font-medium"
+                  />
+                </div>
+                {!isOfficeMode && (
+                  <div>
+                    <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">Mode</label>
+                    <select 
+                      value={formData.attendance_mode}
+                      onChange={(e) => setFormData({...formData, attendance_mode: e.target.value})}
+                      className="w-full border border-zinc-200 dark:border-zinc-700 rounded-lg px-3 py-1.5 text-xs bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-hidden focus:ring-1 focus:ring-zinc-400 dark:focus:ring-zinc-500 font-medium"
+                    >
+                      <option value="direct_dispatch">Direct Dispatch</option>
+                      <option value="out_of_town">Out of Town</option>
+                    </select>
+                  </div>
+                )}
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">Start Time *</label>
+                  <input 
+                    type="time" required
+                    value={formData.start_time}
+                    onChange={(e) => setFormData({...formData, start_time: e.target.value})}
+                    className="w-full border border-zinc-200 dark:border-zinc-700 rounded-lg px-3 py-1.5 text-xs bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-hidden focus:ring-1 focus:ring-zinc-400 dark:focus:ring-zinc-500 font-medium"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider mb-1">Daily Wage Rate (₱) *</label>
-                  <input
-                    type="number"
-                    step="10"
-                    min="500"
-                    required
-                    value={casualForm.dailyRate}
-                    onChange={(e) => setCasualForm({ ...casualForm, dailyRate: parseFloat(e.target.value) || 610 })}
-                    className="w-full border border-zinc-200/80 dark:border-zinc-700 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none font-medium text-zinc-900 dark:text-zinc-100 font-mono"
+                  <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">End Time *</label>
+                  <input 
+                    type="time" required
+                    value={formData.end_time}
+                    onChange={(e) => setFormData({...formData, end_time: e.target.value})}
+                    className="w-full border border-zinc-200 dark:border-zinc-700 rounded-lg px-3 py-1.5 text-xs bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-hidden focus:ring-1 focus:ring-zinc-400 dark:focus:ring-zinc-500 font-medium"
                   />
                 </div>
               </div>
+            </div>
 
-              <div>
-                <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider mb-1">Emergency Contact (Optional)</label>
-                <input
-                  type="text"
-                  placeholder="e.g. Elena Bautista (0918-xxx-xxxx)"
-                  value={casualForm.emergencyContact}
-                  onChange={(e) => setCasualForm({ ...casualForm, emergencyContact: e.target.value })}
-                  className="w-full border border-zinc-200/80 dark:border-zinc-700 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none font-medium text-zinc-900 dark:text-zinc-100"
-                />
-              </div>
+            {!isOfficeMode && (
+              <>
+                <div className="h-px bg-zinc-200 dark:bg-zinc-700 w-full my-1"></div>
 
-              <div>
-                <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider mb-1">Skills / Operational Notes (Optional)</label>
-                <textarea
-                  rows={2}
-                  placeholder="e.g. Certified for heavy lifting, grease trap cleaning, safety boots equipped"
-                  value={casualForm.notes}
-                  onChange={(e) => setCasualForm({ ...casualForm, notes: e.target.value })}
-                  className="w-full border border-zinc-200/80 dark:border-zinc-700 rounded-lg p-2.5 text-xs focus:ring-2 focus:ring-blue-500 outline-none font-medium text-zinc-900 dark:text-zinc-100"
-                />
-              </div>
-
-              <div className="pt-2 flex justify-end gap-2 border-t border-zinc-100">
-                <button
-                  type="button"
-                  onClick={() => setIsCasualModalOpen(false)}
-                  className="px-4 py-2 bg-white border border-zinc-200/80 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 rounded-lg text-xs font-medium hover:bg-zinc-50 dark:bg-zinc-800/60 cursor-pointer"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg text-xs font-bold hover:bg-blue-700 shadow-sm disabled:opacity-50 cursor-pointer flex items-center gap-1.5"
-                >
-                  <Check className="w-3.5 h-3.5" />
-                  {isSubmitting ? 'Saving...' : editingCasualHelper ? 'Update Worker' : 'Register Worker'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Smart Dispatch Modal */}
-      {isModalOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-zinc-900/50 backdrop-blur-sm p-4">
-          <div className={`bg-white rounded-2xl shadow-2xl w-full flex flex-col max-h-[90vh] overflow-hidden border border-zinc-200/80 dark:border-zinc-800 transition-all duration-300 ${isOfficeMode ? 'max-w-md' : 'max-w-5xl'}`}>
-            
-            {/* Modal Header */}
-            <div className="px-6 py-4 border-b border-zinc-100 flex justify-between items-center bg-zinc-50 dark:bg-zinc-800/60">
-              <div className="flex items-center gap-3">
-                <div className={`p-2 rounded-lg ${isOfficeMode ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-100 text-blue-700'}`}>
-                  <Navigation className="w-5 h-5" />
-                </div>
+                {/* Geofence Engine */}
                 <div>
-                  <h2 className="text-xl font-bold text-zinc-900 dark:text-zinc-100 leading-tight">
-                    {isOfficeMode ? 'Schedule Office Hours' : 'Smart Dispatch'}
-                  </h2>
-                  <p className="text-xs text-zinc-500 dark:text-zinc-400 font-medium">
-                    {isOfficeMode ? 'Assign tech to HQ' : 'Assign tech and configure geofence'}
-                  </p>
-                </div>
-              </div>
-              <button onClick={() => setIsModalOpen(false)} className="p-2 text-zinc-400 dark:text-zinc-500 hover:bg-zinc-200 dark:bg-zinc-700 hover:text-zinc-900 dark:text-zinc-100 rounded-full transition-colors">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            
-            {/* Mode Switcher */}
-            <div className="bg-white border-b border-zinc-100 p-2 flex justify-center">
-              <div className="flex bg-zinc-100 dark:bg-zinc-800 p-1 rounded-lg w-full max-w-sm">
-                <button
-                  type="button"
-                  onClick={() => toggleOfficeMode(false)}
-                  className={`flex-1 text-sm font-bold py-1.5 rounded-md transition-colors ${!isOfficeMode ? 'bg-white shadow-sm text-blue-700 border border-zinc-200/80 dark:border-zinc-800' : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:text-zinc-300'}`}
-                >
-                  Standard Dispatch
-                </button>
-                <button
-                  type="button"
-                  onClick={() => toggleOfficeMode(true)}
-                  className={`flex-1 text-sm font-bold py-1.5 rounded-md transition-colors ${isOfficeMode ? 'bg-white shadow-sm text-emerald-700 border border-zinc-200/80 dark:border-zinc-800' : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:text-zinc-300'}`}
-                >
-                  HQ / Office Mode
-                </button>
-              </div>
-            </div>
-
-            {/* Modal Body */}
-            <div className={`flex flex-col lg:flex-row flex-1 min-h-0 overflow-hidden ${isOfficeMode ? '' : 'h-[65vh] min-h-[400px]'}`}>
-              
-              {/* Left Pane - Form */}
-              <div className={`w-full p-6 overflow-y-auto flex flex-col gap-5 ${isOfficeMode ? '' : 'lg:w-[45%] border-r border-zinc-100'}`}>
-                
-                {/* Tech & Time */}
-                <div className="grid grid-cols-1 gap-4">
-                  {isOfficeMode ? (
-                    <div>
-                      <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider mb-1">
-                        HQ Duty Technician *
-                      </label>
-                      <select
-                        value={leadTechId}
-                        onChange={(e) => setLeadTechId(e.target.value)}
-                        className="w-full border border-zinc-200/80 dark:border-zinc-700 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none font-medium text-zinc-900 dark:text-zinc-100 bg-white"
-                      >
-                        <option value="">-- Choose Field Staff --</option>
-                        {profiles.map(p => (
-                          <option key={p.id} value={p.id} disabled={p.lifecycle_status === 'on_leave'}>
-                            {p.full_name} ({p.technician_level === 'senior' ? 'Senior Tech' : p.role === 'helper' ? 'Helper' : 'Technician'}){p.lifecycle_status === 'on_leave' ? ' - ON LEAVE' : ''}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  ) : (
-                    <div className="space-y-4">
-                      {/* Section 1: Lead Technician */}
-                      <div>
-                        <div className="flex items-center justify-between mb-1.5">
-                          <div className="flex items-center gap-1.5">
-                            <ShieldCheck className="w-3.5 h-3.5 text-blue-600" />
-                            <label className="text-xs font-bold text-zinc-900 dark:text-zinc-100 uppercase tracking-wider">
-                              1. Lead Technician <span className="text-rose-500">*</span>
-                            </label>
-                          </div>
-                          <div className="flex gap-1 bg-zinc-100 dark:bg-zinc-800 p-0.5 rounded-md">
-                            <button
-                              type="button"
-                              onClick={() => setTechFilterTier('all')}
-                              className={`px-2 py-0.5 text-[10px] font-bold rounded cursor-pointer ${techFilterTier === 'all' ? 'bg-white shadow-xs text-blue-700' : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:text-zinc-200'}`}
-                            >
-                              All Techs
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setTechFilterTier('senior')}
-                              className={`px-2 py-0.5 text-[10px] font-bold rounded cursor-pointer ${techFilterTier === 'senior' ? 'bg-white shadow-xs text-amber-700' : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:text-zinc-200'}`}
-                            >
-                              Senior Only
-                            </button>
-                          </div>
-                        </div>
-                        
-                        <div className="border border-zinc-200/80 dark:border-zinc-700 rounded-lg overflow-hidden flex flex-col bg-white">
-                          <div className="p-2 border-b border-zinc-200 bg-zinc-50 dark:bg-zinc-800/60 flex items-center gap-2">
-                            <Search className="w-3.5 h-3.5 text-zinc-400 dark:text-zinc-500" />
-                            <input 
-                              type="text" 
-                              placeholder="Search lead technician..." 
-                              value={techSearch}
-                              onChange={(e) => setTechSearch(e.target.value)}
-                              className="w-full bg-transparent text-xs outline-none placeholder-zinc-400 text-zinc-900 dark:text-zinc-100"
-                            />
-                          </div>
-                          <div className="max-h-36 overflow-y-auto p-1 bg-white divide-y divide-zinc-50">
-                            {profiles
-                              .filter(p => p.role === 'technician')
-                              .filter(p => techFilterTier === 'senior' ? p.technician_level === 'senior' : true)
-                              .filter(p => p.full_name.toLowerCase().includes(techSearch.toLowerCase()))
-                              .map(p => {
-                                const isSelected = leadTechId === p.id;
-                                const isBusy = busyTechIds.includes(p.id);
-                                const isOnLeave = p.lifecycle_status === 'on_leave';
-                                return (
-                                  <div
-                                    key={p.id}
-                                    onClick={() => {
-                                      if (!isOnLeave) {
-                                        setLeadTechId(p.id);
-                                        setSelectedHelperIds(prev => prev.filter(id => id !== p.id));
-                                      }
-                                    }}
-                                    className={`flex items-center justify-between p-2 rounded-md cursor-pointer transition-all ${
-                                      isOnLeave ? 'opacity-40 cursor-not-allowed bg-zinc-50 dark:bg-zinc-800/60' : isSelected ? 'bg-blue-50 border border-blue-200 shadow-xs' : 'hover:bg-zinc-50 dark:bg-zinc-800/60'
-                                    }`}
-                                  >
-                                    <div className="flex items-center gap-2.5 min-w-0">
-                                      <div className={`h-6 w-6 rounded-full flex items-center justify-center shrink-0 border ${isSelected ? 'bg-blue-600 text-white border-blue-600' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 border-zinc-200'}`}>
-                                        {isSelected ? <Check className="w-3 h-3" /> : <User className="w-3 h-3" />}
-                                      </div>
-                                      <div className="flex flex-col min-w-0">
-                                        <span className={`text-xs font-bold truncate ${isSelected ? 'text-blue-950' : 'text-zinc-800 dark:text-zinc-200'}`}>
-                                          {p.full_name}
-                                        </span>
-                                        <div className="flex items-center gap-1 mt-0.5">
-                                          {p.technician_level === 'senior' ? (
-                                            <span className="text-[8px] font-bold bg-amber-100 text-amber-700 px-1 py-0.2 rounded border border-amber-200 uppercase">SENIOR</span>
-                                          ) : (
-                                            <span className="text-[8px] font-bold bg-blue-50 text-blue-700 px-1 py-0.2 rounded border border-blue-200 uppercase">TECH</span>
-                                          )}
-                                          {isOnLeave ? (
-                                            <span className="text-[8px] font-bold text-rose-600">ON LEAVE</span>
-                                          ) : isBusy ? (
-                                            <span className="text-[8px] font-bold text-amber-600">BUSY</span>
-                                          ) : (
-                                            <span className="text-[8px] font-bold text-emerald-600">AVAILABLE</span>
-                                          )}
-                                        </div>
-                                      </div>
-                                    </div>
-                                    {isSelected && (
-                                      <span className="text-[10px] font-bold bg-blue-600 text-white px-2 py-0.5 rounded-full uppercase tracking-wider">
-                                        Lead
-                                      </span>
-                                    )}
-                                  </div>
-                                );
-                              })}
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Section 2: Support Crew - Regular Helpers */}
-                      <div>
-                        <div className="flex items-center justify-between mb-1">
-                          <label className="text-xs font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider">
-                            2. Company Helpers ({selectedHelperIds.length} selected)
-                          </label>
-                          <span className="text-[10px] text-zinc-400 dark:text-zinc-500 font-medium">Regular field assistants</span>
-                        </div>
-                        <div className="border border-zinc-200/80 dark:border-zinc-700 rounded-lg p-1.5 max-h-28 overflow-y-auto bg-white space-y-1">
-                          {profiles
-                            .filter(p => (p.role === 'helper' || p.technician_level === 'helper') && p.id !== leadTechId)
-                            .map(p => {
-                              const isChecked = selectedHelperIds.includes(p.id);
-                              const isOnLeave = p.lifecycle_status === 'on_leave';
-                              return (
-                                <label key={p.id} className={`flex items-center gap-2.5 p-1.5 rounded cursor-pointer transition-colors ${isChecked ? 'bg-blue-50/70' : 'hover:bg-zinc-50 dark:bg-zinc-800/60'}`}>
-                                  <input
-                                    type="checkbox"
-                                    disabled={isOnLeave}
-                                    checked={isChecked}
-                                    onChange={(e) => {
-                                      if (e.target.checked) {
-                                        setSelectedHelperIds([...selectedHelperIds, p.id]);
-                                      } else {
-                                        setSelectedHelperIds(selectedHelperIds.filter(id => id !== p.id));
-                                      }
-                                    }}
-                                    className="w-3.5 h-3.5 rounded border-zinc-300 text-blue-600 focus:ring-blue-600 cursor-pointer disabled:opacity-50"
-                                  />
-                                  <div className="flex items-center justify-between flex-1 min-w-0">
-                                    <span className={`text-xs font-medium truncate ${isOnLeave ? 'text-zinc-400 dark:text-zinc-500 line-through' : isChecked ? 'text-blue-900 font-bold' : 'text-zinc-700 dark:text-zinc-300'}`}>
-                                      {p.full_name}
-                                    </span>
-                                    <span className="text-[8px] font-bold bg-zinc-100 text-zinc-600 px-1.5 py-0.2 rounded uppercase">
-                                      {isOnLeave ? 'ON LEAVE' : 'HELPER'}
-                                    </span>
-                                  </div>
-                                </label>
-                              );
-                            })}
-                        </div>
-                      </div>
-
-                      {/* Section 3: Support Crew - Casual Helpers */}
-                      <div>
-                        <div className="flex items-center justify-between mb-1">
-                          <label className="text-xs font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider">
-                            3. Casual Helpers ({selectedCasualHelperIds.length} selected)
-                          </label>
-                          <button
-                            type="button"
-                            onClick={() => openRegisterCasualModal()}
-                            className="text-[10px] font-bold text-blue-600 hover:text-blue-800 uppercase tracking-wider cursor-pointer"
+                  <label className="block text-xs font-semibold text-blue-700 dark:text-blue-400 mb-2 flex items-center gap-1.5">
+                    <MapIcon className="w-3.5 h-3.5" /> Geofence Configuration
+                  </label>
+                  
+                  <div className="relative mb-3">
+                    <input 
+                      type="text" 
+                      placeholder="Search PH Address (Nominatim)..."
+                      value={addressQuery}
+                      onChange={(e) => searchAddress(e.target.value)}
+                      className="w-full border border-zinc-200 dark:border-zinc-700 rounded-lg px-3 py-1.5 pl-8 text-xs bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-hidden focus:ring-1 focus:ring-zinc-400 dark:focus:ring-zinc-500"
+                    />
+                    <Search className="absolute left-2.5 top-2 w-3.5 h-3.5 text-zinc-400" />
+                    
+                    {/* Autocomplete Dropdown */}
+                    {addressResults.length > 0 && (
+                      <div className="absolute z-10 w-full mt-1 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg shadow-xl max-h-48 overflow-y-auto">
+                        {addressResults.map((res: any, idx: number) => (
+                          <div 
+                            key={idx} 
+                            onClick={() => selectAddress(res)}
+                            className="p-2.5 hover:bg-blue-50 dark:hover:bg-zinc-800 cursor-pointer border-b border-zinc-100 dark:border-zinc-800 last:border-0 text-xs flex items-start gap-2"
                           >
-                            + Quick Register
-                          </button>
-                        </div>
-                        <div className="border border-zinc-200/80 dark:border-zinc-700 rounded-lg p-1.5 max-h-28 overflow-y-auto bg-white space-y-1">
-                          {casualHelpers.filter(ch => ch.status === 'active').length === 0 ? (
-                            <div className="p-2 text-center text-xs text-zinc-400 dark:text-zinc-500">No active casual helpers registered</div>
-                          ) : (
-                            casualHelpers.filter(ch => ch.status === 'active').map(ch => {
-                              const isChecked = selectedCasualHelperIds.includes(ch.id);
-                              return (
-                                <label key={ch.id} className={`flex items-center gap-2.5 p-1.5 rounded cursor-pointer transition-colors ${isChecked ? 'bg-blue-50/70' : 'hover:bg-zinc-50 dark:bg-zinc-800/60'}`}>
-                                  <input
-                                    type="checkbox"
-                                    checked={isChecked}
-                                    onChange={(e) => {
-                                      if (e.target.checked) {
-                                        setSelectedCasualHelperIds([...selectedCasualHelperIds, ch.id]);
-                                      } else {
-                                        setSelectedCasualHelperIds(selectedCasualHelperIds.filter(id => id !== ch.id));
-                                      }
-                                    }}
-                                    className="w-3.5 h-3.5 rounded border-zinc-300 text-blue-600 focus:ring-blue-600 cursor-pointer"
-                                  />
-                                  <div className="flex items-center justify-between flex-1 min-w-0">
-                                    <div className="flex flex-col min-w-0">
-                                      <span className={`text-xs font-medium truncate ${isChecked ? 'text-blue-900 font-bold' : 'text-zinc-700 dark:text-zinc-300'}`}>
-                                        {ch.full_name}
-                                      </span>
-                                      <span className="text-[10px] text-zinc-400 dark:text-zinc-500 font-mono">{ch.contact_number}</span>
-                                    </div>
-                                    <span className="text-[9px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
-                                      ₱{Number(ch.daily_rate).toFixed(0)}/day
-                                    </span>
-                                  </div>
-                                </label>
-                              );
-                            })
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Hierarchy Alert Banner */}
-                      {!leadTechId && (selectedHelperIds.length > 0 || selectedCasualHelperIds.length > 0) && (
-                        <div className="p-2.5 bg-rose-50 border border-rose-200 rounded-lg flex items-start gap-2 text-xs text-rose-800">
-                          <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
-                          <div>
-                            <span className="font-bold">Hierarchy Rule: </span>
-                            A Lead Technician must be selected. Support crew cannot be dispatched without a Senior or Standard Technician.
+                            <MapPin className="w-3.5 h-3.5 text-blue-500 shrink-0 mt-0.5" />
+                            <span className="font-medium text-zinc-700 dark:text-zinc-300 line-clamp-2">{res.display_name}</span>
                           </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {!isOfficeMode && (
-                    <div>
-                      <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider mb-1">Client / Assignment</label>
-                      <input 
-                        type="text" required placeholder="e.g. Ayala Malls Routine Inspect"
-                        value={formData.client_name}
-                        onChange={(e) => setFormData({...formData, client_name: e.target.value})}
-                        className="w-full border border-zinc-200/80 dark:border-zinc-700 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none font-medium text-zinc-900 dark:text-zinc-100"
-                      />
-                    </div>
-                  )}
-
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider mb-1">Date</label>
-                      <input 
-                        type="date" required
-                        value={formData.date}
-                        onChange={(e) => setFormData({...formData, date: e.target.value})}
-                        className="w-full border border-zinc-200/80 dark:border-zinc-700 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none font-medium text-zinc-900 dark:text-zinc-100"
-                      />
-                    </div>
-                    {!isOfficeMode && (
-                      <div>
-                        <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider mb-1">Mode</label>
-                        <select 
-                          value={formData.attendance_mode}
-                          onChange={(e) => setFormData({...formData, attendance_mode: e.target.value})}
-                          className="w-full border border-zinc-200/80 dark:border-zinc-700 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none font-medium text-zinc-900 dark:text-zinc-100"
-                        >
-                          <option value="direct_dispatch">Direct Dispatch</option>
-                          <option value="out_of_town">Out of Town</option>
-                        </select>
+                        ))}
                       </div>
                     )}
                   </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider mb-1">Start Time</label>
-                      <input 
-                        type="time" required
-                        value={formData.start_time}
-                        onChange={(e) => setFormData({...formData, start_time: e.target.value})}
-                        className="w-full border border-zinc-200/80 dark:border-zinc-700 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none font-medium text-zinc-900 dark:text-zinc-100"
-                      />
+
+                  <div className="mb-4">
+                    <div className="flex justify-between items-center mb-1">
+                      <label className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">Radius Tolerance</label>
+                      <span className="text-xs font-semibold bg-blue-50 text-blue-800 dark:bg-blue-950/40 dark:text-blue-300 px-2 py-0.5 rounded border border-blue-200 dark:border-blue-800">{formData.geofence_radius} meters</span>
                     </div>
-                    <div>
-                      <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider mb-1">End Time</label>
-                      <input 
-                        type="time" required
-                        value={formData.end_time}
-                        onChange={(e) => setFormData({...formData, end_time: e.target.value})}
-                        className="w-full border border-zinc-200/80 dark:border-zinc-700 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none font-medium text-zinc-900 dark:text-zinc-100"
-                      />
-                    </div>
+                    <input 
+                      type="range" min="50" max="2000" step="50"
+                      value={formData.geofence_radius}
+                      onChange={(e) => setFormData({...formData, geofence_radius: parseInt(e.target.value)})}
+                      className="w-full accent-blue-600 cursor-pointer"
+                    />
                   </div>
-                </div>
 
-                {!isOfficeMode && (
-                  <>
-                    <div className="h-px bg-zinc-200 dark:bg-zinc-700 w-full my-1"></div>
-
-                    {/* Geofence Engine */}
-                    <div>
-                      <label className="block text-xs font-bold text-blue-700 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                        <MapIcon className="w-3.5 h-3.5" /> Geofence Configuration
-                      </label>
-                      
-                      <div className="relative mb-3">
-                        <input 
-                          type="text" 
-                          placeholder="Search PH Address (Nominatim)..."
-                          value={addressQuery}
-                          onChange={(e) => searchAddress(e.target.value)}
-                          className="w-full border border-blue-200 rounded-lg p-2.5 pl-9 text-sm focus:ring-2 focus:ring-blue-500 outline-none font-medium text-zinc-900 dark:text-zinc-100"
-                        />
-                        <Search className="absolute left-3 top-3 w-4 h-4 text-blue-400" />
-                        
-                        {/* Autocomplete Dropdown */}
-                        {addressResults.length > 0 && (
-                          <div className="absolute z-10 w-full mt-1 bg-white border border-zinc-200/80 dark:border-zinc-800 rounded-lg shadow-xl max-h-48 overflow-y-auto">
-                            {addressResults.map((res: any, idx: number) => (
-                              <div 
-                                key={idx} 
-                                onClick={() => selectAddress(res)}
-                                className="p-3 hover:bg-blue-50 cursor-pointer border-b border-zinc-100 last:border-0 text-sm flex items-start gap-2"
-                              >
-                                <MapPin className="w-4 h-4 text-blue-500 shrink-0 mt-0.5" />
-                                <span className="font-medium text-zinc-700 dark:text-zinc-300 line-clamp-2">{res.display_name}</span>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="mb-4">
-                        <div className="flex justify-between items-center mb-1">
-                          <label className="text-xs font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider">Radius Tolerance</label>
-                          <span className="text-xs font-bold bg-blue-100 text-blue-800 px-2 py-0.5 rounded">{formData.geofence_radius} meters</span>
+                  {/* Advanced Fallback */}
+                  <div className="bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-700 rounded-lg overflow-hidden">
+                    <button 
+                      type="button"
+                      onClick={() => setShowAdvanced(!showAdvanced)}
+                      className="w-full p-2.5 flex justify-between items-center bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors text-xs font-semibold text-zinc-700 dark:text-zinc-300"
+                    >
+                      <span className="flex items-center gap-1.5"><Settings2 className="w-3.5 h-3.5" /> Manual Fallback (Override)</span>
+                      <span>{showAdvanced ? '−' : '+'}</span>
+                    </button>
+                    {showAdvanced && (
+                      <div className="p-3 space-y-3">
+                        <div className="p-2.5 bg-blue-50 dark:bg-blue-950/40 border border-blue-100 dark:border-blue-900/60 rounded text-xs text-blue-800 dark:text-blue-300 flex items-start gap-1.5">
+                          <Info className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                          <p>If Nominatim fails, you can paste coordinates directly from Google Maps (e.g. <code>14.599, 120.984</code>) or type them manually.</p>
                         </div>
-                        <input 
-                          type="range" min="50" max="2000" step="50"
-                          value={formData.geofence_radius}
-                          onChange={(e) => setFormData({...formData, geofence_radius: parseInt(e.target.value)})}
-                          className="w-full accent-blue-600 cursor-pointer"
-                        />
-                      </div>
-
-                      {/* Advanced Fallback */}
-                      <div className="bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-200/80 dark:border-zinc-800 rounded-lg overflow-hidden">
-                        <button 
-                          type="button"
-                          onClick={() => setShowAdvanced(!showAdvanced)}
-                          className="w-full p-3 flex justify-between items-center bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:bg-zinc-700 transition-colors text-xs font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider"
-                        >
-                          <span className="flex items-center gap-1.5"><Settings2 className="w-3.5 h-3.5" /> Manual Fallback (Override)</span>
-                          <span>{showAdvanced ? '−' : '+'}</span>
-                        </button>
-                        {showAdvanced && (
-                          <div className="p-3 space-y-3">
-                            <div className="p-2.5 bg-blue-50 border border-blue-100 rounded text-xs text-blue-800 flex items-start gap-1.5">
-                              <Info className="w-4 h-4 shrink-0 mt-0.5" />
-                              <p>If Nominatim fails, you can paste coordinates directly from Google Maps (e.g. <code>14.599, 120.984</code>) or type them manually.</p>
-                            </div>
-                            <div>
-                              <label className="block text-[10px] font-bold text-zinc-600 uppercase mb-1">Paste Coordinates (Lat, Lon)</label>
-                              <input 
-                                type="text" placeholder="14.5995, 120.9842"
-                                value={formData.coordinate_override}
-                                onChange={(e) => handleCoordinateOverride(e.target.value)}
-                                className="w-full border border-zinc-200/80 dark:border-zinc-700 rounded p-2 text-sm focus:ring-1 focus:ring-blue-500 outline-none font-mono text-zinc-800 dark:text-zinc-200"
-                              />
-                            </div>
-                            <div className="grid grid-cols-2 gap-2">
-                              <div>
-                                <label className="block text-[10px] font-bold text-zinc-600 uppercase mb-1">Latitude</label>
-                                <input 
-                                  type="number" step="any"
-                                  value={formData.geofence_lat}
-                                  onChange={(e) => setFormData({...formData, geofence_lat: parseFloat(e.target.value)})}
-                                  className="w-full border border-zinc-200/80 dark:border-zinc-700 rounded p-2 text-sm focus:ring-1 focus:ring-blue-500 outline-none font-mono text-zinc-800 dark:text-zinc-200"
-                                />
-                              </div>
-                              <div>
-                                <label className="block text-[10px] font-bold text-zinc-600 uppercase mb-1">Longitude</label>
-                                <input 
-                                  type="number" step="any"
-                                  value={formData.geofence_lon}
-                                  onChange={(e) => setFormData({...formData, geofence_lon: parseFloat(e.target.value)})}
-                                  className="w-full border border-zinc-200/80 dark:border-zinc-700 rounded p-2 text-sm focus:ring-1 focus:ring-blue-500 outline-none font-mono text-zinc-800 dark:text-zinc-200"
-                                />
-                              </div>
-                            </div>
+                        <div>
+                          <label className="block text-[10px] font-semibold text-zinc-600 dark:text-zinc-400 mb-1">Paste Coordinates (Lat, Lon)</label>
+                          <input 
+                            type="text" placeholder="14.5995, 120.9842"
+                            value={formData.coordinate_override}
+                            onChange={(e) => handleCoordinateOverride(e.target.value)}
+                            className="w-full border border-zinc-200 dark:border-zinc-700 rounded px-2.5 py-1.5 text-xs bg-white dark:bg-zinc-900 text-zinc-800 dark:text-zinc-200 focus:outline-hidden focus:ring-1 focus:ring-blue-500 font-mono"
+                          />
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <label className="block text-[10px] font-semibold text-zinc-600 dark:text-zinc-400 mb-1">Latitude</label>
+                            <input 
+                              type="number" step="any"
+                              value={formData.geofence_lat}
+                              onChange={(e) => setFormData({...formData, geofence_lat: parseFloat(e.target.value)})}
+                              className="w-full border border-zinc-200 dark:border-zinc-700 rounded px-2.5 py-1.5 text-xs bg-white dark:bg-zinc-900 text-zinc-800 dark:text-zinc-200 focus:outline-hidden focus:ring-1 focus:ring-blue-500 font-mono"
+                            />
                           </div>
-                        )}
+                          <div>
+                            <label className="block text-[10px] font-semibold text-zinc-600 dark:text-zinc-400 mb-1">Longitude</label>
+                            <input 
+                              type="number" step="any"
+                              value={formData.geofence_lon}
+                              onChange={(e) => setFormData({...formData, geofence_lon: parseFloat(e.target.value)})}
+                              className="w-full border border-zinc-200 dark:border-zinc-700 rounded px-2.5 py-1.5 text-xs bg-white dark:bg-zinc-900 text-zinc-800 dark:text-zinc-200 focus:outline-hidden focus:ring-1 focus:ring-blue-500 font-mono"
+                            />
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  </>
-                )}
-              </div>
-
-              {/* Right Pane - Visual Map */}
-              {!isOfficeMode && (
-                <div className="hidden lg:block lg:w-[55%] relative bg-zinc-100 dark:bg-zinc-800 h-full min-h-[500px]">
-                  <GeofenceMap 
-                    lat={formData.geofence_lat}
-                    lon={formData.geofence_lon}
-                    radius={formData.geofence_radius}
-                    onPositionChange={(pos) => setFormData({
-                      ...formData,
-                      geofence_lat: pos[0],
-                      geofence_lon: pos[1],
-                      coordinate_override: `${pos[0].toFixed(5)}, ${pos[1].toFixed(5)}`
-                    })}
-                  />
-                  {/* Visualizer Help Overlay */}
-                  <div className="absolute top-4 left-4 z-[400] bg-white/90 backdrop-blur shadow-md border border-zinc-200/80 dark:border-zinc-800 p-3 rounded-lg text-xs max-w-xs pointer-events-none">
-                    <p className="font-bold text-zinc-900 dark:text-zinc-100 mb-0.5">Interactive Geofence</p>
-                    <p className="text-zinc-600">The blue circle represents the valid clock-in zone. You can drag the marker to adjust the precise location.</p>
+                    )}
                   </div>
                 </div>
-              )}
-            </div>
-
-            {/* Modal Footer */}
-            <div className="px-6 py-4 border-t border-zinc-200 bg-zinc-50 dark:bg-zinc-800/60 flex justify-end gap-3 rounded-b-2xl">
-              <button 
-                type="button"
-                onClick={() => setIsModalOpen(false)}
-                className="px-5 py-2.5 bg-white border border-zinc-200/80 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 rounded-lg font-medium hover:bg-zinc-50 dark:bg-zinc-800/60 shadow-sm"
-              >
-                Cancel
-              </button>
-              <button 
-                onClick={handleSubmit}
-                disabled={isSubmitting || (isOfficeMode ? !leadTechId : (!leadTechId || !formData.client_name))}
-                className="px-5 py-2.5 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 cursor-pointer"
-              >
-                {isSubmitting ? 'Creating...' : 'Create Dispatch & Geofence'}
-              </button>
-            </div>
-            
+              </>
+            )}
           </div>
+
+          {/* Right Pane - Visual Map */}
+          {!isOfficeMode && (
+            <div className="hidden lg:block lg:w-[55%] relative bg-zinc-100 dark:bg-zinc-800 h-full min-h-[500px]">
+              <GeofenceMap 
+                lat={formData.geofence_lat}
+                lon={formData.geofence_lon}
+                radius={formData.geofence_radius}
+                onPositionChange={(pos) => setFormData({
+                  ...formData,
+                  geofence_lat: pos[0],
+                  geofence_lon: pos[1],
+                  coordinate_override: `${pos[0].toFixed(5)}, ${pos[1].toFixed(5)}`
+                })}
+              />
+              {/* Visualizer Help Overlay */}
+              <div className="absolute top-4 left-4 z-[400] bg-white/90 dark:bg-zinc-900/90 backdrop-blur shadow-md border border-zinc-200/80 dark:border-zinc-800 p-3 rounded-lg text-xs max-w-xs pointer-events-none">
+                <p className="font-semibold text-zinc-900 dark:text-zinc-100 mb-0.5">Interactive Geofence</p>
+                <p className="text-zinc-600 dark:text-zinc-400">The blue circle represents the valid clock-in zone. You can drag the marker to adjust the precise location.</p>
+              </div>
+            </div>
+          )}
         </div>
-      )}
+      </ModalDialog>
 
       {/* Edit Dispatch Modal */}
       <ModalDialog
@@ -1855,83 +1819,73 @@ export default function DispatchBoardClient() {
       </ModalDialog>
 
       {/* Cancel Dispatch Modal */}
-      {isCancelModalOpen && cancellingSchedule && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-zinc-900/50 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden border border-zinc-200/80 dark:border-zinc-800 animate-in fade-in zoom-in-95 duration-150">
-            <div className="px-6 py-4 border-b border-zinc-100 flex justify-between items-center bg-rose-50/60">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-rose-100 text-rose-700">
-                  <Ban className="w-5 h-5" />
-                </div>
-                <div>
-                  <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-100 leading-tight">Cancel Dispatch</h2>
-                  <p className="text-xs text-zinc-500 dark:text-zinc-400 font-medium">Record operational reason and notify technician.</p>
-                </div>
+      <ModalDialog
+        isOpen={Boolean(isCancelModalOpen && cancellingSchedule)}
+        onClose={() => setIsCancelModalOpen(false)}
+        title="Cancel Dispatch"
+        subtitle="Record operational reason and notify technician."
+        icon={Ban}
+        iconVariant="rose"
+        maxWidth="md"
+        footer={
+          <div className="flex items-center justify-end gap-2 w-full">
+            <button 
+              type="button"
+              onClick={() => setIsCancelModalOpen(false)}
+              className="px-3.5 py-1.5 border border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 rounded-lg text-xs font-semibold hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+            >
+              Keep Dispatch
+            </button>
+            <button 
+              type="button"
+              onClick={handleCancelSubmit}
+              disabled={isSubmitting}
+              className="px-3.5 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-semibold shadow-xs disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
+            >
+              {isSubmitting ? 'Cancelling...' : 'Confirm Cancellation'}
+            </button>
+          </div>
+        }
+      >
+        {cancellingSchedule && (
+          <div className="space-y-3.5 text-xs">
+            <div className="p-3 bg-zinc-50 dark:bg-zinc-800/60 rounded-lg border border-zinc-200 dark:border-zinc-700/60 space-y-1.5">
+              <div className="flex justify-between">
+                <span className="text-zinc-500 dark:text-zinc-400">Client:</span>
+                <span className="font-semibold text-zinc-900 dark:text-zinc-100">{cancellingSchedule.client_name}</span>
               </div>
-              <button 
-                onClick={() => setIsCancelModalOpen(false)}
-                className="p-2 rounded-lg hover:bg-zinc-200 dark:bg-zinc-700 text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:text-zinc-300 transition-colors cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="p-6 space-y-4">
-              <div className="p-3 bg-zinc-50 dark:bg-zinc-800/60 rounded-xl border border-zinc-200/80 dark:border-zinc-800 text-xs space-y-1">
-                <div className="flex justify-between">
-                  <span className="text-zinc-500 dark:text-zinc-400">Client:</span>
-                  <span className="font-bold text-zinc-900 dark:text-zinc-100">{cancellingSchedule.client_name}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-zinc-500 dark:text-zinc-400">Technician:</span>
-                  <span className="font-bold text-zinc-900 dark:text-zinc-100">{cancellingSchedule.profiles?.full_name || 'Unassigned'}</span>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider mb-1.5">Mandatory Cancellation Reason</label>
-                <select
-                  value={cancelPreset}
-                  onChange={(e) => setCancelPreset(e.target.value)}
-                  className="w-full border border-zinc-200/80 dark:border-zinc-700 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-rose-500 outline-none font-medium text-zinc-900 dark:text-zinc-100 bg-white mb-2"
-                >
-                  <option value="Client Rescheduled">Client Rescheduled</option>
-                  <option value="Site Inaccessible / Severe Weather">Site Inaccessible / Severe Weather</option>
-                  <option value="Technician Emergency / Illness">Technician Emergency / Illness</option>
-                  <option value="Operational / Priority Reallocation">Operational / Priority Reallocation</option>
-                  <option value="Duplicate Dispatch Entry">Duplicate Dispatch Entry</option>
-                  <option value="Other">Other Reason (Specify below)</option>
-                </select>
-
-                <textarea
-                  rows={3}
-                  placeholder="Additional context or operational explanation..."
-                  value={cancelCustomNotes}
-                  onChange={(e) => setCancelCustomNotes(e.target.value)}
-                  className="w-full border border-zinc-200/80 dark:border-zinc-700 rounded-lg p-2.5 text-xs focus:ring-2 focus:ring-rose-500 outline-none font-medium text-zinc-900 dark:text-zinc-100"
-                />
+              <div className="flex justify-between">
+                <span className="text-zinc-500 dark:text-zinc-400">Technician:</span>
+                <span className="font-semibold text-zinc-900 dark:text-zinc-100">{cancellingSchedule.profiles?.full_name || 'Unassigned'}</span>
               </div>
             </div>
 
-            <div className="px-6 py-4 border-t border-zinc-200 bg-zinc-50 dark:bg-zinc-800/60 flex justify-end gap-3 rounded-b-2xl">
-              <button 
-                type="button"
-                onClick={() => setIsCancelModalOpen(false)}
-                className="px-4 py-2 bg-white border border-zinc-200/80 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 rounded-lg font-medium hover:bg-zinc-50 dark:bg-zinc-800/60 text-xs cursor-pointer"
+            <div>
+              <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">Mandatory Cancellation Reason *</label>
+              <select
+                value={cancelPreset}
+                onChange={(e) => setCancelPreset(e.target.value)}
+                className="w-full border border-zinc-200 dark:border-zinc-700 rounded-lg px-3 py-1.5 text-xs bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-hidden focus:ring-1 focus:ring-zinc-400 dark:focus:ring-zinc-500 mb-2"
               >
-                Keep Dispatch
-              </button>
-              <button 
-                onClick={handleCancelSubmit}
-                disabled={isSubmitting}
-                className="px-4 py-2 bg-rose-600 text-white rounded-lg font-medium hover:bg-rose-700 text-xs shadow-sm disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-              >
-                {isSubmitting ? 'Cancelling...' : 'Confirm Cancellation'}
-              </button>
+                <option value="Client Rescheduled">Client Rescheduled</option>
+                <option value="Site Inaccessible / Severe Weather">Site Inaccessible / Severe Weather</option>
+                <option value="Technician Emergency / Illness">Technician Emergency / Illness</option>
+                <option value="Operational / Priority Reallocation">Operational / Priority Reallocation</option>
+                <option value="Duplicate Dispatch Entry">Duplicate Dispatch Entry</option>
+                <option value="Other">Other Reason (Specify below)</option>
+              </select>
+
+              <textarea
+                rows={3}
+                placeholder="Additional context or operational explanation..."
+                value={cancelCustomNotes}
+                onChange={(e) => setCancelCustomNotes(e.target.value)}
+                className="w-full border border-zinc-200 dark:border-zinc-700 rounded-lg px-3 py-1.5 text-xs bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-hidden focus:ring-1 focus:ring-zinc-400 dark:focus:ring-zinc-500"
+              />
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </ModalDialog>
     </div>
   );
 }

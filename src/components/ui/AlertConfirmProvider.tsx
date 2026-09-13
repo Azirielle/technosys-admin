@@ -213,21 +213,21 @@ export function AlertConfirmProvider({ children }: { children: React.ReactNode }
     switch (variant) {
       case 'destructive':
         return {
-          icon: <AlertTriangle className="w-6 h-6 text-rose-600" />,
-          iconBg: 'bg-rose-50 border border-rose-100',
-          btnClass: 'bg-rose-600 hover:bg-rose-700 text-white focus:ring-rose-500'
+          icon: <AlertTriangle className="w-4 h-4 stroke-[1.8] text-rose-600 dark:text-rose-400" />,
+          iconBg: 'bg-rose-50/60 dark:bg-rose-950/30 border-rose-200/60 dark:border-rose-800/60',
+          btnClass: 'bg-rose-600 hover:bg-rose-700 text-white shadow-xs'
         }
       case 'success':
         return {
-          icon: <CheckCircle className="w-6 h-6 text-emerald-600" />,
-          iconBg: 'bg-emerald-50 border border-emerald-100',
-          btnClass: 'bg-emerald-600 hover:bg-emerald-700 text-white focus:ring-emerald-500'
+          icon: <CheckCircle className="w-4 h-4 stroke-[1.8] text-emerald-600 dark:text-emerald-400" />,
+          iconBg: 'bg-emerald-50/60 dark:bg-emerald-950/30 border-emerald-200/60 dark:border-emerald-800/60',
+          btnClass: 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs'
         }
       default:
         return {
-          icon: <Info className="w-6 h-6 text-zinc-650" />,
-          iconBg: 'bg-zinc-50 border border-zinc-100',
-          btnClass: 'bg-zinc-950 hover:bg-zinc-800 text-white focus:ring-zinc-500'
+          icon: <Info className="w-4 h-4 stroke-[1.8] text-zinc-600 dark:text-zinc-300" />,
+          iconBg: 'bg-zinc-100 dark:bg-zinc-800 border-zinc-200/80 dark:border-zinc-700/80',
+          btnClass: 'bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-white shadow-xs'
         }
     }
   }
@@ -238,53 +238,57 @@ export function AlertConfirmProvider({ children }: { children: React.ReactNode }
     <AlertConfirmContext.Provider value={{ alert, confirm }}>
       {children}
       {mounted && state.isOpen && createPortal(
-        <div className="fixed inset-0 bg-zinc-900/60 z-[9999] flex items-center justify-center p-4 sm:p-6 backdrop-blur-xs animate-in fade-in duration-200">
-          <div className="bg-white dark:bg-zinc-900 rounded-2xl max-w-md w-full shadow-2xl border border-zinc-200/80 dark:border-zinc-800 overflow-hidden animate-in zoom-in-95 duration-200">
-            <div className="p-6 flex items-start gap-4">
-              <div className={`p-2.5 rounded-xl shrink-0 ${styles.iconBg}`}>
+        <div className="fixed inset-0 bg-zinc-900/60 dark:bg-zinc-950/80 z-[9999] flex items-center justify-center p-4 backdrop-blur-xs animate-in fade-in duration-150">
+          <div className="bg-white dark:bg-zinc-900 rounded-xl max-w-md w-full shadow-xl border border-zinc-200/80 dark:border-zinc-800 overflow-hidden animate-in fade-in zoom-in-[0.98] duration-150">
+            {/* Header */}
+            <div className="px-5 py-3.5 border-b border-zinc-200/80 dark:border-zinc-800 flex items-center gap-2.5 bg-zinc-50/50 dark:bg-zinc-900/50">
+              <div className={`w-7 h-7 rounded-md flex items-center justify-center shrink-0 border ${styles.iconBg}`}>
                 {styles.icon}
               </div>
-              <div className="flex-1 min-w-0">
-                <h3 className="text-base font-extrabold text-zinc-950 dark:text-zinc-100 leading-tight">{state.title}</h3>
-                <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400 leading-normal whitespace-pre-wrap">{state.message}</p>
-                
-                {/* Collapsible Monospace Details Accordion */}
-                {state.rawMessage && (
-                  <div className="mt-4 border-t border-zinc-100 dark:border-zinc-800 pt-3">
-                    <button
-                      type="button"
-                      onClick={() => setShowDetails(!showDetails)}
-                      className="flex items-center text-[10px] font-bold text-zinc-400 hover:text-zinc-600 uppercase tracking-wider cursor-pointer outline-none gap-1"
-                    >
-                      <span>{showDetails ? 'Hide Details' : 'Show Details'}</span>
-                      <svg
-                        className={`w-3 h-3 transform transition-transform duration-200 ${showDetails ? 'rotate-180' : ''}`}
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                        strokeWidth={2.5}
-                      >
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                      </svg>
-                    </button>
-                    {showDetails && (
-                      <div className="mt-2 p-2.5 bg-zinc-50 dark:bg-zinc-800/80 rounded-lg border border-zinc-200 dark:border-zinc-700 max-h-36 overflow-y-auto">
-                        <code className="text-[10px] text-zinc-650 font-mono break-all whitespace-pre-wrap leading-normal">
-                          {state.rawMessage}
-                        </code>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
+              <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 tracking-tight leading-tight">{state.title}</h3>
             </div>
-            
-            <div className="p-4 bg-zinc-50 dark:bg-zinc-900/90 border-t border-zinc-100 dark:border-zinc-800 flex items-center justify-end gap-2.5">
+
+            {/* Body */}
+            <div className="p-5 text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed space-y-3">
+              <p className="whitespace-pre-wrap">{state.message}</p>
+
+              {/* Collapsible Monospace Details Accordion */}
+              {state.rawMessage && (
+                <div className="border-t border-zinc-100 dark:border-zinc-800 pt-3">
+                  <button
+                    type="button"
+                    onClick={() => setShowDetails(!showDetails)}
+                    className="flex items-center text-[10px] font-semibold text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 uppercase tracking-wider cursor-pointer outline-none gap-1"
+                  >
+                    <span>{showDetails ? 'Hide Details' : 'Show Technical Details'}</span>
+                    <svg
+                      className={`w-3 h-3 transform transition-transform duration-200 ${showDetails ? 'rotate-180' : ''}`}
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
+                  {showDetails && (
+                    <div className="mt-2 p-2.5 bg-zinc-50 dark:bg-zinc-800/80 rounded-lg border border-zinc-200 dark:border-zinc-700 max-h-36 overflow-y-auto">
+                      <code className="text-[10px] text-zinc-700 dark:text-zinc-300 font-mono break-all whitespace-pre-wrap leading-normal">
+                        {state.rawMessage}
+                      </code>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="px-5 py-3 bg-zinc-50/50 dark:bg-zinc-900/50 border-t border-zinc-200/80 dark:border-zinc-800 flex items-center justify-end gap-2">
               {state.type === 'confirm' && (
                 <button
                   type="button"
                   onClick={handleCancel}
-                  className="px-4 py-2 border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 text-xs font-bold rounded-xl transition-all cursor-pointer outline-none focus:ring-2 focus:ring-zinc-500"
+                  className="px-3.5 py-1.5 border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 text-xs font-semibold rounded-lg transition-colors cursor-pointer"
                 >
                   Cancel
                 </button>
@@ -293,7 +297,7 @@ export function AlertConfirmProvider({ children }: { children: React.ReactNode }
                 type="button"
                 autoFocus
                 onClick={handleConfirm}
-                className={`px-4.5 py-2 text-xs font-bold rounded-xl transition-all cursor-pointer shadow-sm outline-none focus:ring-2 ${styles.btnClass}`}
+                className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-colors cursor-pointer ${styles.btnClass}`}
               >
                 Confirm
               </button>

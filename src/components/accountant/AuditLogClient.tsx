@@ -1266,68 +1266,61 @@ export default function AuditLogClient() {
       </ModalDialog>
 
       {/* History Inspector Modal */}
-      {viewingHistoryTech && (
-        <div className="fixed inset-0 z-[70] bg-zinc-900/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150">
-          <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl overflow-hidden border border-zinc-200 flex flex-col">
-            <div className="px-5 py-3.5 bg-zinc-900 text-white flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <History className="w-4 h-4 text-blue-400" />
-                <h3 className="text-xs font-bold uppercase tracking-wider">Audit Correction Trail</h3>
-              </div>
-              <button
-                onClick={() => setViewingHistoryTech(null)}
-                className="p-1 rounded-md text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors cursor-pointer"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-            <div className="p-4 space-y-3 overflow-y-auto max-h-[60vh] text-xs">
-              <div className="text-[11px] text-zinc-500 dark:text-zinc-400 font-medium">
-                {viewingHistoryTech.employeeName} &bull; {viewingHistoryTech.targetDate}
-              </div>
-              {loadingHistory ? (
-                <div className="p-8 text-center text-zinc-400">Loading audit history...</div>
-              ) : historyRecords.length === 0 ? (
-                <div className="p-8 text-center text-zinc-400">No correction history found for this date.</div>
-              ) : (
-                historyRecords.map((h) => (
-                  <div key={h.id} className="p-3 bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-800 rounded-xl space-y-1.5">
-                    <div className="flex items-center justify-between text-[11px]">
-                      <span className="font-bold text-zinc-800 dark:text-zinc-200">{h.actor_name} ({h.actor_role.toUpperCase()})</span>
-                      <span className="text-[10px] text-zinc-400 font-mono">
-                        {new Date(h.created_at).toLocaleString('en-US', { timeZone: 'Asia/Manila' })}
-                      </span>
-                    </div>
-                    <div className="text-zinc-700 dark:text-zinc-300 font-mono text-[11px] bg-white dark:bg-zinc-900 p-2 rounded border border-zinc-200 dark:border-zinc-800">
-                      {h.original_time_in ? (
-                        <div>
-                          <span className="text-zinc-400">Original:</span> {new Date(h.original_time_in).toLocaleTimeString('en-US', { timeZone: 'Asia/Manila', hour: '2-digit', minute: '2-digit' })} &rarr; {h.original_time_out ? new Date(h.original_time_out).toLocaleTimeString('en-US', { timeZone: 'Asia/Manila', hour: '2-digit', minute: '2-digit' }) : 'Open'}
-                        </div>
-                      ) : (
-                        <div className="text-zinc-400 italic">Original: No mobile punch recorded</div>
-                      )}
-                      <div className="text-blue-600 dark:text-blue-400 font-bold">
-                        <span className="text-zinc-400 font-normal">Corrected:</span> {new Date(h.corrected_time_in).toLocaleTimeString('en-US', { timeZone: 'Asia/Manila', hour: '2-digit', minute: '2-digit' })} &rarr; {new Date(h.corrected_time_out).toLocaleTimeString('en-US', { timeZone: 'Asia/Manila', hour: '2-digit', minute: '2-digit' })}
-                      </div>
-                    </div>
-                    <div className="text-zinc-600 dark:text-zinc-400 text-[11px] italic bg-amber-50/50 dark:bg-amber-950/20 p-2 rounded border border-amber-200/50 dark:border-amber-800/30">
-                      "{h.reason}"
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-            <div className="p-3 bg-zinc-50 dark:bg-zinc-800/60 border-t border-zinc-200 dark:border-zinc-800 flex justify-end">
-              <button
-                onClick={() => setViewingHistoryTech(null)}
-                className="px-3.5 py-1.5 bg-zinc-800 hover:bg-zinc-900 dark:bg-zinc-700 dark:hover:bg-zinc-600 text-white rounded-lg text-xs font-bold cursor-pointer"
-              >
-                Close
-              </button>
-            </div>
+      <ModalDialog
+        isOpen={Boolean(viewingHistoryTech)}
+        onClose={() => setViewingHistoryTech(null)}
+        title="Audit Correction Trail"
+        subtitle={viewingHistoryTech ? `${viewingHistoryTech.employeeName} • ${viewingHistoryTech.targetDate}` : undefined}
+        icon={History}
+        iconVariant="blue"
+        maxWidth="md"
+        contentHeight="max-h-[80vh]"
+        footer={
+          <div className="flex items-center justify-end w-full">
+            <button
+              type="button"
+              onClick={() => setViewingHistoryTech(null)}
+              className="px-3.5 py-1.5 border border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 rounded-lg text-xs font-semibold hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+            >
+              Close Trail
+            </button>
           </div>
+        }
+      >
+        <div className="space-y-3 text-xs">
+          {loadingHistory ? (
+            <div className="p-8 text-center text-zinc-400">Loading audit history...</div>
+          ) : historyRecords.length === 0 ? (
+            <div className="p-8 text-center text-zinc-400">No correction history found for this date.</div>
+          ) : (
+            historyRecords.map((h) => (
+              <div key={h.id} className="p-3 bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-700/80 rounded-xl space-y-1.5">
+                <div className="flex items-center justify-between text-[11px]">
+                  <span className="font-semibold text-zinc-900 dark:text-zinc-100">{h.actor_name} ({h.actor_role.toUpperCase()})</span>
+                  <span className="text-[10px] text-zinc-400 font-mono">
+                    {new Date(h.created_at).toLocaleString('en-US', { timeZone: 'Asia/Manila' })}
+                  </span>
+                </div>
+                <div className="text-zinc-700 dark:text-zinc-300 font-mono text-[11px] bg-white dark:bg-zinc-900 p-2 rounded-lg border border-zinc-200 dark:border-zinc-800">
+                  {h.original_time_in ? (
+                    <div>
+                      <span className="text-zinc-400">Original:</span> {new Date(h.original_time_in).toLocaleTimeString('en-US', { timeZone: 'Asia/Manila', hour: '2-digit', minute: '2-digit' })} &rarr; {h.original_time_out ? new Date(h.original_time_out).toLocaleTimeString('en-US', { timeZone: 'Asia/Manila', hour: '2-digit', minute: '2-digit' }) : 'Open'}
+                    </div>
+                  ) : (
+                    <div className="text-zinc-400 italic">Original: No mobile punch recorded</div>
+                  )}
+                  <div className="text-blue-600 dark:text-blue-400 font-semibold">
+                    <span className="text-zinc-400 font-normal">Corrected:</span> {new Date(h.corrected_time_in).toLocaleTimeString('en-US', { timeZone: 'Asia/Manila', hour: '2-digit', minute: '2-digit' })} &rarr; {new Date(h.corrected_time_out).toLocaleTimeString('en-US', { timeZone: 'Asia/Manila', hour: '2-digit', minute: '2-digit' })}
+                  </div>
+                </div>
+                <div className="text-zinc-600 dark:text-zinc-400 text-[11px] italic bg-amber-50/50 dark:bg-amber-950/20 p-2 rounded-lg border border-amber-200/50 dark:border-amber-800/30">
+                  "{h.reason}"
+                </div>
+              </div>
+            ))
+          )}
         </div>
-      )}
+      </ModalDialog>
 
     </div>
   );

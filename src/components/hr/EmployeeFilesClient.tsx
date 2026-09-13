@@ -3,6 +3,7 @@
 import PageHeader from '@/components/ui/PageHeader'
 import Pagination from '@/components/ui/Pagination'
 import ModalDialog from '@/components/ui/ModalDialog'
+import ConfirmDialog from '@/components/ui/ConfirmDialog'
 import {
   TableContainer,
   Table,
@@ -17,7 +18,7 @@ import {
 } from '@/components/ui/DataTable'
 
 import { useState, useEffect } from 'react';
-import { Search, FolderOpen, UploadCloud, AlertTriangle, FileText, CheckCircle2, X, Send, Phone, Settings, Filter, ChevronLeft, ChevronRight, Trash2 } from 'lucide-react';
+import { Search, FolderOpen, UploadCloud, AlertTriangle, FileText, CheckCircle2, X, Send, Phone, Settings, Filter, ChevronLeft, ChevronRight, Trash2, UserCheck } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 
 export default function EmployeeFilesClient() {
@@ -531,58 +532,56 @@ export default function EmployeeFilesClient() {
         </div>
       </div>
 
-      {/* Profile Modal */}
-      {selectedEmp && (
-        <div className="fixed inset-0 bg-zinc-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-3xl h-[560px] flex flex-col overflow-hidden border border-zinc-200 dark:border-zinc-800">
-            
-            {/* Modal Header */}
-            <div className="px-6 py-4 border-b border-zinc-200 dark:border-zinc-800 flex justify-between items-center bg-zinc-50/50 dark:bg-zinc-900/80 shrink-0">
-              <div className="flex items-center gap-4">
-                <div className="w-11 h-11 bg-blue-100 text-blue-700 rounded-full flex items-center justify-center text-lg font-black shrink-0 border-2 border-blue-200 shadow-sm">
-                  {selectedEmp.full_name?.charAt(0)}
-                </div>
-                <div>
-                  <h2 className="text-base font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2 leading-none">
-                    {selectedEmp.full_name}
-                    <span className="font-mono text-xs font-semibold text-zinc-700 dark:text-zinc-300 bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 px-2 py-0.5 rounded">
-                      ₱{Number(selectedEmp.base_salary || 0).toLocaleString()}{(selectedEmp.base_salary || 0) >= 3000 ? '/mo' : '/day'}
-                    </span>
-                  </h2>
-                  <p className="text-[11px] font-bold text-zinc-500 uppercase tracking-wider mt-1">
-                    {selectedEmp.role} &bull; {selectedEmp.employment_status} &bull; {selectedEmp.technician_level}
-                  </p>
-                </div>
-              </div>
-              <button onClick={() => setSelectedEmp(null)} className="p-2 text-zinc-400 dark:text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:text-zinc-100 dark:hover:text-zinc-100 rounded-full transition-colors">
-                <X className="w-5 h-5" />
-              </button>
+      {/* Profile / 201 File Modal */}
+      <ModalDialog
+        isOpen={Boolean(selectedEmp)}
+        onClose={() => setSelectedEmp(null)}
+        title={
+          selectedEmp ? (
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="truncate">{selectedEmp.full_name}</span>
+              <span className="font-mono text-[11px] font-semibold text-zinc-700 dark:text-zinc-300 bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 px-1.5 py-0.2 rounded shrink-0">
+                ₱{Number(selectedEmp.base_salary || 0).toLocaleString()}{(selectedEmp.base_salary || 0) >= 3000 ? '/mo' : '/day'}
+              </span>
             </div>
-
+          ) : ''
+        }
+        subtitle={selectedEmp ? `${selectedEmp.role} • ${selectedEmp.employment_status} • ${selectedEmp.technician_level}` : undefined}
+        icon={UserCheck}
+        iconVariant="blue"
+        maxWidth="3xl"
+        contentHeight="h-[600px] max-h-[85vh]"
+        zIndex="z-50"
+      >
+        {selectedEmp && (
+          <div className="-mx-5 -my-5 flex flex-col h-full">
             {/* Tabs */}
-            <div className="flex border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 px-6 shrink-0">
+            <div className="flex border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/50 px-5 shrink-0">
               <button 
+                type="button"
                 onClick={() => setActiveTab('docs')}
-                className={`py-3 px-4 text-sm font-bold border-b-2 transition-colors flex items-center gap-2 ${activeTab === 'docs' ? 'border-blue-600 text-blue-600' : 'border-transparent text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:text-zinc-300 dark:hover:text-zinc-200'}`}
+                className={`py-2.5 px-3 text-xs font-semibold border-b-2 transition-colors flex items-center gap-1.5 cursor-pointer ${activeTab === 'docs' ? 'border-blue-600 text-blue-600 dark:text-blue-400' : 'border-transparent text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200'}`}
               >
-                <FileText className="w-4 h-4" /> 201 Documents
+                <FileText className="w-3.5 h-3.5" /> 201 Documents
               </button>
               <button 
+                type="button"
                 onClick={() => setActiveTab('warnings')}
-                className={`py-3 px-4 text-sm font-bold border-b-2 transition-colors flex items-center gap-2 ${activeTab === 'warnings' ? 'border-rose-600 text-rose-600 dark:text-rose-400 dark:border-rose-400' : 'border-transparent text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:text-zinc-300 dark:hover:text-zinc-200'}`}
+                className={`py-2.5 px-3 text-xs font-semibold border-b-2 transition-colors flex items-center gap-1.5 cursor-pointer ${activeTab === 'warnings' ? 'border-rose-600 text-rose-600 dark:text-rose-400' : 'border-transparent text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200'}`}
               >
-                <AlertTriangle className="w-4 h-4" /> Issue Warning
+                <AlertTriangle className="w-3.5 h-3.5" /> Issue Warning
               </button>
               <button 
+                type="button"
                 onClick={() => setActiveTab('settings')}
-                className={`py-3 px-4 text-sm font-bold border-b-2 transition-colors flex items-center gap-2 ${activeTab === 'settings' ? 'border-blue-600 text-blue-600' : 'border-transparent text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:text-zinc-300 dark:hover:text-zinc-200'}`}
+                className={`py-2.5 px-3 text-xs font-semibold border-b-2 transition-colors flex items-center gap-1.5 cursor-pointer ${activeTab === 'settings' ? 'border-blue-600 text-blue-600 dark:text-blue-400' : 'border-transparent text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200'}`}
               >
-                <Settings className="w-4 h-4" /> Profile Editor & Salary
+                <Settings className="w-3.5 h-3.5" /> Profile & Salary
               </button>
             </div>
 
             {/* Modal Body */}
-            <div className="flex-1 overflow-hidden p-6 bg-white dark:bg-zinc-900 flex flex-col justify-between">
+            <div className="flex-1 overflow-y-auto p-5 bg-white dark:bg-zinc-900 flex flex-col justify-between">
               
               {activeTab === 'docs' && (
                 <div className="space-y-2">
@@ -936,205 +935,208 @@ export default function EmployeeFilesClient() {
 
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </ModalDialog>
 
       {/* Document Viewer Modal */}
-      {previewingDoc && (
-        <div className="fixed inset-0 bg-zinc-900/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden border border-zinc-200 dark:border-zinc-800 animate-scale-in">
-            <div className="px-6 py-4 bg-blue-600 text-white flex justify-between items-center">
-              <div className="flex items-center gap-2">
-                <FileText className="w-5 h-5" />
-                <h3 className="font-bold text-base">{previewingDoc.title}</h3>
-              </div>
-              <button onClick={() => setPreviewingDoc(null)} className="text-white/80 hover:text-white p-1 rounded-full hover:bg-white/10">
-                <X className="w-5 h-5" />
+      <ModalDialog
+        isOpen={Boolean(previewingDoc)}
+        onClose={() => setPreviewingDoc(null)}
+        title={previewingDoc?.title || "Document Viewer"}
+        subtitle="Digital copy attached to 201 Employee File"
+        icon={FileText}
+        iconVariant="blue"
+        maxWidth="md"
+        zIndex="z-[60]"
+        footer={
+          <div className="flex items-center justify-end gap-2 w-full">
+            <button
+              type="button"
+              onClick={() => setPreviewingDoc(null)}
+              className="px-3.5 py-1.5 border border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 rounded-lg text-xs font-semibold hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+            >
+              Close
+            </button>
+            {previewingDoc?.fileUrl ? (
+              <button
+                type="button"
+                onClick={() => window.open(previewingDoc.fileUrl, '_blank')}
+                className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+              >
+                Open Document
               </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => alert(`Downloading copy of ${previewingDoc?.fileName}...`)}
+                className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+              >
+                Download File
+              </button>
+            )}
+          </div>
+        }
+      >
+        {previewingDoc && (
+          <div className="text-center py-4 space-y-3">
+            <div className="w-12 h-12 bg-blue-50/60 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400 rounded-xl flex items-center justify-center mx-auto border border-blue-200/60 dark:border-blue-800/60">
+              <FileText className="w-6 h-6 stroke-[1.8]" />
             </div>
-            <div className="p-6 text-center space-y-4">
-              <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mx-auto border border-blue-100 shadow-sm">
-                <FileText className="w-8 h-8" />
-              </div>
-              <div>
-                <h4 className="font-bold text-zinc-900 dark:text-zinc-100 text-sm">{previewingDoc.fileName}</h4>
-                <p className="text-xs text-zinc-500 mt-1 font-medium">Digital copy attached to 201 Employee File</p>
-              </div>
-              <div className="pt-2 flex gap-3">
-                {previewingDoc.fileUrl ? (
-                  <button 
-                    onClick={() => window.open(previewingDoc.fileUrl, '_blank')}
-                    className="flex-1 py-2.5 bg-blue-600 text-white rounded-xl font-bold text-xs hover:bg-blue-700 shadow-sm transition-colors"
-                  >
-                    Open Document
-                  </button>
-                ) : (
-                  <button 
-                    onClick={() => alert(`Downloading copy of ${previewingDoc.fileName}...`)}
-                    className="flex-1 py-2.5 bg-blue-600 text-white rounded-xl font-bold text-xs hover:bg-blue-700 shadow-sm transition-colors"
-                  >
-                    Download File
-                  </button>
-                )}
-                <button 
-                  onClick={() => setPreviewingDoc(null)}
-                  className="px-4 py-2.5 bg-zinc-100 text-zinc-700 dark:text-zinc-300 rounded-xl font-bold text-xs hover:bg-zinc-200 transition-colors"
-                >
-                  Close
-                </button>
-              </div>
+            <div>
+              <h4 className="font-semibold text-zinc-900 dark:text-zinc-100 text-xs font-mono">{previewingDoc.fileName}</h4>
+              <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-0.5">Ready for review or download</p>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </ModalDialog>
 
-      {/* Remove File Confirmation Modal */}
-      {deletingDoc && selectedEmp && (
-        <div className="fixed inset-0 bg-zinc-900/60 backdrop-blur-sm z-[70] flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden border border-zinc-200 dark:border-zinc-800 animate-scale-in">
-            <div className="p-6 text-center space-y-4">
-              <div className="w-14 h-14 bg-red-50 text-rose-600 dark:text-rose-400 rounded-full flex items-center justify-center mx-auto border border-red-100 shadow-sm">
-                <AlertTriangle className="w-7 h-7 text-rose-600 dark:text-rose-400" />
-              </div>
-              <div>
-                <h3 className="font-black text-zinc-900 dark:text-zinc-100 text-base">Remove Document?</h3>
-                <p className="text-xs text-zinc-500 mt-1.5 font-medium leading-relaxed">
-                  Are you sure you want to remove <span className="font-bold text-zinc-800">{deletingDoc.docType}</span> from <span className="font-bold text-zinc-800">{selectedEmp.full_name}</span>'s 201 file?
-                </p>
-              </div>
-              <div className="pt-2 flex gap-3">
-                <button 
-                  onClick={() => setDeletingDoc(null)}
-                  className="flex-1 py-2.5 bg-zinc-100 text-zinc-700 dark:text-zinc-300 rounded-xl font-bold text-xs hover:bg-zinc-200 transition-colors"
-                >
-                  Cancel
-                </button>
-                <button 
-                  onClick={() => {
-                    confirmRemoveFile(deletingDoc.docType, deletingDoc.dbField);
-                    setDeletingDoc(null);
-                  }}
-                  className="flex-1 py-2.5 bg-rose-600 text-white rounded-xl font-bold text-xs hover:bg-rose-700 shadow-sm transition-colors"
-                >
-                  Yes, Remove
-                </button>
-              </div>
-            </div>
+      {/* Remove File Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={Boolean(deletingDoc && selectedEmp)}
+        onClose={() => setDeletingDoc(null)}
+        onConfirm={() => {
+          if (deletingDoc) {
+            confirmRemoveFile(deletingDoc.docType, deletingDoc.dbField);
+            setDeletingDoc(null);
+          }
+        }}
+        title="Remove Document?"
+        description={
+          deletingDoc && selectedEmp ? (
+            <>
+              Are you sure you want to remove <span className="font-semibold text-zinc-900 dark:text-zinc-100">{deletingDoc.docType}</span> from <span className="font-semibold text-zinc-900 dark:text-zinc-100">{selectedEmp.full_name}</span>&apos;s 201 file? This action cannot be undone.
+            </>
+          ) : undefined
+        }
+        confirmText="Yes, Remove"
+        cancelText="Cancel"
+        variant="danger"
+        zIndex="z-[70]"
+      />
+
+      {/* Warning Confirmation Modal */}
+      <ModalDialog
+        isOpen={Boolean(warningConfirmation?.isOpen)}
+        onClose={() => {
+          setWarningConfirmation(null);
+          setActiveTab('docs');
+        }}
+        title="Disciplinary Warning Issued"
+        subtitle={warningConfirmation ? `Notice filed in ${warningConfirmation.employeeName}'s 201 record.` : undefined}
+        icon={CheckCircle2}
+        iconVariant="emerald"
+        maxWidth="md"
+        zIndex="z-[75]"
+        footer={
+          <div className="flex items-center justify-end w-full">
+            <button
+              type="button"
+              onClick={() => {
+                setWarningConfirmation(null);
+                setActiveTab('docs');
+              }}
+              className="px-3.5 py-1.5 bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-700 dark:hover:bg-zinc-600 text-white rounded-lg text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+            >
+              Done & Return to 201 File
+            </button>
           </div>
-        </div>
-      )}
-
-      {/* In-App Styled Warning Confirmation Modal */}
-      {warningConfirmation?.isOpen && (
-        <div className="fixed inset-0 bg-zinc-900/60 backdrop-blur-xs z-[75] flex items-center justify-center p-4 animate-in fade-in duration-150">
-          <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden border border-zinc-200 dark:border-zinc-800 text-center flex flex-col items-center p-6">
-            <div className="w-12 h-12 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-200 flex items-center justify-center mb-3 shadow-2xs">
-              <CheckCircle2 className="w-6 h-6" />
-            </div>
-
-            <h3 className="text-base font-bold text-zinc-900 dark:text-zinc-100">Disciplinary Warning Issued</h3>
-            <p className="text-xs text-zinc-500 mt-1">
-              Notice has been recorded and officially filed in <span className="font-semibold text-zinc-800">{warningConfirmation.employeeName}</span>'s 201 record.
-            </p>
-
-            <div className="w-full bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-200/80 dark:border-zinc-700 rounded-xl p-3 my-4 text-left space-y-2 text-xs">
+        }
+      >
+        {warningConfirmation && (
+          <div className="space-y-3 text-xs">
+            <div className="bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-700/80 rounded-xl p-3 space-y-2 text-xs">
               <div className="flex items-center justify-between">
                 <span className="text-zinc-500 font-medium">Target Technician:</span>
-                <span className="font-bold text-zinc-900 dark:text-zinc-100">{warningConfirmation.employeeName}</span>
+                <span className="font-semibold text-zinc-900 dark:text-zinc-100">{warningConfirmation.employeeName}</span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-zinc-500 font-medium">Warning Subject:</span>
-                <span className="font-semibold text-zinc-800 truncate max-w-[200px]">{warningConfirmation.subject}</span>
+                <span className="font-semibold text-zinc-800 dark:text-zinc-200 truncate max-w-[200px]">{warningConfirmation.subject}</span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-zinc-500 font-medium">Mobile Push Notification:</span>
-                <span className={`font-semibold ${warningConfirmation.sentPush ? 'text-emerald-600' : 'text-zinc-400'}`}>
+                <span className={`font-semibold ${warningConfirmation.sentPush ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-400'}`}>
                   {warningConfirmation.sentPush ? 'Dispatched' : 'Skipped'}
                 </span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-zinc-500 font-medium">SMS Alert:</span>
-                <span className={`font-semibold ${warningConfirmation.sentSms ? 'text-emerald-600' : 'text-zinc-400'}`}>
+                <span className={`font-semibold ${warningConfirmation.sentSms ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-400'}`}>
                   {warningConfirmation.sentSms ? 'Dispatched' : 'Skipped'}
                 </span>
               </div>
-              <div className="flex items-center justify-between pt-1.5 border-t border-zinc-200/60">
+              <div className="flex items-center justify-between pt-1.5 border-t border-zinc-200/60 dark:border-zinc-700">
                 <span className="text-zinc-500 font-medium">201 Dossier:</span>
-                <span className="font-semibold text-blue-600">Updated in Database</span>
+                <span className="font-semibold text-blue-600 dark:text-blue-400">Updated in Database</span>
               </div>
             </div>
+          </div>
+        )}
+      </ModalDialog>
 
+      {/* Profile & Compensation Save Confirmation Modal */}
+      <ModalDialog
+        isOpen={Boolean(settingsConfirmation?.isOpen)}
+        onClose={() => {
+          setSettingsConfirmation(null);
+          setActiveTab('docs');
+        }}
+        title={settingsConfirmation?.isPromotion ? 'Promotion & Compensation Updated' : 'Profile & Compensation Saved'}
+        subtitle={settingsConfirmation ? `Committed to ${settingsConfirmation.employeeName}'s 201 profile.` : undefined}
+        icon={CheckCircle2}
+        iconVariant="emerald"
+        maxWidth="md"
+        zIndex="z-[75]"
+        footer={
+          <div className="flex items-center justify-end w-full">
             <button
+              type="button"
               onClick={() => {
-                setWarningConfirmation(null);
+                setSettingsConfirmation(null);
                 setActiveTab('docs');
               }}
-              className="w-full py-2.5 bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-700 dark:hover:bg-zinc-600 text-white rounded-xl text-xs font-semibold shadow-xs transition-colors"
+              className="px-3.5 py-1.5 bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-700 dark:hover:bg-zinc-600 text-white rounded-lg text-xs font-semibold shadow-xs transition-colors cursor-pointer"
             >
               Done & Return to 201 File
             </button>
           </div>
-        </div>
-      )}
-
-      {/* In-App Styled Profile & Compensation Save Confirmation Modal */}
-      {settingsConfirmation?.isOpen && (
-        <div className="fixed inset-0 bg-zinc-900/60 backdrop-blur-xs z-[75] flex items-center justify-center p-4 animate-in fade-in duration-150">
-          <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden border border-zinc-200 dark:border-zinc-800 text-center flex flex-col items-center p-6">
-            <div className="w-12 h-12 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-200 flex items-center justify-center mb-3 shadow-2xs">
-              <CheckCircle2 className="w-6 h-6" />
-            </div>
-
-            <h3 className="text-base font-bold text-zinc-900 dark:text-zinc-100">
-              {settingsConfirmation.isPromotion ? 'Promotion & Compensation Updated' : 'Profile & Compensation Saved'}
-            </h3>
-            <p className="text-xs text-zinc-500 mt-1">
-              Changes to <span className="font-semibold text-zinc-800">{settingsConfirmation.employeeName}</span> have been committed to their 201 profile.
-            </p>
-
-            <div className="w-full bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-200/80 dark:border-zinc-700 rounded-xl p-3 my-4 text-left space-y-2 text-xs">
+        }
+      >
+        {settingsConfirmation && (
+          <div className="space-y-3 text-xs">
+            <div className="bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-700/80 rounded-xl p-3 space-y-2 text-xs">
               <div className="flex items-center justify-between">
                 <span className="text-zinc-500 font-medium">Technician:</span>
-                <span className="font-bold text-zinc-900 dark:text-zinc-100">{settingsConfirmation.employeeName}</span>
+                <span className="font-semibold text-zinc-900 dark:text-zinc-100">{settingsConfirmation.employeeName}</span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-zinc-500 font-medium">Operational Placement:</span>
-                <span className="font-semibold text-zinc-800 capitalize">
-                  {settingsConfirmation.updatedRole} &bull; {settingsConfirmation.updatedLevel}
+                <span className="font-semibold text-zinc-800 dark:text-zinc-200 capitalize">
+                  {settingsConfirmation.updatedRole} • {settingsConfirmation.updatedLevel}
                 </span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-zinc-500 font-medium">Employment Status:</span>
-                <span className="font-semibold text-zinc-800 uppercase text-[10px] tracking-wider px-2 py-0.5 rounded bg-zinc-200/60">
+                <span className="font-semibold text-zinc-800 dark:text-zinc-200 uppercase text-[10px] tracking-wider px-2 py-0.5 rounded bg-zinc-200/60 dark:bg-zinc-700">
                   {settingsConfirmation.updatedStatus}
                 </span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-zinc-500 font-medium">Individual Base Rate:</span>
-                <span className="font-bold font-mono text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                <span className="font-semibold font-mono text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30 px-2 py-0.5 rounded border border-emerald-200 dark:border-emerald-800">
                   ₱{Number(settingsConfirmation.updatedSalary || 0).toLocaleString()}{settingsConfirmation.updatedSalary >= 3000 ? '/mo' : '/day'}
                 </span>
               </div>
               {settingsConfirmation.isPromotion && (
-                <div className="flex items-center justify-between pt-1.5 border-t border-zinc-200/60 text-emerald-700">
+                <div className="flex items-center justify-between pt-1.5 border-t border-zinc-200/60 dark:border-zinc-700 text-emerald-700 dark:text-emerald-400">
                   <span className="font-medium">Promotion Dispatch:</span>
                   <span className="font-semibold">Celebratory Push Queued</span>
                 </div>
               )}
             </div>
-
-            <button
-              onClick={() => {
-                setSettingsConfirmation(null);
-                setActiveTab('docs');
-              }}
-              className="w-full py-2.5 bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-700 dark:hover:bg-zinc-600 text-white rounded-xl text-xs font-semibold shadow-xs transition-colors"
-            >
-              Done & Return to 201 File
-            </button>
           </div>
-        </div>
-      )}
+        )}
+      </ModalDialog>
     </div>
   );
 }

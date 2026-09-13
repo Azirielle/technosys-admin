@@ -26,6 +26,7 @@ import {
 import { getSystemOverrides, fetchRemoteOverrides, subscribeToOverrideChanges, getModuleHref, SYSTEM_MODULES, RoleKey } from '@/lib/overrides'
 import OperationalTelemetry from '@/components/dashboard/OperationalTelemetry'
 import { useTheme } from '@/components/theme/ThemeProvider'
+import ConfirmDialog from '@/components/ui/ConfirmDialog'
 
 export type NavItem = {
   title: string
@@ -279,43 +280,20 @@ export function Sidebar({ navItems, title, role }: SidebarProps) {
         </div>
       </div>
 
-      {/* Logout Confirmation Modal rendered via Portal */}
-      {showLogoutModal && mounted && createPortal(
-        <div className="fixed inset-0 bg-zinc-950/70 backdrop-blur-xs z-[9999] flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden border border-zinc-200 dark:border-zinc-800 animate-in fade-in zoom-in-95 duration-150">
-            <div className="p-6 text-center space-y-4">
-              <div className="w-12 h-12 bg-red-50 dark:bg-red-950/50 text-red-600 dark:text-red-400 rounded-full flex items-center justify-center mx-auto border border-red-100 dark:border-red-900/60 shadow-2xs">
-                <LogOut className="w-6 h-6 text-red-600 dark:text-red-400" />
-              </div>
-              <div>
-                <h3 className="font-bold text-zinc-900 dark:text-zinc-100 text-base">Confirm Logout?</h3>
-                <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1.5 leading-relaxed">
-                  Are you sure you want to end your TechnoCycle Admin session?
-                </p>
-              </div>
-              <div className="pt-2 flex gap-3">
-                <button 
-                  type="button"
-                  onClick={() => setShowLogoutModal(false)}
-                  disabled={isLoggingOut}
-                  className="flex-1 py-2 bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 rounded-xl font-semibold text-xs hover:bg-zinc-200 dark:hover:bg-zinc-700 disabled:opacity-50 transition-colors"
-                >
-                  Cancel
-                </button>
-                <button 
-                  type="button"
-                  onClick={executeLogout}
-                  disabled={isLoggingOut}
-                  className="flex-1 py-2 bg-red-600 dark:bg-red-600 text-white rounded-xl font-semibold text-xs hover:bg-red-700 dark:hover:bg-red-500 shadow-2xs disabled:opacity-50 transition-colors"
-                >
-                  {isLoggingOut ? 'Signing out...' : 'Yes, Logout'}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>,
-        document.body
-      )}
+      {/* Logout Confirmation Modal */}
+      <ConfirmDialog
+        isOpen={Boolean(showLogoutModal && mounted)}
+        onClose={() => setShowLogoutModal(false)}
+        onConfirm={executeLogout}
+        title="Confirm Logout"
+        description="Are you sure you want to end your TechnoCycle Admin session?"
+        confirmText="Yes, Logout"
+        cancelText="Cancel"
+        variant="danger"
+        icon={LogOut}
+        isPending={isLoggingOut}
+        zIndex="z-[9999]"
+      />
     </aside>
   )
 }

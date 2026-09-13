@@ -815,174 +815,165 @@ export default function InventoryLedgerPage() {
       </div>
 
       {/* MODAL 1: ADD / EDIT TOOL */}
-      {isToolModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-900/60 backdrop-blur-xs p-4">
-          <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-xl max-w-lg w-full overflow-hidden border border-zinc-200/80 dark:border-zinc-800">
-            <div className="px-6 py-4 border-b border-zinc-200 flex items-center justify-between">
-              <div>
-                <h3 className="text-base font-bold text-zinc-900 dark:text-zinc-100">
-                  {editingTool ? 'Edit Equipment Specs' : 'Register New Equipment'}
-                </h3>
-                <p className="text-xs text-zinc-500">Record tools, capital assets, and consumables into the vault.</p>
-              </div>
-              <button
-                onClick={() => setIsToolModalOpen(false)}
-                className="p-1 rounded-lg text-zinc-400 hover:bg-zinc-100"
-              >
-                <XCircle className="w-5 h-5" />
-              </button>
+      <ModalDialog
+        isOpen={isToolModalOpen}
+        onClose={() => setIsToolModalOpen(false)}
+        title={editingTool ? 'Edit Equipment Specs' : 'Register New Equipment'}
+        subtitle="Record tools, capital assets, and consumables into the vault."
+        icon={Package}
+        iconVariant="emerald"
+        maxWidth="lg"
+        footer={
+          <div className="flex items-center justify-end gap-2 w-full">
+            <button
+              type="button"
+              onClick={() => setIsToolModalOpen(false)}
+              className="px-3.5 py-1.5 border border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 rounded-lg text-xs font-semibold hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              form="tool-form"
+              disabled={isPending}
+              className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold shadow-xs transition-colors disabled:opacity-50 cursor-pointer"
+            >
+              {isPending ? 'Saving...' : editingTool ? 'Update Equipment' : 'Register Equipment'}
+            </button>
+          </div>
+        }
+      >
+        <form id="tool-form" onSubmit={handleToolFormSubmit} className="space-y-4">
+          {editingTool && <input type="hidden" name="id" value={editingTool.id} />}
+          {formError && (
+            <div className="p-3 bg-rose-50 border border-rose-200 text-rose-700 rounded-lg text-xs font-medium dark:bg-rose-950/40 dark:border-rose-900/60 dark:text-rose-400">
+              {formError}
+            </div>
+          )}
+
+          <div className="grid grid-cols-2 gap-3.5">
+            <div className="col-span-2">
+              <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">Equipment Name *</label>
+              <input
+                type="text"
+                name="name"
+                required
+                defaultValue={editingTool?.name || ''}
+                placeholder="e.g. Digital Manifold Gauge"
+                className="w-full px-3 py-1.5 border border-zinc-200 dark:border-zinc-700 rounded-lg text-xs bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-hidden focus:ring-1 focus:ring-zinc-400 dark:focus:ring-zinc-500"
+              />
             </div>
 
-            <form onSubmit={handleToolFormSubmit} className="p-6 space-y-4">
-              {editingTool && <input type="hidden" name="id" value={editingTool.id} />}
-              {formError && (
-                <div className="p-3 bg-rose-50 border border-rose-200 text-rose-700 rounded-xl text-xs font-medium">
-                  {formError}
-                </div>
-              )}
+            <div>
+              <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">Category</label>
+              <select
+                name="category"
+                defaultValue={editingTool?.category || 'General Tools'}
+                className="w-full px-3 py-1.5 border border-zinc-200 dark:border-zinc-700 rounded-lg text-xs bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-hidden focus:ring-1 focus:ring-zinc-400 dark:focus:ring-zinc-500"
+              >
+                {CATEGORIES.filter((c) => c !== 'All Categories').map((c) => (
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="col-span-2">
-                  <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">Equipment Name *</label>
-                  <input
-                    type="text"
-                    name="name"
-                    required
-                    defaultValue={editingTool?.name || ''}
-                    placeholder="e.g. Digital Manifold Gauge"
-                    className="w-full px-3 py-2 border border-zinc-300 rounded-xl text-xs focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">Category</label>
-                  <select
-                    name="category"
-                    defaultValue={editingTool?.category || 'General Tools'}
-                    className="w-full px-3 py-2 border border-zinc-300 rounded-xl text-xs focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
-                  >
-                    {CATEGORIES.filter((c) => c !== 'All Categories').map((c) => (
-                      <option key={c} value={c}>
-                        {c}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <label className="block text-xs font-semibold text-zinc-700">Serial / Asset Tag</label>
-                    <button
-                      type="button"
-                      onClick={() => setFormSerial(generateAssetTag())}
-                      className="text-[10px] text-emerald-600 hover:text-emerald-700 font-semibold inline-flex items-center gap-1 transition-colors"
-                      title="Generate random serial number"
-                    >
-                      <RefreshCw className="w-3 h-3" />
-                      Auto-Generate
-                    </button>
-                  </div>
-                  <input
-                    type="text"
-                    name="serial_number"
-                    value={formSerial}
-                    onChange={(e) => setFormSerial(e.target.value)}
-                    placeholder="e.g. TC-EQP-8492"
-                    className="w-full px-3 py-2 border border-zinc-300 rounded-xl text-xs font-mono focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">Total Stock *</label>
-                  <input
-                    type="number"
-                    name="total_stock"
-                    min="0"
-                    required
-                    defaultValue={editingTool?.total_stock ?? 1}
-                    className="w-full px-3 py-2 border border-zinc-300 rounded-xl text-xs focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">Available in Warehouse *</label>
-                  <input
-                    type="number"
-                    name="available_stock"
-                    min="0"
-                    required
-                    defaultValue={editingTool?.available_stock ?? 1}
-                    className="w-full px-3 py-2 border border-zinc-300 rounded-xl text-xs focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">Unit Cost (₱)</label>
-                  <input
-                    type="number"
-                    name="unit_cost"
-                    min="0"
-                    step="0.01"
-                    defaultValue={editingTool?.unit_cost || 0}
-                    className="w-full px-3 py-2 border border-zinc-300 rounded-xl text-xs font-mono focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">Lifecycle Status</label>
-                  <select
-                    name="status"
-                    defaultValue={editingTool?.status || 'active'}
-                    className="w-full px-3 py-2 border border-zinc-300 rounded-xl text-xs focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
-                  >
-                    <option value="active">Active Service</option>
-                    <option value="maintenance">In Maintenance</option>
-                    <option value="retired">Retired / Obsolete</option>
-                  </select>
-                </div>
-
-                <div className="col-span-2">
-                  <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">Description / Spec Notes</label>
-                  <textarea
-                    name="description"
-                    rows={2}
-                    defaultValue={editingTool?.description || ''}
-                    placeholder="Provide technical notes, calibration dates, or accessories included..."
-                    className="w-full px-3 py-2 border border-zinc-300 rounded-xl text-xs focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
-                  />
-                </div>
-
-                <div className="col-span-2">
-                  <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">Photo Upload</label>
-                  <input
-                    type="file"
-                    name="image"
-                    accept="image/*"
-                    className="w-full text-xs text-zinc-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-zinc-100 file:text-zinc-700 hover:file:bg-zinc-200"
-                  />
-                </div>
-              </div>
-
-              <div className="pt-3 border-t border-zinc-200 flex justify-end gap-2">
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300">Serial / Asset Tag</label>
                 <button
                   type="button"
-                  onClick={() => setIsToolModalOpen(false)}
-                  className="px-4 py-2 border border-zinc-300 text-zinc-700 rounded-xl text-xs font-semibold hover:bg-zinc-50 transition-colors"
+                  onClick={() => setFormSerial(generateAssetTag())}
+                  className="text-[10px] text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 font-semibold inline-flex items-center gap-1 transition-colors cursor-pointer"
+                  title="Generate random serial number"
                 >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={isPending}
-                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold shadow-xs transition-colors disabled:opacity-50"
-                >
-                  {isPending ? 'Saving...' : editingTool ? 'Update Equipment' : 'Register Equipment'}
+                  <RefreshCw className="w-3 h-3" />
+                  Auto-Generate
                 </button>
               </div>
-            </form>
+              <input
+                type="text"
+                name="serial_number"
+                value={formSerial}
+                onChange={(e) => setFormSerial(e.target.value)}
+                placeholder="e.g. TC-EQP-8492"
+                className="w-full px-3 py-1.5 border border-zinc-200 dark:border-zinc-700 rounded-lg text-xs font-mono bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-hidden focus:ring-1 focus:ring-zinc-400 dark:focus:ring-zinc-500"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">Total Stock *</label>
+              <input
+                type="number"
+                name="total_stock"
+                min="0"
+                required
+                defaultValue={editingTool?.total_stock ?? 1}
+                className="w-full px-3 py-1.5 border border-zinc-200 dark:border-zinc-700 rounded-lg text-xs bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-hidden focus:ring-1 focus:ring-zinc-400 dark:focus:ring-zinc-500"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">Available in Warehouse *</label>
+              <input
+                type="number"
+                name="available_stock"
+                min="0"
+                required
+                defaultValue={editingTool?.available_stock ?? 1}
+                className="w-full px-3 py-1.5 border border-zinc-200 dark:border-zinc-700 rounded-lg text-xs bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-hidden focus:ring-1 focus:ring-zinc-400 dark:focus:ring-zinc-500"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">Unit Cost (₱)</label>
+              <input
+                type="number"
+                name="unit_cost"
+                min="0"
+                step="0.01"
+                defaultValue={editingTool?.unit_cost || 0}
+                className="w-full px-3 py-1.5 border border-zinc-200 dark:border-zinc-700 rounded-lg text-xs font-mono bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-hidden focus:ring-1 focus:ring-zinc-400 dark:focus:ring-zinc-500"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">Lifecycle Status</label>
+              <select
+                name="status"
+                defaultValue={editingTool?.status || 'active'}
+                className="w-full px-3 py-1.5 border border-zinc-200 dark:border-zinc-700 rounded-lg text-xs bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-hidden focus:ring-1 focus:ring-zinc-400 dark:focus:ring-zinc-500"
+              >
+                <option value="active">Active Service</option>
+                <option value="maintenance">In Maintenance</option>
+                <option value="retired">Retired / Obsolete</option>
+              </select>
+            </div>
+
+            <div className="col-span-2">
+              <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">Description / Spec Notes</label>
+              <textarea
+                name="description"
+                rows={2}
+                defaultValue={editingTool?.description || ''}
+                placeholder="Provide technical notes, calibration dates, or accessories included..."
+                className="w-full px-3 py-1.5 border border-zinc-200 dark:border-zinc-700 rounded-lg text-xs bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-hidden focus:ring-1 focus:ring-zinc-400 dark:focus:ring-zinc-500"
+              />
+            </div>
+
+            <div className="col-span-2">
+              <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">Photo Upload</label>
+              <input
+                type="file"
+                name="image"
+                accept="image/*"
+                className="w-full text-xs text-zinc-500 dark:text-zinc-400 file:mr-3 file:py-1 file:px-2.5 file:rounded-md file:border file:border-zinc-200 dark:file:border-zinc-700 file:text-xs file:font-medium file:bg-zinc-50 dark:file:bg-zinc-800 file:text-zinc-700 dark:file:text-zinc-300 hover:file:bg-zinc-100 dark:hover:file:bg-zinc-700 cursor-pointer"
+              />
+            </div>
           </div>
-        </div>
-      )}
+        </form>
+      </ModalDialog>
 
       {/* MODAL 2: CHECKOUT / HANDOVER */}
       <ModalDialog
@@ -1250,106 +1241,96 @@ export default function InventoryLedgerPage() {
       </ModalDialog>
 
       {/* MODAL 4: ASSIGNMENT DETAILS */}
-      {selectedAssignment && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-900/60 backdrop-blur-xs p-4"
-          onClick={() => setSelectedAssignment(null)}
-        >
-          <div
-            className="bg-white rounded-2xl shadow-xl max-w-lg w-full overflow-hidden border border-zinc-200"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="px-6 py-4 border-b border-zinc-200 flex items-center justify-between">
-              <div>
-                <h3 className="text-base font-bold text-zinc-900 dark:text-zinc-100">Custody Record Details</h3>
-                <p className="text-xs text-zinc-400 font-mono">#{selectedAssignment.id}</p>
-              </div>
-              <button
-                onClick={() => setSelectedAssignment(null)}
-                className="p-1 rounded-lg text-zinc-400 hover:bg-zinc-100"
-              >
-                <XCircle className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="p-6 grid grid-cols-2 gap-4 text-xs">
+      <ModalDialog
+        isOpen={Boolean(selectedAssignment)}
+        onClose={() => setSelectedAssignment(null)}
+        title="Custody Record Details"
+        subtitle={selectedAssignment ? `#${selectedAssignment.id.slice(0, 8).toUpperCase()}` : undefined}
+        icon={Clock}
+        iconVariant="blue"
+        maxWidth="md"
+        footer={
+          <div className="flex items-center justify-end w-full">
+            <button
+              type="button"
+              onClick={() => setSelectedAssignment(null)}
+              className="px-3.5 py-1.5 border border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 rounded-lg text-xs font-semibold hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+            >
+              Close
+            </button>
+          </div>
+        }
+      >
+        {selectedAssignment && (
+          <div className="space-y-3.5 text-xs">
+            <div className="grid grid-cols-2 gap-3 p-3 bg-zinc-50 dark:bg-zinc-800/60 rounded-lg border border-zinc-200/80 dark:border-zinc-700/60">
               <div>
                 <p className="text-[10px] font-semibold text-zinc-400 uppercase tracking-wider mb-0.5">Tool / Asset</p>
-                <p className="font-bold text-zinc-900 text-sm">{selectedAssignment.tool_catalog?.name}</p>
-                <p className="text-zinc-500 font-mono text-[10px]">
-                  {selectedAssignment.tool_catalog?.serial_number ? `SN: ${selectedAssignment.tool_catalog.serial_number}` : ''}
-                </p>
+                <p className="font-semibold text-zinc-900 dark:text-zinc-100 text-xs">{selectedAssignment.tool_catalog?.name}</p>
+                {selectedAssignment.tool_catalog?.serial_number && (
+                  <p className="text-zinc-500 dark:text-zinc-400 font-mono text-[10px]">
+                    SN: {selectedAssignment.tool_catalog.serial_number}
+                  </p>
+                )}
               </div>
 
               <div>
                 <p className="text-[10px] font-semibold text-zinc-400 uppercase tracking-wider mb-0.5">Technician</p>
-                <p className="font-bold text-zinc-900 text-sm">{selectedAssignment.profiles?.full_name}</p>
-                <p className="text-zinc-500 uppercase text-[10px]">{selectedAssignment.profiles?.role}</p>
+                <p className="font-semibold text-zinc-900 dark:text-zinc-100 text-xs">{selectedAssignment.profiles?.full_name}</p>
+                <p className="text-zinc-500 dark:text-zinc-400 uppercase text-[10px]">{selectedAssignment.profiles?.role}</p>
               </div>
+            </div>
 
+            <div className="grid grid-cols-2 gap-3">
               <div>
                 <p className="text-[10px] font-semibold text-zinc-400 uppercase tracking-wider mb-0.5">Quantity</p>
-                <p className="font-bold text-zinc-900">{selectedAssignment.quantity || 1} unit(s)</p>
+                <p className="font-medium text-zinc-800 dark:text-zinc-200">{selectedAssignment.quantity || 1} unit(s)</p>
               </div>
 
               <div>
                 <p className="text-[10px] font-semibold text-zinc-400 uppercase tracking-wider mb-0.5">Status</p>
-                <span
-                  className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold border ${getStatusBadge(
-                    selectedAssignment.status
-                  )}`}
-                >
-                  {selectedAssignment.status.toUpperCase()}
-                </span>
+                <StatusDot
+                  status={(selectedAssignment.status as string) === 'returned' ? 'active' : (selectedAssignment.status as string) === 'overdue' || (selectedAssignment.status as string) === 'lost' ? 'danger' : 'warning'}
+                  label={selectedAssignment.status.toUpperCase()}
+                />
               </div>
 
               <div>
                 <p className="text-[10px] font-semibold text-zinc-400 uppercase tracking-wider mb-0.5">Handed Over At</p>
-                <p className="font-medium text-zinc-700">{new Date(selectedAssignment.handed_over_at).toLocaleString()}</p>
+                <p className="font-mono text-[11px] text-zinc-700 dark:text-zinc-300">{new Date(selectedAssignment.handed_over_at).toLocaleString()}</p>
               </div>
 
               <div>
                 <p className="text-[10px] font-semibold text-zinc-400 uppercase tracking-wider mb-0.5">Returned At</p>
-                <p className="font-medium text-zinc-700">
+                <p className="font-mono text-[11px] text-zinc-700 dark:text-zinc-300">
                   {selectedAssignment.returned_at ? new Date(selectedAssignment.returned_at).toLocaleString() : 'Active in Field'}
                 </p>
               </div>
 
               {selectedAssignment.condition_on_return && (
                 <div>
-                  <p className="text-[10px] font-semibold text-zinc-400 uppercase tracking-wider mb-0.5">
-                    Return Condition
-                  </p>
-                  <p className="font-bold text-zinc-900 uppercase">{selectedAssignment.condition_on_return}</p>
+                  <p className="text-[10px] font-semibold text-zinc-400 uppercase tracking-wider mb-0.5">Return Condition</p>
+                  <p className="font-semibold text-zinc-900 dark:text-zinc-100 capitalize">{selectedAssignment.condition_on_return.replace('_', ' ')}</p>
                 </div>
               )}
 
               {selectedAssignment.damage_fee > 0 && (
                 <div>
                   <p className="text-[10px] font-semibold text-zinc-400 uppercase tracking-wider mb-0.5">Damage Fee</p>
-                  <p className="font-bold text-rose-600 font-mono">₱{selectedAssignment.damage_fee.toLocaleString()}</p>
-                </div>
-              )}
-
-              {selectedAssignment.notes && (
-                <div className="col-span-2 pt-2 border-t border-zinc-100">
-                  <p className="text-[10px] font-semibold text-zinc-400 uppercase tracking-wider mb-0.5">Notes</p>
-                  <p className="text-zinc-700">{selectedAssignment.notes}</p>
+                  <p className="font-semibold text-rose-600 dark:text-rose-400 font-mono">₱{selectedAssignment.damage_fee.toLocaleString()}</p>
                 </div>
               )}
             </div>
 
-            <div className="px-6 py-3 border-t border-zinc-200 bg-zinc-50 flex justify-end">
-              <button
-                onClick={() => setSelectedAssignment(null)}
-                className="px-4 py-2 bg-white border border-zinc-300 text-zinc-700 rounded-xl text-xs font-semibold hover:bg-zinc-100"
-              >
-                Close
-              </button>
-            </div>
+            {selectedAssignment.notes && (
+              <div className="pt-2 border-t border-zinc-100 dark:border-zinc-800">
+                <p className="text-[10px] font-semibold text-zinc-400 uppercase tracking-wider mb-1">Notes</p>
+                <p className="text-zinc-600 dark:text-zinc-300 leading-relaxed">{selectedAssignment.notes}</p>
+              </div>
+            )}
           </div>
-        </div>
-      )}
+        )}
+      </ModalDialog>
     </div>
   )
 }
