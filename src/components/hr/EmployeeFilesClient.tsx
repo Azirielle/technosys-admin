@@ -3,6 +3,18 @@
 import PageHeader from '@/components/ui/PageHeader'
 import Pagination from '@/components/ui/Pagination'
 import ModalDialog from '@/components/ui/ModalDialog'
+import {
+  TableContainer,
+  Table,
+  TableHead,
+  TableHeaderCell,
+  TableBody,
+  TableRow,
+  TableCell,
+  TableEmptyState,
+  StatusDot,
+  MutedBadge
+} from '@/components/ui/DataTable'
 
 import { useState, useEffect } from 'react';
 import { Search, FolderOpen, UploadCloud, AlertTriangle, FileText, CheckCircle2, X, Send, Phone, Settings, Filter, ChevronLeft, ChevronRight, Trash2 } from 'lucide-react';
@@ -339,31 +351,31 @@ export default function EmployeeFilesClient() {
         <div className="max-w-7xl mx-auto w-full flex-1 flex flex-col overflow-hidden">
           
           {/* Controls */}
-          <div className="bg-white dark:bg-zinc-900 p-4 rounded-t-xl border border-zinc-200/80 dark:border-zinc-800 border-b-0 flex items-center justify-between relative">
+          <div className="bg-white dark:bg-zinc-900 px-3.5 py-2.5 rounded-t-lg border border-zinc-200/80 dark:border-zinc-800 border-b-0 flex items-center justify-between relative">
             <div className="flex items-center gap-3">
               <div className="relative w-80">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-400" />
                 <input 
                   type="text" 
                   placeholder="Search by name..." 
                   value={search}
                   onChange={e => setSearch(e.target.value)}
-                  className="w-full pl-9 pr-4 py-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-sm text-zinc-900 dark:text-zinc-100 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium"
+                  className="w-full pl-8 pr-3 py-1.5 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-md text-xs text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none focus:ring-1 focus:ring-blue-500 font-medium"
                 />
               </div>
               <button 
                 onClick={() => setShowFilters(!showFilters)}
-                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-bold border transition-colors ${showFilters ? 'bg-blue-50 dark:bg-blue-950/50 border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300' : 'bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-700'}`}
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-semibold border transition-colors duration-75 ${showFilters ? 'bg-blue-50 dark:bg-blue-950/50 border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300' : 'bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-700'}`}
               >
-                <Filter className="w-4 h-4" /> Filters
+                <Filter className="w-3.5 h-3.5" /> Filters
               </button>
 
               {/* Filter Popover */}
               {showFilters && (
-                <div className="absolute top-16 left-0 bg-white dark:bg-zinc-900 shadow-xl rounded-xl border border-zinc-200 dark:border-zinc-800 p-4 z-10 flex gap-4 w-[500px]">
+                <div className="absolute top-12 left-0 bg-white dark:bg-zinc-900 shadow-lg rounded-lg border border-zinc-200 dark:border-zinc-800 p-3.5 z-20 flex gap-3 w-[480px]">
                   <div className="flex-1">
-                    <label className="block text-xs font-bold text-zinc-500 uppercase mb-1">Role</label>
-                    <select value={filterRole} onChange={e => setFilterRole(e.target.value)} className="w-full border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 dark:text-zinc-100 rounded-md p-1.5 text-sm outline-none focus:ring-1 focus:ring-blue-500">
+                    <label className="block text-[11px] font-semibold text-zinc-500 uppercase mb-1">Role</label>
+                    <select value={filterRole} onChange={e => setFilterRole(e.target.value)} className="w-full border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 rounded p-1 text-xs outline-none focus:ring-1 focus:ring-blue-500">
                       <option value="all">All Roles</option>
                       <option value="technician">Technician</option>
                       <option value="coordinator">Coordinator</option>
@@ -372,8 +384,8 @@ export default function EmployeeFilesClient() {
                     </select>
                   </div>
                   <div className="flex-1">
-                    <label className="block text-xs font-bold text-zinc-500 uppercase mb-1">Status</label>
-                    <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} className="w-full border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 dark:text-zinc-100 rounded-md p-1.5 text-sm outline-none focus:ring-1 focus:ring-blue-500">
+                    <label className="block text-[11px] font-semibold text-zinc-500 uppercase mb-1">Status</label>
+                    <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} className="w-full border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 rounded p-1 text-xs outline-none focus:ring-1 focus:ring-blue-500">
                       <option value="all">All Status</option>
                       <option value="regular">Regular</option>
                       <option value="ojt">OJT</option>
@@ -381,8 +393,8 @@ export default function EmployeeFilesClient() {
                     </select>
                   </div>
                   <div className="flex-1">
-                    <label className="block text-xs font-bold text-zinc-500 uppercase mb-1">Warnings</label>
-                    <select value={filterWarnings} onChange={e => setFilterWarnings(e.target.value)} className="w-full border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 dark:text-zinc-100 rounded-md p-1.5 text-sm outline-none focus:ring-1 focus:ring-blue-500">
+                    <label className="block text-[11px] font-semibold text-zinc-500 uppercase mb-1">Warnings</label>
+                    <select value={filterWarnings} onChange={e => setFilterWarnings(e.target.value)} className="w-full border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 rounded p-1 text-xs outline-none focus:ring-1 focus:ring-blue-500">
                       <option value="all">All Records</option>
                       <option value="has_warnings">Has Warnings</option>
                       <option value="no_warnings">Clean Record</option>
@@ -393,79 +405,120 @@ export default function EmployeeFilesClient() {
             </div>
           </div>
 
-          {/* Table */}
-          <div className="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 border-b-0 rounded-b-none overflow-y-scroll flex-1 shadow-xs [scrollbar-gutter:stable]">
-            <table className="w-full text-left border-collapse table-fixed">
-              <thead>
-                <tr className="bg-zinc-50 dark:bg-zinc-800/80 border-b border-zinc-200/80 dark:border-zinc-800 sticky top-0 z-10 text-[11px] font-semibold text-zinc-600 dark:text-zinc-400 uppercase tracking-wider">
-                  <th className="px-3.5 py-2.5 border-r border-zinc-200 dark:border-zinc-800 dark:border-zinc-800 w-[28%]">Employee</th>
-                  <th className="px-3.5 py-2.5 border-r border-zinc-200 dark:border-zinc-800 dark:border-zinc-800 w-[22%]">Role & Level</th>
-                  <th className="px-3.5 py-2.5 border-r border-zinc-200 dark:border-zinc-800 dark:border-zinc-800 w-[20%]">Employment Status</th>
-                  <th className="px-3.5 py-2.5 border-r border-zinc-200 dark:border-zinc-800 dark:border-zinc-800 w-[16%]">Base Compensation</th>
-                  <th className="px-3.5 py-2.5 w-[14%]">Record</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-zinc-200/80 dark:divide-zinc-800">
+          {/* Table Container */}
+          <TableContainer className="rounded-none border-b-0 flex-1 overflow-y-scroll">
+            <Table fixed>
+              <TableHead sticky>
+                <TableRow className="h-8">
+                  <TableHeaderCell width="28%">Employee</TableHeaderCell>
+                  <TableHeaderCell width="22%">Role & Level</TableHeaderCell>
+                  <TableHeaderCell width="20%">Employment Status</TableHeaderCell>
+                  <TableHeaderCell width="16%" numeric>Base Compensation</TableHeaderCell>
+                  <TableHeaderCell width="14%" noDivider>Record</TableHeaderCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
                 {loading ? (
-                  <tr><td colSpan={5} className="p-8 text-center text-zinc-400 font-medium text-xs">Loading records...</td></tr>
+                  <tr>
+                    <td colSpan={5} className="h-24 text-center text-zinc-400 font-medium text-xs">
+                      <span className="inline-flex items-center gap-2">
+                        <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
+                        Loading employee records...
+                      </span>
+                    </td>
+                  </tr>
                 ) : paginatedEmployees.length === 0 ? (
-                  <tr><td colSpan={5} className="p-8 text-center text-zinc-400 font-medium text-xs">No employees found.</td></tr>
-                ) : paginatedEmployees.map((emp) => {
-                  const warnCount = emp.employee_warnings?.length || 0;
-                  const isMonthly = (emp.base_salary || 0) >= 3000;
-                  
-                  return (
-                    <tr key={emp.id} className="hover:bg-zinc-50/80 dark:hover:bg-zinc-800/50 transition-colors group cursor-pointer" onClick={() => handleSelectEmp(emp)}>
-                      <td className="px-3.5 py-2 border-r border-zinc-200 dark:border-zinc-800">
-                        <div className="font-semibold text-zinc-900 dark:text-zinc-100 dark:text-zinc-100 text-xs">{emp.full_name}</div>
-                        <div className="text-[11px] text-zinc-500 font-medium mt-0.5">
-                          {emp.lifecycle_status === 'active' ? (
-                            <span className="text-emerald-600 font-medium">Active</span>
-                          ) : (
-                            <span className="text-red-500 uppercase font-semibold">{emp.lifecycle_status}</span>
-                          )}
-                        </div>
-                      </td>
-                      <td className="px-3.5 py-2 border-r border-zinc-200 dark:border-zinc-800">
-                        <div className="text-xs font-semibold text-zinc-800 dark:text-zinc-200 capitalize">{emp.role}</div>
-                        {emp.technician_level && (
-                          <div className="text-[10px] font-bold uppercase tracking-wider text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/50 inline-block px-1.5 py-0.2 rounded mt-0.5 border border-blue-200 dark:border-blue-800">
-                            {emp.technician_level}
+                  <TableEmptyState
+                    colSpan={5}
+                    icon={FolderOpen}
+                    title="No employees found"
+                    description={search ? `No records match "${search}".` : "Try adjusting your filter criteria."}
+                  />
+                ) : (
+                  paginatedEmployees.map((emp) => {
+                    const warnCount = emp.employee_warnings?.length || 0;
+                    const isMonthly = (emp.base_salary || 0) >= 3000;
+                    const isSelected = selectedEmp?.id === emp.id;
+
+                    return (
+                      <TableRow
+                        key={emp.id}
+                        onClick={() => handleSelectEmp(emp)}
+                        selected={isSelected}
+                      >
+                        {/* 1. Employee */}
+                        <TableCell>
+                          <div className="flex items-center gap-2 min-w-0">
+                            <span className="font-semibold text-zinc-900 dark:text-zinc-100 truncate">
+                              {emp.full_name}
+                            </span>
+                            {emp.lifecycle_status === 'active' ? (
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" title="Active" />
+                            ) : (
+                              <MutedBadge className="text-[9px] py-0 text-rose-600 dark:text-rose-400 border-rose-200 dark:border-rose-900">
+                                {emp.lifecycle_status}
+                              </MutedBadge>
+                            )}
                           </div>
-                        )}
-                      </td>
-                      <td className="px-3.5 py-2 border-r border-zinc-200 dark:border-zinc-800">
-                        <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider
-                          ${emp.employment_status === 'regular' ? 'bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-700'}
-                        `}>
-                          {emp.employment_status}
-                        </span>
-                      </td>
-                      <td className="px-3.5 py-2 border-r border-zinc-200 dark:border-zinc-800">
-                        <span className="font-mono font-bold text-xs text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/50 px-2 py-0.5 rounded border border-emerald-200 dark:border-emerald-800 inline-block">
-                          ₱{Number(emp.base_salary || 0).toLocaleString()}{isMonthly ? '/mo' : '/day'}
-                        </span>
-                      </td>
-                      <td className="px-3.5 py-2">
-                        {warnCount > 0 ? (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-bold bg-rose-50 dark:bg-rose-950/50 text-rose-700 dark:text-rose-300 px-2 py-0.5 rounded border border-rose-200 dark:border-rose-800">
-                            <AlertTriangle className="w-3 h-3" /> {warnCount} WARNING{warnCount > 1 ? 'S' : ''}
+                        </TableCell>
+
+                        {/* 2. Role & Level */}
+                        <TableCell>
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="text-zinc-700 dark:text-zinc-300 capitalize font-medium">
+                              {emp.role}
+                            </span>
+                            {emp.technician_level && (
+                              <MutedBadge>
+                                {emp.technician_level}
+                              </MutedBadge>
+                            )}
+                          </div>
+                        </TableCell>
+
+                        {/* 3. Employment Status */}
+                        <TableCell>
+                          <MutedBadge>
+                            {emp.employment_status || 'regular'}
+                          </MutedBadge>
+                        </TableCell>
+
+                        {/* 4. Base Compensation (Numeric: font-mono, tabular-nums, right-aligned) */}
+                        <TableCell numeric>
+                          <span className="font-mono text-zinc-900 dark:text-zinc-100">
+                            ₱{Number(emp.base_salary || 0).toLocaleString()}
                           </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-bold bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 px-2 py-0.5 rounded border border-emerald-200 dark:border-emerald-800">
-                            <CheckCircle2 className="w-3 h-3" /> CLEAN
+                          <span className="text-[11px] text-zinc-400 dark:text-zinc-500 ml-1">
+                            {isMonthly ? '/mo' : '/day'}
                           </span>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+                        </TableCell>
+
+                        {/* 5. Record */}
+                        <TableCell noDivider>
+                          {warnCount > 0 ? (
+                            <StatusDot
+                              status="warning"
+                              icon={AlertTriangle}
+                              label={`${warnCount} Warning${warnCount > 1 ? 's' : ''}`}
+                            />
+                          ) : (
+                            <StatusDot
+                              status="active"
+                              icon={CheckCircle2}
+                              label="Clean"
+                            />
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
+                )}
+              </TableBody>
+            </Table>
+          </TableContainer>
 
           {/* Standardized Bottom Pagination Bar */}
-          <div className="rounded-b-xl overflow-hidden border border-zinc-200/80 dark:border-zinc-800 border-t-0 shadow-2xs shrink-0">
+          <div className="rounded-b-lg overflow-hidden border border-zinc-200/80 dark:border-zinc-800 border-t-0 shadow-none shrink-0">
             <Pagination
               currentPage={currentPage}
               totalPages={totalPages}
@@ -490,9 +543,9 @@ export default function EmployeeFilesClient() {
                   {selectedEmp.full_name?.charAt(0)}
                 </div>
                 <div>
-                  <h2 className="text-lg font-black text-zinc-900 dark:text-zinc-100 dark:text-zinc-100 flex items-center gap-2 leading-none">
+                  <h2 className="text-base font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2 leading-none">
                     {selectedEmp.full_name}
-                    <span className="font-mono text-xs text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full font-bold">
+                    <span className="font-mono text-xs font-semibold text-zinc-700 dark:text-zinc-300 bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 px-2 py-0.5 rounded">
                       ₱{Number(selectedEmp.base_salary || 0).toLocaleString()}{(selectedEmp.base_salary || 0) >= 3000 ? '/mo' : '/day'}
                     </span>
                   </h2>

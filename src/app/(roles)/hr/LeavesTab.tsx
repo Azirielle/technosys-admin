@@ -1,10 +1,22 @@
 'use client'
 
 import Pagination from '@/components/ui/Pagination'
+import {
+  TableContainer,
+  Table,
+  TableHead,
+  TableHeaderCell,
+  TableBody,
+  TableRow,
+  TableCell,
+  TableEmptyState,
+  StatusDot,
+  MutedBadge
+} from '@/components/ui/DataTable'
 
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { Check, X, Search, Filter, ChevronLeft, ChevronRight, User } from 'lucide-react'
+import { Check, X, Search, Filter, ChevronLeft, ChevronRight, User, CalendarOff } from 'lucide-react'
 
 type Leave = {
   id: string
@@ -71,27 +83,27 @@ export function LeavesTab() {
   )
 
   return (
-    <div className="bg-white dark:bg-zinc-900 rounded-xl shadow-xs border border-zinc-200/80 dark:border-zinc-800 overflow-hidden flex-1 flex flex-col h-full">
+    <div className="bg-white dark:bg-zinc-900 rounded-lg shadow-none border border-zinc-200/80 dark:border-zinc-800 overflow-hidden flex-1 flex flex-col h-full">
       {/* Toolbar - Search and Filter */}
-      <div className="p-3.5 border-b border-zinc-200/80 dark:border-zinc-800 bg-zinc-50/70 dark:bg-zinc-900/60 flex flex-wrap gap-3 items-center justify-start shrink-0">
+      <div className="px-3.5 py-2.5 border-b border-zinc-200/80 dark:border-zinc-800 bg-zinc-50/70 dark:bg-zinc-900/60 flex flex-wrap gap-2.5 items-center justify-start shrink-0">
         <div className="relative w-full sm:w-80">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <Search className="h-4 w-4 text-zinc-400" />
+          <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none">
+            <Search className="h-3.5 w-3.5 text-zinc-400" />
           </div>
           <input
             type="text"
             placeholder="Search leaves by name or reason..."
             value={searchQuery}
             onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
-            className="block w-full pl-9 pr-3 py-1.5 border border-zinc-200/80 dark:border-zinc-700 rounded-lg text-xs leading-5 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+            className="block w-full pl-8 pr-3 py-1.5 border border-zinc-200/80 dark:border-zinc-700 rounded-md text-xs leading-5 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none focus:ring-1 focus:ring-blue-500 transition-colors"
           />
         </div>
-        <div className="flex items-center gap-2 w-full sm:w-auto">
+        <div className="flex items-center gap-1.5 w-full sm:w-auto">
           <Filter className="h-3.5 w-3.5 text-zinc-400" />
           <select
             value={statusFilter}
             onChange={(e) => { setStatusFilter(e.target.value); setCurrentPage(1); }}
-            className="block w-full pl-2.5 pr-8 py-1.5 text-xs font-semibold border border-zinc-200/80 dark:border-zinc-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200"
+            className="block w-full sm:w-auto pl-2 pr-7 py-1.5 text-xs font-medium border border-zinc-200/80 dark:border-zinc-700 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200"
           >
             <option value="all">All Statuses</option>
             <option value="pending">Pending</option>
@@ -103,148 +115,152 @@ export function LeavesTab() {
       
       {/* Data Table */}
       <div className="overflow-y-scroll flex-1 [scrollbar-gutter:stable]">
-        <table className="w-full border-collapse table-fixed">
-          <thead className="bg-zinc-50 dark:bg-zinc-800/60 sticky top-0 z-10 border-b border-zinc-200 dark:border-zinc-800">
-            <tr>
-              <th className="border-r border-zinc-200/80 dark:border-zinc-800 px-4 py-2.5 text-left text-[11px] font-semibold text-zinc-600 dark:text-zinc-400 uppercase tracking-wider w-[32%]">Issuer & Reason</th>
-              <th className="border-r border-zinc-200/80 dark:border-zinc-800 px-4 py-2.5 text-left text-[11px] font-semibold text-zinc-600 dark:text-zinc-400 uppercase tracking-wider w-[22%]">Leave Type</th>
-              <th className="border-r border-zinc-200/80 dark:border-zinc-800 px-4 py-2.5 text-left text-[11px] font-semibold text-zinc-600 dark:text-zinc-400 uppercase tracking-wider w-[20%]">Duration</th>
-              <th className="border-r border-zinc-200/80 dark:border-zinc-800 px-4 py-2.5 text-left text-[11px] font-semibold text-zinc-600 dark:text-zinc-400 uppercase tracking-wider w-[13%]">Status</th>
-              <th className="px-4 py-2.5 text-center text-[11px] font-semibold text-zinc-600 dark:text-zinc-400 uppercase tracking-wider w-[13%]">Action</th>
-            </tr>
-          </thead>
-          <tbody className="bg-white dark:bg-zinc-900 divide-y divide-zinc-200/80 dark:divide-zinc-800">
+        <Table fixed>
+          <TableHead sticky>
+            <TableRow className="h-8">
+              <TableHeaderCell width="32%">Issuer & Reason</TableHeaderCell>
+              <TableHeaderCell width="18%">Leave Type</TableHeaderCell>
+              <TableHeaderCell width="22%">Duration</TableHeaderCell>
+              <TableHeaderCell width="14%">Status</TableHeaderCell>
+              <TableHeaderCell width="14%" align="right" noDivider>Action</TableHeaderCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
             {paginatedLeaves.length === 0 ? (
-              <tr>
-                <td colSpan={5} className="px-6 py-12 text-center text-zinc-400 dark:text-zinc-500 text-xs">No leave requests match your filters.</td>
-              </tr>
+              <TableEmptyState
+                colSpan={5}
+                icon={CalendarOff}
+                title="No leave requests found"
+                description={searchQuery || statusFilter !== 'all' ? "Try adjusting your search query or status filter." : "No technician leave requests have been logged yet."}
+              />
             ) : (
-              paginatedLeaves.map((leave) => (
-                <tr 
-                  key={leave.id} 
-                  onClick={() => setSelectedLeave(leave)}
-                  className="hover:bg-zinc-50/80 dark:hover:bg-zinc-800/50 transition-colors cursor-pointer"
-                >
-                  <td className="border-r border-zinc-200/80 dark:border-zinc-800 px-4 py-2.5 overflow-hidden">
-                    <div className="flex flex-col min-w-0">
-                      <span className="text-xs font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-1.5 truncate">
-                        <User className="h-3.5 w-3.5 text-zinc-400 shrink-0" />
-                        <span className="truncate">{leave.profiles?.full_name || 'Unknown User'}</span>
-                      </span>
-                      <span className="text-[11px] text-zinc-500 dark:text-zinc-400 truncate mt-0.5">{leave.reason}</span>
-                    </div>
-                  </td>
-                  <td className="border-r border-zinc-200/80 dark:border-zinc-800 px-4 py-2.5 whitespace-nowrap">
-                    <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-950/50 dark:text-blue-300 dark:border-blue-800 uppercase tracking-wider">
-                      {leave.leave_type.toUpperCase()}
-                    </span>
-                  </td>
-                  <td className="border-r border-zinc-200/80 dark:border-zinc-800 px-4 py-2.5 whitespace-nowrap">
-                    <div className="flex flex-col text-xs text-zinc-900 dark:text-zinc-100 font-medium">
-                      <span>{new Date(leave.start_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span>
-                      <span className="text-[11px] text-zinc-400 dark:text-zinc-500">to {new Date(leave.end_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span>
-                    </div>
-                  </td>
-                  <td className="border-r border-zinc-200/80 dark:border-zinc-800 px-4 py-2.5 whitespace-nowrap">
-                    <span className={`inline-flex items-center px-2 py-0.5 rounded border text-[10px] font-bold uppercase tracking-wider ${
-                      leave.status === 'approved' ? 'bg-emerald-50 text-emerald-800 border-emerald-300 dark:bg-emerald-950/50 dark:text-emerald-300 dark:border-emerald-800' :
-                      leave.status === 'rejected' ? 'bg-rose-50 text-rose-800 border-rose-300 dark:bg-rose-950/50 dark:text-rose-300 dark:border-rose-800' :
-                      'bg-amber-50 text-amber-800 border-amber-300 dark:bg-amber-950/50 dark:text-amber-300 dark:border-amber-800'
-                    }`}>
-                      {leave.status.toUpperCase()}
-                    </span>
-                  </td>
-                  <td className="px-4 py-2.5 whitespace-nowrap text-center">
-                    {leave.status === 'pending' ? (
-                      <div className="flex items-center justify-center gap-1.5">
-                        <button 
-                          onClick={(e) => updateLeaveStatus(leave.id, 'approved', e)}
-                          className="inline-flex items-center gap-1 bg-emerald-600 hover:bg-emerald-700 text-white dark:bg-emerald-600 dark:hover:bg-emerald-500 px-2.5 py-1 rounded-lg font-semibold transition-colors shadow-2xs text-[11px] cursor-pointer"
-                          title="Approve leave request"
-                        >
-                          <Check className="w-3.5 h-3.5" /> Approve
-                        </button>
-                        <button 
-                          onClick={(e) => updateLeaveStatus(leave.id, 'rejected', e)}
-                          className="inline-flex items-center gap-1 bg-rose-600 hover:bg-rose-700 text-white dark:bg-rose-600 dark:hover:bg-rose-500 px-2.5 py-1 rounded-lg font-semibold transition-colors shadow-2xs text-[11px] cursor-pointer"
-                          title="Reject leave request"
-                        >
-                          <X className="w-3.5 h-3.5" /> Reject
-                        </button>
+              paginatedLeaves.map((leave) => {
+                const isSelected = selectedLeave?.id === leave.id;
+                const statusType = leave.status === 'approved' ? 'active' : leave.status === 'rejected' ? 'danger' : 'warning';
+                const statusLabel = leave.status.charAt(0).toUpperCase() + leave.status.slice(1);
+
+                return (
+                  <TableRow 
+                    key={leave.id} 
+                    onClick={() => setSelectedLeave(leave)}
+                    selected={isSelected}
+                  >
+                    <TableCell>
+                      <div className="flex flex-col min-w-0">
+                        <span className="text-[12px] font-semibold text-zinc-900 dark:text-zinc-100 flex items-center gap-1.5 truncate">
+                          <User className="h-3.5 w-3.5 text-zinc-400 shrink-0" />
+                          <span className="truncate">{leave.profiles?.full_name || 'Unknown User'}</span>
+                        </span>
+                        <span className="text-[11px] text-zinc-500 dark:text-zinc-400 truncate mt-0.5">{leave.reason}</span>
                       </div>
-                    ) : (
-                      <span className="text-zinc-400 dark:text-zinc-500 text-xs font-medium">Processed</span>
-                    )}
-                  </td>
-                </tr>
-              ))
+                    </TableCell>
+                    <TableCell>
+                      <MutedBadge>
+                        {leave.leave_type}
+                      </MutedBadge>
+                    </TableCell>
+                    <TableCell>
+                      <div className="font-mono text-[11px] text-zinc-700 dark:text-zinc-300">
+                        <span>{new Date(leave.start_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span>
+                        <span className="text-zinc-400 dark:text-zinc-500 mx-1">—</span>
+                        <span>{new Date(leave.end_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <StatusDot
+                        status={statusType}
+                        label={statusLabel}
+                      />
+                    </TableCell>
+                    <TableCell align="right" noDivider>
+                      {leave.status === 'pending' ? (
+                        <div className="flex items-center justify-end gap-1.5" onClick={(e) => e.stopPropagation()}>
+                          <button 
+                            onClick={(e) => updateLeaveStatus(leave.id, 'approved', e)}
+                            className="inline-flex items-center gap-1 bg-emerald-600 hover:bg-emerald-700 text-white px-2 py-0.5 rounded text-[11px] font-medium transition-colors duration-75 cursor-pointer"
+                            title="Approve leave request"
+                          >
+                            <Check className="w-3 h-3" /> Approve
+                          </button>
+                          <button 
+                            onClick={(e) => updateLeaveStatus(leave.id, 'rejected', e)}
+                            className="inline-flex items-center gap-1 bg-zinc-100 dark:bg-zinc-800 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-zinc-700 dark:text-zinc-300 hover:text-rose-600 dark:hover:text-rose-400 border border-zinc-200 dark:border-zinc-700 hover:border-rose-200 dark:hover:border-rose-800 px-2 py-0.5 rounded text-[11px] font-medium transition-colors duration-75 cursor-pointer"
+                            title="Reject leave request"
+                          >
+                            <X className="w-3 h-3" /> Reject
+                          </button>
+                        </div>
+                      ) : (
+                        <span className="text-zinc-400 dark:text-zinc-500 text-[11px] font-mono">Processed</span>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                );
+              })
             )}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
 
       {/* Pagination */}
-      <Pagination
-        currentPage={currentPage}
-        totalPages={totalPages}
-        totalItems={filteredLeaves.length}
-        itemsPerPage={itemsPerPage}
-        onPageChange={setCurrentPage}
-        itemNamePlural="leave requests"
-      />
+      <div className="border-t border-zinc-200/80 dark:border-zinc-800 shrink-0">
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={filteredLeaves.length}
+          itemsPerPage={itemsPerPage}
+          onPageChange={setCurrentPage}
+          itemNamePlural="leave requests"
+        />
+      </div>
 
       {/* Detail Modal */}
       {selectedLeave && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-zinc-900/60 backdrop-blur-xs p-4" onClick={() => setSelectedLeave(null)}>
-          <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-xl max-w-lg w-full flex flex-col max-h-[90vh] border border-zinc-200 dark:border-zinc-800 overflow-hidden" onClick={e => e.stopPropagation()}>
-            <div className="p-5 border-b border-zinc-200/80 dark:border-zinc-800 flex justify-between items-start">
+          <div className="bg-white dark:bg-zinc-900 rounded-xl shadow-xl max-w-lg w-full flex flex-col max-h-[90vh] border border-zinc-200 dark:border-zinc-800 overflow-hidden" onClick={e => e.stopPropagation()}>
+            <div className="p-4 border-b border-zinc-200/80 dark:border-zinc-800 flex justify-between items-start">
               <div>
-                <h2 className="text-base font-bold text-zinc-900 dark:text-zinc-100">Leave Request Details</h2>
-                <p className="text-xs text-zinc-500 dark:text-zinc-400 font-mono mt-0.5">ID: #{selectedLeave.id.slice(0, 8).toUpperCase()}</p>
+                <h2 className="text-sm font-bold text-zinc-900 dark:text-zinc-100">Leave Request Details</h2>
+                <p className="text-[11px] text-zinc-500 dark:text-zinc-400 font-mono mt-0.5">ID: #{selectedLeave.id.slice(0, 8).toUpperCase()}</p>
               </div>
-              <button onClick={() => setSelectedLeave(null)} className="p-1 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors">
-                <X className="w-5 h-5" />
+              <button onClick={() => setSelectedLeave(null)} className="p-1 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded transition-colors">
+                <X className="w-4 h-4" />
               </button>
             </div>
             
-            <div className="p-5 overflow-y-auto space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+            <div className="p-4 overflow-y-auto space-y-4">
+              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <p className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-1">Employee</p>
-                  <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{selectedLeave.profiles?.full_name || 'Unknown User'}</p>
+                  <p className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-1">Employee</p>
+                  <p className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">{selectedLeave.profiles?.full_name || 'Unknown User'}</p>
                 </div>
                 <div>
-                  <p className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-1">Leave Type</p>
-                  <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-950/50 dark:text-blue-300 dark:border-blue-800 uppercase">
-                    {selectedLeave.leave_type}
-                  </span>
+                  <p className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-1">Leave Type</p>
+                  <MutedBadge>{selectedLeave.leave_type}</MutedBadge>
                 </div>
                 <div>
-                  <p className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-1">Start Date</p>
-                  <p className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">{new Date(selectedLeave.start_date).toLocaleDateString()}</p>
+                  <p className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-1">Start Date</p>
+                  <p className="text-xs font-mono text-zinc-800 dark:text-zinc-200">{new Date(selectedLeave.start_date).toLocaleDateString()}</p>
                 </div>
                 <div>
-                  <p className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-1">End Date</p>
-                  <p className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">{new Date(selectedLeave.end_date).toLocaleDateString()}</p>
+                  <p className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-1">End Date</p>
+                  <p className="text-xs font-mono text-zinc-800 dark:text-zinc-200">{new Date(selectedLeave.end_date).toLocaleDateString()}</p>
                 </div>
                 <div>
-                  <p className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-1">Status</p>
-                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded border text-xs font-bold uppercase tracking-wider ${
-                    selectedLeave.status === 'approved' ? 'bg-emerald-50 text-emerald-800 border-emerald-300 dark:bg-emerald-950/50 dark:text-emerald-300 dark:border-emerald-800' :
-                    selectedLeave.status === 'rejected' ? 'bg-rose-50 text-rose-800 border-rose-300 dark:bg-rose-950/50 dark:text-rose-300 dark:border-rose-800' :
-                    'bg-amber-50 text-amber-800 border-amber-300 dark:bg-amber-950/50 dark:text-amber-300 dark:border-amber-800'
-                  }`}>
-                    {selectedLeave.status}
-                  </span>
+                  <p className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-1">Status</p>
+                  <StatusDot
+                    status={selectedLeave.status === 'approved' ? 'active' : selectedLeave.status === 'rejected' ? 'danger' : 'warning'}
+                    label={selectedLeave.status.charAt(0).toUpperCase() + selectedLeave.status.slice(1)}
+                  />
                 </div>
                 <div>
-                  <p className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-1">Date Requested</p>
-                  <p className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">{new Date(selectedLeave.created_at).toLocaleDateString()}</p>
+                  <p className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-1">Date Requested</p>
+                  <p className="text-xs font-mono text-zinc-800 dark:text-zinc-200">{new Date(selectedLeave.created_at).toLocaleDateString()}</p>
                 </div>
               </div>
               
-              <div className="bg-zinc-50 dark:bg-zinc-800/60 rounded-xl p-4 border border-zinc-200/80 dark:border-zinc-800">
-                <p className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-2">Reason Provided</p>
+              <div className="bg-zinc-50 dark:bg-zinc-800/60 rounded-lg p-3 border border-zinc-200/80 dark:border-zinc-800">
+                <p className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-1.5">Reason Provided</p>
                 <p className="text-xs text-zinc-800 dark:text-zinc-200 whitespace-pre-wrap leading-relaxed">{selectedLeave.reason}</p>
               </div>
             </div>
