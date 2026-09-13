@@ -2,6 +2,17 @@
 
 import PageHeader from '@/components/ui/PageHeader'
 import Pagination from '@/components/ui/Pagination'
+import {
+  TableContainer,
+  Table,
+  TableHead,
+  TableHeaderCell,
+  TableBody,
+  TableRow,
+  TableCell,
+  TableEmptyState,
+  MutedBadge,
+} from '@/components/ui/DataTable'
 
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import {
@@ -177,12 +188,12 @@ export default function AdminActivitiesClient() {
         title="Administrator Activity Audit Logs"
         subtitle="Pinnacle Chief Executive Officer oversight. Track and verify admin activities executed under standard scope vs. CEO-granted overrides."
         icon={ShieldAlert}
-        className="rounded-xl shadow-xs"
+        className="rounded-lg"
         actions={
           <button
             onClick={loadLogs}
             disabled={isLoading}
-            className="inline-flex items-center gap-2 px-3.5 py-2 bg-zinc-50 dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 text-xs font-semibold rounded-xl border border-zinc-200 dark:border-zinc-700 transition-colors cursor-pointer disabled:opacity-50 shadow-2xs"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-200 text-xs font-medium rounded-md transition-colors duration-75 cursor-pointer disabled:opacity-50 shadow-none"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
             <span>Refresh Logs</span>
@@ -191,44 +202,44 @@ export default function AdminActivitiesClient() {
       />
 
       {/* Main Filter & Navigation Tabs Card */}
-      <div className="bg-white border border-zinc-200 rounded-xl overflow-hidden shadow-xs flex-1 flex flex-col min-h-0">
+      <div className="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 rounded-lg overflow-hidden shadow-none flex-1 flex flex-col min-h-0">
         {/* Category Tabs Header */}
-        <div className="border-b border-zinc-200 bg-zinc-50 px-4 pt-3 flex flex-col shrink-0">
+        <div className="border-b border-zinc-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900 px-3.5 pt-2.5 flex flex-col shrink-0">
           <div className="flex items-center gap-2">
             <button
               onClick={() => { setActiveTab('override'); setCurrentPage(1); }}
-              className={`flex items-center gap-2 px-3.5 py-2 text-xs font-semibold rounded-t-lg transition-all border-b-2 ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-t-md transition-colors duration-75 border-b-2 cursor-pointer ${
                 activeTab === 'override'
-                  ? 'bg-white text-blue-900 border-blue-600 shadow-2xs font-bold'
-                  : 'text-zinc-500 hover:text-zinc-900 border-transparent hover:bg-zinc-100/70'
+                  ? 'border-zinc-900 text-zinc-900 dark:border-zinc-100 dark:text-zinc-100 font-semibold'
+                  : 'border-transparent text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200'
               }`}
             >
-              <Unlock className="w-3.5 h-3.5 text-purple-600" />
-              <span>CEO Granted Override Activities</span>
-              <span className="ml-1 bg-purple-100 text-purple-800 font-bold px-2 py-0.5 rounded-full text-[10px]">
-                {overrideCount}
+              <Unlock className="w-3.5 h-3.5 text-amber-500" />
+              <span>CEO Granted Overrides</span>
+              <span className="ml-1 font-mono tabular-nums text-[11px] text-zinc-400">
+                ({overrideCount})
               </span>
             </button>
 
             <button
               onClick={() => { setActiveTab('standard'); setCurrentPage(1); }}
-              className={`flex items-center gap-2 px-3.5 py-2 text-xs font-semibold rounded-t-lg transition-all border-b-2 ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-t-md transition-colors duration-75 border-b-2 cursor-pointer ${
                 activeTab === 'standard'
-                  ? 'bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 border-blue-600 dark:border-blue-500 shadow-2xs font-bold'
-                  : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 border-transparent hover:bg-zinc-100/70 dark:hover:bg-zinc-800/70'
+                  ? 'border-zinc-900 text-zinc-900 dark:border-zinc-100 dark:text-zinc-100 font-semibold'
+                  : 'border-transparent text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200'
               }`}
             >
-              <Lock className="w-3.5 h-3.5 text-emerald-600" />
-              <span>Standard Scope Activities</span>
-              <span className="ml-1 bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full text-[10px]">
-                {standardCount}
+              <Lock className="w-3.5 h-3.5 text-zinc-400" />
+              <span>Standard Scope</span>
+              <span className="ml-1 font-mono tabular-nums text-[11px] text-zinc-400">
+                ({standardCount})
               </span>
             </button>
           </div>
 
           {/* Context Explainer */}
-          <div className="py-2 flex items-center gap-1.5 text-[11px] font-medium text-zinc-500 border-t border-zinc-200/80 mt-1">
-            <Info className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+          <div className="py-2 flex items-center gap-1.5 text-[11px] font-normal text-zinc-400 border-t border-zinc-200/80 dark:border-zinc-800 mt-1">
+            <Info className="w-3 h-3 text-zinc-400 shrink-0" />
             <span>
               {activeTab === 'override' 
                 ? 'Displaying operations logged across modules outside standard department permissions or under CEO overrides.'
@@ -238,29 +249,29 @@ export default function AdminActivitiesClient() {
         </div>
 
         {/* Filter Bar */}
-        <div className="p-3.5 bg-white dark:bg-zinc-900 border-b border-zinc-200/80 dark:border-zinc-800 flex flex-wrap items-center justify-between gap-3 shrink-0">
-          <div className="flex items-center gap-3 flex-1 min-w-[260px] max-w-md">
+        <div className="px-3.5 py-2.5 bg-white dark:bg-zinc-900 border-b border-zinc-200/80 dark:border-zinc-800 flex flex-wrap items-center justify-between gap-2.5 shrink-0">
+          <div className="flex items-center gap-2.5 flex-1 min-w-[260px] max-w-md">
             <div className="relative w-full">
-              <Search className="w-4 h-4 text-zinc-400 absolute left-3 top-2.5" />
+              <Search className="w-3.5 h-3.5 text-zinc-400 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
               <input
                 type="text"
                 placeholder="Search administrator name, action, or description..."
                 value={search}
                 onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }}
-                className="w-full pl-9 pr-4 py-1.5 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-xs font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 text-zinc-900 dark:text-zinc-100 placeholder-zinc-400"
+                className="w-full pl-8 pr-3 py-1.5 bg-zinc-50/50 dark:bg-zinc-800 border border-zinc-200/80 dark:border-zinc-700 rounded-md text-xs font-normal focus:outline-none focus:ring-1 focus:ring-zinc-400 text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 transition-colors duration-75"
               />
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-1.5 text-xs font-semibold text-zinc-600">
-              <Filter className="w-3.5 h-3.5 text-zinc-500" />
-              Role:
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 text-xs text-zinc-500">
+              <Filter className="w-3 h-3 text-zinc-400" />
+              <span>Role:</span>
             </div>
             <select
               value={selectedRole}
               onChange={(e) => { setSelectedRole(e.target.value); setCurrentPage(1); }}
-              className="bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-xs font-semibold text-zinc-700 dark:text-zinc-200 px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="bg-white dark:bg-zinc-800 border border-zinc-200/80 dark:border-zinc-700 rounded-md text-xs text-zinc-700 dark:text-zinc-200 px-2 py-1 focus:outline-none focus:ring-1 focus:ring-zinc-400"
             >
               <option value="all">All Roles</option>
               <option value="ceo">CEO</option>
@@ -271,13 +282,13 @@ export default function AdminActivitiesClient() {
               <option value="system">System Core</option>
             </select>
 
-            <div className="flex items-center gap-1.5 text-xs font-semibold text-zinc-600 ml-2">
-              Module:
+            <div className="flex items-center gap-1 text-xs text-zinc-500 ml-2">
+              <span>Module:</span>
             </div>
             <select
               value={selectedCategory}
               onChange={(e) => { setSelectedCategory(e.target.value); setCurrentPage(1); }}
-              className="bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-xs font-semibold text-zinc-700 dark:text-zinc-200 px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="bg-white dark:bg-zinc-800 border border-zinc-200/80 dark:border-zinc-700 rounded-md text-xs text-zinc-700 dark:text-zinc-200 px-2 py-1 focus:outline-none focus:ring-1 focus:ring-zinc-400"
             >
               <option value="all">All Modules</option>
               <option value="system_overrides">System Overrides</option>
@@ -293,124 +304,113 @@ export default function AdminActivitiesClient() {
         </div>
 
         {/* Data Table */}
-        <div className="overflow-y-auto flex-1 [scrollbar-gutter:stable]">
-          <table className="w-full border-collapse table-fixed">
-            <thead className="bg-zinc-50 dark:bg-zinc-800/80 sticky top-0 z-10 border-b border-zinc-200/80 dark:border-zinc-800">
-              <tr>
-                <th className="border-r border-zinc-200 px-3.5 py-2.5 text-left text-[11px] font-semibold text-zinc-600 uppercase tracking-wider w-[24%]">
-                  Administrator & Role
-                </th>
-                <th className="border-r border-zinc-200 px-3.5 py-2.5 text-left text-[11px] font-semibold text-zinc-600 uppercase tracking-wider w-[42%]">
-                  Action & Module Description
-                </th>
-                <th className="border-r border-zinc-200 px-3.5 py-2.5 text-left text-[11px] font-semibold text-zinc-600 uppercase tracking-wider w-[16%]">
-                  Access Scope
-                </th>
-                <th className="px-3.5 py-2.5 text-left text-[11px] font-semibold text-zinc-600 uppercase tracking-wider w-[18%]">
-                  Timestamp
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white dark:bg-zinc-900 divide-y divide-zinc-200/80 dark:divide-zinc-800">
+        <TableContainer className="rounded-none border-x-0 border-t-0 border-b-0 flex-1 overflow-y-auto">
+          <Table fixed>
+            <TableHead sticky>
+              <TableRow className="h-8">
+                <TableHeaderCell width="24%">Administrator & Role</TableHeaderCell>
+                <TableHeaderCell width="42%">Action & Module Description</TableHeaderCell>
+                <TableHeaderCell width="16%">Access Scope</TableHeaderCell>
+                <TableHeaderCell width="18%">Timestamp</TableHeaderCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
               {isLoading ? (
                 <tr>
-                  <td colSpan={4} className="px-6 py-12 text-center text-zinc-500">
-                    <div className="flex flex-col items-center justify-center gap-2">
-                      <RefreshCw className="w-5 h-5 text-blue-600 animate-spin" />
-                      <span className="text-xs font-medium">Fetching real activity logs...</span>
-                    </div>
+                  <td colSpan={4} className="h-24 text-center text-zinc-400 font-medium text-xs">
+                    <span className="inline-flex items-center gap-2">
+                      <RefreshCw className="w-3.5 h-3.5 text-zinc-400 animate-spin" />
+                      Loading activity logs...
+                    </span>
                   </td>
                 </tr>
               ) : paginatedLogs.length === 0 ? (
-                <tr>
-                  <td colSpan={4} className="px-6 py-12 text-center text-zinc-500">
-                    <div className="flex flex-col items-center justify-center gap-1">
-                      <ShieldAlert className="w-6 h-6 text-zinc-400 mb-1" />
-                      <p className="text-xs font-semibold text-zinc-700">No activity logs found</p>
-                      <p className="text-[11px] text-zinc-400">No activities match your current tab or filter selections.</p>
-                    </div>
-                  </td>
-                </tr>
+                <TableEmptyState
+                  colSpan={4}
+                  icon={ShieldAlert}
+                  title="No activity logs found"
+                  description="No activities match your current tab or filter selections."
+                />
               ) : (
                 paginatedLogs.map((log) => {
                   const modInfo = MODULE_MAP[log.category] || { label: log.category, department: 'System' }
                   const roleLabel = ROLE_LABELS[log.performed_by_role || ''] || log.performed_by_role || 'Staff'
 
                   return (
-                    <tr
+                    <TableRow
                       key={log.id}
                       onClick={() => setSelectedLog(log)}
-                      className="hover:bg-zinc-50/80 dark:hover:bg-zinc-800/50 transition-colors cursor-pointer"
+                      className="cursor-pointer"
                     >
                       {/* Admin & Role */}
-                      <td className="border-r border-zinc-200 px-3.5 py-2.5 overflow-hidden">
+                      <TableCell>
                         <div className="flex flex-col min-w-0">
-                          <span className="text-xs font-semibold text-zinc-900 dark:text-zinc-100 flex items-center gap-1.5 truncate">
-                            <User className="h-3.5 w-3.5 text-zinc-400 shrink-0" />
+                          <span className="font-medium text-zinc-900 dark:text-zinc-100 flex items-center gap-1.5 truncate">
+                            <User className="h-3 w-3 text-zinc-400 shrink-0" />
                             <span className="truncate">{log.performed_by_name || 'System'}</span>
                           </span>
-                          <span className="text-[10px] font-semibold text-zinc-600 bg-zinc-100 px-1.5 py-0.5 rounded border border-zinc-200 w-fit mt-1">
-                            {roleLabel}
-                          </span>
+                          <div className="mt-0.5">
+                            <MutedBadge>{roleLabel}</MutedBadge>
+                          </div>
                         </div>
-                      </td>
+                      </TableCell>
 
                       {/* Action & Feature */}
-                      <td className="border-r border-zinc-200 px-3.5 py-2.5 overflow-hidden">
+                      <TableCell>
                         <div className="flex flex-col min-w-0">
                           <div className="flex items-center gap-1.5 min-w-0">
-                            <span className="text-xs font-bold text-zinc-900 truncate">
+                            <span className="font-medium text-zinc-900 dark:text-zinc-100 truncate">
                               {formatActionType(log.action)}
                             </span>
-                            <span className="text-[10px] font-mono text-zinc-500 bg-zinc-100 px-1.5 py-0.5 rounded border border-zinc-200 shrink-0">
-                              {modInfo.label}
-                            </span>
+                            <MutedBadge>{modInfo.label}</MutedBadge>
                           </div>
-                          <span className="text-[11px] text-zinc-500 truncate mt-0.5 font-normal">
+                          <span className="text-[11px] text-zinc-400 truncate mt-0.5 font-normal">
                             {log.description}
                           </span>
                         </div>
-                      </td>
+                      </TableCell>
 
                       {/* Access Scope Badge */}
-                      <td className="border-r border-zinc-200 px-3.5 py-2.5 whitespace-nowrap">
+                      <TableCell className="whitespace-nowrap">
                         {log.is_override ? (
-                          <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-bold bg-purple-50 text-purple-900 border border-purple-200 shadow-2xs">
-                            <Unlock className="w-3 h-3 text-purple-700 shrink-0" />
-                            CEO OVERRIDE
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/50">
+                            <Unlock className="w-2.5 h-2.5 text-amber-600 dark:text-amber-400 shrink-0" />
+                            CEO Override
                           </span>
                         ) : (
-                          <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
-                            <Lock className="w-3 h-3 text-emerald-600 shrink-0" />
-                            STANDARD SCOPE
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium text-zinc-600 dark:text-zinc-400 bg-zinc-100 dark:bg-zinc-800 border border-zinc-200/80 dark:border-zinc-700">
+                            <Lock className="w-2.5 h-2.5 text-zinc-400 shrink-0" />
+                            Standard Scope
                           </span>
                         )}
-                      </td>
+                      </TableCell>
 
                       {/* Timestamp */}
-                      <td className="px-3.5 py-2.5 whitespace-nowrap">
-                        <div className="flex items-center gap-1.5 text-xs text-zinc-700 font-medium">
-                          <Clock className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
+                      <TableCell className="whitespace-nowrap font-mono tabular-nums text-xs text-zinc-500">
+                        <div className="flex items-center gap-1.5">
+                          <Clock className="w-3 h-3 text-zinc-400 shrink-0" />
                           <span>{formatExecutiveTimestamp(log.created_at)}</span>
                         </div>
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   )
                 })
               )}
-            </tbody>
-          </table>
-        </div>
+            </TableBody>
+          </Table>
+        </TableContainer>
 
         {/* Pagination Footer */}
-        <Pagination
-          currentPage={currentPage}
-          totalPages={totalPages}
-          totalItems={filteredLogs.length}
-          itemsPerPage={ITEMS_PER_PAGE}
-          onPageChange={setCurrentPage}
-          itemNamePlural="entries"
-        />
+        <div className="mt-auto border-t border-zinc-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900">
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={filteredLogs.length}
+            itemsPerPage={ITEMS_PER_PAGE}
+            onPageChange={setCurrentPage}
+            itemNamePlural="entries"
+          />
+        </div>
       </div>
 
       {/* Log Details Security Audit Modal */}

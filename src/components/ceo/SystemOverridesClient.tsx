@@ -4,6 +4,16 @@ import { useState, useEffect, useTransition } from 'react'
 import PageHeader from '@/components/ui/PageHeader'
 import { KpiCard, KpiGrid } from '@/components/ui/KpiCard'
 import {
+  TableContainer,
+  Table,
+  TableHead,
+  TableHeaderCell,
+  TableBody,
+  TableRow,
+  TableCell,
+  MutedBadge,
+} from '@/components/ui/DataTable'
+import {
   ShieldCheck,
   RefreshCw,
   Zap,
@@ -275,9 +285,9 @@ export default function SystemOverridesClient() {
         title="System Overrides & Access Matrix"
         subtitle="Pinnacle Chief Executive Officer access control. Persisted globally with auto-expiring time limits."
         icon={ShieldCheck}
-        className="rounded-xl mb-4 shadow-xs"
+        className="rounded-lg mb-4"
         badge={
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 text-[10px] font-bold">
+          <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-zinc-100 dark:bg-zinc-800 border border-zinc-200/80 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 text-[10px] font-medium font-mono">
             <span className="relative flex h-1.5 w-1.5">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
               <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500" />
@@ -290,17 +300,17 @@ export default function SystemOverridesClient() {
             <button
               onClick={handleGrantAll}
               disabled={isSyncing || loading}
-              className="inline-flex items-center gap-1.5 bg-blue-50 dark:bg-blue-950/50 border border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/50 disabled:opacity-50 px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors shadow-2xs cursor-pointer"
+              className="inline-flex items-center gap-1.5 bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-200 disabled:opacity-50 px-3 py-1.5 rounded-md text-xs font-medium transition-colors duration-75 shadow-none cursor-pointer"
             >
-              {isSyncing ? <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-600" /> : <Zap className="w-3.5 h-3.5 text-blue-600" />}
+              {isSyncing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Zap className="w-3.5 h-3.5" />}
               Grant All Overrides
             </button>
             <button
               onClick={handleResetDefaults}
               disabled={isSyncing || loading}
-              className="inline-flex items-center gap-1.5 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-700 disabled:opacity-50 px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors shadow-2xs cursor-pointer"
+              className="inline-flex items-center gap-1.5 bg-white dark:bg-zinc-800 border border-zinc-200/80 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-700/50 disabled:opacity-50 px-3 py-1.5 rounded-md text-xs font-medium transition-colors duration-75 shadow-none cursor-pointer"
             >
-              <RefreshCw className="w-3.5 h-3.5 text-zinc-500" />
+              <RefreshCw className="w-3.5 h-3.5 text-zinc-400" />
               Reset Defaults
             </button>
           </div>
@@ -360,55 +370,55 @@ export default function SystemOverridesClient() {
       )}
 
       {/* Main Override Matrix Table */}
-      <div className="bg-white border border-zinc-200 rounded-xl overflow-hidden shadow-xs flex-1 flex flex-col">
-        <div className="p-3 bg-zinc-50 border-b border-zinc-200 flex items-center justify-between shrink-0 text-xs">
-          <div className="flex items-center gap-1.5 font-bold text-zinc-700 uppercase tracking-wider text-[11px]">
-            <Info className="w-3.5 h-3.5 text-blue-600" />
-            Live Access Governance Matrix (Overrides dynamically unlock modules for cross-functional staff)
+      <div className="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 rounded-lg overflow-hidden shadow-none flex-1 flex flex-col">
+        <div className="px-3.5 py-2.5 bg-white dark:bg-zinc-900 border-b border-zinc-200/80 dark:border-zinc-800 flex items-center justify-between shrink-0 text-xs">
+          <div className="flex items-center gap-1.5 font-medium text-zinc-700 dark:text-zinc-300 text-xs">
+            <Info className="w-3.5 h-3.5 text-zinc-400" />
+            <span>Live Access Governance Matrix</span>
           </div>
-          <div className="flex items-center gap-3 text-[11px] font-medium text-zinc-500">
-            <span className="flex items-center gap-1"><Lock className="w-3 h-3 text-zinc-400" /> Default Access</span>
-            <span className="flex items-center gap-1"><Unlock className="w-3 h-3 text-blue-600" /> CEO Time-Limited Override</span>
+          <div className="flex items-center gap-3 text-[11px] font-medium text-zinc-400">
+            <span className="flex items-center gap-1"><Lock className="w-3 h-3 text-zinc-400" /> Standard</span>
+            <span className="flex items-center gap-1"><Unlock className="w-3 h-3 text-amber-500" /> Active Override</span>
           </div>
         </div>
 
-        <div className="overflow-auto flex-1">
-          {loading ? (
-            <div className="flex flex-col items-center justify-center h-64 gap-2.5">
-              <Loader2 className="w-7 h-7 animate-spin text-blue-600" />
-              <span className="text-xs font-semibold text-zinc-500">Connecting to PostgreSQL permissions table...</span>
-            </div>
-          ) : (
-            <table className="w-full border-collapse table-fixed text-left">
-              <thead>
-                <tr className="bg-zinc-50 border-b border-zinc-200 sticky top-0 z-10 text-[11px] font-semibold text-zinc-600 uppercase tracking-wider">
-                  <th className="px-3.5 py-2.5 border-r border-zinc-200 w-[34%]">
-                    System Module & Scope
-                  </th>
-                  {ROLES.map(role => (
-                    <th key={role.key} className="px-3.5 py-2.5 border-r border-zinc-200 text-center w-[22%] last:border-r-0">
-                      <div className="flex flex-col items-center">
-                        <span className="text-zinc-900 font-bold">{role.label}</span>
-                        <span className="text-[10px] text-zinc-500 normal-case font-medium">{role.sub}</span>
-                      </div>
-                    </th>
-                  ))}
+        <TableContainer className="rounded-none border-x-0 border-t-0 border-b-0 flex-1 overflow-auto">
+          <Table fixed>
+            <TableHead sticky>
+              <TableRow className="h-8">
+                <TableHeaderCell width="34%">System Module & Scope</TableHeaderCell>
+                {ROLES.map(role => (
+                  <TableHeaderCell key={role.key} width="22%" align="center">
+                    <div className="flex flex-col items-center">
+                      <span className="font-semibold text-zinc-900 dark:text-zinc-100">{role.label}</span>
+                      <span className="text-[10px] text-zinc-400 font-normal">{role.sub}</span>
+                    </div>
+                  </TableHeaderCell>
+                ))}
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {loading ? (
+                <tr>
+                  <td colSpan={4} className="h-48 text-center text-zinc-400 text-xs font-medium">
+                    <span className="inline-flex items-center gap-2">
+                      <Loader2 className="w-4 h-4 animate-spin text-zinc-400" />
+                      Connecting to permissions ledger...
+                    </span>
+                  </td>
                 </tr>
-              </thead>
-              <tbody className="divide-y divide-zinc-200 bg-white">
-                {SYSTEM_MODULES.map((mod) => (
-                  <tr key={mod.id} className="hover:bg-zinc-50/70 transition-colors">
-                    <td className="px-3.5 py-2.5 border-r border-zinc-200">
-                      <div className="flex flex-col">
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs font-bold text-zinc-900">{mod.name}</span>
-                          <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-zinc-100 text-zinc-600 border border-zinc-200">
-                            {mod.department}
-                          </span>
+              ) : (
+                SYSTEM_MODULES.map((mod) => (
+                  <TableRow key={mod.id}>
+                    <TableCell>
+                      <div className="flex flex-col min-w-0">
+                        <div className="flex items-center gap-1.5">
+                          <span className="font-medium text-zinc-900 dark:text-zinc-100 truncate">{mod.name}</span>
+                          <MutedBadge>{mod.department}</MutedBadge>
                         </div>
-                        <span className="text-[11px] text-zinc-500 mt-0.5 leading-snug">{mod.description}</span>
+                        <span className="text-[11px] text-zinc-400 truncate mt-0.5">{mod.description}</span>
                       </div>
-                    </td>
+                    </TableCell>
 
                     {ROLES.map(role => {
                       const isDefaultRole = mod.defaultRoles.includes(role.key)
@@ -417,32 +427,36 @@ export default function SystemOverridesClient() {
                       const isActive = isGranted && isOverrideActive(itemMeta)
 
                       return (
-                        <td key={role.key} className="px-3 py-2 text-center align-middle border-r border-zinc-200 last:border-r-0">
+                        <TableCell key={role.key} align="center">
                           {isDefaultRole ? (
-                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-2xs">
-                              <Lock className="w-3 h-3 text-emerald-600" />
-                              Default Access
-                            </span>
+                            <div className="flex items-center justify-center">
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium text-zinc-600 dark:text-zinc-400 bg-zinc-100 dark:bg-zinc-800 border border-zinc-200/80 dark:border-zinc-700">
+                                <Lock className="w-2.5 h-2.5 text-zinc-400" />
+                                Standard
+                              </span>
+                            </div>
                           ) : isActive ? (
-                            <div className="flex flex-col items-center justify-center gap-1">
-                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200 shadow-2xs">
-                                <Unlock className="w-3 h-3 text-blue-600" />
+                            <div className="flex flex-col items-center justify-center gap-0.5">
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/50">
+                                <Unlock className="w-2.5 h-2.5 text-amber-600 dark:text-amber-400" />
                                 {itemMeta?.duration === 'indefinite' ? 'Indefinite' : (itemMeta?.duration?.replace('_', ' ') || 'Active')}
                               </span>
-                              <span className="text-[10px] font-mono text-zinc-500">
+                              <span className="text-[10px] font-mono tabular-nums text-zinc-400">
                                 {formatRemainingTime(itemMeta?.expires_at || null)}
                               </span>
                               <button
+                                type="button"
                                 onClick={() => revokeOverride(role.key, mod.id, mod.name)}
                                 disabled={isSyncing}
-                                className="text-[10px] font-bold text-red-600 hover:text-red-700 underline cursor-pointer mt-0.5 transition-colors disabled:opacity-50"
+                                className="text-[10px] font-medium text-zinc-400 hover:text-rose-600 dark:hover:text-rose-400 transition-colors duration-75 cursor-pointer disabled:opacity-50 mt-0.5"
                               >
-                                Revoke Access
+                                Revoke
                               </button>
                             </div>
                           ) : (
-                            <div className="flex flex-col items-center justify-center gap-1">
+                            <div className="flex flex-col items-center justify-center">
                               <button
+                                type="button"
                                 onClick={() => setDurationModal({
                                   isOpen: true,
                                   role: role.key,
@@ -452,33 +466,30 @@ export default function SystemOverridesClient() {
                                   selectedDuration: '1_day'
                                 })}
                                 disabled={isSyncing}
-                                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-semibold bg-zinc-100 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-200 border border-zinc-200 text-zinc-600 transition-colors shadow-2xs cursor-pointer disabled:opacity-50"
+                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 bg-transparent hover:bg-zinc-100 dark:hover:bg-zinc-800 border border-transparent hover:border-zinc-200 dark:hover:border-zinc-700 transition-colors duration-75 cursor-pointer disabled:opacity-50"
                               >
-                                <Lock className="w-3 h-3 text-zinc-400" />
-                                Restricted
+                                <Lock className="w-2.5 h-2.5 text-zinc-300 dark:text-zinc-600" />
+                                <span>Restricted</span>
                               </button>
-                              <span className="text-[9px] text-zinc-500 font-medium">
-                                Click to Grant
-                              </span>
                             </div>
                           )}
-                        </td>
+                        </TableCell>
                       )
                     })}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </div>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </TableContainer>
 
         {/* Footer info bar */}
-        <div className="p-3 bg-zinc-50 border-t border-zinc-200 flex items-center justify-between text-xs text-zinc-500 shrink-0">
-          <span className="flex items-center gap-1.5 font-medium text-[11px]">
-            <ShieldCheck className="w-3.5 h-3.5 text-blue-600" />
+        <div className="px-3.5 py-2 bg-white dark:bg-zinc-900 border-t border-zinc-200/80 dark:border-zinc-800 flex items-center justify-between text-xs text-zinc-400 shrink-0">
+          <span className="flex items-center gap-1.5 font-normal text-[11px]">
+            <ShieldCheck className="w-3.5 h-3.5 text-zinc-400" />
             Overrides persist in PostgreSQL and automatically expire according to designated CEO duration boundaries.
           </span>
-          <span className="font-mono text-[10px] text-zinc-500 uppercase tracking-wider font-semibold">
+          <span className="font-mono text-[10px] text-zinc-400 uppercase tracking-wider">
             CEO Access Governance
           </span>
         </div>
