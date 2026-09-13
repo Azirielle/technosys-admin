@@ -3,6 +3,18 @@
 import PageHeader from '@/components/ui/PageHeader'
 import { KpiCard, KpiGrid } from '@/components/ui/KpiCard'
 import Pagination from '@/components/ui/Pagination'
+import {
+  TableContainer,
+  Table,
+  TableHead,
+  TableHeaderCell,
+  TableBody,
+  TableRow,
+  TableCell,
+  TableEmptyState,
+  StatusDot,
+  MutedBadge
+} from '@/components/ui/DataTable'
 
 import { useEffect, useState, useRef } from "react";
 import dynamic from "next/dynamic";
@@ -35,7 +47,7 @@ export default function DispatchBoardClient() {
   const [searchQuery, setSearchQuery] = useState("");
   const [dateFilter, setDateFilter] = useState(new Date().toISOString().split('T')[0]); // Default Today
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 5;
+  const itemsPerPage = 8;
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -538,25 +550,16 @@ export default function DispatchBoardClient() {
   const totalPages = Math.ceil(filtered.length / itemsPerPage);
   const paginated = filtered.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
-  const getModeBadge = (mode: string) => {
-    switch (mode) {
-      case 'hq': return 'bg-blue-100 text-blue-800 border-blue-200';
-      case 'direct_dispatch': return 'bg-emerald-100 text-emerald-800 border-emerald-200';
-      case 'out_of_town': return 'bg-orange-100 text-orange-800 border-orange-200';
-      default: return 'bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 border-zinc-200';
-    }
-  };
-
   const getStatusBadge = (status?: string) => {
     switch (status) {
       case 'in_progress':
-        return <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-300"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />In Duty</span>;
+        return <StatusDot status="active" label="In Duty" />;
       case 'completed':
-        return <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-zinc-100 text-zinc-700 border border-zinc-200">Completed</span>;
+        return <StatusDot status="neutral" label="Completed" />;
       case 'cancelled':
-        return <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-rose-100 text-rose-800 border border-rose-200">Cancelled</span>;
+        return <StatusDot status="danger" label="Cancelled" />;
       default:
-        return <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-blue-50 text-blue-700 border border-blue-200">Scheduled</span>;
+        return <StatusDot status="info" label="Scheduled" />;
     }
   };
 
@@ -570,22 +573,22 @@ export default function DispatchBoardClient() {
             : 'Register and manage on-demand casual support crew with daily-wage tracking.'
         }
         icon={CalendarIcon}
-        className="rounded-xl mb-4 shadow-sm"
+        className="rounded-lg mb-4"
         actions={
           viewTab === 'dispatches' ? (
             <button 
               onClick={() => setIsModalOpen(true)}
-              className="flex items-center justify-center gap-2 px-3.5 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors shadow-xs font-semibold text-xs cursor-pointer"
+              className="flex items-center justify-center gap-1.5 px-3 py-1.5 bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 rounded-md hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-colors duration-75 font-medium text-xs cursor-pointer shadow-none"
             >
-              <Plus className="w-4 h-4" />
+              <Plus className="w-3.5 h-3.5" />
               Create Dispatch
             </button>
           ) : (
             <button 
               onClick={() => openRegisterCasualModal()}
-              className="flex items-center justify-center gap-2 px-3.5 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors shadow-xs font-semibold text-xs cursor-pointer"
+              className="flex items-center justify-center gap-1.5 px-3 py-1.5 bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 rounded-md hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-colors duration-75 font-medium text-xs cursor-pointer shadow-none"
             >
-              <UserPlus className="w-4 h-4" />
+              <UserPlus className="w-3.5 h-3.5" />
               Register Casual Worker
             </button>
           )
@@ -593,14 +596,14 @@ export default function DispatchBoardClient() {
       />
 
       {/* Top View Switcher Tabs */}
-      <div className="flex items-center gap-2 mb-4">
+      <div className="flex items-center gap-1.5 mb-4">
         <button
           type="button"
           onClick={() => setViewTab('dispatches')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
+          className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors duration-75 cursor-pointer ${
             viewTab === 'dispatches'
-              ? 'bg-blue-600 text-white shadow-sm ring-2 ring-blue-600/20'
-              : 'bg-white text-zinc-600 border border-zinc-200/80 dark:border-zinc-800 hover:bg-zinc-50 dark:bg-zinc-800/60'
+              ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 font-semibold shadow-none'
+              : 'bg-white dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border border-zinc-200/80 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-700/50'
           }`}
         >
           <CalendarIcon className="w-3.5 h-3.5" />
@@ -609,10 +612,10 @@ export default function DispatchBoardClient() {
         <button
           type="button"
           onClick={() => { setViewTab('casual_helpers'); fetchCasualHelpers(); }}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
+          className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors duration-75 cursor-pointer ${
             viewTab === 'casual_helpers'
-              ? 'bg-blue-600 text-white shadow-sm ring-2 ring-blue-600/20'
-              : 'bg-white text-zinc-600 border border-zinc-200/80 dark:border-zinc-800 hover:bg-zinc-50 dark:bg-zinc-800/60'
+              ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 font-semibold shadow-none'
+              : 'bg-white dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border border-zinc-200/80 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-700/50'
           }`}
         >
           <Users className="w-3.5 h-3.5" />
@@ -621,189 +624,194 @@ export default function DispatchBoardClient() {
       </div>
 
       {viewTab === 'dispatches' && (
-      <div className="bg-white rounded-xl shadow-sm border border-zinc-200/80 dark:border-zinc-700 overflow-hidden flex flex-col flex-1 pb-6">
+      <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200/80 dark:border-zinc-800 overflow-hidden flex flex-col flex-1 shadow-none">
         {/* Toolbar */}
-        <div className="p-4 border-b border-zinc-200/80 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/60 flex flex-wrap gap-4 items-center justify-between">
-          <div className="flex flex-wrap gap-3 items-center">
+        <div className="px-3.5 py-2.5 border-b border-zinc-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900 flex flex-wrap gap-2.5 items-center justify-between">
+          <div className="flex flex-wrap gap-2.5 items-center">
             <div className="relative w-full sm:w-64">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Search className="h-4 w-4 text-zinc-400 dark:text-zinc-500" />
-              </div>
+              <Search className="absolute inset-y-0 left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-zinc-400 pointer-events-none" />
               <input
                 type="text"
                 placeholder="Search technician, client, location..."
                 value={searchQuery}
                 onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
-                className="block w-full pl-9 pr-3 py-2 border border-zinc-200/80 dark:border-zinc-700 rounded-md leading-5 bg-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500 sm:text-sm"
+                className="block w-full pl-8 pr-3 py-1.5 border border-zinc-200/80 dark:border-zinc-700 rounded-md text-xs bg-zinc-50/50 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none focus:ring-1 focus:ring-zinc-400 transition-colors duration-75"
               />
             </div>
-            <div className="flex items-center gap-2 w-full sm:w-auto">
-              <CalendarIcon className="h-4 w-4 text-zinc-500 dark:text-zinc-400" />
+            <div className="flex items-center gap-1.5 w-full sm:w-auto">
+              <CalendarIcon className="h-3.5 w-3.5 text-zinc-400" />
               <input
                 type="date"
                 value={dateFilter}
                 onChange={(e) => { setDateFilter(e.target.value); setCurrentPage(1); }}
-                className="block w-full pl-3 pr-3 py-2 border border-zinc-200/80 dark:border-zinc-700 rounded-md leading-5 bg-white text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500 sm:text-sm font-medium cursor-pointer"
+                className="block pl-2.5 pr-2 py-1.5 border border-zinc-200/80 dark:border-zinc-700 rounded-md text-xs bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-zinc-400 cursor-pointer font-medium"
               />
             </div>
           </div>
 
-          <div className="flex items-center gap-4">
-            <label className="flex items-center gap-2 text-xs font-semibold text-zinc-700 dark:text-zinc-300 cursor-pointer select-none bg-white px-3 py-2 rounded-lg border border-zinc-200/80 dark:border-zinc-700 hover:bg-zinc-100 dark:bg-zinc-800/60 shadow-2xs">
+          <div className="flex items-center gap-3">
+            <label className="flex items-center gap-1.5 text-xs text-zinc-600 dark:text-zinc-400 cursor-pointer select-none bg-zinc-50 dark:bg-zinc-800 px-2.5 py-1 rounded-md border border-zinc-200/80 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-700/50 transition-colors duration-75">
               <input
                 type="checkbox"
                 checked={showCancelled}
                 onChange={(e) => { setShowCancelled(e.target.checked); setCurrentPage(1); }}
-                className="rounded border-zinc-300 text-blue-600 focus:ring-blue-500 w-3.5 h-3.5 cursor-pointer"
+                className="rounded border-zinc-300 text-zinc-900 focus:ring-zinc-400 w-3 h-3 cursor-pointer"
               />
               <span>Show Cancelled ({schedules.filter(s => s.status === 'cancelled').length})</span>
             </label>
-            <div className="text-sm text-zinc-500 dark:text-zinc-400 font-medium hidden md:block">
-              {new Date(dateFilter).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+            <div className="text-xs text-zinc-400 font-mono hidden md:block">
+              {new Date(dateFilter).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
             </div>
           </div>
         </div>
         
         {/* Data Table */}
-        <div className="overflow-x-auto flex-1">
-          <table className="min-w-full border-collapse border border-zinc-200/80 dark:border-zinc-700">
-            <thead className="bg-zinc-100 dark:bg-zinc-800">
-              <tr>
-                <th className="border border-zinc-200/80 dark:border-zinc-700 px-4 py-3 text-left text-xs font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider">Technician</th>
-                <th className="border border-zinc-200/80 dark:border-zinc-700 px-4 py-3 text-left text-xs font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider">Client / Assignment</th>
-                <th className="border border-zinc-200/80 dark:border-zinc-700 px-4 py-3 text-left text-xs font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider">Location & Geofence</th>
-                <th className="border border-zinc-200/80 dark:border-zinc-700 px-4 py-3 text-left text-xs font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider">Time Window</th>
-                <th className="border border-zinc-200/80 dark:border-zinc-700 px-4 py-3 text-center text-xs font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider">Mode</th>
-                <th className="border border-zinc-200/80 dark:border-zinc-700 px-4 py-3 text-center text-xs font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider">Status</th>
-                <th className="border border-zinc-200/80 dark:border-zinc-700 px-4 py-3 text-center text-xs font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white">
+        <TableContainer className="rounded-none border-x-0 border-t-0 border-b-0 flex-1 overflow-x-auto">
+          <Table fixed>
+            <TableHead sticky>
+              <TableRow className="h-8">
+                <TableHeaderCell width="22%">Technician</TableHeaderCell>
+                <TableHeaderCell width="20%">Client / Assignment</TableHeaderCell>
+                <TableHeaderCell width="22%">Location & Geofence</TableHeaderCell>
+                <TableHeaderCell width="14%">Time Window</TableHeaderCell>
+                <TableHeaderCell width="10%" align="center">Mode</TableHeaderCell>
+                <TableHeaderCell width="12%">Status</TableHeaderCell>
+                <TableHeaderCell width="10%" align="right" noDivider>Actions</TableHeaderCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
               {loading ? (
                 <tr>
-                  <td colSpan={7} className="border border-zinc-200/80 dark:border-zinc-700 px-6 py-12 text-center text-zinc-500 dark:text-zinc-400 font-medium">Loading schedule...</td>
+                  <td colSpan={7} className="h-24 text-center text-zinc-400 font-medium text-xs">
+                    <span className="inline-flex items-center gap-2">
+                      <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
+                      Loading schedule...
+                    </span>
+                  </td>
                 </tr>
               ) : paginated.length === 0 ? (
-                <tr>
-                  <td colSpan={7} className="border border-zinc-200/80 dark:border-zinc-700 px-6 py-12 text-center text-zinc-500 dark:text-zinc-400 font-medium">No dispatches found for this date.</td>
-                </tr>
+                <TableEmptyState
+                  colSpan={7}
+                  icon={CalendarIcon}
+                  title="No dispatches found"
+                  description={searchQuery ? "No dispatches match your search query." : "No dispatches scheduled for this date."}
+                />
               ) : (
                 paginated.map((s) => (
-                  <tr key={s.id} className={`hover:bg-blue-50/50 transition-colors ${s.status === 'cancelled' ? 'bg-zinc-50/70 opacity-75' : ''}`}>
-                    <td className="border border-zinc-200/80 dark:border-zinc-700 px-4 py-4 whitespace-nowrap">
-                      <div className="flex items-center gap-3">
-                        <div className={`h-8 w-8 rounded-full flex items-center justify-center border shrink-0 ${s.technician_id ? 'bg-blue-100 border-blue-200 text-blue-700' : 'bg-amber-100 border-amber-200 text-amber-700'}`}>
-                          <User className="h-4 w-4" />
+                  <TableRow key={s.id} className={s.status === 'cancelled' ? 'opacity-60 bg-zinc-50/50 dark:bg-zinc-900/50' : undefined}>
+                    <TableCell className="whitespace-nowrap">
+                      <div className="flex items-center gap-2">
+                        <div className={`h-6 w-6 rounded-full flex items-center justify-center border shrink-0 text-[10px] font-bold ${s.technician_id ? 'bg-zinc-100 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300' : 'bg-amber-50 border-amber-200 text-amber-700'}`}>
+                          {s.profiles?.full_name ? s.profiles.full_name.slice(0, 2).toUpperCase() : <User className="h-3 w-3" />}
                         </div>
-                        <div className="flex flex-col">
+                        <div className="flex flex-col min-w-0">
                           <div className="flex items-center gap-1.5">
-                            <span className="text-sm font-bold text-zinc-900 dark:text-zinc-100">
+                            <span className="font-medium text-zinc-900 dark:text-zinc-100 truncate">
                               {s.profiles?.full_name || (s.technician_id ? 'Unknown Staff' : 'Unassigned')}
                             </span>
                             {s.profiles?.technician_level === 'senior' && (
-                              <span className="text-[9px] font-bold bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded uppercase tracking-wider border border-amber-200">
-                                SENIOR
-                              </span>
+                              <MutedBadge>SENIOR</MutedBadge>
                             )}
                             {s.profiles?.role === 'helper' && (
-                              <span className="text-[9px] font-bold bg-zinc-100 text-zinc-600 px-1.5 py-0.5 rounded uppercase tracking-wider border border-zinc-200">
-                                HELPER
-                              </span>
+                              <MutedBadge>HELPER</MutedBadge>
                             )}
                           </div>
                           {s.senior_partner?.full_name && (
-                            <span className="text-[10px] text-zinc-500 dark:text-zinc-400 font-medium">
+                            <span className="text-[10px] text-zinc-400 truncate">
                               Lead: {s.senior_partner.full_name}
                             </span>
                           )}
                           {s.schedule_casual_helpers && s.schedule_casual_helpers.length > 0 && (
-                            <div className="flex items-center gap-1 mt-1">
+                            <div className="flex items-center gap-1 mt-0.5">
                               <span 
-                                className="inline-flex items-center gap-1 text-[10px] font-semibold bg-blue-50 text-blue-700 px-1.5 py-0.5 rounded border border-blue-200" 
+                                className="inline-flex items-center gap-1 text-[10px] font-medium text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 cursor-help"
                                 title={s.schedule_casual_helpers.map((sch: any) => `${sch.casual_helpers?.full_name || 'Worker'} (${sch.casual_helpers?.contact_number || 'No phone'})`).join('\n')}
                               >
-                                <Users className="w-2.5 h-2.5 text-blue-500" />
-                                +{s.schedule_casual_helpers.length} Casual Helper{s.schedule_casual_helpers.length > 1 ? 's' : ''}
+                                <Users className="w-2.5 h-2.5 text-zinc-400" />
+                                +{s.schedule_casual_helpers.length} Helper{s.schedule_casual_helpers.length > 1 ? 's' : ''}
                               </span>
                             </div>
                           )}
                         </div>
                       </div>
-                    </td>
-                    <td className="border border-zinc-200/80 dark:border-zinc-700 px-4 py-4">
-                      <p className={`text-sm font-bold ${s.status === 'cancelled' ? 'line-through text-zinc-400 dark:text-zinc-500' : 'text-zinc-900 dark:text-zinc-100'}`}>{s.client_name}</p>
-                      {s.cancellation_reason && (
-                        <p className="text-[11px] text-rose-600 font-medium mt-0.5">
-                          Cancelled: {s.cancellation_reason}
+                    </TableCell>
+                    <TableCell>
+                      <div className="min-w-0">
+                        <p className={`font-medium truncate ${s.status === 'cancelled' ? 'line-through text-zinc-400' : 'text-zinc-900 dark:text-zinc-100'}`}>
+                          {s.client_name}
                         </p>
-                      )}
-                    </td>
-                    <td className="border border-zinc-200/80 dark:border-zinc-700 px-4 py-4">
-                      <div className="flex flex-col gap-1">
-                        <div className="flex items-start gap-1.5 text-sm text-zinc-900 dark:text-zinc-100">
-                          <MapPin className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
-                          <span className="line-clamp-2">{s.location}</span>
+                        {s.cancellation_reason && (
+                          <p className="text-[10px] text-rose-500 font-normal truncate mt-0.5">
+                            Cancelled: {s.cancellation_reason}
+                          </p>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex flex-col min-w-0">
+                        <div className="flex items-center gap-1.5 text-zinc-900 dark:text-zinc-100">
+                          <MapPin className="w-3 h-3 text-zinc-400 shrink-0" />
+                          <span className="truncate text-xs">{s.location}</span>
                         </div>
-                        <div className="flex items-center gap-2 ml-5 text-[10px] font-mono text-zinc-500 dark:text-zinc-400">
-                          <span>{s.geofence_lat?.toFixed(5)}, {s.geofence_lon?.toFixed(5)}</span>
-                          <span className="px-1.5 bg-zinc-100 dark:bg-zinc-800 rounded border border-zinc-200/80 dark:border-zinc-800">{s.geofence_radius}m radius</span>
+                        <div className="flex items-center gap-1.5 ml-4 text-[10px] font-mono tabular-nums text-zinc-400">
+                          <span>{s.geofence_lat?.toFixed(4)}, {s.geofence_lon?.toFixed(4)}</span>
+                          <span>•</span>
+                          <span>{s.geofence_radius}m</span>
                         </div>
                       </div>
-                    </td>
-                    <td className="border border-zinc-200/80 dark:border-zinc-700 px-4 py-4 whitespace-nowrap">
+                    </TableCell>
+                    <TableCell className="whitespace-nowrap font-mono tabular-nums text-xs">
                       <div className="flex flex-col">
-                        <span className="text-sm font-bold text-zinc-900 dark:text-zinc-100">{new Date(s.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                        <span className="text-xs text-zinc-500 dark:text-zinc-400">to {new Date(s.end_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                        <span className="text-zinc-900 dark:text-zinc-100 font-medium">{new Date(s.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                        <span className="text-[10px] text-zinc-400">to {new Date(s.end_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                       </div>
-                    </td>
-                    <td className="border border-zinc-200/80 dark:border-zinc-700 px-4 py-4 whitespace-nowrap text-center">
-                      <span className={`inline-flex items-center px-2.5 py-1 rounded border text-[10px] uppercase font-bold tracking-wider ${getModeBadge(s.attendance_mode)}`}>
-                        {s.attendance_mode.replace('_', ' ')}
-                      </span>
-                    </td>
-                    <td className="border border-zinc-200/80 dark:border-zinc-700 px-4 py-4 whitespace-nowrap text-center">
+                    </TableCell>
+                    <TableCell align="center" className="whitespace-nowrap">
+                      <MutedBadge>{s.attendance_mode.replace('_', ' ')}</MutedBadge>
+                    </TableCell>
+                    <TableCell className="whitespace-nowrap">
                       {getStatusBadge(s.status)}
-                    </td>
-                    <td className="border border-zinc-200/80 dark:border-zinc-700 px-4 py-4 whitespace-nowrap text-center">
-                      <div className="flex items-center justify-center gap-1.5">
+                    </TableCell>
+                    <TableCell align="right" noDivider className="whitespace-nowrap">
+                      <div className="flex items-center justify-end gap-1">
                         <button
                           type="button"
                           onClick={() => openEditModal(s)}
                           disabled={s.status === 'cancelled'}
                           title={s.status === 'cancelled' ? "Cannot edit cancelled dispatch" : "Edit Dispatch Details"}
-                          className="p-1.5 text-zinc-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors disabled:opacity-25 disabled:cursor-not-allowed cursor-pointer"
+                          className="p-1 text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded transition-colors duration-75 disabled:opacity-25 disabled:cursor-not-allowed cursor-pointer"
                         >
-                          <Edit3 className="w-4 h-4" />
+                          <Edit3 className="w-3.5 h-3.5" />
                         </button>
                         <button
                           type="button"
                           onClick={() => openReassignModal(s)}
                           disabled={s.status === 'cancelled'}
                           title={s.status === 'cancelled' ? "Cannot reassign cancelled dispatch" : "Reassign Technician"}
-                          className="p-1.5 text-zinc-600 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors disabled:opacity-25 disabled:cursor-not-allowed cursor-pointer"
+                          className="p-1 text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded transition-colors duration-75 disabled:opacity-25 disabled:cursor-not-allowed cursor-pointer"
                         >
-                          <UserCheck className="w-4 h-4" />
+                          <UserCheck className="w-3.5 h-3.5" />
                         </button>
                         <button
                           type="button"
                           onClick={() => openCancelModal(s)}
                           disabled={s.status === 'cancelled'}
                           title={s.status === 'cancelled' ? "Already cancelled" : "Cancel Dispatch"}
-                          className="p-1.5 text-zinc-600 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors disabled:opacity-25 disabled:cursor-not-allowed cursor-pointer"
+                          className="p-1 text-zinc-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded transition-colors duration-75 disabled:opacity-25 disabled:cursor-not-allowed cursor-pointer"
                         >
-                          <Ban className="w-4 h-4" />
+                          <Ban className="w-3.5 h-3.5" />
                         </button>
                       </div>
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ))
               )}
-            </tbody>
-          </table>
-        </div>
+            </TableBody>
+          </Table>
+        </TableContainer>
 
         {/* Pagination */}
-        <div className="mt-auto">
+        <div className="mt-auto border-t border-zinc-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900">
           <Pagination
             currentPage={currentPage}
             totalPages={totalPages}
@@ -852,165 +860,158 @@ export default function DispatchBoardClient() {
           </KpiGrid>
 
           {/* Casual Helpers Catalog Table */}
-          <div className="bg-white rounded-xl shadow-sm border border-zinc-200/80 dark:border-zinc-700 overflow-hidden flex flex-col flex-1 pb-4">
-            {/* Toolbar */}
-            <div className="p-4 border-b border-zinc-200/80 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/60 flex flex-wrap gap-4 items-center justify-between">
-              <div className="flex flex-wrap gap-3 items-center">
-                <div className="relative w-full sm:w-72">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <Search className="h-4 w-4 text-zinc-400 dark:text-zinc-500" />
+          {(() => {
+            const filteredCasualHelpers = casualHelpers
+              .filter(c => casualStatusFilter === 'all' ? true : casualStatusFilter === 'active' ? c.status === 'active' : c.status !== 'active')
+              .filter(c => 
+                c.full_name.toLowerCase().includes(casualSearch.toLowerCase()) ||
+                (c.contact_number || '').includes(casualSearch) ||
+                (c.notes || '').toLowerCase().includes(casualSearch.toLowerCase())
+              );
+
+            return (
+              <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200/80 dark:border-zinc-800 overflow-hidden flex flex-col flex-1 shadow-none">
+                {/* Toolbar */}
+                <div className="px-3.5 py-2.5 border-b border-zinc-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900 flex flex-wrap gap-2.5 items-center justify-between">
+                  <div className="flex flex-wrap gap-2.5 items-center">
+                    <div className="relative w-full sm:w-72">
+                      <Search className="absolute inset-y-0 left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-zinc-400 pointer-events-none" />
+                      <input
+                        type="text"
+                        placeholder="Search worker name, phone, notes..."
+                        value={casualSearch}
+                        onChange={(e) => setCasualSearch(e.target.value)}
+                        className="block w-full pl-8 pr-3 py-1.5 border border-zinc-200/80 dark:border-zinc-700 rounded-md text-xs bg-zinc-50/50 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none focus:ring-1 focus:ring-zinc-400 transition-colors duration-75"
+                      />
+                    </div>
+                    <div className="flex items-center gap-0.5 bg-zinc-100 dark:bg-zinc-800 p-0.5 rounded-md border border-zinc-200/80 dark:border-zinc-700/50">
+                      <button
+                        type="button"
+                        onClick={() => setCasualStatusFilter('all')}
+                        className={`px-2 py-0.5 text-xs font-medium rounded transition-colors duration-75 cursor-pointer ${casualStatusFilter === 'all' ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100 font-semibold shadow-2xs' : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'}`}
+                      >
+                        All ({casualHelpers.length})
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setCasualStatusFilter('active')}
+                        className={`px-2 py-0.5 text-xs font-medium rounded transition-colors duration-75 cursor-pointer ${casualStatusFilter === 'active' ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100 font-semibold shadow-2xs' : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'}`}
+                      >
+                        Active ({casualHelpers.filter(c => c.status === 'active').length})
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setCasualStatusFilter('inactive')}
+                        className={`px-2 py-0.5 text-xs font-medium rounded transition-colors duration-75 cursor-pointer ${casualStatusFilter === 'inactive' ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100 font-semibold shadow-2xs' : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'}`}
+                      >
+                        Inactive ({casualHelpers.filter(c => c.status !== 'active').length})
+                      </button>
+                    </div>
                   </div>
-                  <input
-                    type="text"
-                    placeholder="Search casual helper name, phone, notes..."
-                    value={casualSearch}
-                    onChange={(e) => setCasualSearch(e.target.value)}
-                    className="block w-full pl-9 pr-3 py-2 border border-zinc-200/80 dark:border-zinc-700 rounded-md leading-5 bg-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500 sm:text-sm"
-                  />
-                </div>
-                <div className="flex items-center gap-1 bg-white border border-zinc-200/80 dark:border-zinc-700 p-1 rounded-md">
+
                   <button
                     type="button"
-                    onClick={() => setCasualStatusFilter('all')}
-                    className={`px-2.5 py-1 text-xs font-bold rounded cursor-pointer ${casualStatusFilter === 'all' ? 'bg-blue-50 text-blue-700' : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-100'}`}
+                    onClick={() => openRegisterCasualModal()}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 rounded-md hover:bg-zinc-800 dark:hover:bg-zinc-200 text-xs font-medium transition-colors duration-75 cursor-pointer shadow-none"
                   >
-                    All ({casualHelpers.length})
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setCasualStatusFilter('active')}
-                    className={`px-2.5 py-1 text-xs font-bold rounded cursor-pointer ${casualStatusFilter === 'active' ? 'bg-emerald-50 text-emerald-700' : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-100'}`}
-                  >
-                    Active ({casualHelpers.filter(c => c.status === 'active').length})
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setCasualStatusFilter('inactive')}
-                    className={`px-2.5 py-1 text-xs font-bold rounded cursor-pointer ${casualStatusFilter === 'inactive' ? 'bg-rose-50 text-rose-700' : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-100'}`}
-                  >
-                    Inactive ({casualHelpers.filter(c => c.status !== 'active').length})
+                    <UserPlus className="w-3.5 h-3.5" />
+                    Register Worker
                   </button>
                 </div>
-              </div>
 
-              <button
-                type="button"
-                onClick={() => openRegisterCasualModal()}
-                className="flex items-center gap-2 px-3.5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-xs font-bold shadow-sm transition-colors cursor-pointer"
-              >
-                <UserPlus className="w-4 h-4" />
-                + Register New Worker
-              </button>
-            </div>
-
-            {/* Table */}
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-zinc-200 text-left border-collapse">
-                <thead className="bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 uppercase font-bold text-[11px] tracking-wider">
-                  <tr>
-                    <th className="border border-zinc-200/80 dark:border-zinc-700 px-4 py-3">Worker Name & Operational Notes</th>
-                    <th className="border border-zinc-200/80 dark:border-zinc-700 px-4 py-3">Contact Phone</th>
-                    <th className="border border-zinc-200/80 dark:border-zinc-700 px-4 py-3 text-right">Daily Wage Rate</th>
-                    <th className="border border-zinc-200/80 dark:border-zinc-700 px-4 py-3 text-center">Missions Handled</th>
-                    <th className="border border-zinc-200/80 dark:border-zinc-700 px-4 py-3 text-center">Status</th>
-                    <th className="border border-zinc-200/80 dark:border-zinc-700 px-4 py-3 text-center">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-zinc-200">
-                  {casualHelpers
-                    .filter(c => casualStatusFilter === 'all' ? true : casualStatusFilter === 'active' ? c.status === 'active' : c.status !== 'active')
-                    .filter(c => 
-                      c.full_name.toLowerCase().includes(casualSearch.toLowerCase()) ||
-                      (c.contact_number || '').includes(casualSearch) ||
-                      (c.notes || '').toLowerCase().includes(casualSearch.toLowerCase())
-                    ).length === 0 ? (
-                      <tr>
-                        <td colSpan={6} className="text-center py-12 text-zinc-500 dark:text-zinc-400 font-medium">
-                          No casual helpers match the specified criteria.
-                        </td>
-                      </tr>
-                    ) : (
-                      casualHelpers
-                        .filter(c => casualStatusFilter === 'all' ? true : casualStatusFilter === 'active' ? c.status === 'active' : c.status !== 'active')
-                        .filter(c => 
-                          c.full_name.toLowerCase().includes(casualSearch.toLowerCase()) ||
-                          (c.contact_number || '').includes(casualSearch) ||
-                          (c.notes || '').toLowerCase().includes(casualSearch.toLowerCase())
-                        )
-                        .map((ch) => (
-                          <tr key={ch.id} className="hover:bg-blue-50/40 transition-colors">
-                            <td className="border border-zinc-200/80 dark:border-zinc-700 px-4 py-3.5">
-                              <div className="flex items-center gap-3">
-                                <div className="h-9 w-9 rounded-full bg-zinc-100 border border-zinc-200 flex items-center justify-center text-zinc-700 shrink-0 font-bold text-xs">
+                {/* Table */}
+                <TableContainer className="rounded-none border-x-0 border-t-0 border-b-0 flex-1 overflow-x-auto">
+                  <Table fixed>
+                    <TableHead sticky>
+                      <TableRow className="h-8">
+                        <TableHeaderCell width="32%">Worker Name & Operational Notes</TableHeaderCell>
+                        <TableHeaderCell width="20%">Contact Phone</TableHeaderCell>
+                        <TableHeaderCell width="18%" numeric>Daily Wage Rate</TableHeaderCell>
+                        <TableHeaderCell width="14%" align="center">Missions Handled</TableHeaderCell>
+                        <TableHeaderCell width="10%">Status</TableHeaderCell>
+                        <TableHeaderCell width="6%" align="right" noDivider>Actions</TableHeaderCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {filteredCasualHelpers.length === 0 ? (
+                        <TableEmptyState
+                          colSpan={6}
+                          icon={Users}
+                          title="No casual helpers found"
+                          description={casualSearch ? "No workers match your search query." : "No casual helpers registered yet."}
+                        />
+                      ) : (
+                        filteredCasualHelpers.map((ch) => (
+                          <TableRow key={ch.id}>
+                            <TableCell>
+                              <div className="flex items-center gap-2">
+                                <div className="h-6 w-6 rounded-full bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 flex items-center justify-center text-zinc-700 dark:text-zinc-300 shrink-0 font-medium text-[10px]">
                                   {ch.full_name.slice(0, 2).toUpperCase()}
                                 </div>
-                                <div className="flex flex-col">
-                                  <span className="text-sm font-bold text-zinc-900 dark:text-zinc-100">{ch.full_name}</span>
+                                <div className="flex flex-col min-w-0">
+                                  <span className="font-medium text-zinc-900 dark:text-zinc-100 truncate">{ch.full_name}</span>
                                   {ch.notes && (
-                                    <span className="text-[11px] text-zinc-500 dark:text-zinc-400 line-clamp-1">{ch.notes}</span>
+                                    <span className="text-[10px] text-zinc-400 truncate">{ch.notes}</span>
                                   )}
                                   {ch.emergency_contact && (
-                                    <span className="text-[10px] text-zinc-400 dark:text-zinc-500 font-medium">Emergency: {ch.emergency_contact}</span>
+                                    <span className="text-[10px] text-zinc-400 truncate">Emergency: {ch.emergency_contact}</span>
                                   )}
                                 </div>
                               </div>
-                            </td>
-                            <td className="border border-zinc-200/80 dark:border-zinc-700 px-4 py-3.5 whitespace-nowrap">
-                              <div className="flex items-center gap-1.5 text-xs font-mono text-zinc-700 dark:text-zinc-300">
-                                <Phone className="w-3.5 h-3.5 text-zinc-400 dark:text-zinc-500" />
+                            </TableCell>
+                            <TableCell className="whitespace-nowrap font-mono tabular-nums text-xs">
+                              <div className="flex items-center gap-1.5 text-zinc-600 dark:text-zinc-400">
+                                <Phone className="w-3 h-3 text-zinc-400 shrink-0" />
                                 <span>{ch.contact_number}</span>
                               </div>
-                            </td>
-                            <td className="border border-zinc-200/80 dark:border-zinc-700 px-4 py-3.5 whitespace-nowrap text-right">
-                              <span className="text-sm font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                                ₱{Number(ch.daily_rate).toFixed(2)}/day
-                              </span>
-                            </td>
-                            <td className="border border-zinc-200/80 dark:border-zinc-700 px-4 py-3.5 whitespace-nowrap text-center">
-                              <span className="text-xs font-bold text-zinc-700 dark:text-zinc-300 bg-zinc-100 dark:bg-zinc-800 px-2.5 py-1 rounded-full border border-zinc-200/80 dark:border-zinc-800">
-                                {ch.dispatch_count || 0} missions
-                              </span>
-                            </td>
-                            <td className="border border-zinc-200/80 dark:border-zinc-700 px-4 py-3.5 whitespace-nowrap text-center">
-                              <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border ${
-                                ch.status === 'active' 
-                                  ? 'bg-emerald-100 text-emerald-800 border-emerald-300' 
-                                  : 'bg-zinc-100 text-zinc-600 border-zinc-200'
-                              }`}>
-                                {ch.status}
-                              </span>
-                            </td>
-                            <td className="border border-zinc-200/80 dark:border-zinc-700 px-4 py-3.5 whitespace-nowrap text-center">
-                              <div className="flex items-center justify-center gap-2">
+                            </TableCell>
+                            <TableCell numeric className="whitespace-nowrap font-mono tabular-nums text-xs">
+                              <span className="text-zinc-900 dark:text-zinc-100 font-medium">₱{Number(ch.daily_rate).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                              <span className="text-[10px] text-zinc-400 ml-1">/day</span>
+                            </TableCell>
+                            <TableCell align="center" className="whitespace-nowrap font-mono tabular-nums text-xs">
+                              <span className="text-zinc-700 dark:text-zinc-300">{ch.dispatch_count || 0}</span>
+                              <span className="text-[10px] text-zinc-400 ml-1">missions</span>
+                            </TableCell>
+                            <TableCell className="whitespace-nowrap">
+                              <StatusDot 
+                                status={ch.status === 'active' ? 'active' : 'neutral'} 
+                                label={ch.status === 'active' ? 'Active' : 'Inactive'} 
+                              />
+                            </TableCell>
+                            <TableCell align="right" noDivider className="whitespace-nowrap">
+                              <div className="flex items-center justify-end gap-1">
                                 <button
                                   type="button"
                                   onClick={() => openRegisterCasualModal(ch)}
                                   title="Edit Worker Details"
-                                  className="p-1.5 text-zinc-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
+                                  className="p-1 text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded transition-colors duration-75 cursor-pointer"
                                 >
-                                  <Edit3 className="w-4 h-4" />
+                                  <Edit3 className="w-3.5 h-3.5" />
                                 </button>
                                 <button
                                   type="button"
                                   onClick={() => handleToggleCasualStatus(ch)}
                                   title={ch.status === 'active' ? 'Deactivate Worker' : 'Activate Worker'}
-                                  className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+                                  className={`p-1 rounded transition-colors duration-75 cursor-pointer ${
                                     ch.status === 'active'
-                                      ? 'text-emerald-600 hover:text-rose-600 hover:bg-rose-50'
-                                      : 'text-zinc-400 hover:text-emerald-600 hover:bg-emerald-50'
+                                      ? 'text-zinc-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30'
+                                      : 'text-zinc-400 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/30'
                                   }`}
                                 >
-                                  <RotateCcw className="w-4 h-4" />
+                                  <RotateCcw className="w-3.5 h-3.5" />
                                 </button>
                               </div>
-                            </td>
-                          </tr>
+                            </TableCell>
+                          </TableRow>
                         ))
-                    )}
-                </tbody>
-              </table>
-            </div>
-          </div>
+                      )}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              </div>
+            );
+          })()}
         </div>
       )}
 
