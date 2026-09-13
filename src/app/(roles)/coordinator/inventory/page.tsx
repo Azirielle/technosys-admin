@@ -2,6 +2,19 @@
 
 import PageHeader from '@/components/ui/PageHeader'
 import { KpiCard, KpiGrid } from '@/components/ui/KpiCard'
+import Pagination from '@/components/ui/Pagination'
+import {
+  TableContainer,
+  Table,
+  TableHead,
+  TableHeaderCell,
+  TableBody,
+  TableRow,
+  TableCell,
+  TableEmptyState,
+  StatusDot,
+  MutedBadge
+} from '@/components/ui/DataTable'
 
 import { useEffect, useState, useTransition } from 'react'
 import { createClient } from '@/lib/supabase/client'
@@ -197,6 +210,19 @@ export default function InventoryLedgerPage() {
     return matchesSearch && matchesStatus
   })
 
+  // Paginated Slices
+  const totalCatalogPages = Math.ceil(filteredCatalog.length / itemsPerPage)
+  const paginatedCatalog = filteredCatalog.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  )
+
+  const totalAssignmentPages = Math.ceil(filteredAssignments.length / itemsPerPage)
+  const paginatedAssignments = filteredAssignments.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  )
+
   const getDaysBorrowed = (borrowedAt: string, returnedAt: string | null) => {
     const end = returnedAt ? new Date(returnedAt) : new Date()
     const start = new Date(borrowedAt)
@@ -370,16 +396,16 @@ export default function InventoryLedgerPage() {
       </KpiGrid>
 
       {/* Main Content Container */}
-      <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-xs border border-zinc-200/80 dark:border-zinc-800 overflow-hidden flex flex-col flex-1">
+      <div className="bg-white dark:bg-zinc-900 rounded-lg shadow-none border border-zinc-200/80 dark:border-zinc-800 overflow-hidden flex flex-col flex-1">
         {/* Top View Mode Tabs */}
-        <div className="px-5 pt-4 pb-0 border-b border-zinc-200/80 dark:border-zinc-800 bg-zinc-50/60 dark:bg-zinc-900/60 flex items-center justify-between">
+        <div className="px-4 pt-2.5 pb-0 border-b border-zinc-200/80 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/60 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <button
               onClick={() => {
                 setActiveTab('catalog')
                 setCurrentPage(1)
               }}
-              className={`pb-3 px-3 text-xs font-bold border-b-2 transition-all flex items-center gap-2 ${
+              className={`pb-2.5 px-3 text-xs font-bold border-b-2 transition-all flex items-center gap-2 ${
                 activeTab === 'catalog'
                   ? 'border-emerald-600 text-emerald-600 dark:border-emerald-500 dark:text-emerald-400'
                   : 'border-transparent text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200'
@@ -394,7 +420,7 @@ export default function InventoryLedgerPage() {
                 setActiveTab('ledger')
                 setCurrentPage(1)
               }}
-              className={`pb-3 px-3 text-xs font-bold border-b-2 transition-all flex items-center gap-2 ${
+              className={`pb-2.5 px-3 text-xs font-bold border-b-2 transition-all flex items-center gap-2 ${
                 activeTab === 'ledger'
                   ? 'border-emerald-600 text-emerald-600 dark:border-emerald-500 dark:text-emerald-400'
                   : 'border-transparent text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200'
@@ -407,9 +433,9 @@ export default function InventoryLedgerPage() {
         </div>
 
         {/* Toolbar & Search Controls */}
-        <div className="p-4 border-b border-zinc-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900 flex flex-wrap gap-3 items-center justify-between">
+        <div className="px-3.5 py-2.5 border-b border-zinc-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900 flex flex-wrap gap-2.5 items-center justify-between">
           <div className="relative w-full sm:w-80">
-            <Search className="absolute inset-y-0 left-3 top-2.5 h-4 w-4 text-zinc-400 pointer-events-none" />
+            <Search className="absolute inset-y-0 left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-zinc-400 pointer-events-none" />
             <input
               type="text"
               placeholder={activeTab === 'catalog' ? 'Search tools, serials, categories...' : 'Search technician, tool, ID...'}
@@ -418,12 +444,12 @@ export default function InventoryLedgerPage() {
                 setSearchQuery(e.target.value)
                 setCurrentPage(1)
               }}
-              className="block w-full pl-9 pr-3 py-1.5 border border-zinc-200/80 dark:border-zinc-700 rounded-xl text-xs bg-zinc-50/50 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 focus:bg-white dark:focus:bg-zinc-800 transition-all"
+              className="block w-full pl-8 pr-3 py-1.5 border border-zinc-200/80 dark:border-zinc-700 rounded-md text-xs bg-zinc-50/50 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none focus:ring-1 focus:ring-emerald-500 transition-colors"
             />
           </div>
 
           {activeTab === 'catalog' ? (
-            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
+            <div className="flex items-center gap-1 overflow-x-auto pb-1 sm:pb-0">
               {CATEGORIES.map((cat) => (
                 <button
                   key={cat}
@@ -431,10 +457,10 @@ export default function InventoryLedgerPage() {
                     setSelectedCategory(cat)
                     setCurrentPage(1)
                   }}
-                  className={`px-2.5 py-1 rounded-lg text-[11px] font-medium transition-colors whitespace-nowrap ${
+                  className={`px-2 py-0.5 rounded text-[11px] font-medium transition-colors whitespace-nowrap ${
                     selectedCategory === cat
                       ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 font-semibold'
-                      : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700'
+                      : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700'
                   }`}
                 >
                   {cat}
@@ -442,7 +468,7 @@ export default function InventoryLedgerPage() {
               ))}
             </div>
           ) : (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5">
               <Filter className="h-3.5 w-3.5 text-zinc-400" />
               <select
                 value={statusFilter}
@@ -450,7 +476,7 @@ export default function InventoryLedgerPage() {
                   setStatusFilter(e.target.value)
                   setCurrentPage(1)
                 }}
-                className="pl-2.5 pr-8 py-1 text-xs border border-zinc-200/80 dark:border-zinc-700 rounded-xl bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                className="pl-2 pr-7 py-1 text-xs border border-zinc-200/80 dark:border-zinc-700 rounded-md bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 focus:outline-none focus:ring-1 focus:ring-emerald-500"
               >
                 <option value="checked_out">Currently Issued / Deployed</option>
                 <option value="returned">Returned (Historical)</option>
@@ -464,50 +490,59 @@ export default function InventoryLedgerPage() {
 
         {/* TAB 1: EQUIPMENT VAULT (CATALOG) */}
         {activeTab === 'catalog' && (
-          <div className="overflow-x-auto flex-1 p-3">
-            <div className="border border-zinc-200/80 dark:border-zinc-800 rounded-xl overflow-hidden shadow-2xs">
-              <table className="min-w-full divide-y divide-zinc-200 text-left">
-                <thead className="bg-zinc-50 dark:bg-zinc-800/80 text-[11px] font-semibold text-zinc-600 dark:text-zinc-400 uppercase tracking-wider">
-                  <tr>
-                    <th className="px-3.5 py-2.5 border-r border-zinc-200">Equipment / Spec</th>
-                    <th className="px-3 py-2.5 border-r border-zinc-200">Category</th>
-                    <th className="px-3 py-2.5 border-r border-zinc-200">Stock Level</th>
-                    <th className="px-3 py-2.5 border-r border-zinc-200">Status</th>
-                    <th className="px-3.5 py-2.5 text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-zinc-200/80 dark:divide-zinc-800 bg-white dark:bg-zinc-900 text-xs">
+          <div className="flex-1 flex flex-col min-h-0">
+            <TableContainer className="rounded-none border-x-0 border-t-0 border-b-0 flex-1 overflow-y-scroll">
+              <Table fixed>
+                <TableHead sticky>
+                  <TableRow className="h-8">
+                    <TableHeaderCell width="32%">Equipment / Spec</TableHeaderCell>
+                    <TableHeaderCell width="18%">Category</TableHeaderCell>
+                    <TableHeaderCell width="18%" numeric>Stock Level</TableHeaderCell>
+                    <TableHeaderCell width="16%">Status</TableHeaderCell>
+                    <TableHeaderCell width="16%" align="right" noDivider>Actions</TableHeaderCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
                   {loading ? (
                     <tr>
-                      <td colSpan={5} className="px-4 py-8 text-center text-zinc-400">
-                        Loading equipment catalog...
+                      <td colSpan={5} className="h-24 text-center text-zinc-400 font-medium text-xs">
+                        <span className="inline-flex items-center gap-2">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                          Loading equipment catalog...
+                        </span>
                       </td>
                     </tr>
                   ) : filteredCatalog.length === 0 ? (
-                    <tr>
-                      <td colSpan={5} className="px-4 py-8 text-center text-zinc-500">
-                        No equipment matches your search filter.
-                      </td>
-                    </tr>
+                    <TableEmptyState
+                      colSpan={5}
+                      icon={Package}
+                      title="No equipment found"
+                      description={searchQuery || selectedCategory !== 'All Categories' ? "Try adjusting your search query or category filter." : "No tools have been registered in the vault yet."}
+                    />
                   ) : (
-                    filteredCatalog.map((tool) => {
+                    paginatedCatalog.map((tool) => {
                       const isAvailable = tool.available_stock > 0
                       const isLowStock = isAvailable && tool.available_stock <= 2
+                      const statusKind = tool.status === 'active' ? 'active' : tool.status === 'maintenance' ? 'warning' : 'neutral'
+                      const statusLabel = tool.status.charAt(0).toUpperCase() + tool.status.slice(1)
 
                       return (
-                        <tr key={tool.id} className="hover:bg-zinc-50/75 dark:hover:bg-zinc-800/50 transition-colors">
-                          <td className="px-3.5 py-2 border-r border-zinc-200">
-                            <div className="flex items-center gap-2.5">
-                              <div className="w-7 h-7 rounded-lg bg-zinc-100 border border-zinc-200/80 overflow-hidden flex items-center justify-center shrink-0">
+                        <TableRow key={tool.id}>
+                          {/* 1. Equipment / Spec */}
+                          <TableCell>
+                            <div className="flex items-center gap-2 min-w-0">
+                              <div className="w-6 h-6 rounded bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 overflow-hidden flex items-center justify-center shrink-0">
                                 {tool.image_url ? (
                                   <img src={tool.image_url} alt={tool.name} className="w-full h-full object-cover" />
                                 ) : (
-                                  <Wrench className="w-3.5 h-3.5 text-zinc-400" />
+                                  <Wrench className="w-3 h-3 text-zinc-400" />
                                 )}
                               </div>
-                              <div className="min-w-0">
+                              <div className="min-w-0 flex-1">
                                 <div className="flex items-center gap-1.5">
-                                  <p className="font-semibold text-zinc-900 dark:text-zinc-100 leading-tight truncate">{tool.name}</p>
+                                  <span className="font-semibold text-zinc-900 dark:text-zinc-100 truncate">
+                                    {tool.name}
+                                  </span>
                                   {tool.serial_number && (
                                     <span className="font-mono text-[9px] text-zinc-500 dark:text-zinc-400 bg-zinc-100 dark:bg-zinc-800 px-1 py-0.2 rounded border border-zinc-200 dark:border-zinc-700 shrink-0">
                                       {tool.serial_number}
@@ -515,22 +550,26 @@ export default function InventoryLedgerPage() {
                                   )}
                                 </div>
                                 {tool.description && (
-                                  <p className="text-[10px] text-zinc-400 truncate max-w-xs leading-tight mt-0.5">{tool.description}</p>
+                                  <p className="text-[10px] text-zinc-400 dark:text-zinc-500 truncate leading-tight">
+                                    {tool.description}
+                                  </p>
                                 )}
                               </div>
                             </div>
-                          </td>
+                          </TableCell>
 
-                          <td className="px-3 py-2 whitespace-nowrap border-r border-zinc-200">
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700">
+                          {/* 2. Category */}
+                          <TableCell>
+                            <MutedBadge>
                               {tool.category}
-                            </span>
-                          </td>
+                            </MutedBadge>
+                          </TableCell>
 
-                          <td className="px-3 py-2 whitespace-nowrap border-r border-zinc-200">
-                            <div className="flex items-center gap-2">
+                          {/* 3. Stock Level (Numeric: right-aligned) */}
+                          <TableCell numeric>
+                            <span className="inline-flex items-center justify-end gap-1.5">
                               <span
-                                className={`w-1.5 h-1.5 rounded-full ${
+                                className={`w-1.5 h-1.5 rounded-full shrink-0 ${
                                   !isAvailable
                                     ? 'bg-rose-500'
                                     : isLowStock
@@ -538,196 +577,236 @@ export default function InventoryLedgerPage() {
                                     : 'bg-emerald-500'
                                 }`}
                               />
-                              <span className="font-bold text-zinc-900 dark:text-zinc-100">{tool.available_stock}</span>
-                              <span className="text-zinc-400 text-[11px]">/ {tool.total_stock} Available</span>
-                            </div>
-                          </td>
-
-                          <td className="px-3 py-2 whitespace-nowrap border-r border-zinc-200">
-                            <span
-                              className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold border ${
-                                tool.status === 'active'
-                                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                                  : tool.status === 'maintenance'
-                                  ? 'bg-amber-50 text-amber-700 border-amber-200'
-                                  : 'bg-zinc-100 text-zinc-600 border-zinc-200'
-                              }`}
-                            >
-                              {tool.status.toUpperCase()}
+                              <span className="font-mono font-semibold text-zinc-900 dark:text-zinc-100">
+                                {tool.available_stock}
+                              </span>
+                              <span className="font-mono text-[11px] text-zinc-400 dark:text-zinc-500">
+                                / {tool.total_stock}
+                              </span>
                             </span>
-                          </td>
+                          </TableCell>
 
-                          <td className="px-3.5 py-2 text-right whitespace-nowrap">
-                            <div className="flex items-center justify-end gap-1.5">
+                          {/* 4. Status */}
+                          <TableCell>
+                            <StatusDot
+                              status={statusKind}
+                              label={statusLabel}
+                            />
+                          </TableCell>
+
+                          {/* 5. Actions */}
+                          <TableCell align="right" noDivider>
+                            <div className="flex items-center justify-end gap-1.5" onClick={(e) => e.stopPropagation()}>
                               <button
                                 disabled={tool.available_stock <= 0}
                                 onClick={() => {
                                   setCheckoutTool(tool)
                                   setIsCheckoutModalOpen(true)
                                 }}
-                                className="px-2.5 py-1 bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-600 dark:hover:bg-emerald-500 hover:text-white rounded-lg border border-emerald-200 dark:border-emerald-800 font-semibold text-[11px] transition-colors disabled:opacity-40 disabled:pointer-events-none"
+                                className="px-2 py-0.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-[11px] font-medium transition-colors duration-75 disabled:opacity-30 disabled:pointer-events-none cursor-pointer"
                               >
                                 Issue Tool
                               </button>
                               <button
                                 onClick={() => handleOpenEditTool(tool)}
-                                className="p-1 bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-lg transition-colors"
+                                className="p-1 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded transition-colors duration-75 cursor-pointer"
                                 title="Edit Tool"
                               >
                                 <Edit2 className="w-3.5 h-3.5" />
                               </button>
                               <button
                                 onClick={() => handleDeleteTool(tool.id, tool.name)}
-                                className="p-1 bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white rounded-lg transition-colors"
+                                className="p-1 text-zinc-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded transition-colors duration-75 cursor-pointer"
                                 title="Delete Tool"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
                               </button>
                             </div>
-                          </td>
-                        </tr>
+                          </TableCell>
+                        </TableRow>
                       )
                     })
                   )}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
+            </TableContainer>
+
+            {/* Bottom Pagination */}
+            <div className="border-t border-zinc-200/80 dark:border-zinc-800 shrink-0">
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalCatalogPages}
+                totalItems={filteredCatalog.length}
+                itemsPerPage={itemsPerPage}
+                onPageChange={setCurrentPage}
+                itemNamePlural="tools"
+              />
             </div>
           </div>
         )}
 
         {/* TAB 2: ISSUED TOOLS & DEPLOYMENTS */}
         {activeTab === 'ledger' && (
-          <div className="overflow-x-auto flex-1 p-3">
-            <div className="border border-zinc-200/80 dark:border-zinc-800 rounded-xl overflow-hidden shadow-2xs">
-              <table className="min-w-full divide-y divide-zinc-200 text-left">
-                <thead className="bg-zinc-50 dark:bg-zinc-800/80 text-[11px] font-semibold text-zinc-600 dark:text-zinc-400 uppercase tracking-wider">
-                  <tr>
-                    <th className="px-3.5 py-2.5 border-r border-zinc-200">Asset / Tool</th>
-                    <th className="px-3 py-2.5 border-r border-zinc-200">Assigned Crew</th>
-                    <th className="px-3 py-2.5 border-r border-zinc-200">Duration / Aging</th>
-                    <th className="px-3 py-2.5 border-r border-zinc-200">Status / Condition</th>
-                    <th className="px-3.5 py-2.5 text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-zinc-200/80 dark:divide-zinc-800 bg-white dark:bg-zinc-900 text-xs">
+          <div className="flex-1 flex flex-col min-h-0">
+            <TableContainer className="rounded-none border-x-0 border-t-0 border-b-0 flex-1 overflow-y-scroll">
+              <Table fixed>
+                <TableHead sticky>
+                  <TableRow className="h-8">
+                    <TableHeaderCell width="30%">Asset / Tool</TableHeaderCell>
+                    <TableHeaderCell width="20%">Assigned Crew</TableHeaderCell>
+                    <TableHeaderCell width="20%">Duration / Aging</TableHeaderCell>
+                    <TableHeaderCell width="16%">Status / Condition</TableHeaderCell>
+                    <TableHeaderCell width="14%" align="right" noDivider>Actions</TableHeaderCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
                   {loading ? (
                     <tr>
-                      <td colSpan={5} className="px-4 py-8 text-center text-zinc-400">
-                        Loading issued tools ledger...
+                      <td colSpan={5} className="h-24 text-center text-zinc-400 font-medium text-xs">
+                        <span className="inline-flex items-center gap-2">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                          Loading issued tools ledger...
+                        </span>
                       </td>
                     </tr>
                   ) : filteredAssignments.length === 0 ? (
-                    <tr>
-                      <td colSpan={5} className="px-4 py-8 text-center text-zinc-500">
-                        No issued tool records match your filters.
-                      </td>
-                    </tr>
+                    <TableEmptyState
+                      colSpan={5}
+                      icon={Layers}
+                      title="No deployment records found"
+                      description={searchQuery || statusFilter !== 'checked_out' ? "Try adjusting your search query or status filter." : "No tools are currently issued to field staff."}
+                    />
                   ) : (
-                    filteredAssignments.map((a) => {
+                    paginatedAssignments.map((a) => {
                       const days = getDaysBorrowed(a.handed_over_at, a.returned_at)
                       const isOverdue = a.status === 'checked_out' && days > 3
+                      const isSelected = selectedAssignment?.id === a.id
+                      const statusDotKind = a.status === 'checked_out' ? 'warning' : a.status === 'returned' ? 'active' : a.status === 'lost' ? 'danger' : 'purple'
+                      const statusDotLabel = a.status === 'checked_out' ? 'In Field' : a.status.charAt(0).toUpperCase() + a.status.slice(1)
 
                       return (
-                        <tr
+                        <TableRow
                           key={a.id}
                           onClick={() => setSelectedAssignment(a)}
-                          className="hover:bg-zinc-50/75 dark:hover:bg-zinc-800/50 transition-colors cursor-pointer"
+                          selected={isSelected}
                         >
-                          <td className="px-3.5 py-2 border-r border-zinc-200">
-                            <div className="flex items-center gap-2.5">
-                              <div className="w-7 h-7 rounded-lg bg-zinc-100 border border-zinc-200 overflow-hidden flex items-center justify-center shrink-0">
+                          {/* 1. Asset / Tool */}
+                          <TableCell>
+                            <div className="flex items-center gap-2 min-w-0">
+                              <div className="w-6 h-6 rounded bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 overflow-hidden flex items-center justify-center shrink-0">
                                 {a.tool_catalog?.image_url ? (
                                   <img src={a.tool_catalog.image_url} alt="" className="w-full h-full object-cover" />
                                 ) : (
-                                  <Wrench className="w-3.5 h-3.5 text-zinc-400" />
+                                  <Wrench className="w-3 h-3 text-zinc-400" />
                                 )}
                               </div>
-                              <div className="min-w-0">
-                                <p className="font-bold text-zinc-900 dark:text-zinc-100 leading-tight truncate">
+                              <div className="min-w-0 flex-1">
+                                <span className="font-semibold text-zinc-900 dark:text-zinc-100 truncate block">
                                   {a.tool_catalog?.name || 'Unknown Tool'}
-                                </p>
+                                </span>
                                 <div className="flex items-center gap-1.5 mt-0.5">
                                   <span className="font-mono text-[9px] text-zinc-400">
                                     #{a.id.slice(0, 8).toUpperCase()}
                                   </span>
                                   {a.tool_catalog?.serial_number && (
-                                    <span className="text-[9px] font-mono bg-zinc-100 text-zinc-600 px-1 py-0.2 rounded border border-zinc-200">
+                                    <span className="font-mono text-[9px] text-zinc-500 bg-zinc-100 dark:bg-zinc-800 px-1 py-0.2 rounded border border-zinc-200 dark:border-zinc-700">
                                       {a.tool_catalog.serial_number}
                                     </span>
                                   )}
                                 </div>
                               </div>
                             </div>
-                          </td>
+                          </TableCell>
 
-                          <td className="px-3 py-2 whitespace-nowrap border-r border-zinc-200">
-                            <div className="flex items-center gap-2">
-                              <div className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold text-[9px]">
+                          {/* 2. Assigned Crew */}
+                          <TableCell>
+                            <div className="flex items-center gap-1.5 min-w-0">
+                              <div className="w-4 h-4 rounded-full bg-zinc-200 dark:bg-zinc-700 text-zinc-700 dark:text-zinc-200 flex items-center justify-center font-bold text-[8px] shrink-0">
                                 {a.profiles?.full_name?.charAt(0) || 'T'}
                               </div>
-                              <div>
-                                <p className="font-semibold text-zinc-900 leading-tight text-xs">{a.profiles?.full_name || 'Technician'}</p>
-                                <p className="text-[9px] text-zinc-400 uppercase leading-tight">{a.profiles?.role || 'Field Crew'}</p>
+                              <div className="min-w-0">
+                                <span className="font-medium text-zinc-900 dark:text-zinc-100 truncate block">
+                                  {a.profiles?.full_name || 'Technician'}
+                                </span>
+                                <span className="text-[10px] text-zinc-400 uppercase">
+                                  {a.profiles?.role || 'Field Crew'}
+                                </span>
                               </div>
                             </div>
-                          </td>
+                          </TableCell>
 
-                          <td className="px-3 py-2 whitespace-nowrap border-r border-zinc-200">
-                            <div className="flex flex-col gap-0.5">
-                              <span className="text-zinc-700 font-medium text-xs">
-                                {new Date(a.handed_over_at).toLocaleDateString()}
+                          {/* 3. Duration / Aging */}
+                          <TableCell>
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className="font-mono text-[11px] text-zinc-700 dark:text-zinc-300">
+                                {new Date(a.handed_over_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
                               </span>
-                              <span
-                                className={`inline-flex items-center px-1.5 py-0.2 rounded text-[9px] font-bold border w-fit ${
-                                  isOverdue
-                                    ? 'bg-rose-50 text-rose-700 border-rose-200 animate-pulse'
-                                    : 'bg-zinc-100 text-zinc-600 border-zinc-200'
-                                }`}
-                              >
-                                {days} DAYS {a.status === 'checked_out' ? 'OUT' : 'TOTAL'}
-                              </span>
-                            </div>
-                          </td>
-
-                          <td className="px-3 py-2 whitespace-nowrap border-r border-zinc-200">
-                            <div className="flex flex-col gap-0.5">
-                              <span
-                                className={`inline-flex items-center px-2 py-0.5 rounded-full border text-[10px] font-bold w-fit ${getStatusBadge(
-                                  a.status
-                                )}`}
-                              >
-                                {a.status === 'checked_out' ? 'IN FIELD' : a.status.toUpperCase()} ({a.quantity || 1}x)
-                              </span>
-                              {a.condition_on_return && (
-                                <span className="text-[9px] text-zinc-500 font-medium">
-                                  Audit: {a.condition_on_return.toUpperCase()}
+                              {isOverdue ? (
+                                <span className="font-mono text-[9px] font-bold text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/40 px-1 py-0.2 rounded border border-rose-200 dark:border-rose-800">
+                                  {days}d Overdue
+                                </span>
+                              ) : (
+                                <span className="font-mono text-[10px] text-zinc-400 dark:text-zinc-500">
+                                  ({days}d)
                                 </span>
                               )}
                             </div>
-                          </td>
+                          </TableCell>
 
-                          <td className="px-3.5 py-2 text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                          {/* 4. Status / Condition */}
+                          <TableCell>
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <StatusDot
+                                status={statusDotKind}
+                                label={`${statusDotLabel} (${a.quantity || 1}x)`}
+                              />
+                              {a.condition_on_return && (
+                                <MutedBadge className="text-[9px] py-0">
+                                  {a.condition_on_return}
+                                </MutedBadge>
+                              )}
+                            </div>
+                          </TableCell>
+
+                          {/* 5. Actions */}
+                          <TableCell align="right" noDivider>
                             {a.status === 'checked_out' ? (
-                              <button
-                                onClick={() => {
-                                  setReturningAssignment(a)
-                                  setIsReturnModalOpen(true)
-                                }}
-                                className="inline-flex items-center gap-1 px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[11px] font-semibold shadow-2xs transition-colors"
-                              >
-                                <ArrowDownLeft className="w-3 h-3" />
-                                <span>Process Return</span>
-                              </button>
+                              <div className="flex items-center justify-end" onClick={(e) => e.stopPropagation()}>
+                                <button
+                                  onClick={() => {
+                                    setReturningAssignment(a)
+                                    setIsReturnModalOpen(true)
+                                  }}
+                                  className="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-[11px] font-medium transition-colors duration-75 cursor-pointer"
+                                >
+                                  <ArrowDownLeft className="w-3 h-3" />
+                                  <span>Return</span>
+                                </button>
+                              </div>
                             ) : (
-                              <span className="text-zinc-400 text-xs font-medium">Closed</span>
+                              <span className="text-zinc-400 dark:text-zinc-500 font-mono text-[11px]">
+                                Closed
+                              </span>
                             )}
-                          </td>
-                        </tr>
+                          </TableCell>
+                        </TableRow>
                       )
                     })
                   )}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
+            </TableContainer>
+
+            {/* Bottom Pagination */}
+            <div className="border-t border-zinc-200/80 dark:border-zinc-800 shrink-0">
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalAssignmentPages}
+                totalItems={filteredAssignments.length}
+                itemsPerPage={itemsPerPage}
+                onPageChange={setCurrentPage}
+                itemNamePlural="deployments"
+              />
             </div>
           </div>
         )}
