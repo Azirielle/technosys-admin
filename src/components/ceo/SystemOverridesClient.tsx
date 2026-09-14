@@ -26,6 +26,7 @@ import {
   Loader2,
   Clock,
   X,
+  Plus,
 } from 'lucide-react'
 import {
   SYSTEM_MODULES,
@@ -402,14 +403,26 @@ export default function SystemOverridesClient() {
             </TableHead>
             <TableBody>
               {loading ? (
-                <tr>
-                  <td colSpan={4} className="h-48 text-center text-zinc-400 text-xs font-medium">
-                    <span className="inline-flex items-center gap-2">
-                      <Loader2 className="w-4 h-4 animate-spin text-zinc-400" />
-                      Connecting to permissions ledger...
-                    </span>
-                  </td>
-                </tr>
+                Array.from({ length: 6 }).map((_, idx) => (
+                  <TableRow key={`matrix-skel-${idx}`} className="h-12 border-b border-zinc-100 dark:border-zinc-800/60">
+                    <TableCell>
+                      <div className="flex flex-col gap-1.5 py-1">
+                        <div className="flex items-center gap-2">
+                          <div className="h-3.5 w-32 bg-zinc-200/70 dark:bg-zinc-800 rounded animate-pulse" />
+                          <div className="h-4 w-20 bg-zinc-100 dark:bg-zinc-800/60 rounded-full animate-pulse" />
+                        </div>
+                        <div className="h-2.5 w-48 bg-zinc-100 dark:bg-zinc-800/50 rounded animate-pulse" />
+                      </div>
+                    </TableCell>
+                    {ROLES.map(r => (
+                      <TableCell key={r.key} align="center">
+                        <div className="flex justify-center">
+                          <div className="h-6 w-28 bg-zinc-100 dark:bg-zinc-800/60 rounded-md animate-pulse" />
+                        </div>
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))
               ) : (
                 SYSTEM_MODULES.map((mod) => (
                   <TableRow key={mod.id}>
@@ -433,31 +446,34 @@ export default function SystemOverridesClient() {
                         <TableCell key={role.key} align="center">
                           {isDefaultRole ? (
                             <div className="flex items-center justify-center">
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium text-zinc-600 dark:text-zinc-400 bg-zinc-100 dark:bg-zinc-800 border border-zinc-200/80 dark:border-zinc-700">
-                                <Lock className="w-2.5 h-2.5 text-zinc-400" />
-                                Standard
+                              <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-medium text-zinc-400 dark:text-zinc-500 bg-transparent">
+                                <ShieldCheck className="w-3 h-3 text-zinc-400 dark:text-zinc-500" />
+                                <span>Default Scope</span>
                               </span>
                             </div>
                           ) : isActive ? (
-                            <div className="flex flex-col items-center justify-center gap-0.5">
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/50">
+                            <div className="flex flex-col items-center justify-center gap-1">
+                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-[10px] font-semibold text-amber-800 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 shadow-2xs">
                                 <Unlock className="w-2.5 h-2.5 text-amber-600 dark:text-amber-400" />
-                                {itemMeta?.duration === 'indefinite' ? 'Indefinite' : (itemMeta?.duration?.replace('_', ' ') || 'Active')}
+                                {itemMeta?.duration === 'indefinite' ? 'Indefinite Override' : (itemMeta?.duration?.replace('_', ' ') || 'Active Override')}
                               </span>
-                              <span className="text-[10px] font-mono tabular-nums text-zinc-400">
-                                {formatRemainingTime(itemMeta?.expires_at || null)}
-                              </span>
-                              <button
-                                type="button"
-                                onClick={() => revokeOverride(role.key, mod.id, mod.name)}
-                                disabled={isSyncing}
-                                className="text-[10px] font-medium text-zinc-400 hover:text-rose-600 dark:hover:text-rose-400 transition-colors duration-75 cursor-pointer disabled:opacity-50 mt-0.5"
-                              >
-                                Revoke
-                              </button>
+                              <div className="flex items-center gap-1.5 text-[10px]">
+                                <span className="font-mono tabular-nums text-zinc-400">
+                                  {formatRemainingTime(itemMeta?.expires_at || null)}
+                                </span>
+                                <span className="text-zinc-300 dark:text-zinc-700">•</span>
+                                <button
+                                  type="button"
+                                  onClick={() => revokeOverride(role.key, mod.id, mod.name)}
+                                  disabled={isSyncing}
+                                  className="font-medium text-rose-600 dark:text-rose-400 hover:underline cursor-pointer disabled:opacity-50"
+                                >
+                                  Revoke
+                                </button>
+                              </div>
                             </div>
                           ) : (
-                            <div className="flex flex-col items-center justify-center">
+                            <div className="flex items-center justify-center">
                               <button
                                 type="button"
                                 onClick={() => setDurationModal({
@@ -469,10 +485,10 @@ export default function SystemOverridesClient() {
                                   selectedDuration: '1_day'
                                 })}
                                 disabled={isSyncing}
-                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 bg-transparent hover:bg-zinc-100 dark:hover:bg-zinc-800 border border-transparent hover:border-zinc-200 dark:hover:border-zinc-700 transition-colors duration-75 cursor-pointer disabled:opacity-50"
+                                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-medium text-zinc-700 dark:text-zinc-200 bg-white dark:bg-zinc-800 hover:bg-blue-50 dark:hover:bg-blue-950/40 hover:text-blue-700 dark:hover:text-blue-300 border border-zinc-200/90 dark:border-zinc-700 hover:border-blue-300 dark:hover:border-blue-800 shadow-2xs transition-all duration-75 cursor-pointer disabled:opacity-50 group"
                               >
-                                <Lock className="w-2.5 h-2.5 text-zinc-300 dark:text-zinc-600" />
-                                <span>Restricted</span>
+                                <Plus className="w-3 h-3 text-zinc-400 group-hover:text-blue-600 transition-colors" />
+                                <span>Grant Override</span>
                               </button>
                             </div>
                           )}

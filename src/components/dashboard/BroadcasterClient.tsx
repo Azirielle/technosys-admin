@@ -415,8 +415,29 @@ export default function BroadcasterClient({ currentRole, adminName, adminRoleLab
       {/* Announcement Cards List */}
       <div className="flex-1 overflow-y-auto space-y-4 pr-1 [scrollbar-gutter:stable]">
         {loading ? (
-          <div className="p-12 text-center text-zinc-400 dark:text-zinc-500 font-medium text-xs">
-            Loading company announcements...
+          <div className="space-y-4">
+            {Array.from({ length: 3 }).map((_, idx) => (
+              <div
+                key={`bcast-skel-${idx}`}
+                className="bg-white dark:bg-zinc-900 rounded-2xl p-5 border border-zinc-200/80 dark:border-zinc-800 shadow-2xs flex flex-col justify-between"
+              >
+                <div className="flex items-start justify-between gap-4 mb-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-zinc-200/70 dark:bg-zinc-800 animate-pulse shrink-0" />
+                    <div className="space-y-1.5">
+                      <div className="h-4 w-36 bg-zinc-200/70 dark:bg-zinc-800 rounded animate-pulse" />
+                      <div className="h-3 w-28 bg-zinc-100 dark:bg-zinc-800/50 rounded animate-pulse" />
+                    </div>
+                  </div>
+                  <div className="h-6 w-24 bg-zinc-100 dark:bg-zinc-800/60 rounded-md animate-pulse shrink-0" />
+                </div>
+                <div className="space-y-2 mt-2">
+                  <div className="h-4 w-3/4 bg-zinc-200/60 dark:bg-zinc-800 rounded animate-pulse" />
+                  <div className="h-3 w-full bg-zinc-100 dark:bg-zinc-800/50 rounded animate-pulse" />
+                  <div className="h-3 w-2/3 bg-zinc-100 dark:bg-zinc-800/50 rounded animate-pulse" />
+                </div>
+              </div>
+            ))}
           </div>
         ) : filtered.length === 0 ? (
           <div className="p-12 text-center bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm">
