@@ -34,6 +34,54 @@ type Comment = {
   is_internal: boolean
 }
 
+function KineticTypingBubble({
+  role = 'technician',
+  userName = 'Technician',
+}: {
+  role?: 'technician' | 'admin' | 'ai'
+  userName?: string
+}) {
+  const isAi = role === 'ai'
+  return (
+    <div
+      className="flex items-start gap-2.5 my-2.5 animate-in fade-in-50 duration-150"
+      role="status"
+      aria-live="polite"
+      aria-label={isAi ? 'AI Assistant is thinking' : `${userName} is typing`}
+    >
+      <div
+        className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 border ${
+          isAi
+            ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800/50 text-emerald-600 dark:text-emerald-400'
+            : 'bg-blue-50 dark:bg-blue-950/40 border-blue-200 dark:border-blue-800/50 text-blue-600 dark:text-blue-400'
+        }`}
+      >
+        {isAi ? <Bot className="w-3.5 h-3.5" /> : <User className="w-3.5 h-3.5" />}
+      </div>
+      <div className="flex flex-col gap-1">
+        <div className="inline-flex items-center gap-2.5 px-3.5 py-2 rounded-2xl rounded-tl-xs bg-white dark:bg-zinc-800 border border-zinc-200/90 dark:border-zinc-700 shadow-2xs">
+          <div className="flex items-center gap-1">
+            {[0, 1, 2].map((i) => (
+              <span
+                key={i}
+                className={`w-1.5 h-1.5 rounded-full animate-bounce ${isAi ? 'bg-emerald-500' : 'bg-blue-600 dark:bg-blue-400'}`}
+                style={{
+                  animationDuration: '1.2s',
+                  animationDelay: `${i * 0.16}s`,
+                  animationTimingFunction: 'ease-in-out',
+                }}
+              />
+            ))}
+          </div>
+          <span className="text-[11px] font-medium text-zinc-500 dark:text-zinc-400 select-none">
+            {isAi ? 'AI Assistant is thinking...' : `${userName} is typing...`}
+          </span>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export function TicketingTab() {
   const [tickets, setTickets] = useState<Ticket[]>([])
   const [loading, setLoading] = useState(true)
@@ -61,6 +109,17 @@ export function TicketingTab() {
   const selectedTicketRef = useRef<Ticket | null>(null)
   selectedTicketRef.current = selectedTicket
 
+  // Real-time Ephemeral Presence & Typing Engine
+  const [peerTyping, setPeerTyping] = useState<{
+    isTyping: boolean
+    role: 'technician' | 'admin' | 'ai'
+    userName: string
+    ticketId: string
+  } | null>(null)
+  const peerWatchdogRef = useRef<NodeJS.Timeout | null>(null)
+  const systemChannelRef = useRef<any>(null)
+  const adminTypingTimerRef = useRef<NodeJS.Timeout | null>(null)
+
   // Single persistent global channel for all system updates
   useEffect(() => {
     fetchTickets()
@@ -80,6 +139,24 @@ export function TicketingTab() {
             fetchComments(selectedTicketRef.current.id, true);
          }
       })
+      .on('broadcast', { event: 'typing_status' }, (payload) => {
+         const data = payload?.payload || payload;
+         if (!data?.ticket_id) return;
+         if (data.is_typing) {
+           setPeerTyping({
+             isTyping: true,
+             role: data.role || 'technician',
+             userName: data.user_name || 'Technician',
+             ticketId: data.ticket_id,
+           });
+           if (peerWatchdogRef.current) clearTimeout(peerWatchdogRef.current);
+           peerWatchdogRef.current = setTimeout(() => {
+             setPeerTyping(null);
+           }, 4000);
+         } else {
+           setPeerTyping(prev => (prev?.ticketId === data.ticket_id ? null : prev));
+         }
+      })
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'ticket_comments' }, (payload) => {
          const newComment = payload.new as any;
          fetchTickets(true);
@@ -92,7 +169,11 @@ export function TicketingTab() {
       })
       .subscribe()
       
+    systemChannelRef.current = channel
+      
     return () => {
+      if (adminTypingTimerRef.current) clearTimeout(adminTypingTimerRef.current)
+      if (peerWatchdogRef.current) clearTimeout(peerWatchdogRef.current)
       supabase.removeChannel(channel)
     }
   }, []) // Persistent listener - never tear down on ticket selection
@@ -206,8 +287,50 @@ export function TicketingTab() {
     if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
+  const handleAdminInputChange = (val: string) => {
+    setNewComment(val)
+    if (!selectedTicket?.id || !systemChannelRef.current) return
+
+    systemChannelRef.current.send({
+      type: 'broadcast',
+      event: 'typing_status',
+      payload: {
+        ticket_id: selectedTicket.id,
+        role: 'admin',
+        user_name: 'HR Admin',
+        is_typing: true,
+      },
+    })
+
+    if (adminTypingTimerRef.current) clearTimeout(adminTypingTimerRef.current)
+    adminTypingTimerRef.current = setTimeout(() => {
+      systemChannelRef.current?.send({
+        type: 'broadcast',
+        event: 'typing_status',
+        payload: {
+          ticket_id: selectedTicket.id,
+          role: 'admin',
+          user_name: 'HR Admin',
+          is_typing: false,
+        },
+      })
+    }, 2500)
+  }
+
   const handleSendMessage = async () => {
     if ((!newComment.trim() && !attachedAdminFile) || !selectedTicket || uploadingAttachment) return
+    
+    if (adminTypingTimerRef.current) clearTimeout(adminTypingTimerRef.current)
+    systemChannelRef.current?.send({
+      type: 'broadcast',
+      event: 'typing_status',
+      payload: {
+        ticket_id: selectedTicket.id,
+        role: 'admin',
+        user_name: 'HR Admin',
+        is_typing: false,
+      },
+    })
     
     const { data: { user } } = await supabase.auth.getUser()
     
@@ -871,6 +994,12 @@ export function TicketingTab() {
                   </div>
                 ))
               )}
+              {peerTyping?.isTyping && peerTyping.ticketId === selectedTicket.id && (
+                <KineticTypingBubble
+                  role={peerTyping.role}
+                  userName={peerTyping.userName}
+                />
+              )}
               <div ref={chatEndRef} />
             </div>
 
@@ -949,7 +1078,7 @@ export function TicketingTab() {
                     <div className="flex-1 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200/80 dark:border-zinc-700 rounded-xl overflow-hidden focus-within:ring-1 focus-within:ring-purple-500 focus-within:border-purple-500 focus-within:bg-white dark:focus-within:bg-zinc-800 transition-all">
                       <textarea 
                         value={newComment}
-                        onChange={(e) => setNewComment(e.target.value)}
+                        onChange={(e) => handleAdminInputChange(e.target.value)}
                         placeholder="Type response to technician as HR Admin..."
                         className="w-full bg-transparent p-2.5 text-xs focus:outline-none resize-none max-h-32 min-h-[38px] text-zinc-900 dark:text-zinc-100 placeholder-zinc-400"
                         rows={1}
