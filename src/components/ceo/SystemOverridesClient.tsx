@@ -343,10 +343,12 @@ export default function SystemOverridesClient() {
         />
         <KpiCard
           label="Audit Sync Status"
-          value={isSyncing ? "Syncing..." : "Realtime"}
+          value={isSyncing ? "Syncing" : "Realtime"}
+          badge={isSyncing ? "Syncing" : "Protected"}
+          badgeVariant={isSyncing ? "amber" : "emerald"}
           subtext="PostgreSQL WAL active"
           icon={RefreshCw}
-          variant="default"
+          variant={isSyncing ? "amber" : "emerald"}
         />
       </KpiGrid>
 

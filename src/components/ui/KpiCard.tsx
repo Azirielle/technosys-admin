@@ -39,6 +39,8 @@ export function KpiCard({
     amber: "bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800"
   }
 
+  const isLongString = typeof value === 'string' && value.length > 5
+
   return (
     <div
       className={`bg-white dark:bg-zinc-900 p-4 rounded-xl border border-zinc-200/80 dark:border-zinc-800 shadow-2xs flex items-center justify-between gap-3 transition-colors ${className}`}
@@ -47,13 +49,17 @@ export function KpiCard({
         <p className="text-[11px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider truncate">
           {label}
         </p>
-        <div className="flex items-baseline gap-2 mt-1">
-          <p className="text-2xl font-black text-zinc-900 dark:text-zinc-100 tracking-tight leading-none">
+        <div className="flex items-baseline gap-2 mt-1 min-w-0">
+          <p
+            className={`${
+              isLongString ? 'text-lg font-bold' : 'text-2xl font-black'
+            } text-zinc-900 dark:text-zinc-100 tracking-tight leading-none truncate`}
+          >
             {value}
           </p>
           {badge && (
             <span
-              className={`text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.2 rounded border ${badgeVariants[badgeVariant]}`}
+              className={`text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded border shrink-0 ${badgeVariants[badgeVariant]}`}
             >
               {badge}
             </span>

@@ -103,10 +103,26 @@ export async function updatePersistentOverride(
 
     // Record auditable change in activity_logs
     try {
+      const roleDisplay: Record<string, string> = {
+        accountant: 'Accountant',
+        coordinator: 'Field Operations',
+        hr: 'HR Department',
+        ceo: 'CEO',
+        super_admin: 'Super Admin'
+      }
+      const roleLabel = roleDisplay[roleKey] || roleKey
+      const friendlyModules = grantedModules.map(m => {
+        const found = SYSTEM_MODULES.find(mod => mod.id === m)
+        return found ? found.name : m
+      })
+      const desc = grantedModules.length === 0
+        ? `CEO restored standard role boundaries for ${roleLabel} (Revoked all active overrides)`
+        : `CEO granted temporary override access to ${friendlyModules.join(', ')} for ${roleLabel}`
+
       await logActivity({
         action: 'update',
         category: 'system_overrides',
-        description: `CEO updated cross-departmental overrides for role [${roleKey.toUpperCase()}]: ${grantedModules.length ? grantedModules.join(', ') : 'None (Defaults)'}`,
+        description: desc,
         metadata: { roleKey, grantedModules, overrideMetadata }
       })
     } catch (logErr) {

@@ -60,6 +60,67 @@ const ROLE_LABELS: Record<string, string> = {
   staff: 'Staff Member'
 }
 
+const MODULE_NAMES: Record<string, string> = {
+  hr_tickets: 'Tickets & Leaves',
+  hr_files: '201 Files',
+  accountant_audit: 'Audit Logs',
+  coordinator_dispatch: 'Dispatch & Scheduling',
+  coordinator_tracking: 'Live Tracking',
+  coordinator_inventory: 'Inventory Management',
+  system_overrides: 'System Overrides'
+}
+
+function humanizeActivityDescription(rawDesc: string, action?: string, category?: string): string {
+  if (!rawDesc) return 'Standard system operation executed.'
+
+  let text = rawDesc.trim()
+
+  // Match: CEO[- ]Updated cross-departmental overrides for role [(\[]?([A-Za-z0-9_]+)[)\]]?:\s*(.*)
+  const overrideMatch = text.match(/CEO[- ]?[Uu]pdated cross-departmental overrides for role [(\[]?([A-Za-z0-9_]+)[)\]]?:\s*(.*)/i)
+  if (overrideMatch) {
+    const rawRole = overrideMatch[1].toLowerCase()
+    const roleLabel = ROLE_LABELS[rawRole] || rawRole.charAt(0).toUpperCase() + rawRole.slice(1)
+    const rawModules = overrideMatch[2].trim()
+
+    if (rawModules.toLowerCase().includes('none') || rawModules.toLowerCase().includes('defaults')) {
+      return `Restored standard role boundaries for ${roleLabel} (Revoked all active overrides).`
+    }
+
+    const mods = rawModules
+      .split(',')
+      .map(m => m.trim())
+      .filter(Boolean)
+      .map(m => MODULE_NAMES[m] || MODULE_MAP[m]?.label || m.replace(/_/g, ' '))
+
+    const modListStr = mods.length > 1
+      ? `${mods.slice(0, -1).join(', ')} and ${mods[mods.length - 1]}`
+      : mods[0] || 'designated modules'
+
+    return `Granted temporary CEO override for ${roleLabel} on ${modListStr}.`
+  }
+
+  // Match: CEO granted all cross-departmental overrides
+  if (/granted all cross-departmental/i.test(text)) {
+    return 'Granted global administrative overrides across all system departments.'
+  }
+
+  // Match: CEO reset all cross-departmental overrides
+  if (/reset all cross-departmental/i.test(text)) {
+    return 'Reset all departmental permissions back to default system security profiles.'
+  }
+
+  // Match: Dispatch modes e.g. "(Mode: direct_dispatch)" -> "(Direct Dispatch)"
+  text = text.replace(/\(Mode:\s*([a-z_]+)\)/gi, (_, mode) => {
+    const cleanMode = mode.replace(/_/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase())
+    return `(${cleanMode})`
+  })
+
+  // Strip brackets around role codes if any remain
+  text = text.replace(/\[([A-Z_]+)\]/g, '$1')
+
+  return text
+}
+
 function formatExecutiveTimestamp(isoString: string): string {
   try {
     const d = new Date(isoString)
@@ -317,14 +378,31 @@ export default function AdminActivitiesClient() {
             </TableHead>
             <TableBody>
               {isLoading ? (
-                <tr>
-                  <td colSpan={4} className="h-24 text-center text-zinc-400 font-medium text-xs">
-                    <span className="inline-flex items-center gap-2">
-                      <RefreshCw className="w-3.5 h-3.5 text-zinc-400 animate-spin" />
-                      Loading activity logs...
-                    </span>
-                  </td>
-                </tr>
+                Array.from({ length: 7 }).map((_, idx) => (
+                  <TableRow key={`skeleton-${idx}`} className="h-12 border-b border-zinc-100 dark:border-zinc-800/60">
+                    <TableCell>
+                      <div className="flex flex-col gap-1.5 py-1">
+                        <div className="h-3 w-28 bg-zinc-200/70 dark:bg-zinc-800 rounded animate-pulse" />
+                        <div className="h-2.5 w-16 bg-zinc-100 dark:bg-zinc-800/50 rounded animate-pulse" />
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex flex-col gap-1.5 py-1">
+                        <div className="flex items-center gap-2">
+                          <div className="h-3 w-36 bg-zinc-200/70 dark:bg-zinc-800 rounded animate-pulse" />
+                          <div className="h-4 w-20 bg-zinc-100 dark:bg-zinc-800/60 rounded-full animate-pulse" />
+                        </div>
+                        <div className="h-2.5 w-64 bg-zinc-100 dark:bg-zinc-800/50 rounded animate-pulse" />
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="h-5 w-24 bg-zinc-100 dark:bg-zinc-800/60 rounded animate-pulse" />
+                    </TableCell>
+                    <TableCell>
+                      <div className="h-3 w-24 bg-zinc-200/70 dark:bg-zinc-800 rounded animate-pulse" />
+                    </TableCell>
+                  </TableRow>
+                ))
               ) : paginatedLogs.length === 0 ? (
                 <TableEmptyState
                   colSpan={4}
@@ -366,7 +444,7 @@ export default function AdminActivitiesClient() {
                             <MutedBadge>{modInfo.label}</MutedBadge>
                           </div>
                           <span className="text-[11px] text-zinc-400 truncate mt-0.5 font-normal">
-                            {log.description}
+                            {humanizeActivityDescription(log.description, log.action, log.category)}
                           </span>
                         </div>
                       </TableCell>
@@ -423,13 +501,15 @@ export default function AdminActivitiesClient() {
         icon={ShieldAlert}
         maxWidth="lg"
         footer={
-          <button
-            type="button"
-            onClick={() => setSelectedLog(null)}
-            className="px-3.5 py-1.5 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-200 rounded-md text-xs font-medium hover:bg-zinc-50 dark:hover:bg-zinc-700/60 transition-colors cursor-pointer"
-          >
-            Close Audit Sheet
-          </button>
+          <div className="flex items-center justify-end w-full">
+            <button
+              type="button"
+              onClick={() => setSelectedLog(null)}
+              className="px-3.5 py-1.5 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-200 rounded-md text-xs font-medium transition-colors duration-75 cursor-pointer shadow-none"
+            >
+              Dismiss
+            </button>
+          </div>
         }
       >
         {selectedLog && (
@@ -481,7 +561,7 @@ export default function AdminActivitiesClient() {
             <div className="p-3.5 bg-zinc-950 text-zinc-100 rounded-lg space-y-1.5 font-mono text-[11px] border border-zinc-800">
               <div className="text-zinc-400 font-medium uppercase text-[10px] tracking-wider">Action Payload Description</div>
               <div className="text-emerald-400 font-semibold">{formatActionType(selectedLog.action)}</div>
-              <div className="text-zinc-300 font-sans text-xs pt-0.5">{selectedLog.description}</div>
+              <div className="text-zinc-300 font-sans text-xs pt-0.5">{humanizeActivityDescription(selectedLog.description, selectedLog.action, selectedLog.category)}</div>
               <div className="text-zinc-400 text-[10px] pt-2 border-t border-zinc-800/80 font-mono">
                 Executive Timestamp: {formatExecutiveDateDetailed(selectedLog.created_at)}
               </div>
