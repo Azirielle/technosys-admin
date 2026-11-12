@@ -1,98 +1,107 @@
 'use client'
 
-import PageHeader from '@/components/ui/PageHeader'
-import { KpiCard, KpiGrid } from '@/components/ui/KpiCard'
-import Pagination from '@/components/ui/Pagination'
-import {
-  TableContainer,
-  Table,
-  TableHead,
-  TableHeaderCell,
-  TableBody,
-  TableRow,
-  TableCell,
-  TableEmptyState,
-  StatusDot,
-  MutedBadge
-} from '@/components/ui/DataTable'
-import ModalDialog from '@/components/ui/ModalDialog'
-
-import { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import dynamic from "next/dynamic";
 import { createClient } from "@/lib/supabase/client";
+import PageHeader from "@/components/ui/PageHeader";
+import ModalDialog from "@/components/ui/ModalDialog";
 import { 
-  Search, Filter, Calendar as CalendarIcon, MapPin, Map as MapIcon, Plus, X, User, Navigation, Info, Settings2,
-  Edit3, UserCheck, Ban, CheckCircle2, AlertTriangle, RotateCcw, Users, Phone, DollarSign, UserPlus, Check,
-  ChevronDown, ChevronUp, ShieldCheck, ShieldAlert, Award
+  Calendar as CalendarIcon, Users, UserPlus, Search, Plus, X, 
+  MapPin, Check, User, AlertTriangle 
 } from "lucide-react";
+
 import { 
-  updateSchedule, reassignSchedule, cancelSchedule, createDispatchesWithCrew,
+  updateSchedule, reassignSchedule, cancelSchedule,
   getCasualHelpers, createCasualHelper, updateCasualHelper, toggleCasualHelperStatus 
 } from "@/app/actions/schedules";
 
-const GeofenceMap = dynamic(() => import("./GeofenceMap"), {
-  ssr: false,
-  loading: () => <div className="h-full w-full flex items-center justify-center bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 font-medium">Loading Interactive Map...</div>
-});
+// Scheduling Modular Subcomponents
+import { 
+  ScheduleItem, ProfileItem, CasualHelperItem, 
+  HorizonGranularity, ViewMode, AssignmentTypeFilter, AssignmentType,
+  formatLocalDate 
+} from "./scheduling/types";
+import SchedulingKpis from "./scheduling/SchedulingKpis";
+import HorizonFilterBar from "./scheduling/HorizonFilterBar";
+import ScheduleTableView from "./scheduling/ScheduleTableView";
+import ScheduleTimelineView from "./scheduling/ScheduleTimelineView";
+import ScheduleMonthCalendarView from "./scheduling/ScheduleMonthCalendarView";
+import TechnicianRosterDrawer from "./scheduling/TechnicianRosterDrawer";
+import SteppedDispatchDrawer from "./scheduling/SteppedDispatchDrawer";
+import DeploymentDrawer from "./scheduling/DeploymentDrawer";
+import OfficeDutyDrawer from "./scheduling/OfficeDutyDrawer";
+import QuickRescheduleDrawer from "./scheduling/QuickRescheduleDrawer";
+import NewAssignmentModal from "./scheduling/NewAssignmentModal";
+
+import Pagination from "@/components/ui/Pagination";
+import { 
+  TableContainer, Table, TableHead, TableHeaderCell, TableBody, TableRow, TableCell, 
+  TableEmptyState, StatusDot, MutedBadge 
+} from "@/components/ui/DataTable";
 
 export default function DispatchBoardClient() {
   const supabase = createClient();
-  const [schedules, setSchedules] = useState<any[]>([]);
-  const [profiles, setProfiles] = useState<any[]>([]);
+  const [schedules, setSchedules] = useState<ScheduleItem[]>([]);
+  const [profiles, setProfiles] = useState<ProfileItem[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Top-Level View Switcher
   const [viewTab, setViewTab] = useState<'dispatches' | 'casual_helpers'>('dispatches');
-  
-  // Datatable State
+
+  // Horizon & Filter States
+  const [currentDate, setCurrentDate] = useState<Date>(() => new Date());
+  const [granularity, setGranularity] = useState<HorizonGranularity>('day');
+  const [assignmentTypeFilter, setAssignmentTypeFilter] = useState<AssignmentTypeFilter>('all');
+  const [kpiFilter, setKpiFilter] = useState<'all' | 'unassigned' | 'conflicts'>('all');
   const [searchQuery, setSearchQuery] = useState("");
-  const [dateFilter, setDateFilter] = useState(new Date().toISOString().split('T')[0]); // Default Today
+  const [viewMode, setViewMode] = useState<ViewMode>('table');
+  const [showCancelled, setShowCancelled] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 8;
 
-  // Modal State
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showAdvanced, setShowAdvanced] = useState(false);
-  const [isOfficeMode, setIsOfficeMode] = useState(false);
-  const [addressQuery, setAddressQuery] = useState("");
-  const [addressResults, setAddressResults] = useState<any[]>([]);
-  
-  // Show Cancelled Dispatches Toggle
-  const [showCancelled, setShowCancelled] = useState(false);
+  // KPI Metrics State (Matching Mockup 2: On-site, Deployments, Needs a team, Conflicts)
+  const [kpiMetrics, setKpiMetrics] = useState({
+    onSiteCount: 0,
+    deploymentsCount: 0,
+    needsTeamCount: 0,
+    conflictsCount: 0
+  });
 
-  // Edit Modal State
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [editFormData, setEditFormData] = useState<any>(null);
-  const [editAddressQuery, setEditAddressQuery] = useState("");
-  const [editAddressResults, setEditAddressResults] = useState<any[]>([]);
+  // Creation & Modular Drawer States
+  const [isNewAssignmentModalOpen, setIsNewAssignmentModalOpen] = useState(false);
+  const [isDispatchDrawerOpen, setIsDispatchDrawerOpen] = useState(false);
+  const [isDeploymentDrawerOpen, setIsDeploymentDrawerOpen] = useState(false);
+  const [isOfficeDutyDrawerOpen, setIsOfficeDutyDrawerOpen] = useState(false);
+  const [isRosterDrawerOpen, setIsRosterDrawerOpen] = useState(false);
+  const [preselectedTechId, setPreselectedTechId] = useState<string | undefined>(undefined);
+  const [initialScheduleForDispatch, setInitialScheduleForDispatch] = useState<any | null>(null);
+
+  // Quick Reschedule Drawer State
+  const [isRescheduleDrawerOpen, setIsRescheduleDrawerOpen] = useState(false);
+  const [reschedulingSchedule, setReschedulingSchedule] = useState<ScheduleItem | null>(null);
+  const [rescheduleDrawerTab, setRescheduleDrawerTab] = useState<'reschedule' | 'edit_details' | 'history'>('reschedule');
 
   // Reassign Modal State
   const [isReassignModalOpen, setIsReassignModalOpen] = useState(false);
-  const [reassigningSchedule, setReassigningSchedule] = useState<any>(null);
+  const [reassigningSchedule, setReassigningSchedule] = useState<ScheduleItem | null>(null);
   const [newTechnicianId, setNewTechnicianId] = useState("");
   const [reassignReason, setReassignReason] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Cancel Modal State
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
-  const [cancellingSchedule, setCancellingSchedule] = useState<any>(null);
-  const [cancelPreset, setCancelPreset] = useState("Client Rescheduled");
+  const [cancellingSchedule, setCancellingSchedule] = useState<ScheduleItem | null>(null);
+  const [cancelPreset, setCancelPreset] = useState("");
   const [cancelCustomNotes, setCancelCustomNotes] = useState("");
-  
-  // Search & Filter in Dispatch Modal
-  const [techSearch, setTechSearch] = useState("");
-  const [techFilterTier, setTechFilterTier] = useState<'all' | 'senior' | 'standard' | 'helper'>('all');
-
-  // Lead & Support Crew State
-  const [leadTechId, setLeadTechId] = useState<string>("");
-  const [selectedHelperIds, setSelectedHelperIds] = useState<string[]>([]);
-  const [selectedCasualHelperIds, setSelectedCasualHelperIds] = useState<string[]>([]);
 
   // Casual Helpers Register State
-  const [casualHelpers, setCasualHelpers] = useState<any[]>([]);
+  const [casualHelpers, setCasualHelpers] = useState<CasualHelperItem[]>([]);
   const [casualHelperLoading, setCasualHelperLoading] = useState(false);
   const [isCasualModalOpen, setIsCasualModalOpen] = useState(false);
   const [editingCasualHelper, setEditingCasualHelper] = useState<any>(null);
+  const [casualSearch, setCasualSearch] = useState("");
+  const [casualStatusFilter, setCasualStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
+  const [casualCurrentPage, setCasualCurrentPage] = useState(1);
   const [casualForm, setCasualForm] = useState({
     fullName: "",
     contactNumber: "",
@@ -100,69 +109,187 @@ export default function DispatchBoardClient() {
     emergencyContact: "",
     notes: ""
   });
-  const [casualSearch, setCasualSearch] = useState("");
-  const [casualStatusFilter, setCasualStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
-  
-  // Form State
-  const [formData, setFormData] = useState({
-    technician_ids: [] as string[],
-    client_name: "",
-    location: "",
-    date: new Date().toISOString().split('T')[0],
-    start_time: "09:00",
-    end_time: "17:00",
-    attendance_mode: "direct_dispatch",
-    geofence_lat: 14.5995, // Default Manila
-    geofence_lon: 120.9842,
-    geofence_radius: 500,
-    coordinate_override: "" 
-  });
 
-  // Toggle Office Mode
-  const toggleOfficeMode = (enabled: boolean) => {
-    setIsOfficeMode(enabled);
-    if (enabled) {
-      setFormData(p => ({
-        ...p,
-        attendance_mode: "hq",
-        location: "Pacita HQ",
-        client_name: "Office Duty",
-        geofence_lat: 14.3541, // Approx Pacita HQ coords
-        geofence_lon: 121.0665,
-        geofence_radius: 100
-      }));
-    } else {
-      setFormData(p => ({
-        ...p,
-        attendance_mode: "direct_dispatch",
-        location: "",
-        client_name: ""
-      }));
+  // Schedule Collision / Conflict Detector
+  const detectConflicts = (items: ScheduleItem[]): Set<string> => {
+    const conflictedIds = new Set<string>();
+    const activeItems = items.filter(s => s.status !== 'cancelled');
+
+    for (let i = 0; i < activeItems.length; i++) {
+      const a = activeItems[i];
+      const aStart = new Date(a.start_time).getTime();
+      const aEnd = a.end_time ? new Date(a.end_time).getTime() : aStart + 2 * 3600000;
+
+      const aTechs = new Set<string>();
+      if (a.technician_id) aTechs.add(a.technician_id);
+      a.schedule_crew_assignments?.forEach(c => {
+        if (c.status === 'active' && c.technician_id) aTechs.add(c.technician_id);
+      });
+
+      if (aTechs.size === 0) continue;
+
+      for (let j = i + 1; j < activeItems.length; j++) {
+        const b = activeItems[j];
+        const bStart = new Date(b.start_time).getTime();
+        const bEnd = b.end_time ? new Date(b.end_time).getTime() : bStart + 2 * 3600000;
+
+        // Overlap in active hours
+        if (aStart < bEnd && aEnd > bStart) {
+          let sharesTech = false;
+          if (b.technician_id && aTechs.has(b.technician_id)) {
+            sharesTech = true;
+          }
+          if (!sharesTech && b.schedule_crew_assignments) {
+            sharesTech = b.schedule_crew_assignments.some(
+              c => c.status === 'active' && aTechs.has(c.technician_id)
+            );
+          }
+          if (sharesTech) {
+            conflictedIds.add(a.id);
+            conflictedIds.add(b.id);
+          }
+        }
+      }
     }
+    return conflictedIds;
   };
 
+  // Initial Fetch & Refresh on Horizon / Granularity / Date Change
   useEffect(() => {
     fetchSchedules();
     fetchProfiles();
     fetchCasualHelpers();
-  }, [dateFilter]);
+  }, [currentDate, granularity]);
 
   const fetchSchedules = async () => {
     setLoading(true);
-    const startOfDay = new Date(dateFilter);
-    startOfDay.setHours(0, 0, 0, 0);
-    const endOfDay = new Date(dateFilter);
-    endOfDay.setHours(23, 59, 59, 999);
+    try {
+      let query = supabase
+        .from('schedules')
+        .select(`
+          *,
+          profiles!technician_id(full_name, role, technician_level, is_driver),
+          senior_partner:profiles!senior_partner_id(full_name),
+          schedule_crew_assignments(
+            id, technician_id, assignment_role, status, joined_at, released_at, notes,
+            profiles(full_name, role, technician_level, is_driver)
+          ),
+          schedule_casual_helpers(id, casual_helper_id, casual_helpers(id, full_name, contact_number, daily_rate))
+        `);
 
+      let startWindow: Date;
+      let endWindow: Date;
+
+      if (granularity === 'day') {
+        startWindow = new Date(currentDate);
+        startWindow.setHours(0, 0, 0, 0);
+        endWindow = new Date(currentDate);
+        endWindow.setHours(23, 59, 59, 999);
+
+        query = query
+          .gte('start_time', startWindow.toISOString())
+          .lte('start_time', endWindow.toISOString())
+          .order('start_time', { ascending: true });
+      } else if (granularity === 'week') {
+        startWindow = new Date(currentDate);
+        const day = startWindow.getDay();
+        const diff = startWindow.getDate() - day + (day === 0 ? -6 : 1);
+        startWindow.setDate(diff);
+        startWindow.setHours(0, 0, 0, 0);
+        endWindow = new Date(startWindow);
+        endWindow.setDate(startWindow.getDate() + 6);
+        endWindow.setHours(23, 59, 59, 999);
+
+        query = query
+          .gte('start_time', startWindow.toISOString())
+          .lte('start_time', endWindow.toISOString())
+          .order('start_time', { ascending: true });
+      } else if (granularity === 'month') {
+        startWindow = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1, 0, 0, 0, 0);
+        endWindow = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0, 23, 59, 59, 999);
+
+        query = query
+          .gte('start_time', startWindow.toISOString())
+          .lte('start_time', endWindow.toISOString())
+          .order('start_time', { ascending: true });
+      } else {
+        // 'past'
+        const startOfToday = new Date();
+        startOfToday.setHours(0, 0, 0, 0);
+        startWindow = new Date(0);
+        endWindow = startOfToday;
+
+        query = query
+          .lt('start_time', startOfToday.toISOString())
+          .order('start_time', { ascending: false });
+      }
+
+      const { data: regularData, error: regularErr } = await query;
+      if (regularErr) throw regularErr;
+
+      let combined = (regularData || []) as ScheduleItem[];
+
+      // If viewing active horizon, pull ongoing multi-day deployments that started earlier
+      if (granularity !== 'past') {
+        const { data: ongoingDeployments } = await supabase
+          .from('schedules')
+          .select(`
+            *,
+            profiles!technician_id(full_name, role, technician_level, is_driver),
+            senior_partner:profiles!senior_partner_id(full_name),
+            schedule_crew_assignments(
+              id, technician_id, assignment_role, status, joined_at, released_at, notes,
+              profiles(full_name, role, technician_level, is_driver)
+            ),
+            schedule_casual_helpers(id, casual_helper_id, casual_helpers(id, full_name, contact_number, daily_rate))
+          `)
+          .eq('assignment_type', 'deployment')
+          .neq('status', 'cancelled')
+          .lte('start_time', endWindow.toISOString());
+
+        if (ongoingDeployments && ongoingDeployments.length > 0) {
+          const existingIds = new Set(combined.map(s => s.id));
+          ongoingDeployments.forEach((dep: any) => {
+            if (!existingIds.has(dep.id)) {
+              const depEnd = dep.end_time 
+                ? new Date(dep.end_time).getTime() 
+                : (dep.target_review_date ? new Date(dep.target_review_date).getTime() : Infinity);
+              if (depEnd >= startWindow.getTime()) {
+                combined.push(dep);
+              }
+            }
+          });
+        }
+      }
+
+      setSchedules(combined);
+
+      // Compute Period-Aware KPI Metrics
+      const onSite = combined.filter(s => (s.assignment_type === 'on_site' || !s.assignment_type) && s.status !== 'cancelled').length;
+      const deployments = combined.filter(s => s.assignment_type === 'deployment' && s.status !== 'cancelled').length;
+      const needsTeam = combined.filter(s => (!s.technician_id || s.status === 'unassigned') && s.status !== 'cancelled').length;
+      const conflicts = detectConflicts(combined).size;
+
+      setKpiMetrics({
+        onSiteCount: onSite,
+        deploymentsCount: deployments,
+        needsTeamCount: needsTeam,
+        conflictsCount: conflicts
+      });
+    } catch (err: any) {
+      console.error("Failed to fetch schedules:", err.message || err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchProfiles = async () => {
     const { data } = await supabase
-      .from('schedules')
-      .select('*, profiles!technician_id(full_name, role, technician_level), senior_partner:profiles!senior_partner_id(full_name), schedule_casual_helpers(id, casual_helper_id, casual_helpers(id, full_name, contact_number, daily_rate))')
-      .gte('start_time', startOfDay.toISOString())
-      .lte('start_time', endOfDay.toISOString())
-      .order('start_time', { ascending: true });
-      
-    if (data) setSchedules(data);
-    setLoading(false);
+      .from('profiles')
+      .select('id, full_name, role, lifecycle_status, technician_level, is_driver')
+      .in('role', ['technician', 'helper'])
+      .order('full_name');
+    if (data) setProfiles(data as any[]);
   };
 
   const fetchCasualHelpers = async () => {
@@ -174,162 +301,124 @@ export default function DispatchBoardClient() {
     setCasualHelperLoading(false);
   };
 
-  const [busyTechIds, setBusyTechIds] = useState<string[]>([]);
+  // Conflict IDs memoized for the active list
+  const conflictedScheduleIds = useMemo(() => detectConflicts(schedules), [schedules]);
 
-  useEffect(() => {
-    const checkConflicts = async () => {
-      if (!formData.date || !formData.start_time || !formData.end_time) return;
-      
-      const startIso = new Date(`${formData.date}T${formData.start_time}:00`).toISOString();
-      const endIso = new Date(`${formData.date}T${formData.end_time}:00`).toISOString();
-      
-      const { data } = await supabase
-        .from('schedules')
-        .select('technician_id')
-        .lt('start_time', endIso)
-        .gt('end_time', startIso);
-        
-      if (data) {
-        setBusyTechIds(data.map(d => d.technician_id));
+  // Filtered schedules for search, assignment type filter, cancelled toggle, and kpi click filter
+  const filteredSchedules = schedules
+    .filter(s => showCancelled ? true : s.status !== 'cancelled')
+    .filter(s => {
+      if (assignmentTypeFilter === 'all') return true;
+      if (assignmentTypeFilter === 'on_site') {
+        return s.assignment_type === 'on_site' || !s.assignment_type;
       }
-    };
-    checkConflicts();
-  }, [formData.date, formData.start_time, formData.end_time]);
-
-  const fetchProfiles = async () => {
-    // Whitelist strictly field staff: technicians and regular helpers. Exclude administrative accounts.
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('id, full_name, role, lifecycle_status, technician_level')
-      .in('role', ['technician', 'helper'])
-      .order('full_name');
-    if (error) {
-      console.error("Failed to fetch profiles:", error);
-    }
-    if (data) setProfiles(data);
-  };
-
-  // Autocomplete Search using internal geocode API proxy
-  const searchAddress = async (query: string) => {
-    setAddressQuery(query);
-    setFormData(p => ({ ...p, location: query }));
-    if (query.length >= 2) {
-      try {
-        const res = await fetch(`/api/geocode?q=${encodeURIComponent(query)}`);
-        const results = await res.json();
-        setAddressResults(Array.isArray(results) ? results : []);
-      } catch (e) {
-        console.error("Geocode search failed", e);
+      return s.assignment_type === assignmentTypeFilter;
+    })
+    .filter(s => {
+      if (kpiFilter === 'all') return true;
+      if (kpiFilter === 'unassigned') {
+        return !s.technician_id || s.status === 'unassigned';
       }
-    } else {
-      setAddressResults([]);
-    }
-  };
-
-  const selectAddress = (result: any) => {
-    const lat = parseFloat(result.lat);
-    const lon = parseFloat(result.lon);
-    setFormData(p => ({ 
-      ...p, 
-      location: result.display_name, 
-      geofence_lat: lat, 
-      geofence_lon: lon,
-      coordinate_override: `${lat}, ${lon}`
-    }));
-    setAddressQuery(result.display_name);
-    setAddressResults([]);
-  };
-
-  const handleCoordinateOverride = (val: string) => {
-    setFormData(p => ({ ...p, coordinate_override: val }));
-    const parts = val.split(',').map(s => s.trim());
-    if (parts.length === 2) {
-      const lat = parseFloat(parts[0]);
-      const lon = parseFloat(parts[1]);
-      if (!isNaN(lat) && !isNaN(lon)) {
-        setFormData(p => ({ ...p, geofence_lat: lat, geofence_lon: lon }));
+      if (kpiFilter === 'conflicts') {
+        return conflictedScheduleIds.has(s.id);
       }
-    }
+      return true;
+    })
+    .filter(s => {
+      if (!searchQuery.trim()) return true;
+      const q = searchQuery.toLowerCase();
+      return (
+        (s.profiles?.full_name?.toLowerCase() || '').includes(q) ||
+        s.client_name.toLowerCase().includes(q) ||
+        (s.project_name?.toLowerCase() || '').includes(q) ||
+        (s.location?.toLowerCase() || '').includes(q)
+      );
+    });
+
+  // Quick Action Handlers
+  const handleOpenReschedule = (s: ScheduleItem) => {
+    setReschedulingSchedule(s);
+    setRescheduleDrawerTab('reschedule');
+    setIsRescheduleDrawerOpen(true);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleOpenEdit = (s: ScheduleItem) => {
+    setReschedulingSchedule(s);
+    setRescheduleDrawerTab('edit_details');
+    setIsRescheduleDrawerOpen(true);
+  };
+
+  const handleOpenReassign = (s: ScheduleItem) => {
+    setReassigningSchedule(s);
+    setNewTechnicianId("");
+    setReassignReason("");
+    setIsReassignModalOpen(true);
+  };
+
+  const handleOpenCancel = (s: ScheduleItem) => {
+    setCancellingSchedule(s);
+    setCancelPreset("");
+    setCancelCustomNotes("");
+    setIsCancelModalOpen(true);
+  };
+
+  const handleOpenAssignNow = (s: ScheduleItem) => {
+    setInitialScheduleForDispatch(s);
+    setPreselectedTechId(undefined);
+    setIsDispatchDrawerOpen(true);
+  };
+
+  const handleSelectTechForDispatch = (techId: string) => {
+    setPreselectedTechId(techId);
+    setInitialScheduleForDispatch(null);
+    setIsDispatchDrawerOpen(true);
+  };
+
+  // Submit Reassign
+  const handleReassignSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (isOfficeMode) {
-      if (!leadTechId) {
-        alert("Please select a technician for Office Duty.");
-        return;
-      }
-      setIsSubmitting(true);
-      const res = await createDispatchesWithCrew({
-        leadTechnicianId: leadTechId,
-        helperTechnicianIds: [],
-        casualHelperIds: [],
-        clientName: "Office Duty",
-        location: "Pacita HQ",
-        date: formData.date,
-        startTime: formData.start_time,
-        endTime: formData.end_time,
-        attendanceMode: "hq",
-        geofenceLat: 14.3541,
-        geofenceLon: 121.0665,
-        geofenceRadius: 100,
-        attendanceTrackingMode: 'pacita_hq'
-      });
-      setIsSubmitting(false);
-      if (res?.success) {
-        setIsModalOpen(false);
-        setLeadTechId("");
-        setSelectedHelperIds([]);
-        setSelectedCasualHelperIds([]);
-        fetchSchedules();
-      } else {
-        alert(res?.error || "Error scheduling office hours.");
-      }
+    if (!reassigningSchedule || !newTechnicianId) {
+      alert("Please select a replacement technician.");
       return;
     }
-
-    if (!leadTechId) {
-      alert("Operational Hierarchy Rule: Every dispatch requires a designated Lead Technician (Senior or Standard Technician). Helpers cannot be deployed unsupervised.");
-      return;
+    setIsSubmitting(true);
+    const res = await reassignSchedule(reassigningSchedule.id, newTechnicianId, null, reassignReason);
+    setIsSubmitting(false);
+    if (res?.error) {
+      alert(res.error);
+    } else {
+      setIsReassignModalOpen(false);
+      setReassigningSchedule(null);
+      fetchSchedules();
     }
+  };
 
-    if (!formData.client_name.trim()) {
-      alert("Please enter a Client / Assignment name.");
+  // Submit Cancel
+  const handleCancelSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!cancellingSchedule) return;
+    const finalReason = cancelPreset === 'Other' 
+      ? cancelCustomNotes.trim() 
+      : (cancelCustomNotes.trim() ? `${cancelPreset}: ${cancelCustomNotes.trim()}` : cancelPreset);
+
+    if (!finalReason) {
+      alert("Please enter a cancellation reason.");
       return;
     }
 
     setIsSubmitting(true);
-    const res = await createDispatchesWithCrew({
-      leadTechnicianId: leadTechId,
-      helperTechnicianIds: selectedHelperIds,
-      casualHelperIds: selectedCasualHelperIds,
-      clientName: formData.client_name,
-      location: formData.location,
-      date: formData.date,
-      startTime: formData.start_time,
-      endTime: formData.end_time,
-      attendanceMode: formData.attendance_mode,
-      geofenceLat: formData.geofence_lat,
-      geofenceLon: formData.geofence_lon,
-      geofenceRadius: formData.geofence_radius,
-      attendanceTrackingMode: formData.attendance_mode === 'hq' ? 'pacita_hq' : 'direct_on_site'
-    });
-
+    const res = await cancelSchedule(cancellingSchedule.id, finalReason);
     setIsSubmitting(false);
-    if (res?.success) {
-      setIsModalOpen(false);
-      setLeadTechId("");
-      setSelectedHelperIds([]);
-      setSelectedCasualHelperIds([]);
-      setFormData(p => ({ ...p, client_name: "", location: "" }));
-      fetchSchedules();
-      fetchCasualHelpers();
+    if (res?.error) {
+      alert(res.error);
     } else {
-      alert(res?.error || "Error creating dispatch.");
+      setIsCancelModalOpen(false);
+      setCancellingSchedule(null);
+      fetchSchedules();
     }
   };
 
+  // Casual Helpers Handlers
   const openRegisterCasualModal = (helperToEdit?: any) => {
     if (helperToEdit) {
       setEditingCasualHelper(helperToEdit);
@@ -355,12 +444,8 @@ export default function DispatchBoardClient() {
 
   const handleSaveCasualHelper = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!casualForm.fullName.trim()) {
-      alert("Full name is required.");
-      return;
-    }
-    if (!casualForm.contactNumber.trim()) {
-      alert("Contact number is required.");
+    if (!casualForm.fullName.trim() || !casualForm.contactNumber.trim()) {
+      alert("Full name and contact number are required.");
       return;
     }
 
@@ -370,10 +455,6 @@ export default function DispatchBoardClient() {
       res = await updateCasualHelper(editingCasualHelper.id, casualForm);
     } else {
       res = await createCasualHelper(casualForm);
-      if (res.success && res.helper) {
-        // If modal open, auto-select this new casual worker for the dispatch
-        setSelectedCasualHelperIds(prev => [...prev, res.helper.id]);
-      }
     }
     setIsSubmitting(false);
 
@@ -395,1496 +476,683 @@ export default function DispatchBoardClient() {
     }
   };
 
-  const openEditModal = (schedule: any) => {
-    const sDate = schedule.start_time ? new Date(schedule.start_time) : new Date();
-    const eDate = schedule.end_time ? new Date(schedule.end_time) : new Date();
-    const dateStr = sDate.toISOString().split('T')[0];
-    const startTimeStr = sDate.toTimeString().slice(0, 5);
-    const endTimeStr = schedule.end_time ? eDate.toTimeString().slice(0, 5) : "17:00";
-
-    setEditFormData({
-      id: schedule.id,
-      technician_id: schedule.technician_id || "",
-      client_name: schedule.client_name || "",
-      location: schedule.location || "",
-      date: dateStr,
-      start_time: startTimeStr,
-      end_time: endTimeStr,
-      attendance_mode: schedule.attendance_mode || "direct_dispatch",
-      geofence_lat: Number(schedule.geofence_lat) || 14.5995,
-      geofence_lon: Number(schedule.geofence_lon) || 120.9842,
-      geofence_radius: schedule.geofence_radius || 500,
-      coordinate_override: `${schedule.geofence_lat || 14.5995}, ${schedule.geofence_lon || 120.9842}`
-    });
-    setEditAddressQuery(schedule.location || "");
-    setEditAddressResults([]);
-    setIsEditModalOpen(true);
-  };
-
-  const searchEditAddress = async (query: string) => {
-    setEditAddressQuery(query);
-    setEditFormData((p: any) => ({ ...p, location: query }));
-    if (query.length >= 2) {
-      try {
-        const res = await fetch(`/api/geocode?q=${encodeURIComponent(query)}`);
-        const results = await res.json();
-        setEditAddressResults(Array.isArray(results) ? results : []);
-      } catch (e) {
-        console.error("Geocode search failed", e);
-      }
-    } else {
-      setEditAddressResults([]);
-    }
-  };
-
-  const selectEditAddress = (result: any) => {
-    const lat = parseFloat(result.lat);
-    const lon = parseFloat(result.lon);
-    setEditFormData((p: any) => ({
-      ...p,
-      location: result.display_name,
-      geofence_lat: lat,
-      geofence_lon: lon,
-      coordinate_override: `${lat}, ${lon}`
-    }));
-    setEditAddressQuery(result.display_name);
-    setEditAddressResults([]);
-  };
-
-  const openReassignModal = (schedule: any) => {
-    setReassigningSchedule(schedule);
-    setNewTechnicianId("");
-    setReassignReason("");
-    setIsReassignModalOpen(true);
-  };
-
-  const openCancelModal = (schedule: any) => {
-    setCancellingSchedule(schedule);
-    setCancelPreset("Client Rescheduled");
-    setCancelCustomNotes("");
-    setIsCancelModalOpen(true);
-  };
-
-  const handleEditSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editFormData || !editFormData.id) return;
-    setIsSubmitting(true);
-    const fd = new FormData();
-    fd.append('scheduleId', editFormData.id);
-    fd.append('clientName', editFormData.client_name);
-    fd.append('location', editFormData.location);
-    fd.append('startTime', `${editFormData.date}T${editFormData.start_time}:00`);
-    if (editFormData.end_time) {
-      fd.append('endTime', `${editFormData.date}T${editFormData.end_time}:00`);
-    }
-    fd.append('attendanceMode', editFormData.attendance_mode);
-    if (editFormData.geofence_lat) fd.append('geofenceLat', editFormData.geofence_lat.toString());
-    if (editFormData.geofence_lon) fd.append('geofenceLon', editFormData.geofence_lon.toString());
-    if (editFormData.geofence_radius) fd.append('geofenceRadius', editFormData.geofence_radius.toString());
-    if (editFormData.technician_id) fd.append('technicianId', editFormData.technician_id);
-
-    const res = await updateSchedule(fd);
-    setIsSubmitting(false);
-    if (res?.error) {
-      alert(res.error);
-    } else {
-      setIsEditModalOpen(false);
-      setEditFormData(null);
-      fetchSchedules();
-    }
-  };
-
-  const handleReassignSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!reassigningSchedule || !newTechnicianId) {
-      alert("Please select a replacement technician.");
-      return;
-    }
-    setIsSubmitting(true);
-    const res = await reassignSchedule(reassigningSchedule.id, newTechnicianId, null, reassignReason);
-    setIsSubmitting(false);
-    if (res?.error) {
-      alert(res.error);
-    } else {
-      setIsReassignModalOpen(false);
-      setReassigningSchedule(null);
-      setNewTechnicianId("");
-      setReassignReason("");
-      fetchSchedules();
-    }
-  };
-
-  const handleCancelSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!cancellingSchedule) return;
-    const finalReason = cancelPreset === 'Other' 
-      ? cancelCustomNotes.trim() 
-      : (cancelCustomNotes.trim() ? `${cancelPreset}: ${cancelCustomNotes.trim()}` : cancelPreset);
-
-    if (!finalReason) {
-      alert("Please enter a cancellation reason.");
-      return;
-    }
-
-    setIsSubmitting(true);
-    const res = await cancelSchedule(cancellingSchedule.id, finalReason);
-    setIsSubmitting(false);
-    if (res?.error) {
-      alert(res.error);
-    } else {
-      setIsCancelModalOpen(false);
-      setCancellingSchedule(null);
-      setCancelPreset("Client Rescheduled");
-      setCancelCustomNotes("");
-      fetchSchedules();
-    }
-  };
-
-  const filtered = schedules
-    .filter(s => showCancelled ? true : s.status !== 'cancelled')
-    .filter(s => 
-      (s.profiles?.full_name?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
-      s.client_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (s.location?.toLowerCase() || '').includes(searchQuery.toLowerCase())
+  const filteredCasual = casualHelpers
+    .filter(h => {
+      if (casualStatusFilter === 'all') return true;
+      return (h.status || 'active') === casualStatusFilter;
+    })
+    .filter(h => 
+      h.full_name.toLowerCase().includes(casualSearch.toLowerCase()) ||
+      h.contact_number.includes(casualSearch) ||
+      (h.notes || '').toLowerCase().includes(casualSearch.toLowerCase())
     );
-  
-  const totalPages = Math.ceil(filtered.length / itemsPerPage);
-  const paginated = filtered.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
-
-  const getStatusBadge = (status?: string) => {
-    switch (status) {
-      case 'in_progress':
-        return <StatusDot status="active" label="In Duty" />;
-      case 'completed':
-        return <StatusDot status="neutral" label="Completed" />;
-      case 'cancelled':
-        return <StatusDot status="danger" label="Cancelled" />;
-      default:
-        return <StatusDot status="info" label="Scheduled" />;
-    }
-  };
 
   return (
     <div className="flex flex-col h-full w-full max-w-full">
-      <PageHeader
-        title={viewTab === 'dispatches' ? 'Scheduling & Dispatch' : 'Casual Helpers Register'}
-        subtitle={
-          viewTab === 'dispatches'
-            ? 'Manage daily field assignments, crew hierarchy, and geofences.'
-            : 'Register and manage on-demand casual support crew with daily-wage tracking.'
-        }
-        icon={CalendarIcon}
-        className="rounded-lg mb-4"
-        actions={
-          viewTab === 'dispatches' ? (
+      {/* Executive Clean Header (Matching HR & CEO Design DNA) */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 shrink-0 mb-3 px-0.5">
+        <div className="flex flex-col gap-0.5">
+          <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-[#121215] dark:text-[#F4F4F6]">
+            {viewTab === 'dispatches' ? 'Scheduling & Dispatch' : 'Temporary Workers'}
+          </h1>
+          <p className="text-xs sm:text-sm text-[#575762] dark:text-[#B0B2BD]">
+            {viewTab === 'dispatches'
+              ? 'Manage field personnel assignments, team allocations, and scheduling horizons.'
+              : 'Register and manage on-demand temporary support crew with daily wage tracking.'}
+          </p>
+        </div>
+
+        <div className="flex items-center gap-2.5 shrink-0">
+          {viewTab === 'dispatches' ? (
             <button 
-              onClick={() => setIsModalOpen(true)}
-              className="flex items-center justify-center gap-1.5 px-3 py-1.5 bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 rounded-md hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-colors duration-75 font-medium text-xs cursor-pointer shadow-none"
+              onClick={() => setIsNewAssignmentModalOpen(true)}
+              className="flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-[#4D55CC] hover:bg-[#4338CA] text-[#FAF9FB] transition-colors font-bold text-xs cursor-pointer shadow-xs"
             >
-              <Plus className="w-3.5 h-3.5" />
-              Create Dispatch
+              <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
+              <span>New Assignment</span>
             </button>
           ) : (
             <button 
               onClick={() => openRegisterCasualModal()}
-              className="flex items-center justify-center gap-1.5 px-3 py-1.5 bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 rounded-md hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-colors duration-75 font-medium text-xs cursor-pointer shadow-none"
+              className="flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-[#4D55CC] hover:bg-[#4338CA] text-[#FAF9FB] transition-colors font-bold text-xs cursor-pointer shadow-xs"
             >
               <UserPlus className="w-3.5 h-3.5" />
-              Register Casual Worker
+              <span>Register Temporary Worker</span>
             </button>
-          )
-        }
-      />
+          )}
+        </div>
+      </div>
 
-      {/* Top View Switcher Tabs */}
-      <div className="flex items-center gap-1.5 mb-4">
+      {/* Top View Switcher Tabs (Gestalt Segmented Strip) */}
+      <div className="flex items-center gap-1.5 p-1 rounded-xl bg-[#EBEAEF] dark:bg-[#1E1F27] border border-black/[0.04] dark:border-white/[0.05] max-w-fit mb-3">
         <button
           type="button"
           onClick={() => setViewTab('dispatches')}
-          className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors duration-75 cursor-pointer ${
+          className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
             viewTab === 'dispatches'
-              ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 font-semibold shadow-none'
-              : 'bg-white dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border border-zinc-200/80 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-700/50'
+              ? 'bg-[#FAF9FB] dark:bg-[#2B2C35] text-[#121215] dark:text-[#F4F4F6] shadow-xs'
+              : 'text-[#575762] dark:text-[#B0B2BD] hover:text-[#121215] dark:hover:text-[#F4F4F6]'
           }`}
         >
-          <CalendarIcon className="w-3.5 h-3.5" />
-          Active Dispatches ({filtered.length})
+          <CalendarIcon className="w-3.5 h-3.5 text-[#4D55CC] dark:text-[#7A82E6]" />
+          <span>Assignments & Operations ({schedules.length})</span>
         </button>
+
         <button
           type="button"
           onClick={() => { setViewTab('casual_helpers'); fetchCasualHelpers(); }}
-          className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors duration-75 cursor-pointer ${
+          className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
             viewTab === 'casual_helpers'
-              ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 font-semibold shadow-none'
-              : 'bg-white dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border border-zinc-200/80 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-700/50'
+              ? 'bg-[#FAF9FB] dark:bg-[#2B2C35] text-[#121215] dark:text-[#F4F4F6] shadow-xs'
+              : 'text-[#575762] dark:text-[#B0B2BD] hover:text-[#121215] dark:hover:text-[#F4F4F6]'
           }`}
         >
-          <Users className="w-3.5 h-3.5" />
-          Casual Helpers Register ({casualHelpers.length})
+          <Users className="w-3.5 h-3.5 text-[#4D55CC] dark:text-[#7A82E6]" />
+          <span>Temporary Workers ({casualHelpers.length})</span>
         </button>
       </div>
 
+      {/* TAB 1: SCHEDULING & DISPATCH WORKSPACE */}
       {viewTab === 'dispatches' && (
-      <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200/80 dark:border-zinc-800 overflow-hidden flex flex-col flex-1 shadow-none">
-        {/* Toolbar */}
-        <div className="px-3.5 py-2.5 border-b border-zinc-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900 flex flex-wrap gap-2.5 items-center justify-between">
-          <div className="flex flex-wrap gap-2.5 items-center">
-            <div className="relative w-full sm:w-64">
-              <Search className="absolute inset-y-0 left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-zinc-400 pointer-events-none" />
-              <input
-                type="text"
-                placeholder="Search technician, client, location..."
-                value={searchQuery}
-                onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
-                className="block w-full pl-8 pr-3 py-1.5 border border-zinc-200/80 dark:border-zinc-700 rounded-md text-xs bg-zinc-50/50 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none focus:ring-1 focus:ring-zinc-400 transition-colors duration-75"
-              />
-            </div>
-            <div className="flex items-center gap-1.5 w-full sm:w-auto">
-              <CalendarIcon className="h-3.5 w-3.5 text-zinc-400" />
-              <input
-                type="date"
-                value={dateFilter}
-                onChange={(e) => { setDateFilter(e.target.value); setCurrentPage(1); }}
-                className="block pl-2.5 pr-2 py-1.5 border border-zinc-200/80 dark:border-zinc-700 rounded-md text-xs bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-zinc-400 cursor-pointer font-medium"
-              />
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <label className="flex items-center gap-1.5 text-xs text-zinc-600 dark:text-zinc-400 cursor-pointer select-none bg-zinc-50 dark:bg-zinc-800 px-2.5 py-1 rounded-md border border-zinc-200/80 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-700/50 transition-colors duration-75">
-              <input
-                type="checkbox"
-                checked={showCancelled}
-                onChange={(e) => { setShowCancelled(e.target.checked); setCurrentPage(1); }}
-                className="rounded border-zinc-300 text-zinc-900 focus:ring-zinc-400 w-3 h-3 cursor-pointer"
-              />
-              <span>Show Cancelled ({schedules.filter(s => s.status === 'cancelled').length})</span>
-            </label>
-            <div className="text-xs text-zinc-400 font-mono hidden md:block">
-              {new Date(dateFilter).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
-            </div>
-          </div>
-        </div>
-        
-        {/* Data Table */}
-        <TableContainer className="rounded-none border-x-0 border-t-0 border-b-0 flex-1 overflow-x-auto">
-          <Table fixed>
-            <TableHead sticky>
-              <TableRow className="h-8">
-                <TableHeaderCell width="22%">Technician</TableHeaderCell>
-                <TableHeaderCell width="20%">Client / Assignment</TableHeaderCell>
-                <TableHeaderCell width="22%">Location & Geofence</TableHeaderCell>
-                <TableHeaderCell width="14%">Time Window</TableHeaderCell>
-                <TableHeaderCell width="10%" align="center">Mode</TableHeaderCell>
-                <TableHeaderCell width="12%">Status</TableHeaderCell>
-                <TableHeaderCell width="10%" align="right" noDivider>Actions</TableHeaderCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {loading ? (
-                <tr>
-                  <td colSpan={7} className="h-24 text-center text-zinc-400 font-medium text-xs">
-                    <span className="inline-flex items-center gap-2">
-                      <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
-                      Loading schedule...
-                    </span>
-                  </td>
-                </tr>
-              ) : paginated.length === 0 ? (
-                <TableEmptyState
-                  colSpan={7}
-                  icon={CalendarIcon}
-                  title="No dispatches found"
-                  description={searchQuery ? "No dispatches match your search query." : "No dispatches scheduled for this date."}
-                />
-              ) : (
-                paginated.map((s) => (
-                  <TableRow key={s.id} className={s.status === 'cancelled' ? 'opacity-60 bg-zinc-50/50 dark:bg-zinc-900/50' : undefined}>
-                    <TableCell className="whitespace-nowrap">
-                      <div className="flex items-center gap-2">
-                        <div className={`h-6 w-6 rounded-full flex items-center justify-center border shrink-0 text-[10px] font-bold ${s.technician_id ? 'bg-zinc-100 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300' : 'bg-amber-50 border-amber-200 text-amber-700'}`}>
-                          {s.profiles?.full_name ? s.profiles.full_name.slice(0, 2).toUpperCase() : <User className="h-3 w-3" />}
-                        </div>
-                        <div className="flex flex-col min-w-0">
-                          <div className="flex items-center gap-1.5">
-                            <span className="font-medium text-zinc-900 dark:text-zinc-100 truncate">
-                              {s.profiles?.full_name || (s.technician_id ? 'Unknown Staff' : 'Unassigned')}
-                            </span>
-                            {s.profiles?.technician_level === 'senior' && (
-                              <MutedBadge>SENIOR</MutedBadge>
-                            )}
-                            {s.profiles?.role === 'helper' && (
-                              <MutedBadge>HELPER</MutedBadge>
-                            )}
-                          </div>
-                          {s.senior_partner?.full_name && (
-                            <span className="text-[10px] text-zinc-400 truncate">
-                              Lead: {s.senior_partner.full_name}
-                            </span>
-                          )}
-                          {s.schedule_casual_helpers && s.schedule_casual_helpers.length > 0 && (
-                            <div className="flex items-center gap-1 mt-0.5">
-                              <span 
-                                className="inline-flex items-center gap-1 text-[10px] font-medium text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 cursor-help"
-                                title={s.schedule_casual_helpers.map((sch: any) => `${sch.casual_helpers?.full_name || 'Worker'} (${sch.casual_helpers?.contact_number || 'No phone'})`).join('\n')}
-                              >
-                                <Users className="w-2.5 h-2.5 text-zinc-400" />
-                                +{s.schedule_casual_helpers.length} Helper{s.schedule_casual_helpers.length > 1 ? 's' : ''}
-                              </span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="min-w-0">
-                        <p className={`font-medium truncate ${s.status === 'cancelled' ? 'line-through text-zinc-400' : 'text-zinc-900 dark:text-zinc-100'}`}>
-                          {s.client_name}
-                        </p>
-                        {s.cancellation_reason && (
-                          <p className="text-[10px] text-rose-500 font-normal truncate mt-0.5">
-                            Cancelled: {s.cancellation_reason}
-                          </p>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex flex-col min-w-0">
-                        <div className="flex items-center gap-1.5 text-zinc-900 dark:text-zinc-100">
-                          <MapPin className="w-3 h-3 text-zinc-400 shrink-0" />
-                          <span className="truncate text-xs">{s.location}</span>
-                        </div>
-                        <div className="flex items-center gap-1.5 ml-4 text-[10px] font-mono tabular-nums text-zinc-400">
-                          <span>{s.geofence_lat?.toFixed(4)}, {s.geofence_lon?.toFixed(4)}</span>
-                          <span>•</span>
-                          <span>{s.geofence_radius}m</span>
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell className="whitespace-nowrap font-mono tabular-nums text-xs">
-                      <div className="flex flex-col">
-                        <span className="text-zinc-900 dark:text-zinc-100 font-medium">{new Date(s.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                        <span className="text-[10px] text-zinc-400">to {new Date(s.end_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell align="center" className="whitespace-nowrap">
-                      <MutedBadge>{s.attendance_mode.replace('_', ' ')}</MutedBadge>
-                    </TableCell>
-                    <TableCell className="whitespace-nowrap">
-                      {getStatusBadge(s.status)}
-                    </TableCell>
-                    <TableCell align="right" noDivider className="whitespace-nowrap">
-                      <div className="flex items-center justify-end gap-1">
-                        <button
-                          type="button"
-                          onClick={() => openEditModal(s)}
-                          disabled={s.status === 'cancelled'}
-                          title={s.status === 'cancelled' ? "Cannot edit cancelled dispatch" : "Edit Dispatch Details"}
-                          className="p-1 text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded transition-colors duration-75 disabled:opacity-25 disabled:cursor-not-allowed cursor-pointer"
-                        >
-                          <Edit3 className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => openReassignModal(s)}
-                          disabled={s.status === 'cancelled'}
-                          title={s.status === 'cancelled' ? "Cannot reassign cancelled dispatch" : "Reassign Technician"}
-                          className="p-1 text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded transition-colors duration-75 disabled:opacity-25 disabled:cursor-not-allowed cursor-pointer"
-                        >
-                          <UserCheck className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => openCancelModal(s)}
-                          disabled={s.status === 'cancelled'}
-                          title={s.status === 'cancelled' ? "Already cancelled" : "Cancel Dispatch"}
-                          className="p-1 text-zinc-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded transition-colors duration-75 disabled:opacity-25 disabled:cursor-not-allowed cursor-pointer"
-                        >
-                          <Ban className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </TableContainer>
-
-        {/* Pagination */}
-        <div className="mt-auto border-t border-zinc-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900">
-          <Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            totalItems={filtered.length}
-            itemsPerPage={itemsPerPage}
-            onPageChange={setCurrentPage}
-            itemNamePlural="dispatches"
+        <div className="flex flex-col flex-1 min-h-0 space-y-0">
+          {/* 1. Live Period-Aware KPI Cards (Mockup 2) */}
+          <SchedulingKpis
+            onSiteCount={kpiMetrics.onSiteCount}
+            deploymentsCount={kpiMetrics.deploymentsCount}
+            needsTeamCount={kpiMetrics.needsTeamCount}
+            conflictsCount={kpiMetrics.conflictsCount}
+            granularity={granularity}
+            onFilterType={(type) => {
+              setCurrentPage(1);
+              if (type === 'on_site') {
+                setAssignmentTypeFilter('on_site');
+                setKpiFilter('all');
+              } else if (type === 'deployment') {
+                setAssignmentTypeFilter('deployment');
+                setKpiFilter('all');
+              } else if (type === 'unassigned') {
+                setAssignmentTypeFilter('all');
+                setKpiFilter(prev => prev === 'unassigned' ? 'all' : 'unassigned');
+              } else if (type === 'conflicts') {
+                setAssignmentTypeFilter('all');
+                setKpiFilter(prev => prev === 'conflicts' ? 'all' : 'conflicts');
+              }
+            }}
           />
+
+          {/* 2. Universal Horizon & Filter Bar */}
+          <HorizonFilterBar
+            currentDate={currentDate}
+            onDateChange={(d) => {
+              setCurrentDate(d);
+              setCurrentPage(1);
+            }}
+            granularity={granularity}
+            onGranularityChange={(g) => {
+              setGranularity(g);
+              setCurrentPage(1);
+              if (g === 'month') {
+                setViewMode('timeline');
+              } else if (g === 'day' || g === 'week') {
+                setViewMode('table');
+              } else if (g === 'past') {
+                const prevMonth = new Date();
+                prevMonth.setMonth(prevMonth.getMonth() - 1);
+                setCurrentDate(prevMonth);
+                setViewMode('table');
+              }
+            }}
+            assignmentTypeFilter={assignmentTypeFilter}
+            onAssignmentTypeFilterChange={(t) => {
+              setAssignmentTypeFilter(t);
+              setKpiFilter('all');
+              setCurrentPage(1);
+            }}
+            searchQuery={searchQuery}
+            onSearchChange={(q) => {
+              setSearchQuery(q);
+              setCurrentPage(1);
+            }}
+            viewMode={viewMode}
+            onViewModeChange={setViewMode}
+            showCancelled={showCancelled}
+            onToggleShowCancelled={setShowCancelled}
+            totalCount={filteredSchedules.length}
+          />
+
+          {/* 3. Primary Center Workspace: Table vs. Timeline vs. Calendar */}
+          {viewMode === 'table' ? (
+            <ScheduleTableView
+              schedules={filteredSchedules}
+              loading={loading}
+              currentPage={currentPage}
+              itemsPerPage={itemsPerPage}
+              onPageChange={setCurrentPage}
+              onQuickReschedule={handleOpenReschedule}
+              onReassign={handleOpenReassign}
+              onEdit={handleOpenEdit}
+              onCancel={handleOpenCancel}
+              onAssignNow={handleOpenAssignNow}
+              granularity={granularity}
+              upcomingCount={kpiMetrics.onSiteCount}
+              onSwitchToUpcoming={() => {
+                setGranularity('week');
+                setCurrentDate(new Date());
+              }}
+            />
+          ) : granularity === 'month' ? (
+            <ScheduleMonthCalendarView
+              currentDate={currentDate}
+              schedules={schedules}
+              technicians={profiles}
+              onSelectDate={(d) => {
+                setCurrentDate(d);
+              }}
+              onQuickReschedule={handleOpenReschedule}
+              onEdit={handleOpenEdit}
+              onSwitchToTimeline={(d) => {
+                setCurrentDate(d);
+                setGranularity('day');
+                setViewMode('timeline');
+              }}
+              onDispatchTechnician={(techId, d) => {
+                setCurrentDate(d);
+                setPreselectedTechId(techId);
+                setIsDispatchDrawerOpen(true);
+              }}
+              onNewAssignmentForDate={(d) => {
+                setCurrentDate(d);
+                setIsNewAssignmentModalOpen(true);
+              }}
+            />
+          ) : (
+            <ScheduleTimelineView
+              schedules={filteredSchedules}
+              technicians={profiles}
+              selectedDate={formatLocalDate(currentDate)}
+              onQuickReschedule={handleOpenReschedule}
+              onEdit={handleOpenEdit}
+              onDispatchSlot={(techId) => {
+                setPreselectedTechId(techId);
+                setIsDispatchDrawerOpen(true);
+              }}
+            />
+          )}
         </div>
-      </div>
       )}
 
-      {/* Casual Helpers Register View */}
+      {/* TAB 2: CASUAL HELPERS REGISTER */}
       {viewTab === 'casual_helpers' && (
-        <div className="flex flex-col flex-1 gap-5 overflow-y-auto">
-          {/* 4 KPI Cards */}
-          <KpiGrid columns={4}>
-            <KpiCard
-              label="Total Helpers"
-              value={casualHelpers.length}
-              subtext="On-demand registered roster"
-              icon={Users}
-              variant="default"
-            />
-            <KpiCard
-              label="Active on Roster"
-              value={casualHelpers.filter(c => c.status === 'active').length}
-              subtext="Ready for deployment"
-              icon={ShieldCheck}
-              variant="emerald"
-            />
-            <KpiCard
-              label="Dispatches Handled"
-              value={casualHelpers.reduce((sum, c) => sum + (c.dispatch_count || 0), 0)}
-              subtext="Total missions completed"
-              icon={Award}
-              variant="amber"
-            />
-            <KpiCard
-              label="NCR Daily Baseline"
-              value="₱610.00"
-              subtext="DOLE Statutory baseline"
-              icon={DollarSign}
-              variant="blue"
-            />
-          </KpiGrid>
-
-          {/* Casual Helpers Catalog Table */}
-          {(() => {
-            const filteredCasualHelpers = casualHelpers
-              .filter(c => casualStatusFilter === 'all' ? true : casualStatusFilter === 'active' ? c.status === 'active' : c.status !== 'active')
-              .filter(c => 
-                c.full_name.toLowerCase().includes(casualSearch.toLowerCase()) ||
-                (c.contact_number || '').includes(casualSearch) ||
-                (c.notes || '').toLowerCase().includes(casualSearch.toLowerCase())
-              );
-
-            return (
-              <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200/80 dark:border-zinc-800 overflow-hidden flex flex-col flex-1 shadow-none">
-                {/* Toolbar */}
-                <div className="px-3.5 py-2.5 border-b border-zinc-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900 flex flex-wrap gap-2.5 items-center justify-between">
-                  <div className="flex flex-wrap gap-2.5 items-center">
-                    <div className="relative w-full sm:w-72">
-                      <Search className="absolute inset-y-0 left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-zinc-400 pointer-events-none" />
-                      <input
-                        type="text"
-                        placeholder="Search worker name, phone, notes..."
-                        value={casualSearch}
-                        onChange={(e) => setCasualSearch(e.target.value)}
-                        className="block w-full pl-8 pr-3 py-1.5 border border-zinc-200/80 dark:border-zinc-700 rounded-md text-xs bg-zinc-50/50 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none focus:ring-1 focus:ring-zinc-400 transition-colors duration-75"
-                      />
-                    </div>
-                    <div className="flex items-center gap-0.5 bg-zinc-100 dark:bg-zinc-800 p-0.5 rounded-md border border-zinc-200/80 dark:border-zinc-700/50">
-                      <button
-                        type="button"
-                        onClick={() => setCasualStatusFilter('all')}
-                        className={`px-2 py-0.5 text-xs font-medium rounded transition-colors duration-75 cursor-pointer ${casualStatusFilter === 'all' ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100 font-semibold shadow-2xs' : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'}`}
-                      >
-                        All ({casualHelpers.length})
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setCasualStatusFilter('active')}
-                        className={`px-2 py-0.5 text-xs font-medium rounded transition-colors duration-75 cursor-pointer ${casualStatusFilter === 'active' ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100 font-semibold shadow-2xs' : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'}`}
-                      >
-                        Active ({casualHelpers.filter(c => c.status === 'active').length})
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setCasualStatusFilter('inactive')}
-                        className={`px-2 py-0.5 text-xs font-medium rounded transition-colors duration-75 cursor-pointer ${casualStatusFilter === 'inactive' ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100 font-semibold shadow-2xs' : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'}`}
-                      >
-                        Inactive ({casualHelpers.filter(c => c.status !== 'active').length})
-                      </button>
-                    </div>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() => openRegisterCasualModal()}
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 rounded-md hover:bg-zinc-800 dark:hover:bg-zinc-200 text-xs font-medium transition-colors duration-75 cursor-pointer shadow-none"
-                  >
-                    <UserPlus className="w-3.5 h-3.5" />
-                    Register Worker
-                  </button>
-                </div>
-
-                {/* Table */}
-                <TableContainer className="rounded-none border-x-0 border-t-0 border-b-0 flex-1 overflow-x-auto">
-                  <Table fixed>
-                    <TableHead sticky>
-                      <TableRow className="h-8">
-                        <TableHeaderCell width="32%">Worker Name & Operational Notes</TableHeaderCell>
-                        <TableHeaderCell width="20%">Contact Phone</TableHeaderCell>
-                        <TableHeaderCell width="18%" numeric>Daily Wage Rate</TableHeaderCell>
-                        <TableHeaderCell width="14%" align="center">Missions Handled</TableHeaderCell>
-                        <TableHeaderCell width="10%">Status</TableHeaderCell>
-                        <TableHeaderCell width="6%" align="right" noDivider>Actions</TableHeaderCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {filteredCasualHelpers.length === 0 ? (
-                        <TableEmptyState
-                          colSpan={6}
-                          icon={Users}
-                          title="No casual helpers found"
-                          description={casualSearch ? "No workers match your search query." : "No casual helpers registered yet."}
-                        />
-                      ) : (
-                        filteredCasualHelpers.map((ch) => (
-                          <TableRow key={ch.id}>
-                            <TableCell>
-                              <div className="flex items-center gap-2">
-                                <div className="h-6 w-6 rounded-full bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 flex items-center justify-center text-zinc-700 dark:text-zinc-300 shrink-0 font-medium text-[10px]">
-                                  {ch.full_name.slice(0, 2).toUpperCase()}
-                                </div>
-                                <div className="flex flex-col min-w-0">
-                                  <span className="font-medium text-zinc-900 dark:text-zinc-100 truncate">{ch.full_name}</span>
-                                  {ch.notes && (
-                                    <span className="text-[10px] text-zinc-400 truncate">{ch.notes}</span>
-                                  )}
-                                  {ch.emergency_contact && (
-                                    <span className="text-[10px] text-zinc-400 truncate">Emergency: {ch.emergency_contact}</span>
-                                  )}
-                                </div>
-                              </div>
-                            </TableCell>
-                            <TableCell className="whitespace-nowrap font-mono tabular-nums text-xs">
-                              <div className="flex items-center gap-1.5 text-zinc-600 dark:text-zinc-400">
-                                <Phone className="w-3 h-3 text-zinc-400 shrink-0" />
-                                <span>{ch.contact_number}</span>
-                              </div>
-                            </TableCell>
-                            <TableCell numeric className="whitespace-nowrap font-mono tabular-nums text-xs">
-                              <span className="text-zinc-900 dark:text-zinc-100 font-medium">₱{Number(ch.daily_rate).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                              <span className="text-[10px] text-zinc-400 ml-1">/day</span>
-                            </TableCell>
-                            <TableCell align="center" className="whitespace-nowrap font-mono tabular-nums text-xs">
-                              <span className="text-zinc-700 dark:text-zinc-300">{ch.dispatch_count || 0}</span>
-                              <span className="text-[10px] text-zinc-400 ml-1">missions</span>
-                            </TableCell>
-                            <TableCell className="whitespace-nowrap">
-                              <StatusDot 
-                                status={ch.status === 'active' ? 'active' : 'neutral'} 
-                                label={ch.status === 'active' ? 'Active' : 'Inactive'} 
-                              />
-                            </TableCell>
-                            <TableCell align="right" noDivider className="whitespace-nowrap">
-                              <div className="flex items-center justify-end gap-1">
-                                <button
-                                  type="button"
-                                  onClick={() => openRegisterCasualModal(ch)}
-                                  title="Edit Worker Details"
-                                  className="p-1 text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded transition-colors duration-75 cursor-pointer"
-                                >
-                                  <Edit3 className="w-3.5 h-3.5" />
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => handleToggleCasualStatus(ch)}
-                                  title={ch.status === 'active' ? 'Deactivate Worker' : 'Activate Worker'}
-                                  className={`p-1 rounded transition-colors duration-75 cursor-pointer ${
-                                    ch.status === 'active'
-                                      ? 'text-zinc-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30'
-                                      : 'text-zinc-400 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/30'
-                                  }`}
-                                >
-                                  <RotateCcw className="w-3.5 h-3.5" />
-                                </button>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        ))
-                      )}
-                    </TableBody>
-                  </Table>
-                </TableContainer>
+        <div className="bg-[#F5F4F7] dark:bg-[#1E1F27] rounded-2xl border border-black/[0.08] dark:border-white/[0.08] overflow-hidden flex flex-col flex-1 shadow-xs">
+          {/* Toolbar */}
+          <div className="px-4 py-3 border-b border-black/[0.06] dark:border-white/[0.06] flex flex-wrap gap-3 items-center justify-between">
+            <div className="flex flex-wrap gap-2.5 items-center flex-1">
+              <div className="relative w-full sm:w-72">
+                <Search className="absolute inset-y-0 left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[#8E8D9A]" />
+                <input
+                  type="text"
+                  placeholder="Search worker name, contact, notes..."
+                  value={casualSearch}
+                  onChange={(e) => setCasualSearch(e.target.value)}
+                  className="block w-full pl-8 pr-3 py-1.5 border border-black/[0.08] dark:border-white/[0.08] rounded-xl text-xs bg-[#FAF9FB] dark:bg-[#2B2C35] text-[#121215] dark:text-[#F4F4F6] placeholder-[#8E8D9A] focus:outline-none focus:ring-2 focus:ring-[#4D55CC]"
+                />
               </div>
-            );
-          })()}
+
+              {/* Status Filter */}
+              <div className="flex items-center gap-1 bg-[#EBEAEF] dark:bg-[#262732] p-1 rounded-xl border border-black/[0.04] dark:border-white/[0.05]">
+                {(['all', 'active', 'inactive'] as const).map(f => (
+                  <button
+                    key={f}
+                    onClick={() => setCasualStatusFilter(f)}
+                    className={`px-3 py-1 text-xs rounded-lg font-bold capitalize transition-all cursor-pointer ${
+                      casualStatusFilter === f
+                        ? 'bg-[#FAF9FB] dark:bg-[#1E1F27] text-[#121215] dark:text-[#F4F4F6] shadow-xs'
+                        : 'text-[#575762] dark:text-[#B0B2BD] hover:text-[#121215]'
+                    }`}
+                  >
+                    {f}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <span className="text-xs text-[#8E8D9A] font-mono">
+              Total Registered: {casualHelpers.length}
+            </span>
+          </div>
+
+          {/* Casual Table (Direct Native Matching EmployeeFilesClient) */}
+          <div className="flex-1 overflow-x-auto overflow-y-auto">
+            <table className="w-full text-left border-collapse">
+              <thead className="sticky top-0 z-10 bg-[#EBEAEF] dark:bg-[#262732] border-b border-black/[0.08] dark:border-white/[0.08] text-[11px] font-bold text-[#575762] dark:text-[#B0B2BD] uppercase tracking-wider">
+                <tr>
+                  <th className="py-3 px-4 min-w-[200px]">Worker Name</th>
+                  <th className="py-3 px-4 min-w-[160px]">Contact Number</th>
+                  <th className="py-3 px-4 min-w-[130px]">Daily Wage</th>
+                  <th className="py-3 px-4 min-w-[120px]">Status</th>
+                  <th className="py-3 px-4 text-right min-w-[140px]">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-black/[0.06] dark:divide-white/[0.06] text-xs">
+                {casualHelperLoading ? (
+                  <tr>
+                    <td colSpan={5} className="py-16 text-center text-[#8E8D9A]">
+                      <div className="flex flex-col items-center justify-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-[#4D55CC] animate-ping" />
+                        <span className="text-xs font-semibold">Loading casual staff register...</span>
+                      </div>
+                    </td>
+                  </tr>
+                ) : filteredCasual.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="py-16 text-center text-[#8E8D9A]">
+                      <div className="flex flex-col items-center justify-center gap-2 max-w-sm mx-auto">
+                        <div className="w-10 h-10 rounded-2xl bg-black/[0.04] dark:bg-white/[0.05] border border-black/[0.06] dark:border-white/[0.08] flex items-center justify-center text-[#8E8D9A]">
+                          <Users className="w-5 h-5" />
+                        </div>
+                        <span className="font-bold text-[#121215] dark:text-[#F4F4F6] text-sm">No casual workers found</span>
+                        <span className="text-xs leading-relaxed text-[#8E8D9A] dark:text-[#7A7C88]">
+                          No helpers match your search criteria. Click &apos;Register Temporary Worker&apos; to add on-demand support staff.
+                        </span>
+                      </div>
+                    </td>
+                  </tr>
+                ) : (
+                  filteredCasual.slice((casualCurrentPage - 1) * itemsPerPage, casualCurrentPage * itemsPerPage).map((ch) => (
+                    <tr 
+                      key={ch.id}
+                      className="transition-colors border-b border-black/[0.06] dark:border-white/[0.06] hover:bg-black/[0.025] dark:hover:bg-white/[0.025]"
+                    >
+                      <td className="py-3 px-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-full bg-[#EBEAEF] dark:bg-[#343640] border border-black/[0.08] dark:border-white/[0.1] flex items-center justify-center text-[10px] font-extrabold text-[#121215] dark:text-[#F4F4F6] shrink-0">
+                            {ch.full_name.slice(0, 2).toUpperCase()}
+                          </div>
+                          <span className="text-xs font-bold text-[#121215] dark:text-[#F4F4F6]">
+                            {ch.full_name}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="py-3 px-4">
+                        <span className="text-xs text-[#575762] dark:text-[#B0B2BD] font-mono">
+                          {ch.contact_number}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4">
+                        <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 font-mono">
+                          ₱{ch.daily_rate?.toFixed(2) || '610.00'}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4">
+                        {(ch.status || 'active') === 'active' ? (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                            <span>Active</span>
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-black/[0.04] dark:bg-white/[0.06] text-[#8E8D9A] border border-black/[0.08]">
+                            <span className="w-1.5 h-1.5 rounded-full bg-[#8E8D9A]" />
+                            <span>Inactive</span>
+                          </span>
+                        )}
+                      </td>
+                      <td className="py-3 px-4 text-right whitespace-nowrap">
+                        <div className="flex items-center justify-end gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => openRegisterCasualModal(ch)}
+                            className="px-3 py-1 text-xs font-bold bg-[#FAF9FB] dark:bg-[#2B2C35] hover:bg-black/[0.04] dark:hover:bg-white/[0.06] text-[#4D55CC] dark:text-[#7A82E6] rounded-xl border border-black/[0.08] dark:border-white/[0.08] transition-colors cursor-pointer shadow-xs"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleToggleCasualStatus(ch)}
+                            className="px-3 py-1 text-xs font-bold text-[#575762] hover:text-[#121215] dark:text-[#B0B2BD] dark:hover:text-[#F4F4F6] rounded-xl hover:bg-black/[0.04] dark:hover:bg-white/[0.05] transition-colors cursor-pointer"
+                          >
+                            {(ch.status || 'active') === 'active' ? 'Deactivate' : 'Activate'}
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="border-t border-black/[0.08] dark:border-white/[0.08] bg-[#FAF9FB]/60 dark:bg-[#1E1F27]/60 p-2.5">
+            <Pagination
+              currentPage={casualCurrentPage}
+              totalPages={Math.ceil(filteredCasual.length / itemsPerPage)}
+              totalItems={filteredCasual.length}
+              itemsPerPage={itemsPerPage}
+              onPageChange={setCasualCurrentPage}
+              itemNamePlural="workers"
+            />
+          </div>
         </div>
       )}
 
-      {/* Register / Edit Casual Worker Modal */}
+      {/* DRAWERS & MODALS */}
+
+      {/* 1. New Assignment Branching Modal (Mockup 3) */}
+      <NewAssignmentModal
+        isOpen={isNewAssignmentModalOpen}
+        onClose={() => setIsNewAssignmentModalOpen(false)}
+        onSelectType={(type: AssignmentType) => {
+          setIsNewAssignmentModalOpen(false);
+          if (type === 'on_site') {
+            setPreselectedTechId(undefined);
+            setInitialScheduleForDispatch(null);
+            setIsDispatchDrawerOpen(true);
+          } else if (type === 'deployment') {
+            setIsDeploymentDrawerOpen(true);
+          } else if (type === 'office_duty') {
+            setIsOfficeDutyDrawerOpen(true);
+          }
+        }}
+      />
+
+      {/* 2. On-Site Service Stepped Dispatch Drawer (Mockup 4) */}
+      <SteppedDispatchDrawer
+        isOpen={isDispatchDrawerOpen}
+        onClose={() => setIsDispatchDrawerOpen(false)}
+        profiles={profiles}
+        casualHelpers={casualHelpers}
+        existingSchedules={schedules}
+        onOpenCasualRegisterModal={() => openRegisterCasualModal()}
+        preselectedTechId={preselectedTechId}
+        initialSchedule={initialScheduleForDispatch}
+        selectedDate={currentDate}
+        onSuccess={(targetDate) => {
+          if (targetDate) {
+            setCurrentDate(new Date(targetDate));
+          }
+          fetchSchedules();
+        }}
+      />
+
+      {/* 3. Out-of-Town Deployment Dedicated Drawer */}
+      <DeploymentDrawer
+        isOpen={isDeploymentDrawerOpen}
+        onClose={() => setIsDeploymentDrawerOpen(false)}
+        profiles={profiles}
+        existingSchedules={schedules}
+        selectedDate={currentDate}
+        onSuccess={() => {
+          fetchSchedules();
+        }}
+      />
+
+      {/* 4. Main Office Duty Attendance Shift Drawer */}
+      <OfficeDutyDrawer
+        isOpen={isOfficeDutyDrawerOpen}
+        onClose={() => setIsOfficeDutyDrawerOpen(false)}
+        profiles={profiles}
+        existingSchedules={schedules}
+        selectedDate={currentDate}
+        onSuccess={() => {
+          fetchSchedules();
+        }}
+      />
+
+      {/* 5. Quick Reschedule Slide-Over Drawer with Audit History */}
+      <QuickRescheduleDrawer
+        isOpen={isRescheduleDrawerOpen}
+        onClose={() => setIsRescheduleDrawerOpen(false)}
+        schedule={reschedulingSchedule}
+        allSchedules={schedules}
+        initialTab={rescheduleDrawerTab}
+        onReassign={(s) => {
+          setIsRescheduleDrawerOpen(false);
+          handleOpenReassign(s);
+        }}
+        onCancel={(s) => {
+          setIsRescheduleDrawerOpen(false);
+          handleOpenCancel(s);
+        }}
+        onSuccess={(targetDate) => {
+          if (targetDate) {
+            setCurrentDate(new Date(targetDate));
+          }
+          fetchSchedules();
+        }}
+      />
+
+      {/* 6. Technician Availability Roster Drawer */}
+      <TechnicianRosterDrawer
+        isOpen={isRosterDrawerOpen}
+        onClose={() => setIsRosterDrawerOpen(false)}
+        profiles={profiles}
+        schedules={schedules}
+        onSelectForDispatch={handleSelectTechForDispatch}
+      />
+
+      {/* 7. Reassign Modal */}
       <ModalDialog
-        isOpen={isCasualModalOpen}
-        onClose={() => setIsCasualModalOpen(false)}
-        title={editingCasualHelper ? 'Edit Casual Worker' : 'Register Casual Worker'}
-        subtitle="On-demand support crew without app accounts."
-        icon={UserPlus}
-        iconVariant="blue"
+        isOpen={isReassignModalOpen}
+        onClose={() => setIsReassignModalOpen(false)}
+        title="Reassign Lead Technician"
+        subtitle="Transfer this assignment to another qualified technician. Original assignee will receive a real-time transfer notification."
         maxWidth="md"
-        footer={
-          <div className="flex items-center justify-end gap-2 w-full">
+      >
+        <form onSubmit={handleReassignSubmit} className="space-y-4">
+          <div className="p-3 bg-zinc-50 dark:bg-zinc-800 rounded-lg text-xs space-y-1">
+            <span className="text-zinc-500 block">Current Assignment:</span>
+            <strong className="text-zinc-900 dark:text-zinc-100 block">
+              {reassigningSchedule?.client_name}
+            </strong>
+            <span className="text-zinc-500 block">
+              Currently Assigned: {reassigningSchedule?.profiles?.full_name || 'Unassigned'}
+            </span>
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-xs font-bold text-zinc-700 dark:text-zinc-300">
+              Select Replacement Technician *
+            </label>
+            <select
+              required
+              value={newTechnicianId}
+              onChange={(e) => setNewTechnicianId(e.target.value)}
+              className="w-full px-3 py-2 text-xs bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-zinc-100"
+            >
+              <option value="">-- Choose Field Technician --</option>
+              {profiles
+                .filter(p => p.role === 'technician' && p.technician_level !== 'helper' && p.id !== reassigningSchedule?.technician_id)
+                .map(p => (
+                  <option key={p.id} value={p.id}>
+                    {p.full_name} ({p.technician_level || 'Tech'}) {p.lifecycle_status === 'on_leave' ? '[ON LEAVE]' : ''}
+                  </option>
+                ))}
+            </select>
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-xs font-bold text-zinc-700 dark:text-zinc-300">
+              Transfer Reason (Optional)
+            </label>
+            <input
+              type="text"
+              placeholder="e.g., Client requested rescheduling / Tech running late on previous run"
+              value={reassignReason}
+              onChange={(e) => setReassignReason(e.target.value)}
+              className="w-full px-3 py-2 text-xs bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-zinc-100"
+            />
+          </div>
+
+          <div className="pt-3 flex justify-end gap-2 border-t border-zinc-200 dark:border-zinc-800">
             <button
               type="button"
-              onClick={() => setIsCasualModalOpen(false)}
-              className="px-3.5 py-1.5 border border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 rounded-lg text-xs font-semibold hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+              onClick={() => setIsReassignModalOpen(false)}
+              className="px-3 py-1.5 text-xs text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg cursor-pointer"
             >
               Cancel
             </button>
             <button
               type="submit"
-              form="casual-worker-form"
-              disabled={isSubmitting}
-              className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold shadow-xs disabled:opacity-50 transition-colors cursor-pointer flex items-center gap-1.5"
+              disabled={isSubmitting || !newTechnicianId}
+              className="px-4 py-1.5 text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white rounded-lg disabled:opacity-50 cursor-pointer"
             >
-              <Check className="w-3.5 h-3.5" />
-              {isSubmitting ? 'Saving...' : editingCasualHelper ? 'Update Worker' : 'Register Worker'}
+              {isSubmitting ? "Transferring..." : "Confirm Reassignment"}
             </button>
-          </div>
-        }
-      >
-        <form id="casual-worker-form" onSubmit={handleSaveCasualHelper} className="space-y-3.5">
-          <div>
-            <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">Full Legal Name *</label>
-            <input
-              type="text"
-              required
-              placeholder="e.g. Rommel Bautista"
-              value={casualForm.fullName}
-              onChange={(e) => setCasualForm({ ...casualForm, fullName: e.target.value })}
-              className="w-full border border-zinc-200 dark:border-zinc-700 rounded-lg px-3 py-1.5 text-xs bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-hidden focus:ring-1 focus:ring-zinc-400 dark:focus:ring-zinc-500 font-medium"
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">Contact Phone *</label>
-              <input
-                type="text"
-                required
-                placeholder="0917-xxx-xxxx"
-                value={casualForm.contactNumber}
-                onChange={(e) => setCasualForm({ ...casualForm, contactNumber: e.target.value })}
-                className="w-full border border-zinc-200 dark:border-zinc-700 rounded-lg px-3 py-1.5 text-xs bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-hidden focus:ring-1 focus:ring-zinc-400 dark:focus:ring-zinc-500 font-mono"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">Daily Wage Rate (₱) *</label>
-              <input
-                type="number"
-                step="10"
-                min="500"
-                required
-                value={casualForm.dailyRate}
-                onChange={(e) => setCasualForm({ ...casualForm, dailyRate: parseFloat(e.target.value) || 610 })}
-                className="w-full border border-zinc-200 dark:border-zinc-700 rounded-lg px-3 py-1.5 text-xs bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-hidden focus:ring-1 focus:ring-zinc-400 dark:focus:ring-zinc-500 font-mono"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">Emergency Contact (Optional)</label>
-            <input
-              type="text"
-              placeholder="e.g. Elena Bautista (0918-xxx-xxxx)"
-              value={casualForm.emergencyContact}
-              onChange={(e) => setCasualForm({ ...casualForm, emergencyContact: e.target.value })}
-              className="w-full border border-zinc-200 dark:border-zinc-700 rounded-lg px-3 py-1.5 text-xs bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-hidden focus:ring-1 focus:ring-zinc-400 dark:focus:ring-zinc-500"
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">Skills / Operational Notes (Optional)</label>
-            <textarea
-              rows={2}
-              placeholder="e.g. Certified for heavy lifting, grease trap cleaning, safety boots equipped"
-              value={casualForm.notes}
-              onChange={(e) => setCasualForm({ ...casualForm, notes: e.target.value })}
-              className="w-full border border-zinc-200 dark:border-zinc-700 rounded-lg px-3 py-1.5 text-xs bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-hidden focus:ring-1 focus:ring-zinc-400 dark:focus:ring-zinc-500"
-            />
           </div>
         </form>
       </ModalDialog>
 
-      {/* Smart Dispatch Modal */}
+      {/* 8. Cancel Dispatch Modal */}
       <ModalDialog
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        title={isOfficeMode ? 'Schedule Office Hours' : 'Smart Dispatch'}
-        subtitle={isOfficeMode ? 'Assign tech to HQ' : 'Assign tech and configure geofence'}
-        icon={Navigation}
-        iconVariant={isOfficeMode ? 'emerald' : 'blue'}
-        maxWidth={isOfficeMode ? 'md' : '5xl'}
-        contentHeight="max-h-[90vh]"
-        headerExtra={
-          <div className="flex bg-zinc-100 dark:bg-zinc-800 p-0.5 rounded-lg border border-zinc-200/80 dark:border-zinc-700">
-            <button
-              type="button"
-              onClick={() => toggleOfficeMode(false)}
-              className={`text-xs font-semibold px-2.5 py-1 rounded-md transition-colors ${!isOfficeMode ? 'bg-white dark:bg-zinc-900 shadow-xs text-blue-700 dark:text-blue-400' : 'text-zinc-500 hover:text-zinc-700 dark:text-zinc-400'}`}
-            >
-              Dispatch
-            </button>
-            <button
-              type="button"
-              onClick={() => toggleOfficeMode(true)}
-              className={`text-xs font-semibold px-2.5 py-1 rounded-md transition-colors ${isOfficeMode ? 'bg-white dark:bg-zinc-900 shadow-xs text-emerald-700 dark:text-emerald-400' : 'text-zinc-500 hover:text-zinc-700 dark:text-zinc-400'}`}
-            >
-              HQ / Office
-            </button>
-          </div>
-        }
-        footer={
-          <div className="flex items-center justify-end gap-2 w-full">
-            <button 
-              type="button"
-              onClick={() => setIsModalOpen(false)}
-              className="px-3.5 py-1.5 border border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 rounded-lg text-xs font-semibold hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
-            >
-              Cancel
-            </button>
-            <button 
-              type="button"
-              onClick={handleSubmit}
-              disabled={isSubmitting || (isOfficeMode ? !leadTechId : (!leadTechId || !formData.client_name))}
-              className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold shadow-xs disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5 cursor-pointer transition-colors"
-            >
-              {isSubmitting ? 'Creating...' : 'Create Dispatch & Geofence'}
-            </button>
-          </div>
-        }
+        isOpen={isCancelModalOpen}
+        onClose={() => setIsCancelModalOpen(false)}
+        title="Cancel Dispatch Assignment"
+        subtitle="Cancelling will remove this dispatch from active duty and log the operational reason in the audit trail."
+        maxWidth="md"
       >
-        <div className={`-mx-5 -my-5 flex flex-col ${isOfficeMode ? 'p-5' : 'lg:flex-row divide-y lg:divide-y-0 lg:divide-x divide-zinc-200 dark:divide-zinc-800 min-h-[500px]'}`}>
-          {/* Left Pane - Form */}
-          <div className={`w-full ${isOfficeMode ? 'space-y-4' : 'lg:w-[45%] p-5 overflow-y-auto max-h-[65vh] flex flex-col gap-4'}`}>
-            {/* Tech & Time */}
-            <div className="grid grid-cols-1 gap-4">
-              {isOfficeMode ? (
-                <div>
-                  <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
-                    HQ Duty Technician *
-                  </label>
-                  <select
-                    value={leadTechId}
-                    onChange={(e) => setLeadTechId(e.target.value)}
-                    className="w-full border border-zinc-200 dark:border-zinc-700 rounded-lg px-3 py-1.5 text-xs bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-hidden focus:ring-1 focus:ring-zinc-400 dark:focus:ring-zinc-500 font-medium"
-                  >
-                    <option value="">-- Choose Field Staff --</option>
-                    {profiles.map(p => (
-                      <option key={p.id} value={p.id} disabled={p.lifecycle_status === 'on_leave'}>
-                        {p.full_name} ({p.technician_level === 'senior' ? 'Senior Tech' : p.role === 'helper' ? 'Helper' : 'Technician'}){p.lifecycle_status === 'on_leave' ? ' - ON LEAVE' : ''}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {/* Section 1: Lead Technician */}
-                  <div>
-                    <div className="flex items-center justify-between mb-1.5">
-                      <div className="flex items-center gap-1.5">
-                        <ShieldCheck className="w-3.5 h-3.5 text-blue-600" />
-                        <label className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">
-                          1. Lead Technician <span className="text-rose-500">*</span>
-                        </label>
-                      </div>
-                      <div className="flex gap-1 bg-zinc-100 dark:bg-zinc-800 p-0.5 rounded-md">
-                        <button
-                          type="button"
-                          onClick={() => setTechFilterTier('all')}
-                          className={`px-2 py-0.5 text-[10px] font-semibold rounded cursor-pointer ${techFilterTier === 'all' ? 'bg-white shadow-xs text-blue-700' : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:text-zinc-200'}`}
-                        >
-                          All Techs
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setTechFilterTier('senior')}
-                          className={`px-2 py-0.5 text-[10px] font-semibold rounded cursor-pointer ${techFilterTier === 'senior' ? 'bg-white shadow-xs text-amber-700' : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:text-zinc-200'}`}
-                        >
-                          Senior Only
-                        </button>
-                      </div>
-                    </div>
-                    
-                    <div className="border border-zinc-200 dark:border-zinc-700 rounded-lg overflow-hidden flex flex-col bg-white dark:bg-zinc-900">
-                      <div className="p-2 border-b border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/60 flex items-center gap-2">
-                        <Search className="w-3.5 h-3.5 text-zinc-400 dark:text-zinc-500" />
-                        <input 
-                          type="text" 
-                          placeholder="Search lead technician..." 
-                          value={techSearch}
-                          onChange={(e) => setTechSearch(e.target.value)}
-                          className="w-full bg-transparent text-xs outline-none placeholder-zinc-400 text-zinc-900 dark:text-zinc-100"
-                        />
-                      </div>
-                      <div className="max-h-36 overflow-y-auto p-1 bg-white dark:bg-zinc-900 divide-y divide-zinc-50 dark:divide-zinc-800">
-                        {profiles
-                          .filter(p => p.role === 'technician')
-                          .filter(p => techFilterTier === 'senior' ? p.technician_level === 'senior' : true)
-                          .filter(p => p.full_name.toLowerCase().includes(techSearch.toLowerCase()))
-                          .map(p => {
-                            const isSelected = leadTechId === p.id;
-                            const isBusy = busyTechIds.includes(p.id);
-                            const isOnLeave = p.lifecycle_status === 'on_leave';
-                            return (
-                              <div
-                                key={p.id}
-                                onClick={() => {
-                                  if (!isOnLeave) {
-                                    setLeadTechId(p.id);
-                                    setSelectedHelperIds(prev => prev.filter(id => id !== p.id));
-                                  }
-                                }}
-                                className={`flex items-center justify-between p-2 rounded-md cursor-pointer transition-all ${
-                                  isOnLeave ? 'opacity-40 cursor-not-allowed bg-zinc-50 dark:bg-zinc-800/60' : isSelected ? 'bg-blue-50/60 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 shadow-xs' : 'hover:bg-zinc-50 dark:hover:bg-zinc-800/60'
-                                }`}
-                              >
-                                <div className="flex items-center gap-2.5 min-w-0">
-                                  <div className={`h-6 w-6 rounded-full flex items-center justify-center shrink-0 border ${isSelected ? 'bg-blue-600 text-white border-blue-600' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 border-zinc-200 dark:border-zinc-700'}`}>
-                                    {isSelected ? <Check className="w-3 h-3" /> : <User className="w-3 h-3" />}
-                                  </div>
-                                  <div className="flex flex-col min-w-0">
-                                    <span className={`text-xs font-semibold truncate ${isSelected ? 'text-blue-900 dark:text-blue-200' : 'text-zinc-800 dark:text-zinc-200'}`}>
-                                      {p.full_name}
-                                    </span>
-                                    <div className="flex items-center gap-1 mt-0.5">
-                                      {p.technician_level === 'senior' ? (
-                                        <span className="text-[8px] font-semibold bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400 px-1 py-0.2 rounded border border-amber-200 dark:border-amber-800 uppercase">SENIOR</span>
-                                      ) : (
-                                        <span className="text-[8px] font-semibold bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-400 px-1 py-0.2 rounded border border-blue-200 dark:border-blue-800 uppercase">TECH</span>
-                                      )}
-                                      {isOnLeave ? (
-                                        <span className="text-[8px] font-semibold text-rose-600 dark:text-rose-400">ON LEAVE</span>
-                                      ) : isBusy ? (
-                                        <span className="text-[8px] font-semibold text-amber-600 dark:text-amber-400">BUSY</span>
-                                      ) : (
-                                        <span className="text-[8px] font-semibold text-emerald-600 dark:text-emerald-400">AVAILABLE</span>
-                                      )}
-                                    </div>
-                                  </div>
-                                </div>
-                                {isSelected && (
-                                  <span className="text-[10px] font-semibold bg-blue-600 text-white px-2 py-0.5 rounded-full uppercase tracking-wider">
-                                    Lead
-                                  </span>
-                                )}
-                              </div>
-                            );
-                          })}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Section 2: Support Crew - Regular Helpers */}
-                  <div>
-                    <div className="flex items-center justify-between mb-1">
-                      <label className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
-                        2. Company Helpers ({selectedHelperIds.length} selected)
-                      </label>
-                      <span className="text-[10px] text-zinc-400 dark:text-zinc-500 font-medium">Regular field assistants</span>
-                    </div>
-                    <div className="border border-zinc-200 dark:border-zinc-700 rounded-lg p-1.5 max-h-28 overflow-y-auto bg-white dark:bg-zinc-900 space-y-1">
-                      {profiles
-                        .filter(p => (p.role === 'helper' || p.technician_level === 'helper') && p.id !== leadTechId)
-                        .map(p => {
-                          const isChecked = selectedHelperIds.includes(p.id);
-                          const isOnLeave = p.lifecycle_status === 'on_leave';
-                          return (
-                            <label key={p.id} className={`flex items-center gap-2.5 p-1.5 rounded cursor-pointer transition-colors ${isChecked ? 'bg-blue-50/70 dark:bg-blue-950/30' : 'hover:bg-zinc-50 dark:hover:bg-zinc-800/60'}`}>
-                              <input
-                                type="checkbox"
-                                disabled={isOnLeave}
-                                checked={isChecked}
-                                onChange={(e) => {
-                                  if (e.target.checked) {
-                                    setSelectedHelperIds([...selectedHelperIds, p.id]);
-                                  } else {
-                                    setSelectedHelperIds(selectedHelperIds.filter(id => id !== p.id));
-                                  }
-                                }}
-                                className="w-3.5 h-3.5 rounded border-zinc-300 dark:border-zinc-700 text-blue-600 focus:ring-blue-600 cursor-pointer disabled:opacity-50"
-                              />
-                              <div className="flex items-center justify-between flex-1 min-w-0">
-                                <span className={`text-xs font-medium truncate ${isOnLeave ? 'text-zinc-400 dark:text-zinc-500 line-through' : isChecked ? 'text-blue-900 dark:text-blue-200 font-semibold' : 'text-zinc-700 dark:text-zinc-300'}`}>
-                                  {p.full_name}
-                                </span>
-                                <span className="text-[8px] font-semibold bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 px-1.5 py-0.2 rounded uppercase border border-zinc-200 dark:border-zinc-700">
-                                  {isOnLeave ? 'ON LEAVE' : 'HELPER'}
-                                </span>
-                              </div>
-                            </label>
-                          );
-                        })}
-                    </div>
-                  </div>
-
-                  {/* Section 3: Support Crew - Casual Helpers */}
-                  <div>
-                    <div className="flex items-center justify-between mb-1">
-                      <label className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
-                        3. Casual Helpers ({selectedCasualHelperIds.length} selected)
-                      </label>
-                      <button
-                        type="button"
-                        onClick={() => openRegisterCasualModal()}
-                        className="text-[10px] font-semibold text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 uppercase tracking-wider cursor-pointer"
-                      >
-                        + Quick Register
-                      </button>
-                    </div>
-                    <div className="border border-zinc-200 dark:border-zinc-700 rounded-lg p-1.5 max-h-28 overflow-y-auto bg-white dark:bg-zinc-900 space-y-1">
-                      {casualHelpers.filter(ch => ch.status === 'active').length === 0 ? (
-                        <div className="p-2 text-center text-xs text-zinc-400 dark:text-zinc-500">No active casual helpers registered</div>
-                      ) : (
-                        casualHelpers.filter(ch => ch.status === 'active').map(ch => {
-                          const isChecked = selectedCasualHelperIds.includes(ch.id);
-                          return (
-                            <label key={ch.id} className={`flex items-center gap-2.5 p-1.5 rounded cursor-pointer transition-colors ${isChecked ? 'bg-blue-50/70 dark:bg-blue-950/30' : 'hover:bg-zinc-50 dark:hover:bg-zinc-800/60'}`}>
-                              <input
-                                type="checkbox"
-                                checked={isChecked}
-                                onChange={(e) => {
-                                  if (e.target.checked) {
-                                    setSelectedCasualHelperIds([...selectedCasualHelperIds, ch.id]);
-                                  } else {
-                                    setSelectedCasualHelperIds(selectedCasualHelperIds.filter(id => id !== ch.id));
-                                  }
-                                }}
-                                className="w-3.5 h-3.5 rounded border-zinc-300 dark:border-zinc-700 text-blue-600 focus:ring-blue-600 cursor-pointer"
-                              />
-                              <div className="flex items-center justify-between flex-1 min-w-0">
-                                <div className="flex flex-col min-w-0">
-                                  <span className={`text-xs font-medium truncate ${isChecked ? 'text-blue-900 dark:text-blue-200 font-semibold' : 'text-zinc-700 dark:text-zinc-300'}`}>
-                                    {ch.full_name}
-                                  </span>
-                                  <span className="text-[10px] text-zinc-400 dark:text-zinc-500 font-mono">{ch.contact_number}</span>
-                                </div>
-                                <span className="text-[9px] font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30 px-1.5 py-0.5 rounded border border-emerald-200 dark:border-emerald-800">
-                                  ₱{Number(ch.daily_rate).toFixed(0)}/day
-                                </span>
-                              </div>
-                            </label>
-                          );
-                        })
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Hierarchy Alert Banner */}
-                  {!leadTechId && (selectedHelperIds.length > 0 || selectedCasualHelperIds.length > 0) && (
-                    <div className="p-2.5 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/60 rounded-lg flex items-start gap-2 text-xs text-rose-800 dark:text-rose-300">
-                      <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
-                      <div>
-                        <span className="font-semibold">Hierarchy Rule: </span>
-                        A Lead Technician must be selected. Support crew cannot be dispatched without a Senior or Standard Technician.
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {!isOfficeMode && (
-                <div>
-                  <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">Client / Assignment *</label>
-                  <input 
-                    type="text" required placeholder="e.g. Ayala Malls Routine Inspect"
-                    value={formData.client_name}
-                    onChange={(e) => setFormData({...formData, client_name: e.target.value})}
-                    className="w-full border border-zinc-200 dark:border-zinc-700 rounded-lg px-3 py-1.5 text-xs bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-hidden focus:ring-1 focus:ring-zinc-400 dark:focus:ring-zinc-500 font-medium"
-                  />
-                </div>
-              )}
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">Date *</label>
-                  <input 
-                    type="date" required
-                    value={formData.date}
-                    onChange={(e) => setFormData({...formData, date: e.target.value})}
-                    className="w-full border border-zinc-200 dark:border-zinc-700 rounded-lg px-3 py-1.5 text-xs bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-hidden focus:ring-1 focus:ring-zinc-400 dark:focus:ring-zinc-500 font-medium"
-                  />
-                </div>
-                {!isOfficeMode && (
-                  <div>
-                    <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">Mode</label>
-                    <select 
-                      value={formData.attendance_mode}
-                      onChange={(e) => setFormData({...formData, attendance_mode: e.target.value})}
-                      className="w-full border border-zinc-200 dark:border-zinc-700 rounded-lg px-3 py-1.5 text-xs bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-hidden focus:ring-1 focus:ring-zinc-400 dark:focus:ring-zinc-500 font-medium"
-                    >
-                      <option value="direct_dispatch">Direct Dispatch</option>
-                      <option value="out_of_town">Out of Town</option>
-                    </select>
-                  </div>
-                )}
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">Start Time *</label>
-                  <input 
-                    type="time" required
-                    value={formData.start_time}
-                    onChange={(e) => setFormData({...formData, start_time: e.target.value})}
-                    className="w-full border border-zinc-200 dark:border-zinc-700 rounded-lg px-3 py-1.5 text-xs bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-hidden focus:ring-1 focus:ring-zinc-400 dark:focus:ring-zinc-500 font-medium"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">End Time *</label>
-                  <input 
-                    type="time" required
-                    value={formData.end_time}
-                    onChange={(e) => setFormData({...formData, end_time: e.target.value})}
-                    className="w-full border border-zinc-200 dark:border-zinc-700 rounded-lg px-3 py-1.5 text-xs bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-hidden focus:ring-1 focus:ring-zinc-400 dark:focus:ring-zinc-500 font-medium"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {!isOfficeMode && (
-              <>
-                <div className="h-px bg-zinc-200 dark:bg-zinc-700 w-full my-1"></div>
-
-                {/* Geofence Engine */}
-                <div>
-                  <label className="block text-xs font-semibold text-blue-700 dark:text-blue-400 mb-2 flex items-center gap-1.5">
-                    <MapIcon className="w-3.5 h-3.5" /> Geofence Configuration
-                  </label>
-                  
-                  <div className="relative mb-3">
-                    <input 
-                      type="text" 
-                      placeholder="Search PH Address (Nominatim)..."
-                      value={addressQuery}
-                      onChange={(e) => searchAddress(e.target.value)}
-                      className="w-full border border-zinc-200 dark:border-zinc-700 rounded-lg px-3 py-1.5 pl-8 text-xs bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-hidden focus:ring-1 focus:ring-zinc-400 dark:focus:ring-zinc-500"
-                    />
-                    <Search className="absolute left-2.5 top-2 w-3.5 h-3.5 text-zinc-400" />
-                    
-                    {/* Autocomplete Dropdown */}
-                    {addressResults.length > 0 && (
-                      <div className="absolute z-10 w-full mt-1 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg shadow-xl max-h-48 overflow-y-auto">
-                        {addressResults.map((res: any, idx: number) => (
-                          <div 
-                            key={idx} 
-                            onClick={() => selectAddress(res)}
-                            className="p-2.5 hover:bg-blue-50 dark:hover:bg-zinc-800 cursor-pointer border-b border-zinc-100 dark:border-zinc-800 last:border-0 text-xs flex items-start gap-2"
-                          >
-                            <MapPin className="w-3.5 h-3.5 text-blue-500 shrink-0 mt-0.5" />
-                            <span className="font-medium text-zinc-700 dark:text-zinc-300 line-clamp-2">{res.display_name}</span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="mb-4">
-                    <div className="flex justify-between items-center mb-1">
-                      <label className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">Radius Tolerance</label>
-                      <span className="text-xs font-semibold bg-blue-50 text-blue-800 dark:bg-blue-950/40 dark:text-blue-300 px-2 py-0.5 rounded border border-blue-200 dark:border-blue-800">{formData.geofence_radius} meters</span>
-                    </div>
-                    <input 
-                      type="range" min="50" max="2000" step="50"
-                      value={formData.geofence_radius}
-                      onChange={(e) => setFormData({...formData, geofence_radius: parseInt(e.target.value)})}
-                      className="w-full accent-blue-600 cursor-pointer"
-                    />
-                  </div>
-
-                  {/* Advanced Fallback */}
-                  <div className="bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-700 rounded-lg overflow-hidden">
-                    <button 
-                      type="button"
-                      onClick={() => setShowAdvanced(!showAdvanced)}
-                      className="w-full p-2.5 flex justify-between items-center bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors text-xs font-semibold text-zinc-700 dark:text-zinc-300"
-                    >
-                      <span className="flex items-center gap-1.5"><Settings2 className="w-3.5 h-3.5" /> Manual Fallback (Override)</span>
-                      <span>{showAdvanced ? '−' : '+'}</span>
-                    </button>
-                    {showAdvanced && (
-                      <div className="p-3 space-y-3">
-                        <div className="p-2.5 bg-blue-50 dark:bg-blue-950/40 border border-blue-100 dark:border-blue-900/60 rounded text-xs text-blue-800 dark:text-blue-300 flex items-start gap-1.5">
-                          <Info className="w-3.5 h-3.5 shrink-0 mt-0.5" />
-                          <p>If Nominatim fails, you can paste coordinates directly from Google Maps (e.g. <code>14.599, 120.984</code>) or type them manually.</p>
-                        </div>
-                        <div>
-                          <label className="block text-[10px] font-semibold text-zinc-600 dark:text-zinc-400 mb-1">Paste Coordinates (Lat, Lon)</label>
-                          <input 
-                            type="text" placeholder="14.5995, 120.9842"
-                            value={formData.coordinate_override}
-                            onChange={(e) => handleCoordinateOverride(e.target.value)}
-                            className="w-full border border-zinc-200 dark:border-zinc-700 rounded px-2.5 py-1.5 text-xs bg-white dark:bg-zinc-900 text-zinc-800 dark:text-zinc-200 focus:outline-hidden focus:ring-1 focus:ring-blue-500 font-mono"
-                          />
-                        </div>
-                        <div className="grid grid-cols-2 gap-2">
-                          <div>
-                            <label className="block text-[10px] font-semibold text-zinc-600 dark:text-zinc-400 mb-1">Latitude</label>
-                            <input 
-                              type="number" step="any"
-                              value={formData.geofence_lat}
-                              onChange={(e) => setFormData({...formData, geofence_lat: parseFloat(e.target.value)})}
-                              className="w-full border border-zinc-200 dark:border-zinc-700 rounded px-2.5 py-1.5 text-xs bg-white dark:bg-zinc-900 text-zinc-800 dark:text-zinc-200 focus:outline-hidden focus:ring-1 focus:ring-blue-500 font-mono"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-[10px] font-semibold text-zinc-600 dark:text-zinc-400 mb-1">Longitude</label>
-                            <input 
-                              type="number" step="any"
-                              value={formData.geofence_lon}
-                              onChange={(e) => setFormData({...formData, geofence_lon: parseFloat(e.target.value)})}
-                              className="w-full border border-zinc-200 dark:border-zinc-700 rounded px-2.5 py-1.5 text-xs bg-white dark:bg-zinc-900 text-zinc-800 dark:text-zinc-200 focus:outline-hidden focus:ring-1 focus:ring-blue-500 font-mono"
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </>
-            )}
+        <form onSubmit={handleCancelSubmit} className="space-y-4">
+          <div className="p-3 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 rounded-lg text-xs space-y-1">
+            <span className="text-rose-600 font-bold block">Assignment to Cancel:</span>
+            <strong className="text-zinc-900 dark:text-zinc-100 block">
+              {cancellingSchedule?.client_name} ({cancellingSchedule?.location})
+            </strong>
           </div>
 
-          {/* Right Pane - Visual Map */}
-          {!isOfficeMode && (
-            <div className="hidden lg:block lg:w-[55%] relative bg-zinc-100 dark:bg-zinc-800 h-full min-h-[500px]">
-              <GeofenceMap 
-                lat={formData.geofence_lat}
-                lon={formData.geofence_lon}
-                radius={formData.geofence_radius}
-                onPositionChange={(pos) => setFormData({
-                  ...formData,
-                  geofence_lat: pos[0],
-                  geofence_lon: pos[1],
-                  coordinate_override: `${pos[0].toFixed(5)}, ${pos[1].toFixed(5)}`
-                })}
+          <div className="space-y-1">
+            <label className="text-xs font-bold text-zinc-700 dark:text-zinc-300">
+              Cancellation Reason Preset *
+            </label>
+            <select
+              value={cancelPreset}
+              onChange={(e) => setCancelPreset(e.target.value)}
+              className="w-full px-3 py-2 text-xs bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-zinc-100"
+            >
+              <option value="">-- Select a cancellation reason --</option>
+              <option value="Client Rescheduled">Client Rescheduled</option>
+              <option value="Severe Weather / Flooding">Severe Weather / Flooding</option>
+              <option value="Client Site Inaccessible">Client Site Inaccessible</option>
+              <option value="Parts / Materials Unavailable">Parts / Materials Unavailable</option>
+              <option value="Technician Emergency">Technician Emergency</option>
+              <option value="Other">Other (Specify Below)</option>
+            </select>
+          </div>
+
+          {cancelPreset === 'Other' && (
+            <div className="space-y-1">
+              <label className="text-xs font-bold text-zinc-700 dark:text-zinc-300">
+                Custom Cancellation Notes *
+              </label>
+              <textarea
+                required
+                rows={2}
+                placeholder="Enter specific operational justification..."
+                value={cancelCustomNotes}
+                onChange={(e) => setCancelCustomNotes(e.target.value)}
+                className="w-full px-3 py-2 text-xs bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-zinc-100"
               />
-              {/* Visualizer Help Overlay */}
-              <div className="absolute top-4 left-4 z-[400] bg-white/90 dark:bg-zinc-900/90 backdrop-blur shadow-md border border-zinc-200/80 dark:border-zinc-800 p-3 rounded-lg text-xs max-w-xs pointer-events-none">
-                <p className="font-semibold text-zinc-900 dark:text-zinc-100 mb-0.5">Interactive Geofence</p>
-                <p className="text-zinc-600 dark:text-zinc-400">The blue circle represents the valid clock-in zone. You can drag the marker to adjust the precise location.</p>
-              </div>
             </div>
           )}
-        </div>
-      </ModalDialog>
 
-      {/* Edit Dispatch Modal */}
-      <ModalDialog
-        isOpen={Boolean(isEditModalOpen && editFormData)}
-        onClose={() => setIsEditModalOpen(false)}
-        title="Edit Field Dispatch"
-        subtitle="Update assignment details, timing, and site geofence."
-        icon={Edit3}
-        iconVariant="blue"
-        maxWidth="5xl"
-        contentHeight="max-h-[90vh]"
-        footer={
-          <div className="flex items-center justify-end gap-2 w-full">
+          <div className="pt-3 flex justify-end gap-2 border-t border-zinc-200 dark:border-zinc-800">
             <button
-              type="button"
-              onClick={() => setIsEditModalOpen(false)}
-              className="px-3.5 py-1.5 border border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 rounded-lg text-xs font-semibold hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleEditSubmit}
-              disabled={isSubmitting || !editFormData?.client_name}
-              className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold shadow-xs disabled:opacity-50 transition-colors cursor-pointer"
-            >
-              {isSubmitting ? 'Saving Changes...' : 'Save Dispatch Updates'}
-            </button>
-          </div>
-        }
-      >
-        {editFormData && (
-          <div className="-mx-5 -my-5 flex flex-col lg:flex-row divide-y lg:divide-y-0 lg:divide-x divide-zinc-200 dark:divide-zinc-800 min-h-[500px]">
-            {/* Left Pane - Form Fields */}
-            <div className="w-full lg:w-[45%] p-5 space-y-3.5 overflow-y-auto max-h-[580px]">
-              <div>
-                <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">Client / Assignment *</label>
-                <input
-                  type="text"
-                  required
-                  value={editFormData.client_name}
-                  onChange={(e) => setEditFormData({ ...editFormData, client_name: e.target.value })}
-                  className="w-full border border-zinc-200 dark:border-zinc-700 rounded-lg px-3 py-1.5 text-xs bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-hidden focus:ring-1 focus:ring-zinc-400 dark:focus:ring-zinc-500"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">Date *</label>
-                  <input
-                    type="date"
-                    required
-                    value={editFormData.date}
-                    onChange={(e) => setEditFormData({ ...editFormData, date: e.target.value })}
-                    className="w-full border border-zinc-200 dark:border-zinc-700 rounded-lg px-3 py-1.5 text-xs bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-hidden focus:ring-1 focus:ring-zinc-400 dark:focus:ring-zinc-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">Attendance Mode</label>
-                  <select
-                    value={editFormData.attendance_mode}
-                    onChange={(e) => setEditFormData({ ...editFormData, attendance_mode: e.target.value })}
-                    className="w-full border border-zinc-200 dark:border-zinc-700 rounded-lg px-3 py-1.5 text-xs bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-hidden focus:ring-1 focus:ring-zinc-400 dark:focus:ring-zinc-500"
-                  >
-                    <option value="direct_dispatch">Direct Dispatch</option>
-                    <option value="hq">Office / HQ</option>
-                    <option value="out_of_town">Out of Town</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">Start Time *</label>
-                  <input
-                    type="time"
-                    required
-                    value={editFormData.start_time}
-                    onChange={(e) => setEditFormData({ ...editFormData, start_time: e.target.value })}
-                    className="w-full border border-zinc-200 dark:border-zinc-700 rounded-lg px-3 py-1.5 text-xs bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-hidden focus:ring-1 focus:ring-zinc-400 dark:focus:ring-zinc-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">End Time *</label>
-                  <input
-                    type="time"
-                    required
-                    value={editFormData.end_time}
-                    onChange={(e) => setEditFormData({ ...editFormData, end_time: e.target.value })}
-                    className="w-full border border-zinc-200 dark:border-zinc-700 rounded-lg px-3 py-1.5 text-xs bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-hidden focus:ring-1 focus:ring-zinc-400 dark:focus:ring-zinc-500"
-                  />
-                </div>
-              </div>
-
-              {/* Location Search */}
-              <div>
-                <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">Site Address / Search</label>
-                <div className="relative">
-                  <input
-                    type="text"
-                    placeholder="Type landmark or search address..."
-                    value={editAddressQuery}
-                    onChange={(e) => searchEditAddress(e.target.value)}
-                    className="w-full border border-zinc-200 dark:border-zinc-700 rounded-lg px-3 py-1.5 text-xs bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-hidden focus:ring-1 focus:ring-zinc-400 dark:focus:ring-zinc-500"
-                  />
-                  {editAddressResults.length > 0 && (
-                    <div className="absolute top-full left-0 right-0 z-[500] bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 rounded-lg shadow-xl mt-1 max-h-48 overflow-y-auto divide-y divide-zinc-100 dark:divide-zinc-800">
-                      {editAddressResults.map((r: any, idx: number) => (
-                        <div
-                          key={idx}
-                          onClick={() => selectEditAddress(r)}
-                          className="p-2.5 hover:bg-zinc-50 dark:hover:bg-zinc-800 cursor-pointer text-xs text-zinc-700 dark:text-zinc-300 flex items-start gap-2"
-                        >
-                          <MapPin className="w-3.5 h-3.5 text-rose-500 shrink-0 mt-0.5" />
-                          <span className="line-clamp-2 text-[11px]">{r.display_name}</span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Radius Slider */}
-              <div>
-                <div className="flex justify-between items-center mb-1">
-                  <label className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">Geofence Radius</label>
-                  <span className="text-[11px] font-semibold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40 px-2 py-0.5 rounded border border-blue-200/60 dark:border-blue-900/60 font-mono">
-                    {editFormData.geofence_radius}m
-                  </span>
-                </div>
-                <input
-                  type="range"
-                  min="50"
-                  max="2000"
-                  step="25"
-                  value={editFormData.geofence_radius}
-                  onChange={(e) => setEditFormData({ ...editFormData, geofence_radius: parseInt(e.target.value) })}
-                  className="w-full accent-blue-600 cursor-pointer"
-                />
-                <div className="flex justify-between text-[10px] text-zinc-400 dark:text-zinc-500 font-medium mt-0.5">
-                  <span>50m (Strict)</span>
-                  <span>500m (Standard)</span>
-                  <span>2000m (Wide Area)</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Right Pane - Visual Map */}
-            <div className="hidden lg:block lg:w-[55%] relative bg-zinc-100 dark:bg-zinc-800 h-full min-h-[500px]">
-              <GeofenceMap
-                lat={editFormData.geofence_lat}
-                lon={editFormData.geofence_lon}
-                radius={editFormData.geofence_radius}
-                onPositionChange={(pos) =>
-                  setEditFormData({
-                    ...editFormData,
-                    geofence_lat: pos[0],
-                    geofence_lon: pos[1],
-                    coordinate_override: `${pos[0].toFixed(5)}, ${pos[1].toFixed(5)}`,
-                  })
-                }
-              />
-              <div className="absolute top-3 left-3 z-[400] bg-white/90 dark:bg-zinc-900/90 backdrop-blur shadow-md border border-zinc-200/80 dark:border-zinc-800 p-2.5 rounded-lg text-xs max-w-xs pointer-events-none">
-                <p className="font-semibold text-zinc-900 dark:text-zinc-100 text-xs mb-0.5">Drag to Adjust Location</p>
-                <p className="text-[11px] text-zinc-500 dark:text-zinc-400 leading-tight">Blue circle is the geofence perimeter. Coordinates update automatically.</p>
-              </div>
-            </div>
-          </div>
-        )}
-      </ModalDialog>
-
-      {/* Reassign Technician Modal */}
-      <ModalDialog
-        isOpen={Boolean(isReassignModalOpen && reassigningSchedule)}
-        onClose={() => setIsReassignModalOpen(false)}
-        title="Reassign Technician"
-        subtitle="Transfer assignment to replacement personnel."
-        icon={UserCheck}
-        iconVariant="amber"
-        maxWidth="md"
-        footer={
-          <div className="flex items-center justify-end gap-2 w-full">
-            <button
-              type="button"
-              onClick={() => setIsReassignModalOpen(false)}
-              className="px-3.5 py-1.5 border border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 rounded-lg text-xs font-semibold hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleReassignSubmit}
-              disabled={isSubmitting || !newTechnicianId}
-              className="px-3.5 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-xs font-semibold shadow-xs disabled:opacity-50 transition-colors cursor-pointer"
-            >
-              {isSubmitting ? 'Reassigning...' : 'Confirm Reassignment'}
-            </button>
-          </div>
-        }
-      >
-        {reassigningSchedule && (
-          <div className="space-y-4 text-xs">
-            <div className="p-3 bg-zinc-50 dark:bg-zinc-800/60 rounded-lg border border-zinc-200 dark:border-zinc-700/60 space-y-1.5">
-              <div className="flex justify-between">
-                <span className="text-zinc-500 dark:text-zinc-400">Client:</span>
-                <span className="font-semibold text-zinc-900 dark:text-zinc-100">{reassigningSchedule.client_name}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-zinc-500 dark:text-zinc-400">Current Assignee:</span>
-                <span className="font-semibold text-zinc-900 dark:text-zinc-100">{reassigningSchedule.profiles?.full_name || 'Unassigned'}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-zinc-500 dark:text-zinc-400">Schedule Date:</span>
-                <span className="font-medium text-zinc-700 dark:text-zinc-300">{new Date(reassigningSchedule.start_time).toLocaleDateString()}</span>
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">Select Replacement Technician *</label>
-              <select
-                value={newTechnicianId}
-                onChange={(e) => setNewTechnicianId(e.target.value)}
-                className="w-full border border-zinc-200 dark:border-zinc-700 rounded-lg px-3 py-1.5 text-xs bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-hidden focus:ring-1 focus:ring-zinc-400 dark:focus:ring-zinc-500"
-              >
-                <option value="">-- Choose Active Field Technician --</option>
-                {profiles
-                  .filter((p) => p.role === 'technician')
-                  .filter((p) => p.id !== reassigningSchedule.technician_id)
-                  .map((p) => (
-                    <option key={p.id} value={p.id} disabled={p.lifecycle_status === 'on_leave'}>
-                      {p.full_name} ({p.technician_level === 'senior' ? 'Senior Tech' : 'Technician'}){p.lifecycle_status === 'on_leave' ? ' - ON LEAVE' : ''}
-                    </option>
-                  ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">Transfer Note / Reason (Optional)</label>
-              <input
-                type="text"
-                placeholder="e.g. Assigned tech reported illness"
-                value={reassignReason}
-                onChange={(e) => setReassignReason(e.target.value)}
-                className="w-full border border-zinc-200 dark:border-zinc-700 rounded-lg px-3 py-1.5 text-xs bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-hidden focus:ring-1 focus:ring-zinc-400 dark:focus:ring-zinc-500"
-              />
-            </div>
-          </div>
-        )}
-      </ModalDialog>
-
-      {/* Cancel Dispatch Modal */}
-      <ModalDialog
-        isOpen={Boolean(isCancelModalOpen && cancellingSchedule)}
-        onClose={() => setIsCancelModalOpen(false)}
-        title="Cancel Dispatch"
-        subtitle="Record operational reason and notify technician."
-        icon={Ban}
-        iconVariant="rose"
-        maxWidth="md"
-        footer={
-          <div className="flex items-center justify-end gap-2 w-full">
-            <button 
               type="button"
               onClick={() => setIsCancelModalOpen(false)}
-              className="px-3.5 py-1.5 border border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 rounded-lg text-xs font-semibold hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+              className="px-3 py-1.5 text-xs text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg cursor-pointer"
             >
               Keep Dispatch
             </button>
-            <button 
-              type="button"
-              onClick={handleCancelSubmit}
-              disabled={isSubmitting}
-              className="px-3.5 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-semibold shadow-xs disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
+            <button
+              type="submit"
+              disabled={isSubmitting || !cancelPreset || (cancelPreset === 'Other' && !cancelCustomNotes.trim())}
+              className="px-4 py-1.5 text-xs font-bold bg-rose-600 hover:bg-rose-700 text-white rounded-lg disabled:opacity-50 cursor-pointer"
             >
-              {isSubmitting ? 'Cancelling...' : 'Confirm Cancellation'}
+              {isSubmitting ? "Cancelling..." : "Confirm Cancellation"}
             </button>
           </div>
-        }
+        </form>
+      </ModalDialog>
+
+      {/* 9. Casual Helper Register Modal */}
+      <ModalDialog
+        isOpen={isCasualModalOpen}
+        onClose={() => setIsCasualModalOpen(false)}
+        title={editingCasualHelper ? "Edit Casual Support Worker" : "Register On-Demand Casual Worker"}
+        subtitle="Casual support staff are deployed for heavy material handling, cable pulling, or multi-site runs."
+        maxWidth="md"
       >
-        {cancellingSchedule && (
-          <div className="space-y-3.5 text-xs">
-            <div className="p-3 bg-zinc-50 dark:bg-zinc-800/60 rounded-lg border border-zinc-200 dark:border-zinc-700/60 space-y-1.5">
-              <div className="flex justify-between">
-                <span className="text-zinc-500 dark:text-zinc-400">Client:</span>
-                <span className="font-semibold text-zinc-900 dark:text-zinc-100">{cancellingSchedule.client_name}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-zinc-500 dark:text-zinc-400">Technician:</span>
-                <span className="font-semibold text-zinc-900 dark:text-zinc-100">{cancellingSchedule.profiles?.full_name || 'Unassigned'}</span>
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">Mandatory Cancellation Reason *</label>
-              <select
-                value={cancelPreset}
-                onChange={(e) => setCancelPreset(e.target.value)}
-                className="w-full border border-zinc-200 dark:border-zinc-700 rounded-lg px-3 py-1.5 text-xs bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-hidden focus:ring-1 focus:ring-zinc-400 dark:focus:ring-zinc-500 mb-2"
-              >
-                <option value="Client Rescheduled">Client Rescheduled</option>
-                <option value="Site Inaccessible / Severe Weather">Site Inaccessible / Severe Weather</option>
-                <option value="Technician Emergency / Illness">Technician Emergency / Illness</option>
-                <option value="Operational / Priority Reallocation">Operational / Priority Reallocation</option>
-                <option value="Duplicate Dispatch Entry">Duplicate Dispatch Entry</option>
-                <option value="Other">Other Reason (Specify below)</option>
-              </select>
-
-              <textarea
-                rows={3}
-                placeholder="Additional context or operational explanation..."
-                value={cancelCustomNotes}
-                onChange={(e) => setCancelCustomNotes(e.target.value)}
-                className="w-full border border-zinc-200 dark:border-zinc-700 rounded-lg px-3 py-1.5 text-xs bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-hidden focus:ring-1 focus:ring-zinc-400 dark:focus:ring-zinc-500"
-              />
-            </div>
+        <form onSubmit={handleSaveCasualHelper} className="space-y-3">
+          <div className="space-y-1">
+            <label className="text-xs font-bold text-zinc-700 dark:text-zinc-300">
+              Full Legal Name *
+            </label>
+            <input
+              type="text"
+              required
+              placeholder="e.g., Juan Dela Cruz"
+              value={casualForm.fullName}
+              onChange={(e) => setCasualForm({ ...casualForm, fullName: e.target.value })}
+              className="w-full px-3 py-2 text-xs bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-zinc-100"
+            />
           </div>
-        )}
+
+          <div className="space-y-1">
+            <label className="text-xs font-bold text-zinc-700 dark:text-zinc-300">
+              Mobile Contact Number *
+            </label>
+            <input
+              type="tel"
+              required
+              placeholder="0917-xxx-xxxx"
+              value={casualForm.contactNumber}
+              onChange={(e) => setCasualForm({ ...casualForm, contactNumber: e.target.value })}
+              className="w-full px-3 py-2 text-xs bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-zinc-100"
+            />
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-xs font-bold text-zinc-700 dark:text-zinc-300">
+              Daily Rate (₱ PHP) *
+            </label>
+            <input
+              type="number"
+              required
+              min={100}
+              step={10}
+              value={casualForm.dailyRate}
+              onChange={(e) => setCasualForm({ ...casualForm, dailyRate: parseFloat(e.target.value) || 610.00 })}
+              className="w-full px-3 py-2 text-xs bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-zinc-100"
+            />
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-xs font-bold text-zinc-700 dark:text-zinc-300">
+              Emergency Contact & Relationship
+            </label>
+            <input
+              type="text"
+              placeholder="e.g., Maria Dela Cruz (Spouse) - 0918-xxx-xxxx"
+              value={casualForm.emergencyContact}
+              onChange={(e) => setCasualForm({ ...casualForm, emergencyContact: e.target.value })}
+              className="w-full px-3 py-2 text-xs bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-zinc-100"
+            />
+          </div>
+
+          <div className="pt-3 flex justify-end gap-2 border-t border-zinc-200 dark:border-zinc-800">
+            <button
+              type="button"
+              onClick={() => setIsCasualModalOpen(false)}
+              className="px-3 py-1.5 text-xs text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg cursor-pointer"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="px-4 py-1.5 text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white rounded-lg disabled:opacity-50 cursor-pointer"
+            >
+              {isSubmitting ? "Saving..." : (editingCasualHelper ? "Update Helper" : "Register Worker")}
+            </button>
+          </div>
+        </form>
       </ModalDialog>
     </div>
   );

@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache"
 import { logActivity } from "./activity"
 import { verifyRoleAccess } from "@/lib/permissions"
 import { sendPushNotification } from "@/lib/push"
+import { getCleanErrorMessage } from "@/lib/error-sanitizer"
 
 // Normalize a date string that may be date-only (YYYY-MM-DD) to a full ISO timestamp
 // Start dates become 00:00:00 UTC, end dates become 23:59:59 UTC
@@ -292,7 +293,7 @@ export async function bulkCreateSchedules(data: {
         results.push({ id: staffId, name: staffName, success: true })
         successCount++
       } catch (e: any) {
-        results.push({ id: staffId, name: staffName, success: false, error: e.message || 'Database insert failed' })
+        results.push({ id: staffId, name: staffName, success: false, error: getCleanErrorMessage(e, 'Unable to create schedule assignment.') })
         failureCount++
       }
     }
@@ -1102,3 +1103,554 @@ export async function toggleCasualHelperStatus(id: string, currentStatus: string
 }
 
 
+
+// ---------------------------------------------------------------------------
+// Scheduling V2: Assignment Types, Relational Crew & Change History Actions
+// ---------------------------------------------------------------------------
+
+export async function createOnSiteServiceAction(data: {
+  clientName: string;
+  location: string;
+  date: string;
+  startTime: string;
+  endTime?: string;
+  reportingInstruction?: 'direct_to_site' | 'via_pacita_hq';
+  geofenceLat?: number;
+  geofenceLon?: number;
+  geofenceRadius?: number;
+  leadTechnicianId: string;
+  crewTechnicianIds?: string[];
+  casualHelperIds?: string[];
+}) {
+  try {
+    const { authorized } = await verifyRoleAccess('schedules', true);
+    if (!authorized) return { error: "Unauthorized. Scheduling permissions required." };
+
+    const {
+      clientName, location, date, startTime, endTime,
+      reportingInstruction = 'direct_to_site',
+      geofenceLat = 14.3541, geofenceLon = 121.0665, geofenceRadius = 500,
+      leadTechnicianId, crewTechnicianIds = [], casualHelperIds = []
+    } = data;
+
+    if (!leadTechnicianId) return { error: "A Lead Technician is required for on-site services." };
+    if (!clientName?.trim()) return { error: "Client / Service name is required." };
+    if (!location?.trim()) return { error: "Work site location is required." };
+
+    const fullStartTime = new Date(`${date}T${startTime}:00`).toISOString();
+    const fullEndTime = endTime ? new Date(`${date}T${endTime}:00`).toISOString() : null;
+
+    // 1. Insert schedule row
+    const schedulePayload = {
+      client_name: clientName.trim(),
+      location: location.trim(),
+      start_time: fullStartTime,
+      end_time: fullEndTime,
+      technician_id: leadTechnicianId,
+      assignment_type: 'on_site',
+      reporting_instruction: reportingInstruction,
+      attendance_mode: reportingInstruction === 'via_pacita_hq' ? 'hq' : 'direct',
+      attendance_tracking_mode: reportingInstruction === 'via_pacita_hq' ? 'pacita_hq' : 'direct_on_site',
+      geofence_lat: geofenceLat,
+      geofence_lon: geofenceLon,
+      geofence_radius: geofenceRadius,
+      status: 'scheduled'
+    };
+
+    const { data: createdSchedule, error: schedErr } = await supabaseAdmin
+      .from('schedules')
+      .insert(schedulePayload)
+      .select('id')
+      .single();
+
+    if (schedErr || !createdSchedule) throw schedErr || new Error("Failed to create on-site schedule.");
+
+    const scheduleId = createdSchedule.id;
+
+    // 2. Insert Lead into schedule_crew_assignments
+    const crewInserts = [
+      {
+        schedule_id: scheduleId,
+        technician_id: leadTechnicianId,
+        assignment_role: 'lead',
+        joined_at: fullStartTime,
+        status: 'active'
+      },
+      ...crewTechnicianIds.filter(id => id !== leadTechnicianId).map(id => ({
+        schedule_id: scheduleId,
+        technician_id: id,
+        assignment_role: 'crew',
+        joined_at: fullStartTime,
+        status: 'active'
+      }))
+    ];
+
+    const { error: crewErr } = await supabaseAdmin
+      .from('schedule_crew_assignments')
+      .insert(crewInserts);
+
+    if (crewErr) console.warn("Notice: crew assignments insert:", crewErr);
+
+    // 3. Insert Casual Helpers if any
+    if (casualHelperIds.length > 0) {
+      const casualInserts = casualHelperIds.map(chId => ({
+        schedule_id: scheduleId,
+        casual_helper_id: chId
+      }));
+      await supabaseAdmin.from('schedule_casual_helpers').insert(casualInserts);
+    }
+
+    // 4. Log change in schedule_change_logs
+    await supabaseAdmin.from('schedule_change_logs').insert({
+      schedule_id: scheduleId,
+      action_type: 'created',
+      new_payload: { ...schedulePayload, crew: crewInserts },
+      reason: 'Initial creation of on-site service appointment'
+    });
+
+    await logActivity('create_schedule', 'schedule', `Created on-site dispatch: "${clientName.trim()}" at ${location.trim()}`);
+    revalidatePath("/coordinator");
+    return { success: true, scheduleId };
+  } catch (err: any) {
+    console.error("Failed to create on-site service:", err.message || err);
+    return { error: err.message || "Failed to create on-site service." };
+  }
+}
+
+export async function createDeploymentAction(data: {
+  projectName: string;
+  location: string;
+  startDate: string;
+  targetReviewDate?: string;
+  leadTechnicianId?: string;
+  crewTechnicianIds: string[];
+  notes?: string;
+}) {
+  try {
+    const { authorized } = await verifyRoleAccess('schedules', true);
+    if (!authorized) return { error: "Unauthorized. Scheduling permissions required." };
+
+    const {
+      projectName, location, startDate, targetReviewDate,
+      leadTechnicianId, crewTechnicianIds = [], notes
+    } = data;
+
+    if (!projectName?.trim()) return { error: "Project name / Work order is required." };
+    if (!location?.trim()) return { error: "Deployment project site / destination is required." };
+    if (crewTechnicianIds.length === 0 && !leadTechnicianId) {
+      return { error: "At least one technician must be assigned to the deployment project." };
+    }
+
+    const fullStartTime = new Date(`${startDate}T08:00:00`).toISOString();
+    const fullReviewTime = targetReviewDate 
+      ? new Date(`${targetReviewDate}T18:00:00`).toISOString()
+      : new Date(new Date(fullStartTime).getTime() + 30 * 24 * 60 * 60 * 1000).toISOString(); // +30 days default
+
+    const effectiveLeadId = leadTechnicianId || crewTechnicianIds[0];
+
+    // 1. Insert parent deployment schedule
+    const schedulePayload = {
+      client_name: projectName.trim(),
+      project_name: projectName.trim(),
+      location: location.trim(),
+      start_time: fullStartTime,
+      end_time: fullReviewTime,
+      target_review_date: fullReviewTime,
+      technician_id: effectiveLeadId,
+      assignment_type: 'deployment',
+      attendance_mode: 'direct',
+      attendance_tracking_mode: 'direct_on_site',
+      geofence_lat: 14.3541,
+      geofence_lon: 121.0665,
+      geofence_radius: 1000,
+      status: 'scheduled'
+    };
+
+    const { data: createdSchedule, error: schedErr } = await supabaseAdmin
+      .from('schedules')
+      .insert(schedulePayload)
+      .select('id')
+      .single();
+
+    if (schedErr || !createdSchedule) throw schedErr || new Error("Failed to create deployment schedule.");
+
+    const scheduleId = createdSchedule.id;
+
+    // 2. Insert all assigned technicians with initial joined_at = fullStartTime
+    const allCrewIds = Array.from(new Set([effectiveLeadId, ...crewTechnicianIds]));
+    const crewInserts = allCrewIds.map(techId => ({
+      schedule_id: scheduleId,
+      technician_id: techId,
+      assignment_role: techId === effectiveLeadId ? 'lead' : 'crew',
+      joined_at: fullStartTime,
+      status: 'active',
+      notes: notes || 'Initial deployment crew'
+    }));
+
+    await supabaseAdmin.from('schedule_crew_assignments').insert(crewInserts);
+
+    // 3. Log change in schedule_change_logs
+    await supabaseAdmin.from('schedule_change_logs').insert({
+      schedule_id: scheduleId,
+      action_type: 'created',
+      new_payload: { ...schedulePayload, crew: crewInserts },
+      reason: 'Initial creation of out-of-town deployment project'
+    });
+
+    await logActivity('create_schedule', 'schedule', `Created out-of-town deployment: "${projectName.trim()}" at ${location.trim()}`);
+    revalidatePath("/coordinator");
+    return { success: true, scheduleId };
+  } catch (err: any) {
+    console.error("Failed to create deployment:", err.message || err);
+    return { error: err.message || "Failed to create deployment." };
+  }
+}
+
+export async function createOfficeDutyAction(data: {
+  date: string;
+  startTime?: string;
+  endTime?: string;
+  technicianIds: string[];
+  notes?: string;
+}) {
+  try {
+    const { authorized } = await verifyRoleAccess('schedules', true);
+    if (!authorized) return { error: "Unauthorized. Scheduling permissions required." };
+
+    const { date, startTime = '08:00', endTime = '17:00', technicianIds = [], notes } = data;
+
+    if (technicianIds.length === 0) {
+      return { error: "At least one technician must be selected for Main Office Duty." };
+    }
+
+    const fullStartTime = new Date(`${date}T${startTime}:00`).toISOString();
+    const fullEndTime = new Date(`${date}T${endTime}:00`).toISOString();
+
+    const createdIds: string[] = [];
+
+    // Create a schedule for each technician assigned to Office Duty
+    for (const techId of technicianIds) {
+      const schedulePayload = {
+        client_name: 'TechnoCycle Main Office Duty',
+        location: 'Pacita HQ, San Pedro, Laguna',
+        start_time: fullStartTime,
+        end_time: fullEndTime,
+        technician_id: techId,
+        assignment_type: 'office_duty',
+        reporting_instruction: 'via_pacita_hq',
+        attendance_mode: 'hq',
+        attendance_tracking_mode: 'pacita_hq',
+        geofence_lat: 14.3529,
+        geofence_lon: 121.0568,
+        geofence_radius: 200,
+        status: 'scheduled'
+      };
+
+      const { data: created, error } = await supabaseAdmin
+        .from('schedules')
+        .insert(schedulePayload)
+        .select('id')
+        .single();
+
+      if (created) {
+        createdIds.push(created.id);
+        // Link crew assignment
+        await supabaseAdmin.from('schedule_crew_assignments').insert({
+          schedule_id: created.id,
+          technician_id: techId,
+          assignment_role: 'crew',
+          joined_at: fullStartTime,
+          status: 'active',
+          notes: notes || 'Pacita HQ office duty shift'
+        });
+
+        // Log creation
+        await supabaseAdmin.from('schedule_change_logs').insert({
+          schedule_id: created.id,
+          action_type: 'created',
+          new_payload: schedulePayload,
+          reason: 'Scheduled Pacita HQ Main Office Duty'
+        });
+      }
+    }
+
+    await logActivity('create_schedule', 'schedule', `Scheduled Pacita HQ Office Duty for ${technicianIds.length} staff member(s)`);
+    revalidatePath("/coordinator");
+    return { success: true, count: createdIds.length };
+  } catch (err: any) {
+    console.error("Failed to create office duty:", err.message || err);
+    return { error: err.message || "Failed to create office duty." };
+  }
+}
+
+export async function rescheduleAssignmentAction(data: {
+  scheduleId: string;
+  newDate: string;
+  newStartTime: string;
+  newEndTime?: string;
+  reason: string;
+}) {
+  try {
+    const { authorized } = await verifyRoleAccess('schedules', true);
+    if (!authorized) return { error: "Unauthorized. Scheduling permissions required." };
+
+    const { scheduleId, newDate, newStartTime, newEndTime, reason } = data;
+    if (!scheduleId) return { error: "Schedule ID is required." };
+    if (!reason?.trim()) return { error: "A reschedule reason is mandatory for audit records." };
+
+    // Fetch existing
+    const { data: existing, error: fetchErr } = await supabaseAdmin
+      .from('schedules')
+      .select('*')
+      .eq('id', scheduleId)
+      .single();
+
+    if (fetchErr || !existing) return { error: "Schedule not found." };
+
+    const fullStartTime = new Date(`${newDate}T${newStartTime}:00`).toISOString();
+    const fullEndTime = newEndTime ? new Date(`${newDate}T${newEndTime}:00`).toISOString() : null;
+
+    const { error: updateErr } = await supabaseAdmin
+      .from('schedules')
+      .update({
+        start_time: fullStartTime,
+        end_time: fullEndTime,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', scheduleId);
+
+    if (updateErr) throw updateErr;
+
+    // Log historical change
+    await supabaseAdmin.from('schedule_change_logs').insert({
+      schedule_id: scheduleId,
+      action_type: 'rescheduled',
+      previous_payload: { start_time: existing.start_time, end_time: existing.end_time },
+      new_payload: { start_time: fullStartTime, end_time: fullEndTime },
+      reason: reason.trim()
+    });
+
+    await logActivity('update_schedule', 'schedule', `Rescheduled "${existing.client_name}" to ${newDate} (${newStartTime}). Reason: ${reason}`);
+    revalidatePath("/coordinator");
+    return { success: true };
+  } catch (err: any) {
+    console.error("Failed to reschedule assignment:", err.message || err);
+    return { error: err.message || "Failed to reschedule assignment." };
+  }
+}
+
+export async function cancelAssignmentAction(data: {
+  scheduleId: string;
+  reason: string;
+}) {
+  try {
+    const { authorized } = await verifyRoleAccess('schedules', true);
+    if (!authorized) return { error: "Unauthorized. Scheduling permissions required." };
+
+    const { scheduleId, reason } = data;
+    if (!scheduleId) return { error: "Schedule ID is required." };
+    if (!reason?.trim()) return { error: "A cancellation reason is mandatory for audit records." };
+
+    const { data: existing } = await supabaseAdmin
+      .from('schedules')
+      .select('*')
+      .eq('id', scheduleId)
+      .single();
+
+    if (!existing) return { error: "Schedule not found." };
+
+    const { error: updateErr } = await supabaseAdmin
+      .from('schedules')
+      .update({
+        status: 'cancelled',
+        cancellation_reason: reason.trim(),
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', scheduleId);
+
+    if (updateErr) throw updateErr;
+
+    // Release all active crew in schedule_crew_assignments
+    await supabaseAdmin
+      .from('schedule_crew_assignments')
+      .update({
+        status: 'released',
+        released_at: new Date().toISOString(),
+        notes: `Released due to cancellation: ${reason.trim()}`
+      })
+      .eq('schedule_id', scheduleId)
+      .eq('status', 'active');
+
+    // Log audit
+    await supabaseAdmin.from('schedule_change_logs').insert({
+      schedule_id: scheduleId,
+      action_type: 'cancelled',
+      previous_payload: { status: existing.status },
+      new_payload: { status: 'cancelled', cancellation_reason: reason.trim() },
+      reason: reason.trim()
+    });
+
+    await logActivity('cancel_schedule', 'schedule', `Cancelled assignment "${existing.client_name}". Reason: ${reason}`);
+    revalidatePath("/coordinator");
+    return { success: true };
+  } catch (err: any) {
+    console.error("Failed to cancel assignment:", err.message || err);
+    return { error: err.message || "Failed to cancel assignment." };
+  }
+}
+
+export async function addCrewToDeploymentAction(data: {
+  scheduleId: string;
+  technicianId: string;
+  role?: 'lead' | 'crew' | 'driver' | 'helper';
+  joinedAt?: string;
+  notes?: string;
+}) {
+  try {
+    const { authorized } = await verifyRoleAccess('schedules', true);
+    if (!authorized) return { error: "Unauthorized. Scheduling permissions required." };
+
+    const { scheduleId, technicianId, role = 'crew', joinedAt, notes } = data;
+
+    const { error } = await supabaseAdmin
+      .from('schedule_crew_assignments')
+      .upsert({
+        schedule_id: scheduleId,
+        technician_id: technicianId,
+        assignment_role: role,
+        joined_at: joinedAt ? new Date(joinedAt).toISOString() : new Date().toISOString(),
+        status: 'active',
+        notes: notes || 'Joined deployment team'
+      }, { onConflict: 'schedule_id,technician_id' });
+
+    if (error) throw error;
+
+    await supabaseAdmin.from('schedule_change_logs').insert({
+      schedule_id: scheduleId,
+      action_type: 'crew_added',
+      new_payload: { technicianId, role, joinedAt },
+      reason: notes || 'Added crew member to deployment'
+    });
+
+    revalidatePath("/coordinator");
+    return { success: true };
+  } catch (err: any) {
+    return { error: err.message || "Failed to add crew member." };
+  }
+}
+
+export async function releaseCrewFromDeploymentAction(data: {
+  scheduleId: string;
+  technicianId: string;
+  reason?: string;
+}) {
+  try {
+    const { authorized } = await verifyRoleAccess('schedules', true);
+    if (!authorized) return { error: "Unauthorized. Scheduling permissions required." };
+
+    const { scheduleId, technicianId, reason } = data;
+
+    const { error } = await supabaseAdmin
+      .from('schedule_crew_assignments')
+      .update({
+        status: 'released',
+        released_at: new Date().toISOString(),
+        notes: reason || 'Released from deployment project'
+      })
+      .eq('schedule_id', scheduleId)
+      .eq('technician_id', technicianId);
+
+    if (error) throw error;
+
+    await supabaseAdmin.from('schedule_change_logs').insert({
+      schedule_id: scheduleId,
+      action_type: 'crew_released',
+      new_payload: { technicianId, released_at: new Date().toISOString() },
+      reason: reason || 'Released technician from deployment'
+    });
+
+    revalidatePath("/coordinator");
+    return { success: true };
+  } catch (err: any) {
+    return { error: err.message || "Failed to release crew member." };
+  }
+}
+
+export async function getScheduleChangeLogs(scheduleId: string) {
+  try {
+    const { data, error } = await supabaseAdmin
+      .from('schedule_change_logs')
+      .select('*, profiles:changed_by(full_name)')
+      .eq('schedule_id', scheduleId)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    return { data: data || [] };
+  } catch (err: any) {
+    return { error: err.message || "Failed to fetch change logs." };
+  }
+}
+
+export async function updateAssignmentDetailsAction(data: {
+  scheduleId: string;
+  clientName: string;
+  location: string;
+  reportingInstruction?: 'direct_to_site' | 'via_pacita_hq';
+  reason: string;
+}) {
+  try {
+    const { authorized } = await verifyRoleAccess('schedules', true);
+    if (!authorized) return { error: "Unauthorized. Scheduling permissions required." };
+
+    const { scheduleId, clientName, location, reportingInstruction, reason } = data;
+    if (!scheduleId) return { error: "Schedule ID is required." };
+    if (!clientName?.trim()) return { error: "Job or Customer Name is required." };
+    if (!location?.trim()) return { error: "Work Location is required." };
+    if (!reason?.trim()) return { error: "An operational reason is required for audit history." };
+
+    const { data: currentSchedule } = await supabaseAdmin
+      .from('schedules')
+      .select('*')
+      .eq('id', scheduleId)
+      .single();
+
+    if (!currentSchedule) return { error: "Assignment record not found." };
+
+    const updatePayload: Record<string, any> = {
+      client_name: clientName.trim(),
+      location: location.trim()
+    };
+
+    if (currentSchedule.assignment_type === 'deployment') {
+      updatePayload.project_name = clientName.trim();
+    }
+    if (reportingInstruction) {
+      updatePayload.reporting_instruction = reportingInstruction;
+    }
+
+    const { error: updateErr } = await supabaseAdmin
+      .from('schedules')
+      .update(updatePayload)
+      .eq('id', scheduleId);
+
+    if (updateErr) throw updateErr;
+
+    await supabaseAdmin.from('schedule_change_logs').insert({
+      schedule_id: scheduleId,
+      action_type: 'details_updated',
+      previous_payload: {
+        client_name: currentSchedule.client_name,
+        location: currentSchedule.location,
+        reporting_instruction: currentSchedule.reporting_instruction
+      },
+      new_payload: updatePayload,
+      reason: reason.trim()
+    });
+
+    await logActivity('edit_schedule', 'schedule', `Updated details for assignment "${clientName.trim()}"`);
+    revalidatePath("/coordinator");
+    return { success: true };
+  } catch (err: any) {
+    return { error: err.message || "Failed to update assignment details." };
+  }
+}

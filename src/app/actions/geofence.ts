@@ -115,7 +115,7 @@ export async function addOfficeLocation(formData: FormData) {
     return { success: true }
   } catch (err: any) {
     console.error("Failed to add office location:", err.message)
-    return { error: "Database transaction failed: " + err.message }
+    return { error: "Failed to add branch location. Please verify the coordinates and try again." }
   }
 }
 

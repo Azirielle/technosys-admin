@@ -113,14 +113,14 @@ export default function OperationalTelemetry({ role }: OperationalTelemetryProps
         }))
       } else if (role === 'ceo') {
         const [overridesRes, profilesRes, activeCrewsCount] = await Promise.all([
-          supabase.from('system_overrides').select('*', { count: 'exact', head: true }).eq('status', 'active'),
+          supabase.from('system_overrides').select('granted_modules, override_metadata'),
           supabase.from('profiles').select('*', { count: 'exact', head: true }),
           calculateActiveCrews(),
         ])
 
         setMetrics((prev) => ({
           ...prev,
-          activeOverrides: overridesRes.count ?? 0,
+          activeOverrides: (overridesRes.data || []).reduce((acc: number, r: any) => acc + (Array.isArray(r.granted_modules) ? r.granted_modules.length : 0), 0),
           totalStaff: profilesRes.count ?? 0,
           activeCrews: activeCrewsCount,
         }))
@@ -200,7 +200,7 @@ export default function OperationalTelemetry({ role }: OperationalTelemetryProps
       case 'accountant':
         return { title: 'Attendance Audit', pulseColor: 'text-emerald-600 dark:text-emerald-400', dotColor: 'bg-emerald-500' }
       case 'ceo':
-        return { title: 'Executive Telemetry', pulseColor: 'text-amber-600 dark:text-amber-400', dotColor: 'bg-amber-500' }
+        return { title: 'Executive Overview', pulseColor: 'text-amber-600 dark:text-amber-400', dotColor: 'bg-amber-500' }
       default:
         return { title: 'Field Operations', pulseColor: 'text-emerald-600 dark:text-emerald-400', dotColor: 'bg-emerald-500' }
     }
@@ -212,12 +212,12 @@ export default function OperationalTelemetry({ role }: OperationalTelemetryProps
     <div className="p-3 bg-zinc-100/70 dark:bg-zinc-900/80 border border-zinc-200/70 dark:border-zinc-800 rounded-xl mt-4 transition-colors duration-200">
       <div className="flex items-center justify-between text-[11px] font-semibold text-zinc-700 dark:text-zinc-300 mb-2">
         <div className="flex items-center gap-1.5">
-          <Radio className={`w-3.5 h-3.5 ${pulseColor} animate-pulse`} />
+          <Radio className={`w-3.5 h-3.5 ${pulseColor}`} />
           <span>{title}</span>
         </div>
         <span className="inline-flex items-center gap-1 text-[10px] text-zinc-500 dark:text-zinc-400 font-medium">
-          <span className={`w-1.5 h-1.5 rounded-full ${dotColor} animate-pulse`} />
-          Realtime
+          <span className={`w-1.5 h-1.5 rounded-full ${dotColor}`} />
+          Connected
         </span>
       </div>
 

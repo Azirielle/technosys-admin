@@ -40,7 +40,7 @@ import {
   Briefcase,
   Edit3,
   History,
-  Sparkles,
+  Calculator,
   Loader2,
   Info,
   Pencil,
@@ -584,7 +584,7 @@ export default function AuditLogClient() {
         icon={FileSpreadsheet}
         badge={
           <span className="text-[11px] font-bold tracking-wider px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 border border-blue-200/60 dark:border-blue-800 uppercase">
-            Live Telemetry
+            Verified Attendance
           </span>
         }
         actions={
@@ -699,7 +699,7 @@ export default function AuditLogClient() {
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 text-xs font-semibold shadow-2xs">
                 <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                <span>Live Attendance Audit</span>
+                <span>Attendance Records</span>
               </div>
 
               <div className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 hidden md:block">
@@ -730,7 +730,7 @@ export default function AuditLogClient() {
                     <td colSpan={9} className="p-12 text-center text-zinc-400 font-medium">
                       <div className="flex flex-col items-center justify-center gap-2">
                         <Clock className="w-5 h-5 animate-spin text-zinc-500" />
-                        <span className="text-xs font-medium">Computing live Kinsenas attendance & time logs...</span>
+                        <span className="text-xs font-medium">Calculating Kinsenas attendance records...</span>
                       </div>
                     </td>
                   </tr>
@@ -1228,8 +1228,8 @@ export default function AuditLogClient() {
               {correctionPreview ? (
                 <div className="bg-zinc-50 border border-zinc-200 rounded-xl p-3.5 space-y-2">
                   <div className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500 flex items-center gap-1.5">
-                    <Sparkles className="w-3.5 h-3.5 text-blue-600" />
-                    Live DOLE Kinsenas Math Preview
+                    <Calculator className="w-3.5 h-3.5 text-blue-600" />
+                    DOLE Kinsenas Computation Breakdown
                   </div>
                   <div className="grid grid-cols-4 gap-2 text-center">
                     <div className="bg-white p-2 rounded-lg border border-zinc-200">

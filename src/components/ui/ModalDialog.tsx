@@ -1,5 +1,6 @@
 "use client"
-import React, { ReactNode, useEffect } from "react"
+import React, { ReactNode, useEffect, useState } from "react"
+import { createPortal } from "react-dom"
 import { LucideIcon, X } from "lucide-react"
 
 export interface ModalDialogProps {
@@ -31,8 +32,14 @@ export default function ModalDialog({
   footer,
   headerExtra,
   className = "",
-  zIndex = "z-[90]"
+  zIndex = "z-[9999]"
 }: ModalDialogProps) {
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
   // Close on Escape key
   useEffect(() => {
     if (!isOpen) return
@@ -43,7 +50,17 @@ export default function ModalDialog({
     return () => window.removeEventListener("keydown", handleKeyDown)
   }, [isOpen, onClose])
 
-  if (!isOpen) return null
+  // Prevent background body scrolling while modal is open
+  useEffect(() => {
+    if (!isOpen) return
+    const prevOverflow = document.body.style.overflow
+    document.body.style.overflow = "hidden"
+    return () => {
+      document.body.style.overflow = prevOverflow
+    }
+  }, [isOpen])
+
+  if (!isOpen || !mounted) return null
 
   const maxWidthClasses = {
     sm: "max-w-sm",
@@ -64,16 +81,19 @@ export default function ModalDialog({
     amber: "bg-amber-50/60 dark:bg-amber-950/30 text-amber-600 dark:text-amber-400 border-amber-200/60 dark:border-amber-800/60"
   }
 
-  return (
+  const modalNode = (
     <div
-      className={`fixed inset-0 bg-zinc-900/60 dark:bg-zinc-950/80 backdrop-blur-xs ${zIndex} flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-150`}
+      className={`fixed inset-0 bg-black/75 backdrop-blur-sm ${zIndex} flex items-center justify-center p-4 sm:p-6 overflow-hidden animate-in fade-in duration-150`}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose()
+      }}
     >
       <div
-        className={`bg-white dark:bg-zinc-900 rounded-xl shadow-xl w-full ${
+        className={`bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full ${
           maxWidthClasses[maxWidth]
         } ${
-          contentHeight ? contentHeight : "max-h-[90vh]"
-        } flex flex-col overflow-hidden border border-zinc-200/80 dark:border-zinc-800 animate-in fade-in zoom-in-[0.98] duration-150 transition-colors ${className}`}
+          contentHeight ? contentHeight : "max-h-[85vh]"
+        } flex flex-col overflow-hidden border border-zinc-200 dark:border-zinc-800 animate-in fade-in zoom-in-[0.98] duration-150 transition-colors ${className}`}
       >
         {/* Header */}
         <div className="px-5 py-3.5 border-b border-zinc-200/80 dark:border-zinc-800 flex items-center justify-between gap-3 shrink-0 bg-zinc-50/50 dark:bg-zinc-900/50">
@@ -124,4 +144,6 @@ export default function ModalDialog({
       </div>
     </div>
   )
+
+  return createPortal(modalNode, document.body)
 }

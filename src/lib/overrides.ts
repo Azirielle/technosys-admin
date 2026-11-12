@@ -49,9 +49,9 @@ export const SYSTEM_MODULES: SystemModule[] = [
   },
   {
     id: 'coordinator_tracking',
-    name: 'Live Tracking',
+    name: 'Fleet Tracking',
     department: 'Field Operations',
-    description: 'Real-time GPS fleet tracking, technician map spotlighting, and field status.',
+    description: 'Fleet GPS location tracking, technician map spotlighting, and field status.',
     href: '/coordinator/tracking',
     iconName: 'MapPin',
     defaultRoles: ['coordinator'],

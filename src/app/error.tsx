@@ -3,6 +3,7 @@
 import { useEffect } from 'react'
 import { AlertCircle, RefreshCw, Home } from 'lucide-react'
 import Link from 'next/link'
+import { getCleanErrorMessage } from '@/lib/error-sanitizer'
 
 export default function GlobalErrorBoundary({
   error,
@@ -23,7 +24,7 @@ export default function GlobalErrorBoundary({
         </div>
         <h2 className="text-base font-bold text-zinc-900 dark:text-zinc-100">Application Session Interrupted</h2>
         <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed">
-          {error.message || 'An unexpected client connection issue occurred. Please retry or return to your portal.'}
+          {error?.message ? getCleanErrorMessage(error.message, 'An unexpected client connection issue occurred. Please retry or return to your portal.') : 'An unexpected client connection issue occurred. Please retry or return to your portal.'}
         </p>
         <div className="mt-6 flex items-center justify-center gap-3">
           <button

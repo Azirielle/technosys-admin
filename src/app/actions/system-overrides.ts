@@ -115,9 +115,20 @@ export async function updatePersistentOverride(
         const found = SYSTEM_MODULES.find(mod => mod.id === m)
         return found ? found.name : m
       })
+      let reasonSuffix = ''
+      if (overrideMetadata) {
+        const firstMod = Object.values(overrideMetadata)[0]
+        if (firstMod?.granted_by_name && firstMod.granted_by_name.includes('(')) {
+          const match = firstMod.granted_by_name.match(/\((.*?)\)/)
+          if (match && match[1] && match[1] !== 'Temporary Department Coverage') {
+            reasonSuffix = ` · Reason: ${match[1]}`
+          }
+        }
+      }
+
       const desc = grantedModules.length === 0
         ? `CEO restored standard role boundaries for ${roleLabel} (Revoked all active overrides)`
-        : `CEO granted temporary override access to ${friendlyModules.join(', ')} for ${roleLabel}`
+        : `CEO granted temporary override access to ${friendlyModules.join(', ')} for ${roleLabel}${reasonSuffix}`
 
       await logActivity({
         action: 'update',
@@ -131,6 +142,7 @@ export async function updatePersistentOverride(
 
     // Revalidate paths for all affected roles
     revalidatePath('/ceo')
+    revalidatePath('/ceo/activities')
     revalidatePath('/accountant')
     revalidatePath('/coordinator')
     revalidatePath('/hr')
@@ -194,6 +206,7 @@ export async function grantAllPersistentOverrides(): Promise<{ success: boolean;
     }
 
     revalidatePath('/ceo')
+    revalidatePath('/ceo/activities')
     revalidatePath('/accountant')
     revalidatePath('/coordinator')
     revalidatePath('/hr')
@@ -245,6 +258,7 @@ export async function resetAllPersistentOverrides(): Promise<{ success: boolean;
     }
 
     revalidatePath('/ceo')
+    revalidatePath('/ceo/activities')
     revalidatePath('/accountant')
     revalidatePath('/coordinator')
     revalidatePath('/hr')
@@ -252,5 +266,51 @@ export async function resetAllPersistentOverrides(): Promise<{ success: boolean;
     return { success: true }
   } catch (err: any) {
     return { success: false, error: err.message || "Failed to reset overrides" }
+  }
+}
+
+
+export interface StaffAbsence {
+  id: string
+  name: string
+  role: string
+  leaveType: string
+  startDate: string
+  endDate: string
+}
+
+/**
+ * Fetches staff members with approved leave covering the current date
+ */
+export async function getStaffAbsencesToday(): Promise<{
+  success: boolean
+  absences: StaffAbsence[]
+  error?: string
+}> {
+  try {
+    const today = new Date().toISOString().split('T')[0]
+    const { data, error } = await supabaseAdmin
+      .from('leaves')
+      .select('id, user_id, leave_type, start_date, end_date, status, profiles(full_name, role)')
+      .eq('status', 'approved')
+      .lte('start_date', today)
+      .gte('end_date', today)
+
+    if (error) {
+      return { success: true, absences: [] }
+    }
+
+    const absences: StaffAbsence[] = (data || []).map((row: any) => ({
+      id: row.id,
+      name: row.profiles?.full_name || 'Staff Member',
+      role: row.profiles?.role || 'Staff',
+      leaveType: row.leave_type || 'Approved Leave',
+      startDate: row.start_date,
+      endDate: row.end_date,
+    }))
+
+    return { success: true, absences }
+  } catch (err: any) {
+    return { success: true, absences: [] }
   }
 }

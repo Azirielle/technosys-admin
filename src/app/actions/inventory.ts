@@ -165,7 +165,7 @@ export async function createOrUpdateInventoryItem(formData: FormData) {
     return { success: true }
   } catch (err: any) {
     console.error("Failed to create/update inventory item:", err.message)
-    return { error: "Database transaction failed: " + err.message }
+    return { error: "Failed to save inventory item. Please verify the details and try again." }
   }
 }
 
@@ -407,6 +407,6 @@ export async function returnTool(
     return { success: true }
   } catch (err: any) {
     console.error("Failed to process tool return:", err.message)
-    return { error: "Return transaction failed: " + err.message }
+    return { error: "Failed to process return. Please verify the quantities and try again." }
   }
 }

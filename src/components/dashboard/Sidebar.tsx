@@ -20,13 +20,19 @@ import {
   MessageSquare,
   ShieldAlert,
   Megaphone,
+  ScrollText,
   Sun,
   Moon,
+  KeyRound,
+  Loader2,
+  CheckCircle2,
 } from 'lucide-react'
 import { getSystemOverrides, fetchRemoteOverrides, subscribeToOverrideChanges, getModuleHref, SYSTEM_MODULES, RoleKey } from '@/lib/overrides'
 import OperationalTelemetry from '@/components/dashboard/OperationalTelemetry'
 import { useTheme } from '@/components/theme/ThemeProvider'
 import ConfirmDialog from '@/components/ui/ConfirmDialog'
+import ModalDialog from '@/components/ui/ModalDialog'
+import { updateAdminPassword } from '@/app/actions/credentials'
 
 export type NavItem = {
   title: string
@@ -56,6 +62,7 @@ const ICON_MAP: Record<string, LucideIcon> = {
   Home,
   MessageSquare,
   Megaphone,
+  ScrollText,
 }
 
 export function Sidebar({ navItems, title, role }: SidebarProps) {
@@ -65,6 +72,14 @@ export function Sidebar({ navItems, title, role }: SidebarProps) {
   const [showLogoutModal, setShowLogoutModal] = useState(false)
   const [isLoggingOut, setIsLoggingOut] = useState(false)
   const [mounted, setMounted] = useState(false)
+
+  // Self-service password alternation states
+  const [showPasswordModal, setShowPasswordModal] = useState(false)
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [passwordError, setPasswordError] = useState<string | null>(null)
+  const [passwordSuccess, setPasswordSuccess] = useState(false)
+  const [isUpdatingPassword, setIsUpdatingPassword] = useState(false)
 
   useEffect(() => {
     setMounted(true)
@@ -80,6 +95,42 @@ export function Sidebar({ navItems, title, role }: SidebarProps) {
       console.log('Client signout fallback:', err)
     }
     window.location.href = '/login'
+  }
+
+  const handleUpdatePassword = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setPasswordError(null)
+    setPasswordSuccess(false)
+
+    if (newPassword.length < 6) {
+      setPasswordError('Password must be at least 6 characters in length.')
+      return
+    }
+
+    if (newPassword !== confirmPassword) {
+      setPasswordError('New password and confirmation password do not match.')
+      return
+    }
+
+    setIsUpdatingPassword(true)
+    const formData = new FormData()
+    formData.append('new_password', newPassword)
+    formData.append('confirm_password', confirmPassword)
+
+    const res = await updateAdminPassword(formData)
+    setIsUpdatingPassword(false)
+
+    if (!res.success) {
+      setPasswordError(res.error || 'Failed to update credentials.')
+    } else {
+      setPasswordSuccess(true)
+      setNewPassword('')
+      setConfirmPassword('')
+      setTimeout(() => {
+        setShowPasswordModal(false)
+        setPasswordSuccess(false)
+      }, 1400)
+    }
   }
 
   useEffect(() => {
@@ -235,7 +286,7 @@ export function Sidebar({ navItems, title, role }: SidebarProps) {
         </div>
 
         {/* Real-World Operational Telemetry Component */}
-        <OperationalTelemetry role={role} />
+        {role !== 'ceo' && <OperationalTelemetry role={role} />}
       </div>
 
       {/* Encapsulated User & Sign-Out Dock */}
@@ -255,6 +306,21 @@ export function Sidebar({ navItems, title, role }: SidebarProps) {
           </div>
           
           <div className="flex items-center gap-1">
+            {/* Change Password Trigger */}
+            <button
+              type="button"
+              onClick={() => {
+                setShowPasswordModal(true)
+                setPasswordError(null)
+                setPasswordSuccess(false)
+              }}
+              title="Change Password"
+              aria-label="Change Password"
+              className="p-1.5 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-200/60 dark:hover:bg-zinc-800 rounded-md transition-colors cursor-pointer"
+            >
+              <KeyRound className="w-4 h-4" />
+            </button>
+
             {/* Theme Mode Toggle (Sun/Moon) */}
             <button
               type="button"
@@ -294,6 +360,77 @@ export function Sidebar({ navItems, title, role }: SidebarProps) {
         isPending={isLoggingOut}
         zIndex="z-[9999]"
       />
+
+      {/* Self-Service Password Alteration Modal */}
+      <ModalDialog
+        isOpen={Boolean(showPasswordModal && mounted)}
+        onClose={() => setShowPasswordModal(false)}
+        title="Update Credentials"
+        subtitle="Alter your personal administrative password for this portal."
+        maxWidth="md"
+        iconVariant="default"
+        icon={KeyRound}
+        footer={
+          <div className="flex items-center justify-end gap-2 w-full">
+            <button
+              type="button"
+              onClick={() => setShowPasswordModal(false)}
+              className="px-3 py-1.5 rounded-md text-xs font-medium text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={handleUpdatePassword}
+              disabled={isUpdatingPassword}
+              className="px-3.5 py-1.5 rounded-md text-xs font-semibold bg-zinc-900 text-white hover:bg-zinc-800 disabled:opacity-50 transition-colors cursor-pointer flex items-center gap-1.5"
+            >
+              {isUpdatingPassword ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
+              <span>Save New Password</span>
+            </button>
+          </div>
+        }
+      >
+        <form onSubmit={handleUpdatePassword} className="space-y-3.5">
+          {passwordError && (
+            <div className="p-2.5 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-xs">
+              {passwordError}
+            </div>
+          )}
+          {passwordSuccess && (
+            <div className="p-2.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs flex items-center gap-1.5 font-semibold">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+              <span>Password successfully updated!</span>
+            </div>
+          )}
+          <div className="space-y-1">
+            <label className="text-[11px] font-semibold text-zinc-600 uppercase tracking-wider block">
+              New Password (min. 6 characters)
+            </label>
+            <input
+              type="password"
+              required
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              placeholder="••••••••••••"
+              className="w-full px-3 py-2 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-zinc-900"
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="text-[11px] font-semibold text-zinc-600 uppercase tracking-wider block">
+              Confirm New Password
+            </label>
+            <input
+              type="password"
+              required
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              placeholder="••••••••••••"
+              className="w-full px-3 py-2 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-zinc-900"
+            />
+          </div>
+        </form>
+      </ModalDialog>
     </aside>
   )
 }

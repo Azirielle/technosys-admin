@@ -200,17 +200,17 @@ export default function TrackingPage() {
             </div>
             <div className="min-w-0">
               <div className="flex items-center gap-2">
-                <h1 className="text-sm font-black text-zinc-900 dark:text-zinc-100 truncate">Fleet Radar</h1>
+                <h1 className="text-sm font-black text-zinc-900 dark:text-zinc-100 truncate">Active Field Crew</h1>
                 <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full border ${
                   activeCount > 0 
-                    ? 'bg-emerald-100 text-emerald-800 border-emerald-200 animate-pulse' 
+                    ? 'bg-emerald-100 text-emerald-800 border-emerald-200' 
                     : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 border-zinc-200/80 dark:border-zinc-800'
                 }`}>
                   {activeCount} On Duty
                 </span>
               </div>
               {!isCollapsed && (
-                <p className="text-[11px] text-zinc-500 dark:text-zinc-400 font-medium truncate">Duty-bound live operations</p>
+                <p className="text-[11px] text-zinc-500 dark:text-zinc-400 font-medium truncate">Active field assignments</p>
               )}
             </div>
           </div>
@@ -395,9 +395,9 @@ export default function TrackingPage() {
 
             {/* Footer Summary */}
             <div className="px-3 py-2 border-t border-zinc-200/80 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/60/80 text-[10px] text-zinc-500 dark:text-zinc-400 flex items-center justify-between">
-              <span className="flex items-center gap-1 font-medium">
-                <Zap className="w-3 h-3 text-amber-500" />
-                Live Realtime Sync
+              <span className="flex items-center gap-1.5 font-medium">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                Connected
               </span>
               <span>
                 {viewMode === 'on_duty' ? `${activeCount} On Duty` : `${totalCount} Total`}

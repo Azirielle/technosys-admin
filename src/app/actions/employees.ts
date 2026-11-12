@@ -7,6 +7,7 @@ import { verifyRoleAccess } from "@/lib/permissions"
 import { logActivity } from "./activity"
 import { sendPushNotification } from "@/lib/push"
 import { getBranchFilter } from "@/lib/branch-filter"
+import { getCleanErrorMessage } from "@/lib/error-sanitizer"
 
 export interface TechnicianInfo {
   id: string
@@ -761,7 +762,7 @@ export async function bulkRegisterEmployees(employeesRaw: any[]) {
         results.push({ rowNum, name: emp.fullName, success: true })
         successCount++
       } catch (e: any) {
-        results.push({ rowNum, name: emp.fullName, success: false, error: e.message || 'Database error' })
+        results.push({ rowNum, name: emp.fullName, success: false, error: getCleanErrorMessage(e, 'Unable to register employee.') })
         failureCount++
       }
     }
@@ -772,7 +773,7 @@ export async function bulkRegisterEmployees(employeesRaw: any[]) {
     return { success: true, results, successCount, failureCount }
   } catch (err: any) {
     console.error("Bulk registration error:", err)
-    return { error: err.message || "Failed to process bulk registration request." }
+    return { error: getCleanErrorMessage(err, "Failed to process bulk registration request.") }
   }
 }
 

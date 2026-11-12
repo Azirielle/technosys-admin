@@ -1,7 +1,8 @@
 import Image from 'next/image'
-import { Mail, Lock, ArrowRight, AlertCircle, Terminal } from 'lucide-react'
-import { login } from './actions'
-import { PortfolioShowcase } from '@/components/auth/PortfolioShowcase'
+import { AlertCircle } from 'lucide-react'
+import { LoginForm } from '@/components/auth/LoginForm'
+import { LoginPolicyModal } from '@/components/auth/LoginPolicyModal'
+import { LoginBackgroundCarousel } from '@/components/auth/LoginBackgroundCarousel'
 
 export default async function LoginPage({
   searchParams,
@@ -11,156 +12,71 @@ export default async function LoginPage({
   const resolvedSearchParams = await searchParams
 
   return (
-    <div className="min-h-[100dvh] w-full flex flex-col lg:flex-row bg-zinc-950">
-      {/* Left Side: 58% HVAC Portfolio Showcase */}
-      <div className="w-full lg:w-[58%] xl:w-[60%] shrink-0">
-        <PortfolioShowcase />
-      </div>
+    <div className="h-screen max-h-screen w-full overflow-hidden flex items-center justify-center relative bg-[#060B14] select-none text-slate-100">
+      
+      {/* Cinematic Landmark Crossfade Background */}
+      <LoginBackgroundCarousel />
 
-      {/* Right Side: 42% Branded Authentication Console */}
-      <div className="w-full lg:w-[42%] xl:w-[40%] flex flex-col justify-between bg-zinc-50 p-6 sm:p-10 lg:p-12 xl:p-14 border-t lg:border-t-0 lg:border-l border-zinc-200 min-h-screen">
-        {/* Top Header & Organization Lockup */}
-        <div className="flex items-center gap-3.5">
-          <div className="w-12 h-12 rounded-xl bg-white border border-zinc-200/80 flex items-center justify-center shadow-2xs overflow-hidden p-1 shrink-0">
+      {/* Floating Centered Glassmorphic Portal */}
+      <main className="w-full max-w-[440px] px-4 relative z-10 animate-in fade-in zoom-in-95 duration-500">
+        <div className="bg-[#081020]/75 border border-white/15 border-t-white/30 backdrop-blur-2xl rounded-3xl p-7 sm:p-8 shadow-[0_30px_70px_-15px_rgba(0,0,0,0.85)] text-center relative overflow-hidden">
+          
+          {/* Subtle Ambient Top Edge Accent */}
+          <div 
+            className="absolute -top-[1px] left-1/4 right-1/4 h-[2px] bg-gradient-to-r from-transparent via-sky-400/80 to-transparent" 
+            aria-hidden="true" 
+          />
+
+          {/* Master Inverted Dark Mode Brand Emblem */}
+          <div className="relative inline-flex items-center justify-center w-22 h-22 mb-3 filter drop-shadow-[0_0_16px_rgba(56,189,248,0.35)] transition-transform duration-300 hover:scale-105">
             <Image 
-              src="/technocycle_logo.png" 
+              src="/technocycle_logo_dark.png" 
               alt="TechnoCycle Logo" 
-              width={48} 
-              height={48} 
+              width={88} 
+              height={88} 
               unoptimized
               className="w-full h-full object-contain"
               priority
             />
           </div>
-          <div>
-            <div className="font-serif font-bold tracking-tight text-zinc-900 text-lg sm:text-xl leading-none">
-              TECHNOCYCLE
-            </div>
-            <div className="text-[11px] tracking-widest text-zinc-500 font-semibold uppercase mt-1">
-              CORPORATION
-            </div>
-          </div>
-        </div>
 
-        {/* Center: Auth Console Form */}
-        <div className="w-full max-w-md mx-auto my-auto py-8 space-y-6">
-          <div className="space-y-1.5">
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-zinc-900">
-              Technocycle Admin Portal
+          {/* Heading Lockup */}
+          <div className="space-y-1 mb-5">
+            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white font-sans">
+              Welcome Back
             </h1>
-            <p className="text-sm text-zinc-500 leading-relaxed">
-              Sign in to your administrative account.
+            <p className="text-xs text-slate-400 max-w-xs mx-auto leading-relaxed">
+              Sign in with your authorized TechnoCycle administrative account.
             </p>
           </div>
 
+          {/* Notice Alert if present */}
           {resolvedSearchParams?.message && (
-            <div className="rounded-xl border border-rose-200 bg-rose-50/80 p-3.5 flex items-start gap-3 text-rose-700 text-xs shadow-2xs">
-              <AlertCircle className="w-4 h-4 shrink-0 text-rose-600 mt-0.5" />
+            <div className="mb-4 rounded-xl border border-rose-400/40 bg-rose-900/60 p-3 flex items-start gap-2.5 text-white text-xs text-left shadow-sm">
+              <AlertCircle className="w-4 h-4 shrink-0 text-rose-300 mt-0.5" />
               <div>
-                <p className="font-semibold">Authentication Notice</p>
-                <p className="mt-0.5 text-rose-600">{resolvedSearchParams.message}</p>
+                <p className="font-semibold text-rose-100">Notice</p>
+                <p className="mt-0.5 text-rose-200 text-xs leading-relaxed">
+                  {resolvedSearchParams.message}
+                </p>
               </div>
             </div>
           )}
 
-          <form className="space-y-4" action={login}>
-            <div className="space-y-4">
-              {/* Email Address */}
-              <div className="space-y-1.5">
-                <label htmlFor="email" className="block text-xs font-semibold uppercase tracking-wider text-zinc-600">
-                  Corporate Email
-                </label>
-                <div className="relative rounded-xl border border-zinc-200 bg-white shadow-2xs focus-within:border-zinc-900 focus-within:ring-1 focus-within:ring-zinc-900 transition-all">
-                  <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-zinc-400">
-                    <Mail className="h-4 w-4" />
-                  </div>
-                  <input
-                    id="email"
-                    name="email"
-                    type="email"
-                    autoComplete="email"
-                    required
-                    placeholder="admin@technocycle.com.ph"
-                    className="block w-full rounded-xl border-0 py-2.5 pl-10 pr-3 text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none bg-transparent"
-                  />
-                </div>
-              </div>
+          {/* Interactive Form Component */}
+          <LoginForm />
 
-              {/* Password */}
-              <div className="space-y-1.5">
-                <label htmlFor="password" className="block text-xs font-semibold uppercase tracking-wider text-zinc-600">
-                  Password
-                </label>
-                <div className="relative rounded-xl border border-zinc-200 bg-white shadow-2xs focus-within:border-zinc-900 focus-within:ring-1 focus-within:ring-zinc-900 transition-all">
-                  <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-zinc-400">
-                    <Lock className="h-4 w-4" />
-                  </div>
-                  <input
-                    id="password"
-                    name="password"
-                    type="password"
-                    autoComplete="current-password"
-                    required
-                    placeholder="••••••••••••"
-                    className="block w-full rounded-xl border-0 py-2.5 pl-10 pr-3 text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none bg-transparent"
-                  />
-                </div>
-              </div>
-
-              {/* Developer / Operations Testing Role Override */}
-              <div className="rounded-xl border border-zinc-200 bg-zinc-100/70 p-3.5 space-y-2">
-                <div className="flex items-center justify-between">
-                  <label htmlFor="role_override" className="text-[11px] font-bold text-zinc-700 uppercase tracking-wider flex items-center gap-1.5">
-                    <Terminal className="w-3.5 h-3.5 text-zinc-500" />
-                    <span>Session Role Injection</span>
-                  </label>
-                  <span className="text-[10px] font-mono font-medium px-2 py-0.5 rounded-full bg-zinc-200 text-zinc-600">
-                    TESTING OVERRIDE
-                  </span>
-                </div>
-                <select 
-                  id="role_override" 
-                  name="role_override" 
-                  defaultValue="auto"
-                  className="block w-full rounded-lg border border-zinc-300 py-1.5 px-2.5 text-xs text-zinc-800 focus:ring-1 focus:ring-zinc-900 focus:border-zinc-900 bg-white cursor-pointer"
-                >
-                  <option value="auto">Auto (Fetch from DB Role / Fallback)</option>
-                  <option value="/ceo">CEO Executive (/ceo)</option>
-                  <option value="/hr">HR Department (/hr)</option>
-                  <option value="/coordinator">Field Operations Coordinator (/coordinator)</option>
-                  <option value="/accountant">Financial Accountant (/accountant)</option>
-                </select>
-                <p className="text-[10px] text-zinc-400 leading-tight">
-                  Directs middleware session routing immediately upon authentication.
-                </p>
-              </div>
-            </div>
-
-            {/* Submit Action */}
-            <div className="pt-2">
-              <button
-                type="submit"
-                className="group relative flex w-full items-center justify-center gap-2 rounded-xl bg-zinc-900 py-3 px-4 text-sm font-semibold text-white shadow-xs hover:bg-zinc-800 active:scale-[0.99] transition-all cursor-pointer"
-              >
-                <span>Sign in to Terminal</span>
-                <div className="w-5 h-5 rounded-full bg-white/15 flex items-center justify-center group-hover:translate-x-0.5 transition-transform">
-                  <ArrowRight className="w-3 h-3 text-white" />
-                </div>
-              </button>
-            </div>
-          </form>
-        </div>
-
-        {/* Bottom Footer */}
-        <div className="pt-6 border-t border-zinc-200 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-zinc-500">
-          <p className="text-xs text-zinc-500">
-            By signing in, you agree to TechnoCycle administrative policies.
-          </p>
-          <div className="text-zinc-400 font-mono text-[11px] shrink-0">
-            © 2026 TechnoCycle Corporation
+          {/* Institutional Compliance Policy Trigger */}
+          <div className="pt-4 text-center space-y-1">
+            <LoginPolicyModal variant="on-blue" />
+            <p className="text-[11px] text-slate-400/80">
+              Authorized internal access only. Activity monitored under RA 10173.
+            </p>
           </div>
+
         </div>
-      </div>
+      </main>
+
     </div>
   )
 }

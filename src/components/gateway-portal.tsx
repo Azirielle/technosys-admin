@@ -1,13 +1,36 @@
 'use client'
 
+import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
+import Link from 'next/link'
+import { ShieldCheck, ExternalLink, Loader2, CheckCircle2 } from 'lucide-react'
+import ModalDialog from '@/components/ui/ModalDialog'
+import { getPublicPolicy, CompanyPolicy } from '@/app/actions/policies'
 
 const ease = [0.32, 0.72, 0, 1] as const
 
 export default function GatewayPortal() {
   const router = useRouter()
+  const [activePolicyModal, setActivePolicyModal] = useState<'terms_of_service' | 'privacy_policy' | null>(null)
+  const [policyData, setPolicyData] = useState<CompanyPolicy | null>(null)
+  const [loadingPolicy, setLoadingPolicy] = useState(false)
+
+  const handleOpenPolicy = async (policyId: 'terms_of_service' | 'privacy_policy') => {
+    setActivePolicyModal(policyId)
+    setLoadingPolicy(true)
+    try {
+      const res = await getPublicPolicy(policyId)
+      if (res.success && res.policy) {
+        setPolicyData(res.policy)
+      }
+    } catch (err) {
+      console.error('Failed to load policy modal:', err)
+    } finally {
+      setLoadingPolicy(false)
+    }
+  }
 
   return (
     <div className="min-h-[100dvh] flex flex-col md:flex-row">
@@ -269,12 +292,97 @@ export default function GatewayPortal() {
             style={{ color: 'oklch(0.64 0 0)' }}
           >
             By continuing, you agree to TechnoCycle&apos;s{' '}
-            <span style={{ color: 'oklch(0.45 0.14 160)' }}>Terms of Use</span>
+            <button
+              type="button"
+              onClick={() => handleOpenPolicy('terms_of_service')}
+              className="font-medium underline hover:opacity-80 transition-opacity cursor-pointer"
+              style={{ color: 'oklch(0.45 0.14 160)' }}
+            >
+              Terms of Use
+            </button>
             {' '}and{' '}
-            <span style={{ color: 'oklch(0.45 0.14 160)' }}>Privacy Policy</span>.
+            <button
+              type="button"
+              onClick={() => handleOpenPolicy('privacy_policy')}
+              className="font-medium underline hover:opacity-80 transition-opacity cursor-pointer"
+              style={{ color: 'oklch(0.45 0.14 160)' }}
+            >
+              Privacy Policy
+            </button>.
           </p>
         </div>
       </motion.div>
+
+      {/* Policy Modal Dialog */}
+      {activePolicyModal && (
+        <ModalDialog
+          isOpen={true}
+          onClose={() => {
+            setActivePolicyModal(null)
+            setPolicyData(null)
+          }}
+          title={
+            activePolicyModal === 'terms_of_service'
+              ? 'TechnoSys Terms and Conditions of Use'
+              : 'TechnoCycle Employee Data Privacy Notice'
+          }
+          subtitle="Official Corporate Compliance Document — San Pedro, Laguna, Philippines"
+          icon={ShieldCheck}
+          iconVariant="emerald"
+          maxWidth="3xl"
+          footer={
+            <div className="flex items-center justify-between w-full">
+              <Link
+                href={activePolicyModal === 'terms_of_service' ? '/terms' : '/privacy'}
+                target="_blank"
+                className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:underline"
+              >
+                Open in Dedicated Tab
+                <ExternalLink className="w-3.5 h-3.5" />
+              </Link>
+              <button
+                type="button"
+                onClick={() => {
+                  setActivePolicyModal(null)
+                  setPolicyData(null)
+                }}
+                className="px-4 py-2 rounded-xl text-xs font-bold bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 hover:opacity-90 transition-opacity cursor-pointer"
+              >
+                Close Document
+              </button>
+            </div>
+          }
+        >
+          {loadingPolicy ? (
+            <div className="flex flex-col items-center justify-center py-16 gap-3">
+              <Loader2 className="w-6 h-6 animate-spin text-emerald-600" />
+              <p className="text-xs text-zinc-500 font-medium">Loading official policy document...</p>
+            </div>
+          ) : policyData ? (
+            <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2 text-xs leading-relaxed">
+              <div className="rounded-xl p-4 bg-emerald-50/80 dark:bg-emerald-950/30 border border-emerald-200/80 dark:border-emerald-800/80 flex items-start gap-3">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+                <div>
+                  <h4 className="font-bold text-emerald-900 dark:text-emerald-300 uppercase tracking-wider text-[11px] mb-0.5">
+                    Executive Summary ({policyData.version})
+                  </h4>
+                  <p className="text-emerald-800 dark:text-emerald-200 leading-normal">
+                    {policyData.summary}
+                  </p>
+                </div>
+              </div>
+
+              <div className="prose prose-zinc dark:prose-invert max-w-none text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap font-sans text-xs leading-relaxed">
+                {policyData.content_markdown}
+              </div>
+            </div>
+          ) : (
+            <div className="py-8 text-center text-xs text-zinc-500">
+              Unable to load document content. Please try again or open the dedicated page.
+            </div>
+          )}
+        </ModalDialog>
+      )}
     </div>
   )
 }

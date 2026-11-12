@@ -82,6 +82,31 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+
+  /* Porcelain Minimalist Light Palette (Strictly ZERO #FFFFFF) */
+  --canvas-bg: #E4E4EA;
+  --shell-bg: #F5F4F7;
+  --card-bg: #FAF9FB;
+  --card-inner-bg: #EBEAEF;
+  --border-subtle: rgba(0, 0, 0, 0.05);
+  --border-card: rgba(0, 0, 0, 0.06);
+  --border-active: #18181B;
+  --text-primary: #121215;
+  --text-secondary: #575762;
+  --text-muted: #8E8D9A;
+  --pill-active-bg: #18181B;
+  --pill-active-text: #FAF9FB;
+  --amber-bg: #FEF8ED;
+  --amber-border: #FCE1B6;
+  --amber-text: #92530C;
+  --amber-solid: #D97706;
+  --emerald-bg: #F0FDF4;
+  --emerald-border: #BBF7D0;
+  --emerald-text: #15803D;
+  --emerald-solid: #16A34A;
+  --rose-bg: #FEF2F2;
+  --rose-border: #FECACA;
+  --rose-text: #B91C1C;
 }
 
 .dark {
@@ -116,6 +141,31 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
+
+  /* Luxury Slate Minimalist Dark Palette (Strictly ZERO #000000) */
+  --canvas-bg: #1A1B20;
+  --shell-bg: #22232A;
+  --card-bg: #2B2C35;
+  --card-inner-bg: #343640;
+  --border-subtle: rgba(255, 255, 255, 0.07);
+  --border-card: rgba(255, 255, 255, 0.09);
+  --border-active: #F4F4F6;
+  --text-primary: #F4F4F6;
+  --text-secondary: #B0B2BD;
+  --text-muted: #7A7C88;
+  --pill-active-bg: #F4F4F6;
+  --pill-active-text: #16171B;
+  --amber-bg: rgba(217, 119, 6, 0.18);
+  --amber-border: rgba(217, 119, 6, 0.4);
+  --amber-text: #FCD34D;
+  --amber-solid: #F59E0B;
+  --emerald-bg: rgba(22, 163, 74, 0.18);
+  --emerald-border: rgba(22, 163, 74, 0.4);
+  --emerald-text: #86EFAC;
+  --emerald-solid: #22C55E;
+  --rose-bg: rgba(239, 68, 68, 0.18);
+  --rose-border: rgba(239, 68, 68, 0.4);
+  --rose-text: #FCA5A5;
 }
 
 @layer base {
@@ -205,4 +255,15 @@
   height: 10px;
   background-color: theme('colors.red.500');
   border-radius: 50%;
+}
+
+/* Chrome & Safari Autofill Dark Override */
+input:-webkit-autofill,
+input:-webkit-autofill:hover, 
+input:-webkit-autofill:focus, 
+input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 1000px #090a0f inset !important;
+  -webkit-text-fill-color: #f4f4f5 !important;
+  caret-color: #f4f4f5 !important;
+  transition: background-color 5000s ease-in-out 0s;
 }

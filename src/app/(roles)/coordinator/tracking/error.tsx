@@ -3,6 +3,7 @@
 import { useEffect } from 'react'
 import { AlertTriangle, RefreshCw, ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
+import { getCleanErrorMessage } from '@/lib/error-sanitizer'
 
 export default function TrackingErrorBoundary({
   error,
@@ -23,7 +24,7 @@ export default function TrackingErrorBoundary({
         </div>
         <h2 className="text-base font-bold text-zinc-900 dark:text-zinc-100">Fleet Tracking Connection Interrupted</h2>
         <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed">
-          {error.message || 'Unable to connect to the fleet telemetry stream. This may be caused by a transient network reset or server reconnection.'}
+          {error?.message ? getCleanErrorMessage(error.message, 'Unable to connect to the fleet location service. Please check your network connection and retry.') : 'Unable to connect to the fleet location service. Please check your network connection and retry.'}
         </p>
         <div className="mt-6 flex items-center justify-center gap-3">
           <button
@@ -32,7 +33,7 @@ export default function TrackingErrorBoundary({
             className="inline-flex items-center gap-2 rounded-xl bg-blue-600 dark:bg-blue-600 px-4 py-2 text-xs font-bold text-white hover:bg-blue-700 dark:hover:bg-blue-500 transition-colors shadow-sm"
           >
             <RefreshCw className="h-3.5 w-3.5" />
-            Retry Fleet Radar
+            Retry Connection
           </button>
           <Link
             href="/coordinator"

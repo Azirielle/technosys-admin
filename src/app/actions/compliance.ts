@@ -57,7 +57,7 @@ export async function updatePhilHealthRules(formData: FormData) {
     return { success: true };
   } catch (err: any) {
     console.error("Failed to update PhilHealth rules:", err.message || err)
-    return { error: "Database transaction failed: " + (err.message || err) }
+    return { error: "Failed to update PhilHealth rules. Please verify the input values and try again." }
   }
 }
 
@@ -106,6 +106,6 @@ export async function updatePagibigRules(formData: FormData) {
     return { success: true };
   } catch (err: any) {
     console.error("Failed to update Pag-IBIG rules:", err.message || err)
-    return { error: "Database transaction failed: " + (err.message || err) }
+    return { error: "Failed to update Pag-IBIG rules. Please verify the input values and try again." }
   }
 }
