@@ -1,9 +1,12 @@
-// LeaveDeclineModal: confirms declining a leave request.
+// LeaveDeclineModal: asks HR why a leave is being declined, then declines it with that reason.
 'use client'
 
+import { useEffect, useState } from 'react'
 import { XCircle } from 'lucide-react'
-import { Button, Modal } from '@/components/ui'
+import { Button, Field, Modal, Textarea } from '@/components/ui'
 import { applicantName, type LeaveRecord } from './types'
+
+const MIN_LENGTH = 5
 
 export function LeaveDeclineModal({
   leave,
@@ -14,9 +17,27 @@ export function LeaveDeclineModal({
   leave: LeaveRecord | null
   saving: boolean
   onCancel: () => void
-  onConfirm: (leave: LeaveRecord) => void
+  onConfirm: (leave: LeaveRecord, reason: string) => void
 }) {
+  const [reason, setReason] = useState('')
+  const [tried, setTried] = useState(false)
+
+  // Start with an empty reason for every request.
+  useEffect(() => {
+    setReason('')
+    setTried(false)
+  }, [leave?.id])
+
   if (!leave) return null
+  const trimmed = reason.trim()
+  const tooShort = trimmed.length < MIN_LENGTH
+
+  function submit() {
+    setTried(true)
+    if (!leave || tooShort) return
+    onConfirm(leave, trimmed)
+  }
+
   return (
     <Modal
       isOpen
@@ -29,13 +50,27 @@ export function LeaveDeclineModal({
       footer={
         <>
           <Button variant="ghost" onClick={onCancel}>Cancel</Button>
-          <Button variant="danger" onClick={() => onConfirm(leave)} loading={saving}>Decline leave</Button>
+          <Button variant="danger" onClick={submit} loading={saving}>Decline leave</Button>
         </>
       }
     >
-      <p className="text-small text-ink-2">
-        {applicantName(leave)} will see the request as declined in the app. Tell them the reason through a ticket or in person.
-      </p>
+      <Field
+        label="Why are you declining it?"
+        htmlFor="leave-decline-reason"
+        required
+        hint={`${applicantName(leave)} will see this reason in the app.`}
+        error={tried && tooShort ? 'Write a short reason (at least 5 characters).' : undefined}
+      >
+        <Textarea
+          id="leave-decline-reason"
+          value={reason}
+          onChange={(e) => setReason(e.target.value)}
+          placeholder="For example: Two other technicians are already on leave that week."
+          invalid={tried && tooShort}
+          maxLength={500}
+          autoFocus
+        />
+      </Field>
     </Modal>
   )
 }

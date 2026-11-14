@@ -563,6 +563,7 @@ export type Database = {
           id: string
           leave_type: string
           reason: string
+          rejection_reason: string | null
           start_date: string
           status: string
           technician_id: string
@@ -575,6 +576,7 @@ export type Database = {
           id?: string
           leave_type: string
           reason: string
+          rejection_reason?: string | null
           start_date: string
           status?: string
           technician_id: string
@@ -587,6 +589,7 @@ export type Database = {
           id?: string
           leave_type?: string
           reason?: string
+          rejection_reason?: string | null
           start_date?: string
           status?: string
           technician_id?: string

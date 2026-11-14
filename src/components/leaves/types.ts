@@ -9,6 +9,7 @@ export type LeaveRecord = {
   status: 'pending' | 'approved' | 'rejected'
   created_at: string
   attachment_url?: string | null
+  rejection_reason?: string | null
   profiles?: {
     full_name?: string
     role?: string

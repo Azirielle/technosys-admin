@@ -65,6 +65,15 @@ export function LeaveReviewModal({
           <p className="mt-2 text-caption text-ink-3">Filed {formatTimeAgo(leave.created_at)}</p>
         </section>
 
+        {leave.status === 'rejected' && (
+          <section className="rounded-control bg-danger-soft p-3">
+            <h3 className="text-caption font-medium text-danger">Why it was declined</h3>
+            <p className="mt-1 whitespace-pre-wrap text-small text-ink">
+              {leave.rejection_reason || 'No reason was recorded (declined before reasons were saved).'}
+            </p>
+          </section>
+        )}
+
         {leave.attachment_url && (
           <a
             href={leave.attachment_url}

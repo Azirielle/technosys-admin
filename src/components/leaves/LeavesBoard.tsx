@@ -70,9 +70,16 @@ export function LeavesBoard() {
     }
   }, [supabase, fetchLeaves])
 
-  async function setStatus(leave: LeaveRecord, status: 'approved' | 'rejected') {
+  async function setStatus(leave: LeaveRecord, status: 'approved' | 'rejected', rejectionReason?: string) {
     setSaving(true)
-    const { error } = await supabase.from('leaves').update({ status, updated_at: new Date().toISOString() }).eq('id', leave.id)
+    const { error } = await supabase
+      .from('leaves')
+      .update({
+        status,
+        rejection_reason: status === 'rejected' ? rejectionReason ?? null : null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', leave.id)
     setSaving(false)
     if (error) {
       toast.error(`Couldn't save the decision: ${error.message}`)
@@ -211,7 +218,7 @@ export function LeavesBoard() {
         leave={declining ? selected : null}
         saving={saving}
         onCancel={() => setDeclining(false)}
-        onConfirm={(leave) => setStatus(leave, 'rejected')}
+        onConfirm={(leave, reason) => setStatus(leave, 'rejected', reason)}
       />
     </Page>
   )
