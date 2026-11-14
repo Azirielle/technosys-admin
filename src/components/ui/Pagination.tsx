@@ -1,5 +1,6 @@
+// Pagination: "Showing 1 to 20 of 84" and page buttons, shown under a table.
 "use client"
-import React from "react"
+import { cx } from "./cx"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 
 interface PaginationProps {
@@ -19,7 +20,7 @@ export default function Pagination({
   itemsPerPage,
   onPageChange,
   itemNamePlural = "records",
-  className = ""
+  className
 }: PaginationProps) {
   const safeTotalPages = Math.max(1, totalPages)
   const startIndex = totalItems === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1
@@ -39,92 +40,50 @@ export default function Pagination({
     pages.push(i)
   }
 
+  const pageButton = (active: boolean) =>
+    cx(
+      "min-w-8 h-8 px-2 rounded-pill text-caption font-medium tabular-nums transition-colors cursor-pointer",
+      "focus-visible:outline-2 focus-visible:outline-focus",
+      active ? "bg-action text-on-action" : "text-ink-2 hover:bg-surface-soft hover:text-ink"
+    )
+  const arrowButton =
+    "size-8 rounded-pill flex items-center justify-center text-ink-2 hover:bg-surface-soft hover:text-ink transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent focus-visible:outline-2 focus-visible:outline-focus"
+
   return (
-    <div
-      className={`px-4 py-3 bg-zinc-50 dark:bg-zinc-900 border-t border-zinc-200/80 dark:border-zinc-800 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs transition-colors ${className}`}
-    >
-      <p className="text-zinc-500 dark:text-zinc-400 font-medium">
-        Showing <span className="font-semibold text-zinc-900 dark:text-zinc-100">{totalItems === 0 ? 0 : startIndex}</span> to{" "}
-        <span className="font-semibold text-zinc-900 dark:text-zinc-100">{endIndex}</span> of{" "}
-        <span className="font-semibold text-zinc-900 dark:text-zinc-100">{totalItems}</span> {itemNamePlural}
+    <div className={cx("flex flex-col items-center justify-between gap-3 border-t border-line px-card py-3 sm:flex-row", className)}>
+      <p className="text-caption text-ink-2">
+        Showing <span className="font-medium text-ink tabular-nums">{startIndex}</span> to{" "}
+        <span className="font-medium text-ink tabular-nums">{endIndex}</span> of{" "}
+        <span className="font-medium text-ink tabular-nums">{totalItems}</span> {itemNamePlural}
       </p>
 
-      <div className="flex items-center gap-1 font-sans select-none">
-        {/* Previous Button */}
-        <button
-          type="button"
-          onClick={() => onPageChange(Math.max(currentPage - 1, 1))}
-          disabled={currentPage === 1}
-          className="p-1.5 rounded-lg border border-zinc-200/80 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700 disabled:opacity-40 disabled:hover:bg-white dark:disabled:hover:bg-zinc-800 disabled:cursor-not-allowed transition-colors cursor-pointer flex items-center justify-center shadow-2xs"
-          title="Previous Page"
-        >
-          <ChevronLeft className="w-4 h-4" />
+      <div className="flex select-none items-center gap-1">
+        <button type="button" aria-label="Previous page" onClick={() => onPageChange(Math.max(currentPage - 1, 1))} disabled={currentPage === 1} className={arrowButton}>
+          <ChevronLeft className="size-4" aria-hidden />
         </button>
 
-        {/* First Page if far away */}
         {startPage > 1 && (
           <>
-            <button
-              type="button"
-              onClick={() => onPageChange(1)}
-              className="min-w-8 h-8 px-2 rounded-lg text-xs font-semibold border border-zinc-200/80 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors cursor-pointer shadow-2xs"
-            >
-              1
-            </button>
-            {startPage > 2 && (
-              <span className="text-zinc-400 dark:text-zinc-500 text-xs px-1 select-none font-bold">
-                ...
-              </span>
-            )}
+            <button type="button" onClick={() => onPageChange(1)} className={pageButton(false)}>1</button>
+            {startPage > 2 && <span className="px-1 text-caption text-ink-3">…</span>}
           </>
         )}
 
-        {/* Visible Page Numbers */}
-        {pages.map((page) => {
-          const isCurrent = page === currentPage
-          return (
-            <button
-              key={page}
-              type="button"
-              onClick={() => onPageChange(page)}
-              className={`min-w-8 h-8 px-2 rounded-lg text-xs font-bold border transition-colors cursor-pointer shadow-2xs ${
-                isCurrent
-                  ? "bg-blue-50 dark:bg-blue-950/50 border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400"
-                  : "bg-white dark:bg-zinc-800 border-zinc-200/80 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700"
-              }`}
-            >
-              {page}
-            </button>
-          )
-        })}
+        {pages.map((page) => (
+          <button key={page} type="button" aria-current={page === currentPage ? "page" : undefined} onClick={() => onPageChange(page)} className={pageButton(page === currentPage)}>
+            {page}
+          </button>
+        ))}
 
-        {/* Last Page if far away */}
         {endPage < safeTotalPages && (
           <>
-            {endPage < safeTotalPages - 1 && (
-              <span className="text-zinc-400 dark:text-zinc-500 text-xs px-1 select-none font-bold">
-                ...
-              </span>
-            )}
-            <button
-              type="button"
-              onClick={() => onPageChange(safeTotalPages)}
-              className="min-w-8 h-8 px-2 rounded-lg text-xs font-semibold border border-zinc-200/80 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors cursor-pointer shadow-2xs"
-            >
-              {safeTotalPages}
-            </button>
+            {endPage < safeTotalPages - 1 && <span className="px-1 text-caption text-ink-3">…</span>}
+            <button type="button" onClick={() => onPageChange(safeTotalPages)} className={pageButton(false)}>{safeTotalPages}</button>
           </>
         )}
 
-        {/* Next Button */}
-        <button
-          type="button"
-          onClick={() => onPageChange(Math.min(currentPage + 1, safeTotalPages))}
-          disabled={currentPage === safeTotalPages || totalItems === 0}
-          className="p-1.5 rounded-lg border border-zinc-200/80 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700 disabled:opacity-40 disabled:hover:bg-white dark:disabled:hover:bg-zinc-800 disabled:cursor-not-allowed transition-colors cursor-pointer flex items-center justify-center shadow-2xs"
-          title="Next Page"
-        >
-          <ChevronRight className="w-4 h-4" />
+        <button type="button" aria-label="Next page" onClick={() => onPageChange(Math.min(currentPage + 1, safeTotalPages))} disabled={currentPage === safeTotalPages || totalItems === 0} className={arrowButton}>
+          <ChevronRight className="size-4" aria-hidden />
         </button>
       </div>
     </div>

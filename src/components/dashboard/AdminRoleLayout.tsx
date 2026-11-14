@@ -1,3 +1,4 @@
+// AdminRoleLayout: the app frame for CEO, HR and Coordinator pages (dock on the left, page on the right).
 'use client'
 
 import React, { useState, useEffect } from 'react'
@@ -48,12 +49,12 @@ export function AdminRoleLayout({
   }, [])
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-[#E4E4EA] dark:bg-[#1A1B20] p-4 md:p-5 gap-4 select-none transition-colors duration-250 relative">
+    <div className="flex h-screen w-screen overflow-hidden bg-bg p-4 md:p-5 gap-4 transition-colors duration-250 relative">
       {/* 1. Reserved spacer for floating capsule dock (smoothly accommodates pinned vs collapsed dock) */}
       <div
         className={`${
-          isPinned ? 'w-[230px]' : 'w-[64px]'
-        } h-full shrink-0 transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]`}
+ isPinned ? 'w-[230px]' : 'w-[64px]'
+ } h-full shrink-0 transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]`}
       />
 
       {/* 2. Floating Expandable Capsule Dock (Smooth width expansion on hover or pinned) */}
@@ -68,7 +69,7 @@ export function AdminRoleLayout({
       />
 
       {/* 3. Main Executive Porcelain Shell Container */}
-      <div className="flex-1 h-full min-w-0 bg-[#F5F4F7] dark:bg-[#22232A] rounded-[28px] border border-black/[0.04] dark:border-white/[0.07] shadow-tactile overflow-hidden flex flex-col transition-colors duration-250">
+      <div className="flex-1 h-full min-w-0 overflow-hidden flex flex-col">
         <main className="flex-1 flex flex-col h-full overflow-hidden">
           {children}
         </main>

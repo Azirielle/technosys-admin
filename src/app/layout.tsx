@@ -1,20 +1,26 @@
+// Root layout: loads the Geist fonts, the theme (light/dark) and the toast messages for every page.
 import type { Metadata } from "next";
-import { Plus_Jakarta_Sans } from "next/font/google";
+import { Geist, Geist_Mono } from "next/font/google";
+import NextTopLoader from "nextjs-toploader";
 import "./globals.css";
 
-const plusJakartaSans = Plus_Jakarta_Sans({
-  variable: "--font-plus-jakarta",
+import { MobileHardwareListener } from "@/components/mobile-hardware-listener";
+import { ThemeProvider } from "@/components/theme/ThemeProvider";
+import { ToastProvider } from "@/components/ui/Toast";
+
+const geist = Geist({
+  variable: "--font-geist",
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
 });
 
-import { MobileHardwareListener } from "@/components/mobile-hardware-listener";
-import NextTopLoader from 'nextjs-toploader';
-import { ThemeProvider } from "@/components/theme/ThemeProvider";
+const geistMono = Geist_Mono({
+  variable: "--font-geist-mono",
+  subsets: ["latin"],
+});
 
 export const metadata: Metadata = {
-  title: "TechnoCycle Admin — Operations Portal",
-  description: "TechnoCycle Operations, Fleet Tracking & HR Portal",
+  title: "TechnoSys Admin",
+  description: "Technocycle attendance, inventory and ticketing",
 };
 
 export default function RootLayout({
@@ -26,13 +32,16 @@ export default function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      className={`${plusJakartaSans.variable} h-full antialiased`}
+      className={`${geist.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 transition-colors duration-200">
+      <body className="min-h-full flex flex-col bg-bg text-ink font-sans transition-colors duration-200">
         <ThemeProvider>
-          <NextTopLoader color="#2563eb" showSpinner={false} />
-          <MobileHardwareListener />
-          {children}
+          <ToastProvider>
+            {/* The top loading bar uses the action colour token */}
+            <NextTopLoader color="var(--tc-action)" showSpinner={false} />
+            <MobileHardwareListener />
+            {children}
+          </ToastProvider>
         </ThemeProvider>
       </body>
     </html>

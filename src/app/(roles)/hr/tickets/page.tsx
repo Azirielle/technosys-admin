@@ -1,11 +1,6 @@
-'use client'
-
-import { TicketingTab } from '../TicketingTab'
+// HR Tickets page.
+import { TicketsBoard } from '@/components/tickets/TicketsBoard'
 
 export default function HRTicketsPage() {
-  return (
-    <div className="flex flex-col h-full w-full bg-[#FAF9FB] dark:bg-[#121215] overflow-hidden">
-      <TicketingTab />
-    </div>
-  )
+  return <TicketsBoard />
 }

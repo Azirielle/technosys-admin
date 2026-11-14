@@ -1,0 +1,163 @@
+/*
+ * TechnoSys design tokens — the ONE place for colours, fonts, sizes, spacing, radius and shadows.
+ * Style: soft minimal ("Cloud"): cool white, near-black actions, soft shadows, round corners.
+ * Pages never use hex values or one-off sizes: use the Tailwind classes these tokens create
+ * (bg-surface, text-ink-2, rounded-card, shadow-card, p-card, gap-section, text-title …).
+ * See README.md in this folder for what each token is for.
+ */
+
+/* ---------- Light (default) ---------- */
+:root,
+.light {
+  color-scheme: light;
+
+  /* Backgrounds, from back to front */
+  --tc-bg: #f4f5f7;            /* page canvas behind everything */
+  --tc-surface: #ffffff;       /* cards, dock, modals */
+  --tc-surface-soft: #f1f2f4;  /* inside a card: table header, inputs, tab track */
+  --tc-surface-hover: #f7f8fa; /* hovered row or ghost button */
+  --tc-line: #ebecef;          /* hairline dividers */
+  --tc-line-strong: #d9dbe0;   /* input outline, secondary button ring */
+
+  /* Text */
+  --tc-ink: #1d1d1f;           /* headings and main text */
+  --tc-ink-2: #6e6e73;         /* supporting text */
+  --tc-ink-3: #8e8e93;         /* hints, placeholders, IDs, "of 18" */
+
+  /* Actions: near-black, like the reference pictures */
+  --tc-action: #1d1d1f;
+  --tc-action-hover: #3a3a3d;
+  --tc-on-action: #ffffff;
+  --tc-focus: #3b74f0;         /* keyboard focus ring only */
+  --tc-link: #1d1d1f;
+
+  /* Status: only for status pills, alerts and numbers that mean good/attention/bad */
+  --tc-success: #1e7a47;
+  --tc-success-soft: #e8f6ee;
+  --tc-warning: #8a5a00;
+  --tc-warning-soft: #fff4db;
+  --tc-danger: #b42318;
+  --tc-danger-soft: #fdeceb;
+  --tc-danger-solid: #d92d20;  /* destructive button fill */
+  --tc-info: #1f55c7;
+  --tc-info-soft: #eaf1fe;
+
+  /* Soft shadows instead of borders */
+  --tc-shadow-card: 0 1px 2px rgba(16, 17, 22, 0.04), 0 8px 24px rgba(16, 17, 22, 0.05);
+  --tc-shadow-raised: 0 2px 4px rgba(16, 17, 22, 0.05), 0 16px 40px rgba(16, 17, 22, 0.09);
+  --tc-shadow-overlay: 0 24px 64px rgba(16, 17, 22, 0.18);
+  --tc-scrim: rgba(16, 17, 22, 0.32);
+}
+
+/* ---------- Dark ---------- */
+.dark {
+  color-scheme: dark;
+  --tc-bg: #0f1013;
+  --tc-surface: #1a1b20;
+  --tc-surface-soft: #24252b;
+  --tc-surface-hover: #212228;
+  --tc-line: #2a2b31;
+  --tc-line-strong: #3a3b42;
+
+  --tc-ink: #f2f2f4;
+  --tc-ink-2: #a1a1a8;
+  --tc-ink-3: #77777f;
+
+  --tc-action: #f2f2f4;
+  --tc-action-hover: #d9d9de;
+  --tc-on-action: #16171d;
+  --tc-focus: #7aa5ff;
+  --tc-link: #f2f2f4;
+
+  --tc-success: #7fd3a0;
+  --tc-success-soft: #15291d;
+  --tc-warning: #f2c766;
+  --tc-warning-soft: #33280f;
+  --tc-danger: #f4a3a0;
+  --tc-danger-soft: #3a1717;
+  --tc-danger-solid: #e5484d;
+  --tc-info: #9dbbf5;
+  --tc-info-soft: #16233d;
+
+  --tc-shadow-card: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.35);
+  --tc-shadow-raised: 0 2px 4px rgba(0, 0, 0, 0.35), 0 16px 40px rgba(0, 0, 0, 0.5);
+  --tc-shadow-overlay: 0 24px 64px rgba(0, 0, 0, 0.6);
+  --tc-scrim: rgba(0, 0, 0, 0.6);
+}
+
+/* ---------- Tailwind classes made from the tokens ---------- */
+@theme inline {
+  /* Fonts (loaded in app/layout.tsx) */
+  --font-sans: var(--font-geist), system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+  --font-heading: var(--font-geist), system-ui, sans-serif;
+
+  /* Colours → bg-*, text-*, border-*, ring-* */
+  --color-bg: var(--tc-bg);
+  --color-surface: var(--tc-surface);
+  --color-surface-soft: var(--tc-surface-soft);
+  --color-surface-hover: var(--tc-surface-hover);
+  --color-line: var(--tc-line);
+  --color-line-strong: var(--tc-line-strong);
+  --color-ink: var(--tc-ink);
+  --color-ink-2: var(--tc-ink-2);
+  --color-ink-3: var(--tc-ink-3);
+  --color-action: var(--tc-action);
+  --color-action-hover: var(--tc-action-hover);
+  --color-on-action: var(--tc-on-action);
+  --color-focus: var(--tc-focus);
+  --color-link: var(--tc-link);
+  --color-success: var(--tc-success);
+  --color-success-soft: var(--tc-success-soft);
+  --color-warning: var(--tc-warning);
+  --color-warning-soft: var(--tc-warning-soft);
+  --color-danger: var(--tc-danger);
+  --color-danger-soft: var(--tc-danger-soft);
+  --color-danger-solid: var(--tc-danger-solid);
+  --color-info: var(--tc-info);
+  --color-info-soft: var(--tc-info-soft);
+  --color-scrim: var(--tc-scrim);
+
+  /* Font sizes → text-display, text-title … (weights: 400 body, 500 labels, 600 headings) */
+  --text-display: 32px;
+  --text-display--line-height: 1.1;
+  --text-display--letter-spacing: -0.03em;
+  --text-title: 24px;
+  --text-title--line-height: 1.2;
+  --text-title--letter-spacing: -0.02em;
+  --text-heading: 17px;
+  --text-heading--line-height: 1.35;
+  --text-heading--letter-spacing: -0.015em;
+  --text-body: 14px;
+  --text-body--line-height: 1.5;
+  --text-small: 13px;
+  --text-small--line-height: 1.45;
+  --text-caption: 12px;
+  --text-caption--line-height: 1.4;
+  --text-micro: 11px;
+  --text-micro--line-height: 1.35;
+
+  /* Spacing → p-card, px-page, gap-section … (all on the 4px grid) */
+  --spacing-page: 32px;      /* page side padding */
+  --spacing-page-y: 28px;    /* page top/bottom padding */
+  --spacing-section: 24px;   /* gap between blocks on a page */
+  --spacing-card: 20px;      /* padding inside a card */
+  --spacing-card-sm: 16px;   /* padding inside a small card or list row */
+  --spacing-stack: 12px;     /* gap between fields in a form */
+  --spacing-inline: 8px;     /* gap between buttons or icon and text */
+  --spacing-control-sm: 32px; /* small button / input height */
+  --spacing-control: 40px;    /* default button / input height */
+  --spacing-control-lg: 48px; /* large button height */
+
+  /* Radius → rounded-control, rounded-card … */
+  --radius-chip: 8px;        /* tiny squares: checkbox, icon tile */
+  --radius-control: 12px;    /* inputs and selects */
+  --radius-card: 20px;       /* cards, tables, drawers */
+  --radius-modal: 28px;      /* modals and the app shell */
+  --radius-pill: 999px;      /* buttons, badges, tabs, avatars */
+
+  /* Shadows → shadow-card, shadow-raised, shadow-overlay */
+  --shadow-card: var(--tc-shadow-card);
+  --shadow-raised: var(--tc-shadow-raised);
+  --shadow-overlay: var(--tc-shadow-overlay);
+}
