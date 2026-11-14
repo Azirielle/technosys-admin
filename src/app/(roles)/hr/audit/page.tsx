@@ -1,5 +1,6 @@
-import DtrClient from "@/components/dtr/DtrClient";
+// DTR and attendance page.
+import { DtrBoard } from '@/components/dtr/DtrBoard'
 
-export default function HRAuditPage() {
-  return <DtrClient />;
+export default function DtrPage() {
+  return <DtrBoard />
 }
