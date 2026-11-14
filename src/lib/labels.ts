@@ -22,6 +22,6 @@ export const JOB_STATUS: Record<string, { label: string; tone: Tone }> = {
 export const REQUEST_STATUS: Record<string, { label: string; tone: Tone }> = {
   pending: { label: 'Pending', tone: 'warning' },
   approved: { label: 'Approved', tone: 'success' },
-  rejected: { label: 'Rejected', tone: 'danger' },
+  rejected: { label: 'Declined', tone: 'danger' },
   cancelled: { label: 'Cancelled', tone: 'neutral' },
 }

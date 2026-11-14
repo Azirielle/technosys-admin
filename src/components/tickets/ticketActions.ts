@@ -45,8 +45,17 @@ export async function takeOverTicket(supabase: Client, ticket: Ticket) {
   await notifyApp(supabase, ticket.id, ['new_comment', 'ticket_update'])
 }
 
-/** Uploads the file (if any) and adds HR's message. Returns the saved message. */
-export async function sendReply(supabase: Client, ticket: Ticket, text: string, file: File | null): Promise<TicketMessage | null> {
+/**
+ * Uploads the file (if any) and adds HR's message. Returns the saved message.
+ * `internal` makes it an HR-only note: the access rules hide it from the employee and no push is sent.
+ */
+export async function sendReply(
+  supabase: Client,
+  ticket: Ticket,
+  text: string,
+  file: File | null,
+  internal = false,
+): Promise<TicketMessage | null> {
   const authorId = await currentUserId(supabase)
   let attachmentUrl: string | null = null
   let attachmentType: string | null = null
@@ -67,13 +76,14 @@ export async function sendReply(supabase: Client, ticket: Ticket, text: string, 
       author_id: authorId,
       content: text.trim() || (file ? `Attached: ${file.name}` : ''),
       sender_role: 'admin',
+      is_internal: internal,
       attachment_url: attachmentUrl,
       attachment_type: attachmentType,
     })
     .select()
     .single()
   if (error) throw error
-  await notifyApp(supabase, ticket.id, ['new_comment'])
+  if (!internal) await notifyApp(supabase, ticket.id, ['new_comment'])
   return data as TicketMessage
 }
 

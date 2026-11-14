@@ -26,6 +26,7 @@ export function TicketsBoard() {
   const [search, setSearch] = useState('')
   const [reply, setReply] = useState('')
   const [file, setFile] = useState<File | null>(null)
+  const [internal, setInternal] = useState(false)
   const [sending, setSending] = useState(false)
   const [takingOver, setTakingOver] = useState(false)
   const [finishing, setFinishing] = useState<'resolved' | 'closed' | null>(null)
@@ -53,11 +54,13 @@ export function TicketsBoard() {
     setSelectedId(id)
     setReply('')
     setFile(null)
+    setInternal(false)
   }
 
   function changeReply(text: string) {
     setReply(text)
-    if (!selectedId) return
+    // Don't show the employee "HR is typing…" while HR writes a note they'll never see.
+    if (!selectedId || internal) return
     sendTyping(selectedId, true)
     if (stopTypingTimer.current) clearTimeout(stopTypingTimer.current)
     stopTypingTimer.current = setTimeout(() => sendTyping(selectedId, false), 2500)
@@ -68,7 +71,7 @@ export function TicketsBoard() {
     setSending(true)
     sendTyping(selected.id, false)
     try {
-      const saved = await sendReply(supabase, selected, reply, file)
+      const saved = await sendReply(supabase, selected, reply, file, internal)
       if (saved) addMessage(saved)
       setReply('')
       setFile(null)
@@ -141,9 +144,14 @@ export function TicketsBoard() {
             reply={reply}
             file={file}
             sending={sending}
+            internal={internal}
             takingOver={takingOver}
             onReplyChange={changeReply}
             onFileChange={setFile}
+            onInternalChange={(on) => {
+              setInternal(on)
+              if (on && selectedId) sendTyping(selectedId, false)
+            }}
             onSend={send}
             onTakeOver={takeOver}
             onFinish={setFinishing}

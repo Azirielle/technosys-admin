@@ -1,24 +1,31 @@
-// ReplyBox: where HR types a reply to the employee, with an optional file. Enter sends.
+// ReplyBox: where HR types a reply to the employee (or an HR-only note), with an optional file. Enter sends.
 'use client'
 
 import { useRef } from 'react'
-import { Paperclip, Send, X } from 'lucide-react'
-import { Button, IconButton, Input, useToast } from '@/components/ui'
+import { Lock, Paperclip, Send, X } from 'lucide-react'
+import { Button, Checkbox, IconButton, Input, useToast } from '@/components/ui'
 import { ALLOWED_FILE_TYPES, checkAttachment } from './ticketActions'
 
 export function ReplyBox({
   text,
   file,
   sending,
+  internal,
+  employeeName,
   onTextChange,
   onFileChange,
+  onInternalChange,
   onSend,
 }: {
   text: string
   file: File | null
   sending: boolean
+  /** On: the message is an HR-only note the employee never sees. */
+  internal: boolean
+  employeeName: string
   onTextChange: (text: string) => void
   onFileChange: (file: File | null) => void
+  onInternalChange: (internal: boolean) => void
   onSend: () => void
 }) {
   const toast = useToast()
@@ -53,15 +60,20 @@ export function ReplyBox({
         <IconButton icon={Paperclip} label="Attach a file" variant="secondary" onClick={() => fileInput.current?.click()} />
         <Input
           className="flex-1"
-          aria-label="Reply"
-          placeholder="Write a reply to the employee"
+          aria-label={internal ? 'HR-only note' : 'Reply'}
+          placeholder={internal ? 'Write a note only HR can see' : 'Write a reply to the employee'}
           value={text}
           onChange={(e) => onTextChange(e.target.value)}
         />
-        <Button type="submit" variant="primary" icon={Send} loading={sending} disabled={!canSend}>
-          Send
+        <Button type="submit" variant="primary" icon={internal ? Lock : Send} loading={sending} disabled={!canSend}>
+          {internal ? 'Add note' : 'Send'}
         </Button>
       </form>
+      <Checkbox
+        checked={internal}
+        onChange={(e) => onInternalChange(e.target.checked)}
+        label={`HR-only note (${employeeName} won't see it)`}
+      />
     </div>
   )
 }

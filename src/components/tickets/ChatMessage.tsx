@@ -1,7 +1,7 @@
 // ChatMessage and TypingBubble: one message in a ticket conversation (employee, AI, HR or system note).
 'use client'
 
-import { Bot, FileText, ZoomIn } from 'lucide-react'
+import { Bot, FileText, Lock, ZoomIn } from 'lucide-react'
 import { formatTime } from '@/lib/format'
 import { Avatar, cx } from '@/components/ui'
 import { isImage, type TicketMessage } from './types'
@@ -26,6 +26,19 @@ export function ChatMessage({
   const fromHr = message.sender_role === 'admin'
   const fromAi = message.sender_role === 'ai'
   const who = fromAi ? WHO.ai : fromHr ? WHO.admin : employeeName
+
+  // HR-only note: the employee never sees it, so it must not look like a reply.
+  if (message.is_internal) {
+    return (
+      <div className="ml-auto max-w-[78%] rounded-card rounded-br-chip border border-dashed border-warning bg-warning-soft px-4 py-3 text-small text-ink">
+        <p className="mb-0.5 flex items-center gap-1 text-micro font-medium text-warning">
+          <Lock className="size-3" aria-hidden /> HR-only note · {employeeName} can't see this
+        </p>
+        <p className="whitespace-pre-wrap">{message.content}</p>
+        <p className="mt-1 text-right text-micro text-ink-3">{formatTime(message.created_at)}</p>
+      </div>
+    )
+  }
 
   return (
     <div className={cx('flex items-end gap-2', fromHr && 'flex-row-reverse')}>

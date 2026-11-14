@@ -4,16 +4,24 @@
 -- RE-RUNNABLE. Every date is counted from the day it runs ("today", "3 days ago"), so re-run it on the
 -- morning of the defense and the screens show that day. Paste the whole file into the Supabase SQL editor.
 --
--- SAFE FOR YOUR OWN TESTS. Every row made here has an id starting with "de5eed". A re-run deletes only
--- those rows and makes them again. A ticket or leave you file yourself is never touched.
+-- SAFE FOR YOUR OWN TESTS. Every row made here has a fixed id made from a label (see sid below). A re-run
+-- deletes only those ids and makes them again. A ticket or leave you file yourself is never touched.
 --
 -- No push notifications are sent: the push triggers are switched off while this runs.
 -- New logins (username = password, demo only): mark, joel, rico, allan, jerome.
+--
+-- This file is the demo seed, meant to be re-run; it was updated in place on 15 Nov (random-looking ids so
+-- each ticket gets its own reference, no repeated first message, HR's resolve note saved like the app does).
 
 -- Helpers (exist only while this runs) -------------------------------------------------------------
--- sid(kind, n): the fixed id of seeded row n of one kind, e.g. de5eed02-0000-4000-8000-000000000004.
+-- sid(kind, n): the fixed id of seeded row n of one kind. It looks random (so ticket references differ),
+-- but is always the same for the same kind and n.
 create or replace function pg_temp.sid(kind int, n int) returns uuid language sql immutable as $$
-  select format('de5eed%s-0000-4000-8000-%s', lpad(kind::text, 2, '0'), lpad(n::text, 12, '0'))::uuid
+  select md5('technosys-demo:' || kind || ':' || n)::uuid
+$$;
+-- seeded(kind): every id this file can make for one kind.
+create or replace function pg_temp.seeded(kind int) returns setof uuid language sql immutable as $$
+  select pg_temp.sid(kind, g) from generate_series(1, 300) g
 $$;
 -- at(day, time): that Manila wall-clock time as a timestamp.
 create or replace function pg_temp.at(d date, t time) returns timestamptz language sql immutable as $$
@@ -32,18 +40,20 @@ alter table public.ticket_comments disable trigger on_ticket_comment_push;
 alter table public.attendance_logs disable trigger trg_prevent_duplicate_clockins;
 
 -- 1. Remove the previous demo rows ----------------------------------------------------------------------
-delete from public.ticket_comments where id::text like 'de5eed%' or ticket_id::text like 'de5eed%';
-delete from public.tickets where id::text like 'de5eed%';
-delete from public.schedule_history where schedule_id::text like 'de5eed%';
-delete from public.schedule_casual_helpers where schedule_id::text like 'de5eed%';
-delete from public.schedule_crew where schedule_id::text like 'de5eed%';
-delete from public.schedules where id::text like 'de5eed%';
-delete from public.attendance_logs where id::text like 'de5eed%';
-delete from public.leaves where id::text like 'de5eed%';
-delete from public.overtime_requests where id::text like 'de5eed%';
-delete from public.tool_borrowings where id::text like 'de5eed%';
-delete from public.announcements where id::text like 'de5eed%';
-delete from auth.users where id::text like 'de5eed00%';   -- the 5 demo staff; their profiles follow (cascade)
+-- (Rows whose id starts with "de5eed" come from the first version of this file.)
+delete from public.ticket_comments where ticket_id in (select pg_temp.seeded(8)) or id in (select pg_temp.seeded(9)) or ticket_id::text like 'de5eed%';
+delete from public.tickets where id in (select pg_temp.seeded(8)) or id::text like 'de5eed%';
+delete from public.schedule_history where schedule_id in (select pg_temp.seeded(2)) or schedule_id::text like 'de5eed%';
+delete from public.schedule_casual_helpers where schedule_id in (select pg_temp.seeded(2)) or schedule_id::text like 'de5eed%';
+delete from public.schedule_crew where schedule_id in (select pg_temp.seeded(2)) or schedule_id::text like 'de5eed%';
+delete from public.schedules where id in (select pg_temp.seeded(2)) or id::text like 'de5eed%';
+delete from public.attendance_logs where id in (select pg_temp.seeded(1)) or id::text like 'de5eed%';
+delete from public.leaves where id in (select pg_temp.seeded(6)) or id::text like 'de5eed%';
+delete from public.overtime_requests where id in (select pg_temp.seeded(7)) or id::text like 'de5eed%';
+delete from public.tool_borrowings where id in (select pg_temp.seeded(10)) or id::text like 'de5eed%';
+delete from public.announcements where id in (select pg_temp.seeded(11)) or id::text like 'de5eed%';
+-- The 5 demo staff; their profiles and records follow (cascade).
+delete from auth.users where id in (select pg_temp.seeded(0)) or id::text like 'de5eed00%';
 
 -- 2. Five more field staff ------------------------------------------------------------------------------
 do $$
@@ -156,7 +166,7 @@ create temp table demo_jobs as
 select * from (values
   (1,  0, '09:00', '12:00', 'on_site',     'Reyes residence',               'BF Homes, Parañaque',            14.4520, 121.0230, 'direct_to_site', 'in_progress', false, null, 'senior',     array['helper']),
   (2,  0, '13:30', '17:00', 'on_site',     'Sunrise Bakeshop',              'Alabang–Zapote Rd, Las Piñas',   14.4440, 120.9960, 'via_pacita_hq',  'scheduled',   false, null, 'senior',     array['helper']),
-  (3,  0, '08:00', '17:00', 'office_duty', 'Shop work: duct fabrication',   'Pacita HQ',                      14.3439, 121.0617, 'via_pacita_hq',  'in_progress', false, null, null,         array['allan']),
+  (3,  0, '08:00', '17:00', 'office_duty', 'Shop work: duct fabrication',   'Pacita HQ',                      14.3439, 121.0617, 'via_pacita_hq',  'in_progress', false, null, 'allan',      array[]::text[]),
   (4,  0, '10:30', '14:00', 'on_site',     'Lim Dental Clinic',             'National Hwy, San Pedro, Laguna', 14.3590, 121.0560, 'direct_to_site', 'in_progress', true,  null, 'technician', array['mark']),
   (5,  1, '08:30', '16:00', 'on_site',     'Garcia residence',              'Southwoods, Biñan, Laguna',      14.3260, 121.0380, 'direct_to_site', 'scheduled',   false, null, 'joel',       array['jerome']),
   (6,  1, '09:00', '12:00', 'on_site',     'St. Joseph parish office',      'Poblacion, San Pedro, Laguna',   14.3640, 121.0580, 'via_pacita_hq',  'scheduled',   false, null, 'technician', array['helper']),
@@ -187,7 +197,8 @@ select pg_temp.sid(2, j.n), pg_temp.who(j.lead), j.client, j.place,
        now()
 from demo_jobs j;
 
--- Lead + crew (the lead of a cancelled job is released).
+-- Lead + crew (the lead of a cancelled job is released). Office duty has no lead: like the app, the person
+-- is set on the job and listed as crew.
 insert into public.schedule_crew (id, schedule_id, technician_id, assignment_role, joined_at, released_at, status)
 select pg_temp.sid(3, row_number() over (order by j.n, m.ord)::int), pg_temp.sid(2, j.n), pg_temp.who(m.username),
        m.role, s.start_time,
@@ -279,17 +290,14 @@ values
    'I was marked late but there was an accident on SLEX that morning. I left the house at 6:30 AM.',
    'resolved', 'medium', pg_temp.who('hr'), 'ADMIN', now() - interval '6 days', now() - interval '5 days', false);
 
+-- The employee's first message is the ticket description (shown above the chat), so it isn't repeated here.
 insert into public.ticket_comments (id, ticket_id, author_id, content, sender_role, is_internal, read_at, created_at)
 values
-  (pg_temp.sid(9, 1), pg_temp.sid(8, 1), pg_temp.who('technician'), 'I timed out at 5:40 PM after the Lopez job but the app shows no time-out. My phone had no signal at the site.', 'technician', false, now() - interval '47 hours', now() - interval '2 days'),
   (pg_temp.sid(9, 2), pg_temp.sid(8, 1), pg_temp.who('hr'), 'Hi Juan, thanks for reporting. Was Ramon with you when you left the site? I will check with him.', 'admin', false, now() - interval '40 hours', now() - interval '46 hours'),
   (pg_temp.sid(9, 3), pg_temp.sid(8, 1), pg_temp.who('technician'), 'Yes po, Ramon drove us back to Pacita. We arrived around 6:15 PM.', 'technician', false, now() - interval '30 hours', now() - interval '40 hours'),
   (pg_temp.sid(9, 4), pg_temp.sid(8, 1), pg_temp.who('hr'), 'Ramon confirmed. Correct the time-out to 5:40 PM in DTR & Attendance.', 'admin', true, null, now() - interval '3 hours'),
-  (pg_temp.sid(9, 5), pg_temp.sid(8, 2), pg_temp.who('joel'), 'The 5CFM vacuum pump I borrowed loses vacuum after 2 minutes. I think the seal is worn. I need a working one for the Garcia job tomorrow.', 'technician', false, null, now() - interval '4 hours'),
-  (pg_temp.sid(9, 6), pg_temp.sid(8, 3), pg_temp.who('helper'), 'Good day po. How many vacation leave days do I still have this year?', 'technician', false, null, now() - interval '40 minutes'),
-  (pg_temp.sid(9, 7), pg_temp.sid(8, 4), pg_temp.who('mark'), 'I was marked late but there was an accident on SLEX that morning. I left the house at 6:30 AM.', 'technician', false, now() - interval '6 days', now() - interval '6 days'),
   (pg_temp.sid(9, 8), pg_temp.sid(8, 4), pg_temp.who('hr'), 'We saw the SLEX advisory for that morning. The late mark stays in the DTR, but it will not count toward the tardiness review.', 'admin', false, now() - interval '5 days', now() - interval '5 days' - interval '1 hour'),
-  (pg_temp.sid(9, 9), pg_temp.sid(8, 4), pg_temp.who('hr'), 'Resolved by HR: the late mark is excused for the tardiness count.', 'system', false, now() - interval '5 days', now() - interval '5 days');
+  (pg_temp.sid(9, 9), pg_temp.sid(8, 4), pg_temp.who('hr'), E'Resolved by HR.\n\nThe late mark is excused for the tardiness count.', 'admin', false, now() - interval '5 days', now() - interval '5 days');
 
 -- 8. Tool borrowings ------------------------------------------------------------------------------------
 insert into public.tool_borrowings (id, tool_id, technician_id, quantity, status, handed_over_at, returned_at,

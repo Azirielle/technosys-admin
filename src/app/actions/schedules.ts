@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache"
 import { logActivity } from "./activity"
 import { verifyRoleAccess } from "@/lib/permissions"
 import { sendPushToUser } from "@/lib/push"
+import { releaseCrew } from "@/lib/crewRelease"
 import { getCleanErrorMessage } from "@/lib/error-sanitizer"
 
 // Normalize a date string that may be date-only (YYYY-MM-DD) to a full ISO timestamp
@@ -1047,7 +1048,7 @@ export async function createOnSiteServiceAction(data: {
   casualHelperIds?: string[];
 }) {
   try {
-    const { authorized } = await verifyRoleAccess('schedules', true);
+    const { authorized, userId } = await verifyRoleAccess('schedules', true);
     if (!authorized) return { error: "Unauthorized. Scheduling permissions required." };
 
     const {
@@ -1073,7 +1074,7 @@ export async function createOnSiteServiceAction(data: {
       technician_id: leadTechnicianId,
       assignment_type: 'on_site',
       reporting_instruction: reportingInstruction,
-      attendance_mode: reportingInstruction === 'via_pacita_hq' ? 'hq' : 'direct',
+      attendance_mode: reportingInstruction === 'via_pacita_hq' ? 'hq' : 'direct_dispatch',
       attendance_tracking_mode: reportingInstruction === 'via_pacita_hq' ? 'pacita_hq' : 'direct_on_site',
       geofence_lat: geofenceLat,
       geofence_lon: geofenceLon,
@@ -1126,6 +1127,7 @@ export async function createOnSiteServiceAction(data: {
 
     // 4. Log change in schedule_change_logs
     await supabaseAdmin.from('schedule_history').insert({
+      changed_by: userId ?? null,
       schedule_id: scheduleId,
       action_type: 'created',
       new_payload: { ...schedulePayload, crew: crewInserts },
@@ -1151,7 +1153,7 @@ export async function createDeploymentAction(data: {
   notes?: string;
 }) {
   try {
-    const { authorized } = await verifyRoleAccess('schedules', true);
+    const { authorized, userId } = await verifyRoleAccess('schedules', true);
     if (!authorized) return { error: "Unauthorized. Scheduling permissions required." };
 
     const {
@@ -1182,8 +1184,8 @@ export async function createDeploymentAction(data: {
       target_review_date: fullReviewTime,
       technician_id: effectiveLeadId,
       assignment_type: 'deployment',
-      attendance_mode: 'direct',
-      attendance_tracking_mode: 'direct_on_site',
+      attendance_mode: 'out_of_town',
+      attendance_tracking_mode: 'out_of_town',
       geofence_lat: 14.3541,
       geofence_lon: 121.0665,
       geofence_radius: 1000,
@@ -1215,6 +1217,7 @@ export async function createDeploymentAction(data: {
 
     // 3. Log change in schedule_change_logs
     await supabaseAdmin.from('schedule_history').insert({
+      changed_by: userId ?? null,
       schedule_id: scheduleId,
       action_type: 'created',
       new_payload: { ...schedulePayload, crew: crewInserts },
@@ -1238,7 +1241,7 @@ export async function createOfficeDutyAction(data: {
   notes?: string;
 }) {
   try {
-    const { authorized } = await verifyRoleAccess('schedules', true);
+    const { authorized, userId } = await verifyRoleAccess('schedules', true);
     if (!authorized) return { error: "Unauthorized. Scheduling permissions required." };
 
     const { date, startTime = '08:00', endTime = '17:00', technicianIds = [], notes } = data;
@@ -1290,6 +1293,7 @@ export async function createOfficeDutyAction(data: {
 
         // Log creation
         await supabaseAdmin.from('schedule_history').insert({
+      changed_by: userId ?? null,
           schedule_id: created.id,
           action_type: 'created',
           new_payload: schedulePayload,
@@ -1315,7 +1319,7 @@ export async function rescheduleAssignmentAction(data: {
   reason: string;
 }) {
   try {
-    const { authorized } = await verifyRoleAccess('schedules', true);
+    const { authorized, userId } = await verifyRoleAccess('schedules', true);
     if (!authorized) return { error: "Unauthorized. Scheduling permissions required." };
 
     const { scheduleId, newDate, newStartTime, newEndTime, reason } = data;
@@ -1347,6 +1351,7 @@ export async function rescheduleAssignmentAction(data: {
 
     // Log historical change
     await supabaseAdmin.from('schedule_history').insert({
+      changed_by: userId ?? null,
       schedule_id: scheduleId,
       action_type: 'rescheduled',
       previous_payload: { start_time: existing.start_time, end_time: existing.end_time },
@@ -1368,7 +1373,7 @@ export async function cancelAssignmentAction(data: {
   reason: string;
 }) {
   try {
-    const { authorized } = await verifyRoleAccess('schedules', true);
+    const { authorized, userId } = await verifyRoleAccess('schedules', true);
     if (!authorized) return { error: "Unauthorized. Scheduling permissions required." };
 
     const { scheduleId, reason } = data;
@@ -1394,19 +1399,12 @@ export async function cancelAssignmentAction(data: {
 
     if (updateErr) throw updateErr;
 
-    // Release all active crew in schedule_crew_assignments
-    await supabaseAdmin
-      .from('schedule_crew')
-      .update({
-        status: 'released',
-        released_at: new Date().toISOString(),
-        notes: `Released due to cancellation: ${reason.trim()}`
-      })
-      .eq('schedule_id', scheduleId)
-      .eq('status', 'active');
+    // Free everyone on the job so they show as available again.
+    await releaseCrew(scheduleId, `Released due to cancellation: ${reason.trim()}`);
 
     // Log audit
     await supabaseAdmin.from('schedule_history').insert({
+      changed_by: userId ?? null,
       schedule_id: scheduleId,
       action_type: 'cancelled',
       previous_payload: { status: existing.status },
@@ -1440,7 +1438,7 @@ export async function addCrewToDeploymentAction(data: {
   notes?: string;
 }) {
   try {
-    const { authorized } = await verifyRoleAccess('schedules', true);
+    const { authorized, userId } = await verifyRoleAccess('schedules', true);
     if (!authorized) return { error: "Unauthorized. Scheduling permissions required." };
 
     const { scheduleId, technicianId, role = 'crew', joinedAt, notes } = data;
@@ -1459,6 +1457,7 @@ export async function addCrewToDeploymentAction(data: {
     if (error) throw error;
 
     await supabaseAdmin.from('schedule_history').insert({
+      changed_by: userId ?? null,
       schedule_id: scheduleId,
       action_type: 'crew_added',
       new_payload: { technicianId, role, joinedAt },
@@ -1478,24 +1477,15 @@ export async function releaseCrewFromDeploymentAction(data: {
   reason?: string;
 }) {
   try {
-    const { authorized } = await verifyRoleAccess('schedules', true);
+    const { authorized, userId } = await verifyRoleAccess('schedules', true);
     if (!authorized) return { error: "Unauthorized. Scheduling permissions required." };
 
     const { scheduleId, technicianId, reason } = data;
 
-    const { error } = await supabaseAdmin
-      .from('schedule_crew')
-      .update({
-        status: 'released',
-        released_at: new Date().toISOString(),
-        notes: reason || 'Released from deployment project'
-      })
-      .eq('schedule_id', scheduleId)
-      .eq('technician_id', technicianId);
-
-    if (error) throw error;
+    await releaseCrew(scheduleId, reason || 'Released from deployment project', technicianId);
 
     await supabaseAdmin.from('schedule_history').insert({
+      changed_by: userId ?? null,
       schedule_id: scheduleId,
       action_type: 'crew_released',
       new_payload: { technicianId, released_at: new Date().toISOString() },
@@ -1532,7 +1522,7 @@ export async function updateAssignmentDetailsAction(data: {
   reason: string;
 }) {
   try {
-    const { authorized } = await verifyRoleAccess('schedules', true);
+    const { authorized, userId } = await verifyRoleAccess('schedules', true);
     if (!authorized) return { error: "Unauthorized. Scheduling permissions required." };
 
     const { scheduleId, clientName, location, reportingInstruction, reason } = data;
@@ -1559,6 +1549,12 @@ export async function updateAssignmentDetailsAction(data: {
     }
     if (reportingInstruction) {
       updatePayload.reporting_instruction = reportingInstruction;
+      // Keep the time-in rule the phone shows in step with where the crew reports (out-of-town jobs keep theirs).
+      if (currentSchedule.assignment_type !== 'deployment') {
+        const viaHq = reportingInstruction === 'via_pacita_hq';
+        updatePayload.attendance_mode = viaHq ? 'hq' : 'direct_dispatch';
+        updatePayload.attendance_tracking_mode = viaHq ? 'pacita_hq' : 'direct_on_site';
+      }
     }
 
     const { error: updateErr } = await supabaseAdmin
@@ -1569,6 +1565,7 @@ export async function updateAssignmentDetailsAction(data: {
     if (updateErr) throw updateErr;
 
     await supabaseAdmin.from('schedule_history').insert({
+      changed_by: userId ?? null,
       schedule_id: scheduleId,
       action_type: 'details_updated',
       previous_payload: {

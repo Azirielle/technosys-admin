@@ -19,9 +19,11 @@ export function TicketThread({
   reply,
   file,
   sending,
+  internal,
   takingOver,
   onReplyChange,
   onFileChange,
+  onInternalChange,
   onSend,
   onTakeOver,
   onFinish,
@@ -35,9 +37,11 @@ export function TicketThread({
   reply: string
   file: File | null
   sending: boolean
+  internal: boolean
   takingOver: boolean
   onReplyChange: (text: string) => void
   onFileChange: (file: File | null) => void
+  onInternalChange: (internal: boolean) => void
   onSend: () => void
   onTakeOver: () => void
   onFinish: (outcome: 'resolved' | 'closed') => void
@@ -110,7 +114,17 @@ export function TicketThread({
           This ticket is {status.label.toLowerCase()}. The employee can open a new one from the app.
         </p>
       ) : (
-        <ReplyBox text={reply} file={file} sending={sending} onTextChange={onReplyChange} onFileChange={onFileChange} onSend={onSend} />
+        <ReplyBox
+          text={reply}
+          file={file}
+          sending={sending}
+          internal={internal}
+          employeeName={name}
+          onTextChange={onReplyChange}
+          onFileChange={onFileChange}
+          onInternalChange={onInternalChange}
+          onSend={onSend}
+        />
       )}
     </div>
   )
