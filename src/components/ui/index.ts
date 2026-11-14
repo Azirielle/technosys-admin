@@ -22,6 +22,7 @@ export {
 } from './DataTable'
 export { default as Pagination } from './Pagination'
 export { Tabs, type TabItem } from './Tabs'
+export { Steps } from './Steps'
 export { Modal, type ModalProps } from './Modal'
 export { Drawer } from './Drawer'
 export { EmptyState } from './EmptyState'

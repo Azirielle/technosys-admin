@@ -47,6 +47,7 @@ To change the look (for example, the warm "Sand" palette), edit only `tokens.css
 | `StatTile`, `StatRow` | One big number with a label; `href` makes it a link to where you act on it | Show more than 4 in a row |
 | `TableContainer` … `TableCell` | Every table. `numeric` right-aligns numbers, `mono` for IDs, `TableEmptyState` when empty, `Pagination` under it | Use a plain `<table>` or a grid of cards for records |
 | `Tabs` | Switching views or filters inside a page (All / Pending / Approved) | Use it as the main navigation |
+| `Steps` | Numbered progress for a form in several parts (Job, Time, Team, Review) | Use it for one-screen forms |
 | `Modal` | Short confirmations and small forms (2–4 fields) | Put long forms in it; use a Drawer |
 | `Drawer` | Long forms and detail views (ticket thread, 201 file, new job) | |
 | `EmptyState` | A page or card with nothing in it yet. Name what goes there and the next step | Write "No data" |

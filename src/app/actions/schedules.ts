@@ -629,58 +629,9 @@ export async function reassignSchedule(scheduleId: string, newTechnicianId: stri
   }
 }
 
+// Cancels a job the complete way (status, crew released, history, push). Kept for older callers.
 export async function cancelSchedule(scheduleId: string, reason: string) {
-  try {
-    const { authorized } = await verifyRoleAccess('schedules', true)
-    if (!authorized) {
-      return { error: "Unauthorized. Scheduling write permissions required." }
-    }
-
-    if (!scheduleId) {
-      throw new Error("Schedule ID is required.")
-    }
-
-    if (!reason || !reason.trim()) {
-      throw new Error("A mandatory cancellation reason is required.")
-    }
-
-    const { data: originalSchedule, error: fetchErr } = await supabaseAdmin
-      .from('schedules')
-      .select('*, profiles!technician_id(full_name)')
-      .eq('id', scheduleId)
-      .single()
-
-    if (fetchErr || !originalSchedule) {
-      throw new Error("Schedule not found.")
-    }
-
-    const { error: updateErr } = await supabaseAdmin
-      .from('schedules')
-      .update({
-        status: 'cancelled',
-        cancellation_reason: reason.trim(),
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', scheduleId)
-
-    if (updateErr) throw updateErr
-
-    // Send push notification to technician if assigned
-    if (originalSchedule.technician_id) {
-      await sendPushToUser(
-        originalSchedule.technician_id,
-        "Dispatch Cancelled",
-        `Your schedule for "${originalSchedule.client_name}" has been cancelled. Reason: ${reason.trim()}`
-      )
-    }
-
-    await logActivity('cancel_schedule', 'schedule', `Cancelled dispatch for "${originalSchedule.client_name}". Reason: ${reason.trim()}`)
-    revalidatePath("/coordinator", "layout")
-    return { success: true }
-  } catch (err: any) {
-    console.error("Failed to cancel schedule:", err.message || err)
-    return { error: err.message || "Failed to cancel schedule." }
-  }
+  return cancelAssignmentAction({ scheduleId, reason })
 }
 
 export async function deleteSchedule(scheduleId: string) {
@@ -1462,6 +1413,15 @@ export async function cancelAssignmentAction(data: {
       new_payload: { status: 'cancelled', cancellation_reason: reason.trim() },
       reason: reason.trim()
     });
+
+    // Tell the lead technician on their phone
+    if (existing.technician_id) {
+      await sendPushToUser(
+        existing.technician_id,
+        "Job cancelled",
+        `Your job "${existing.client_name}" was cancelled. Reason: ${reason.trim()}`
+      );
+    }
 
     await logActivity('cancel_schedule', 'schedule', `Cancelled assignment "${existing.client_name}". Reason: ${reason}`);
     revalidatePath("/coordinator", "layout");

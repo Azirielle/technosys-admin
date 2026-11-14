@@ -86,7 +86,7 @@ export function SchedulingBoard() {
   }
 
   return (
-    <div className="flex h-full flex-col gap-section overflow-y-auto px-page py-page-y">
+    <div className="flex h-full flex-col gap-section overflow-y-auto px-page py-page-y [&>*]:shrink-0">
       <PageHeader
         title={tab === 'jobs' ? 'Scheduling' : 'Temporary workers'}
         subtitle={tab === 'jobs' ? 'Assign technicians and crews to jobs, and see who is working where.' : "Helpers hired per job who don't use the mobile app."}
