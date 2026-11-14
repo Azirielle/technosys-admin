@@ -1,5 +1,6 @@
-import SystemOverridesClient from '@/components/ceo/SystemOverridesClient'
+// CEO Temporary access page.
+import { AccessBoard } from '@/components/access/AccessBoard'
 
 export default function TemporaryAccessPage() {
-  return <SystemOverridesClient />
+  return <AccessBoard />
 }

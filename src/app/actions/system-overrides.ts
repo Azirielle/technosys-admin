@@ -281,16 +281,17 @@ export async function getStaffAbsencesToday(): Promise<{
   error?: string
 }> {
   try {
-    const today = new Date().toISOString().split('T')[0]
+    // Today in Manila (not UTC), so early-morning checks don't see yesterday.
+    const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Manila' }).format(new Date())
     const { data, error } = await supabaseAdmin
       .from('leaves')
-      .select('id, user_id, leave_type, start_date, end_date, status, profiles(full_name, role)')
+      .select('id, technician_id, leave_type, start_date, end_date, status, profiles!technician_id(full_name, role)')
       .eq('status', 'approved')
       .lte('start_date', today)
       .gte('end_date', today)
 
     if (error) {
-      return { success: true, absences: [] }
+      return { success: false, absences: [], error: error.message }
     }
 
     const absences: StaffAbsence[] = (data || []).map((row: any) => ({
