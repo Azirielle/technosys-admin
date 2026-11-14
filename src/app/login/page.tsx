@@ -13,8 +13,8 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
       <main className="flex items-center justify-center px-2 py-10">
         <div className="w-full max-w-sm">
           {/* Light and dark versions of the logo; CSS shows the one that fits the theme. */}
-          <Image src="/technocycle-logo-light.png" alt="Technocycle" width={56} height={56} priority className="mb-6 dark:hidden" />
-          <Image src="/technocycle-logo-dark.png" alt="Technocycle" width={56} height={56} priority className="mb-6 hidden dark:block" />
+          <Image src="/technocycle-logo-light.png" alt="Technocycle" width={56} height={56} priority className="mb-6 h-14 w-auto dark:hidden" />
+          <Image src="/technocycle-logo-dark.png" alt="Technocycle" width={56} height={56} priority className="mb-6 hidden h-14 w-auto dark:block" />
 
           <h1 className="text-title font-semibold text-ink">Sign in to TechnoSys</h1>
           <p className="mt-1 mb-8 text-small text-ink-2">For Technocycle office staff: CEO, HR and Service Dept.</p>
