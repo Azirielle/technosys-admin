@@ -65,8 +65,8 @@ export default function ScheduleTableView({
   const getStatusBadge = (status?: string, isUnassigned?: boolean) => {
     if (isUnassigned) {
       return (
-        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/25 animate-pulse">
-          <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-micro font-semibold bg-danger/15 text-danger border border-transparent animate-pulse">
+          <span className="w-1.5 h-1.5 rounded-full bg-danger" />
           <span>Needs a Team</span>
         </span>
       )
@@ -74,29 +74,29 @@ export default function ScheduleTableView({
     switch (status) {
       case 'in_progress':
         return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/25">
-            <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-micro font-semibold bg-warning/15 text-warning border border-transparent">
+            <span className="w-1.5 h-1.5 rounded-full bg-warning" />
             <span>In Progress</span>
           </span>
         )
       case 'completed':
         return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-micro font-semibold bg-success/15 text-success border border-transparent">
+            <span className="w-1.5 h-1.5 rounded-full bg-success" />
             <span>Completed</span>
           </span>
         )
       case 'cancelled':
         return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-black/[0.04] dark:bg-white/[0.06] text-[#8E8D9A] border border-black/[0.08] dark:border-white/[0.08]">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#8E8D9A]" />
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-micro font-semibold bg-surface-soft text-ink-3 border border-line">
+            <span className="w-1.5 h-1.5 rounded-full bg-ink-3" />
             <span>Cancelled</span>
           </span>
         )
       default:
         return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-blue-500/15 text-blue-600 dark:text-blue-400 border border-blue-500/25">
-            <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-micro font-semibold bg-info/15 text-ink border border-transparent">
+            <span className="w-1.5 h-1.5 rounded-full bg-info" />
             <span>Scheduled</span>
           </span>
         )
@@ -106,7 +106,7 @@ export default function ScheduleTableView({
   const getAssignmentTypeBadge = (type?: string) => {
     if (type === 'deployment') {
       return (
-        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-purple-500/10 text-purple-700 dark:text-purple-300 border border-purple-500/20">
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-micro font-semibold bg-info/10 text-info border border-transparent">
           <PlaneTakeoff className="w-2.5 h-2.5" />
           <span>Out-of-Town</span>
         </span>
@@ -114,14 +114,14 @@ export default function ScheduleTableView({
     }
     if (type === 'office_duty') {
       return (
-        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20">
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-micro font-semibold bg-success/10 text-success border border-transparent">
           <Building2 className="w-2.5 h-2.5" />
           <span>Office Duty</span>
         </span>
       )
     }
     return (
-      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-blue-500/10 text-blue-700 dark:text-blue-300 border border-blue-500/20">
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-micro font-semibold bg-info/10 text-ink border border-transparent">
         <Wrench className="w-2.5 h-2.5" />
         <span>On-site</span>
       </span>
@@ -129,13 +129,13 @@ export default function ScheduleTableView({
   }
 
   return (
-    <div className="flex-1 flex flex-col h-full min-h-0 overflow-hidden bg-[#F5F4F7] dark:bg-[#1E1F27] rounded-2xl border border-black/[0.08] dark:border-white/[0.08] shadow-xs">
+    <div className="flex-1 flex flex-col h-full min-h-0 overflow-hidden bg-surface-soft rounded-card border border-line shadow-xs">
       {/* Table Scroll Area */}
       <div className="flex-1 overflow-x-auto overflow-y-auto">
         <table className="w-full text-left border-collapse">
-          <thead className="sticky top-0 z-10 bg-[#EBEAEF] dark:bg-[#262732] border-b border-black/[0.08] dark:border-white/[0.08] text-[11px] font-bold text-[#575762] dark:text-[#B0B2BD] uppercase tracking-wider">
+          <thead className="sticky top-0 z-10 bg-surface-soft border-b border-line text-micro font-semibold text-ink-2 ">
             <tr>
-              <th className="py-3 px-4 min-w-[260px]">Work Order & Assignment</th>
+              <th className="py-3 px-4 min-w-[260px]">Job</th>
               <th className="py-3 px-4 min-w-[200px]">Lead & Crew</th>
               <th className="py-3 px-4 min-w-[180px]">Schedule & Mode</th>
               <th className="py-3 px-4 min-w-[130px]">Status</th>
@@ -143,25 +143,25 @@ export default function ScheduleTableView({
             </tr>
           </thead>
 
-          <tbody className="divide-y divide-black/[0.06] dark:divide-white/[0.06] text-xs">
+          <tbody className="divide-y divide-line text-xs">
             {loading ? (
               <tr>
-                <td colSpan={5} className="py-16 text-center text-[#8E8D9A]">
+                <td colSpan={5} className="py-16 text-center text-ink-3">
                   <div className="flex flex-col items-center justify-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-[#4D55CC] animate-ping" />
+                    <span className="w-2 h-2 rounded-full bg-action animate-ping" />
                     <span className="text-xs font-semibold">Loading operations schedule...</span>
                   </div>
                 </td>
               </tr>
             ) : paginated.length === 0 ? (
               <tr>
-                <td colSpan={5} className="py-16 text-center text-[#8E8D9A]">
+                <td colSpan={5} className="py-16 text-center text-ink-3">
                   <div className="flex flex-col items-center justify-center gap-2 max-w-sm mx-auto">
-                    <div className="w-10 h-10 rounded-2xl bg-black/[0.04] dark:bg-white/[0.05] border border-black/[0.06] dark:border-white/[0.08] flex items-center justify-center text-[#8E8D9A]">
+                    <div className="w-10 h-10 rounded-card bg-surface-soft border border-line flex items-center justify-center text-ink-3">
                       <CalendarIcon className="w-5 h-5" />
                     </div>
-                    <span className="font-bold text-[#121215] dark:text-[#F4F4F6] text-sm">No assignments found</span>
-                    <span className="text-xs leading-relaxed text-[#8E8D9A] dark:text-[#7A7C88]">
+                    <span className="font-semibold text-ink text-sm">No jobs here</span>
+                    <span className="text-xs leading-relaxed text-ink-3">
                       No records match your selected date, type, or search query. Adjust your filters or create a new assignment.
                     </span>
                   </div>
@@ -185,31 +185,31 @@ export default function ScheduleTableView({
                 return (
                   <tr 
                     key={s.id} 
-                    className={`transition-colors border-b border-black/[0.06] dark:border-white/[0.06] ${
-                      isCancelled 
-                        ? 'opacity-60 bg-black/[0.01] dark:bg-white/[0.01]' 
-                        : isUnassigned
-                        ? 'bg-rose-500/[0.04] dark:bg-rose-950/[0.08]'
-                        : 'hover:bg-black/[0.025] dark:hover:bg-white/[0.025]'
-                    }`}
+                    className={`transition-colors border-b border-line ${
+ isCancelled 
+ ? 'opacity-60 bg-surface-soft ' 
+ : isUnassigned
+ ? 'bg-danger/[0.04] '
+ : 'hover:bg-surface-hover '
+ }`}
                   >
                     {/* Column 1: Work Order & Assignment */}
                     <td className="py-3 px-4">
                       <div className="min-w-0 space-y-1">
                         <div className="flex items-center gap-2 flex-wrap">
                           {getAssignmentTypeBadge(s.assignment_type)}
-                          <p className={`font-bold text-xs truncate ${isCancelled ? 'line-through text-[#8E8D9A]' : 'text-[#121215] dark:text-[#F4F4F6]'}`}>
+                          <p className={`font-semibold text-xs truncate ${isCancelled ? 'line-through text-ink-3' : 'text-ink'}`}>
                             {s.project_name || s.client_name}
                           </p>
                         </div>
 
-                        <div className="flex items-center gap-1.5 text-[11px] text-[#8E8D9A] dark:text-[#7A7C88] truncate">
-                          <MapPin className="w-3 h-3 text-[#8E8D9A] shrink-0" />
+                        <div className="flex items-center gap-1.5 text-micro text-ink-3 truncate">
+                          <MapPin className="w-3 h-3 text-ink-3 shrink-0" />
                           <span className="truncate">{s.location || 'Pacita HQ'}</span>
                         </div>
 
                         {s.cancellation_reason && (
-                          <p className="text-[10px] text-rose-500 font-medium truncate">
+                          <p className="text-micro text-danger font-medium truncate">
                             Cancelled: {s.cancellation_reason}
                           </p>
                         )}
@@ -219,13 +219,13 @@ export default function ScheduleTableView({
                     {/* Column 2: Lead & Crew */}
                     <td className="py-3 px-4 whitespace-nowrap">
                       <div className="flex items-center gap-3">
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center border shrink-0 text-[10px] font-extrabold ${
-                          isUnassigned 
-                            ? 'bg-rose-500/15 border-rose-500/30 text-rose-700 dark:text-rose-400'
-                            : s.profiles?.technician_level === 'senior'
-                            ? 'bg-[#4D55CC]/15 border-[#4D55CC]/30 text-[#4D55CC] dark:text-[#7A82E6]'
-                            : 'bg-[#EBEAEF] dark:bg-[#343640] border-black/[0.08] dark:border-white/[0.1] text-[#121215] dark:text-[#F4F4F6]'
-                        }`}>
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center border shrink-0 text-micro font-semibold ${
+ isUnassigned 
+ ? 'bg-danger/15 border-transparent text-danger'
+ : s.profiles?.technician_level === 'senior'
+ ? 'bg-action border-ink text-on-action'
+ : 'bg-surface-soft border-line text-on-action'
+ }`}>
                           {isUnassigned ? <User className="w-3.5 h-3.5" /> : initials}
                         </div>
 
@@ -235,39 +235,39 @@ export default function ScheduleTableView({
                               <button
                                 type="button"
                                 onClick={() => onAssignNow(s)}
-                                className="text-xs font-bold text-rose-600 dark:text-rose-400 hover:underline flex items-center gap-1 cursor-pointer"
+                                className="text-xs font-semibold text-danger hover:underline flex items-center gap-1 cursor-pointer"
                               >
-                                <span>Unassigned</span>
-                                <span className="text-[10px] bg-rose-500/15 dark:bg-rose-900/60 px-1.5 py-0.2 rounded-full font-bold">Assign</span>
+                                <span>No lead yet</span>
+                                <span className="text-micro bg-danger/15 px-1.5 py-0.2 rounded-full font-semibold">Assign</span>
                               </button>
                             ) : (
-                              <span className="font-bold text-[#121215] dark:text-[#F4F4F6] truncate text-xs">
+                              <span className="font-semibold text-ink truncate text-xs">
                                 {s.profiles?.full_name || 'Staff'}
                               </span>
                             )}
 
                             {s.profiles?.technician_level === 'senior' && (
-                              <span className="px-1.5 py-0.2 rounded-full text-[9px] font-extrabold uppercase tracking-wider bg-[#4D55CC]/15 text-[#4D55CC] dark:text-[#7A82E6]">
+                              <span className="px-1.5 py-0.2 rounded-full text-micro font-semibold bg-action text-on-action">
                                 SENIOR
                               </span>
                             )}
                           </div>
 
                           {/* Crew Badges */}
-                          <div className="flex items-center gap-1.5 mt-0.5 text-[10px] text-[#8E8D9A]">
+                          <div className="flex items-center gap-1.5 mt-0.5 text-micro text-ink-3">
                             {activeCrewCount > 1 && (
-                              <span className="inline-flex items-center gap-1 text-[#4D55CC] dark:text-indigo-400 font-bold">
+                              <span className="inline-flex items-center gap-1 text-ink font-semibold">
                                 <Users className="w-2.5 h-2.5" />
                                 {activeCrewCount} in Crew
                               </span>
                             )}
                             {casualCount > 0 && (
-                              <span className="text-amber-600 dark:text-amber-400 font-bold">
+                              <span className="text-warning font-semibold">
                                 +{casualCount} Helper{casualCount > 1 ? 's' : ''}
                               </span>
                             )}
                             {activeCrewCount <= 1 && casualCount === 0 && !isUnassigned && (
-                              <span className="text-[#8E8D9A] dark:text-[#7A7C88] text-[10px]">Solo assignment</span>
+                              <span className="text-ink-3 text-micro">Solo assignment</span>
                             )}
                           </div>
                         </div>
@@ -279,34 +279,34 @@ export default function ScheduleTableView({
                       <div className="flex flex-col text-xs">
                         {isDeployment ? (
                           <>
-                            <div className="flex items-center gap-1.5 font-bold text-purple-700 dark:text-purple-300">
-                              <CalendarIcon className="w-3.5 h-3.5 text-purple-500 shrink-0" />
+                            <div className="flex items-center gap-1.5 font-semibold text-info ">
+                              <CalendarIcon className="w-3.5 h-3.5 text-info shrink-0" />
                               <span>From {formatDate(s.start_time)}</span>
                             </div>
-                            <div className="text-[10px] text-[#8E8D9A] dark:text-[#7A7C88] mt-0.5">
+                            <div className="text-micro text-ink-3 mt-0.5">
                               {s.target_review_date ? `Review: ${formatDate(s.target_review_date)}` : 'Active Project'}
                             </div>
                           </>
                         ) : isOfficeDuty ? (
                           <>
-                            <div className="flex items-center gap-1.5 font-bold text-emerald-700 dark:text-emerald-300">
-                              <Clock className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                            <div className="flex items-center gap-1.5 font-semibold text-success">
+                              <Clock className="w-3.5 h-3.5 text-success shrink-0" />
                               <span>{formatTime(s.start_time)} – {formatTime(s.end_time)}</span>
                             </div>
-                            <div className="text-[10px] text-[#8E8D9A] dark:text-[#7A7C88] mt-0.5">
+                            <div className="text-micro text-ink-3 mt-0.5">
                               {formatDate(s.start_time)} &bull; Pacita HQ Duty
                             </div>
                           </>
                         ) : (
                           <>
-                            <div className="flex items-center gap-1.5 font-bold text-[#121215] dark:text-[#F4F4F6]">
-                              <Clock className="w-3.5 h-3.5 text-[#8E8D9A] shrink-0" />
+                            <div className="flex items-center gap-1.5 font-semibold text-ink">
+                              <Clock className="w-3.5 h-3.5 text-ink-3 shrink-0" />
                               <span>{formatTime(s.start_time)} – {formatTime(s.end_time)}</span>
                             </div>
-                            <div className="flex items-center gap-1.5 text-[10px] text-[#8E8D9A] dark:text-[#7A7C88] mt-0.5">
+                            <div className="flex items-center gap-1.5 text-micro text-ink-3 mt-0.5">
                               <span>{formatDate(s.start_time)}</span>
                               <span>&bull;</span>
-                              <span className="uppercase font-bold text-[9px] text-[#575762] dark:text-[#B0B2BD]">
+                              <span className=" font-semibold text-micro text-ink-2">
                                 {s.reporting_instruction === 'via_pacita_hq' ? 'Report via HQ' : 'Direct Site'}
                               </span>
                             </div>
@@ -326,7 +326,7 @@ export default function ScheduleTableView({
                         <button
                           type="button"
                           onClick={() => onEdit(s)}
-                          className="px-3 py-1 text-xs font-bold bg-[#FAF9FB] dark:bg-[#2B2C35] hover:bg-black/[0.04] dark:hover:bg-white/[0.06] text-[#121215] dark:text-[#F4F4F6] rounded-xl border border-black/[0.08] dark:border-white/[0.08] transition-colors cursor-pointer shadow-xs"
+                          className="px-3 py-1 text-xs font-semibold bg-surface hover:bg-surface-soft text-ink rounded-xl border border-line transition-colors cursor-pointer shadow-xs"
                         >
                           View
                         </button>
@@ -336,7 +336,7 @@ export default function ScheduleTableView({
                             <button
                               type="button"
                               onClick={() => onQuickReschedule(s)}
-                              className="px-2.5 py-1 text-xs font-bold text-[#4D55CC] hover:bg-[#4D55CC]/10 dark:text-[#7A82E6] rounded-xl transition-colors cursor-pointer"
+                              className="px-2.5 py-1 text-xs font-semibold text-ink hover:bg-action rounded-xl transition-colors cursor-pointer"
                             >
                               Reschedule
                             </button>
@@ -344,7 +344,7 @@ export default function ScheduleTableView({
                             <button
                               type="button"
                               onClick={() => onCancel(s)}
-                              className="px-2.5 py-1 text-xs font-bold text-rose-600 hover:bg-rose-500/10 dark:text-rose-400 rounded-xl transition-colors cursor-pointer"
+                              className="px-2.5 py-1 text-xs font-semibold text-danger hover:bg-danger/10 rounded-xl transition-colors cursor-pointer"
                             >
                               Cancel
                             </button>
@@ -362,7 +362,7 @@ export default function ScheduleTableView({
 
       {/* Pagination Footer clamped to 8 rows max */}
       {totalPages > 1 && (
-        <div className="border-t border-black/[0.08] dark:border-white/[0.08] bg-[#FAF9FB]/60 dark:bg-[#1E1F27]/60 p-2.5">
+        <div className="border-t border-line bg-surface p-2.5">
           <Pagination
             currentPage={currentPage}
             totalPages={totalPages}

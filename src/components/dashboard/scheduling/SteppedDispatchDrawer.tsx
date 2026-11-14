@@ -14,7 +14,7 @@ import TeamSelectionDirectory from './TeamSelectionDirectory'
 const GeofenceMap = dynamic(() => import('../GeofenceMap'), {
   ssr: false,
   loading: () => (
-    <div className="h-44 w-full flex items-center justify-center bg-zinc-100 dark:bg-zinc-800 text-zinc-400 text-xs font-medium rounded-xl">
+    <div className="h-44 w-full flex items-center justify-center bg-surface-soft text-ink-3 text-xs font-medium rounded-xl">
       Loading interactive map...
     </div>
   )
@@ -189,25 +189,25 @@ export default function SteppedDispatchDrawer({
     <div className="fixed inset-0 z-50 overflow-hidden">
       {/* Backdrop */}
       <div 
-        className="absolute inset-0 bg-zinc-950/60 backdrop-blur-xs transition-opacity" 
+        className="absolute inset-0 bg-scrim transition-opacity" 
         onClick={onClose} 
       />
 
       {/* Drawer Container */}
-      <div className="absolute inset-y-0 right-0 max-w-full flex pl-4 sm:pl-10">
-        <div className="w-screen max-w-2xl lg:max-w-3xl bg-white dark:bg-[#0B0F19] border-l border-zinc-200 dark:border-zinc-800 shadow-2xl flex flex-col">
+      <div className="absolute inset-y-0 right-0 max-w-full flex p-3 pl-4 sm:pl-10">
+        <div className="w-screen max-w-2xl lg:max-w-3xl bg-surface rounded-modal shadow-overlay overflow-hidden flex flex-col animate-smooth-slide-in">
           
           {/* Header */}
-          <div className="px-6 py-5 border-b border-zinc-200 dark:border-zinc-800/80 bg-zinc-50/50 dark:bg-zinc-900/50 flex items-start justify-between">
+          <div className="px-6 py-5 border-b border-line bg-surface-soft flex items-start justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-md">
+              <div className="w-10 h-10 rounded-xl bg-action text-on-action flex items-center justify-center shrink-0 shadow-md">
                 <CalendarIcon className="w-5 h-5" />
               </div>
               <div>
-                <h2 className="text-base font-bold text-zinc-900 dark:text-zinc-100 tracking-tight">
+                <h2 className="text-base font-semibold text-ink tracking-tight">
                   Schedule a Service Job
                 </h2>
-                <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
+                <p className="text-xs text-ink-2 mt-0.5">
                   Create the job, set the time, and choose the team.
                 </p>
               </div>
@@ -216,14 +216,14 @@ export default function SteppedDispatchDrawer({
               type="button"
               onClick={onClose}
               aria-label="Close Drawer"
-              className="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+              className="p-1.5 rounded-lg text-ink-3 hover:text-ink hover:bg-surface-soft transition-colors cursor-pointer"
             >
               <X className="w-5 h-5" />
             </button>
           </div>
 
           {/* Stepper Navigation (1 Job details, 2 Set time, 3 Choose team, 4 Review) */}
-          <div className="px-8 py-3.5 border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#0B0F19]">
+          <div className="px-8 py-3.5 border-b border-line bg-surface ">
             <div className="grid grid-cols-4 gap-2 text-center">
               {[
                 { num: 1, label: 'Job details' },
@@ -237,20 +237,20 @@ export default function SteppedDispatchDrawer({
                   onClick={() => setCurrentStep(step.num as any)}
                   className="flex flex-col items-center gap-1 cursor-pointer group"
                 >
-                  <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
-                    currentStep === step.num
-                      ? 'bg-blue-600 text-white shadow-sm ring-2 ring-blue-600/30'
-                      : currentStep > step.num
-                      ? 'bg-blue-100 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400'
-                      : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-400'
-                  }`}>
+                  <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold transition-all ${
+ currentStep === step.num
+ ? 'bg-action text-on-action shadow-sm ring-2 ring-focus'
+ : currentStep > step.num
+ ? 'bg-info-soft text-on-action '
+ : 'bg-surface-soft text-ink-3'
+ }`}>
                     {currentStep > step.num ? <Check className="w-3.5 h-3.5" /> : step.num}
                   </div>
-                  <span className={`text-[11px] font-semibold transition-colors ${
-                    currentStep === step.num
-                      ? 'text-blue-600 dark:text-blue-400'
-                      : 'text-zinc-500 group-hover:text-zinc-700 dark:group-hover:text-zinc-300'
-                  }`}>
+                  <span className={`text-micro font-semibold transition-colors ${
+ currentStep === step.num
+ ? 'text-ink '
+ : 'text-ink-2 group-hover:text-ink-2 '
+ }`}>
                     {step.label}
                   </span>
                 </button>
@@ -260,9 +260,9 @@ export default function SteppedDispatchDrawer({
 
           {/* Error Banner */}
           {errorMessage && (
-            <div className="mx-6 mt-4 p-3 bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-900 rounded-xl text-xs text-rose-700 dark:text-rose-300 flex items-center justify-between">
+            <div className="mx-6 mt-4 p-3 bg-danger-soft border border-transparent rounded-xl text-xs text-danger flex items-center justify-between">
               <span>{errorMessage}</span>
-              <button onClick={() => setErrorMessage(null)} className="p-1 hover:text-rose-900">
+              <button onClick={() => setErrorMessage(null)} className="p-1 hover:text-danger">
                 <X className="w-3.5 h-3.5" />
               </button>
             </div>
@@ -275,57 +275,57 @@ export default function SteppedDispatchDrawer({
             {currentStep === 1 && (
               <div className="space-y-6">
                 <div>
-                  <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-100">
+                  <h3 className="text-sm font-semibold text-ink">
                     Where is the job?
                   </h3>
-                  <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
+                  <p className="text-xs text-ink-2 mt-0.5">
                     Enter the work order and the location where the technician needs to go.
                   </p>
                 </div>
 
                 {/* Job or Customer Name */}
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-zinc-700 dark:text-zinc-300 block">
+                  <label className="text-xs font-semibold text-ink block">
                     Job or customer name *
                   </label>
                   <input
                     type="text"
                     required
-                    placeholder="e.g. Printer repair — Main Office"
+                    placeholder="Aircon cleaning, SM Southmall"
                     value={clientName}
                     onChange={(e) => setClientName(e.target.value)}
-                    className="w-full px-3.5 py-2.5 text-xs bg-zinc-50/70 dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none focus:ring-1 focus:ring-blue-500 font-medium"
+                    className="w-full px-3.5 py-2.5 text-xs bg-surface-soft border border-line rounded-xl text-ink placeholder:text-ink-3 focus:outline-none focus:ring-1 ring-focus font-medium"
                   />
                 </div>
 
                 {/* Work Location Input */}
                 <div className="space-y-1.5 relative">
-                  <label className="text-xs font-bold text-zinc-700 dark:text-zinc-300 block">
+                  <label className="text-xs font-semibold text-ink block">
                     Work location *
                   </label>
                   <div className="relative">
-                    <MapPin className="absolute inset-y-0 left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-blue-500" />
+                    <MapPin className="absolute inset-y-0 left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink" />
                     <input
                       type="text"
                       required
                       placeholder="Search for an address or work site"
                       value={location}
                       onChange={(e) => handleAddressSearch(e.target.value)}
-                      className="w-full pl-9 pr-3.5 py-2.5 text-xs bg-zinc-50/70 dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none focus:ring-1 focus:ring-blue-500 font-medium"
+                      className="w-full pl-9 pr-3.5 py-2.5 text-xs bg-surface-soft border border-line rounded-xl text-ink placeholder:text-ink-3 focus:outline-none focus:ring-1 ring-focus font-medium"
                     />
                   </div>
 
                   {/* Address Suggestions Dropdown */}
                   {addressResults.length > 0 && (
-                    <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl shadow-xl z-30 max-h-52 overflow-y-auto divide-y divide-zinc-100 dark:divide-zinc-700/50">
+                    <div className="absolute top-full left-0 right-0 mt-1 bg-surface border border-line rounded-xl shadow-xl z-30 max-h-52 overflow-y-auto divide-y divide-line ">
                       {addressResults.map((res: any, idx: number) => (
                         <div
                           key={`addr-opt-${res.place_id || idx}-${idx}`}
                           onClick={() => selectAddress(res)}
-                          className="px-3.5 py-2.5 text-xs text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700 cursor-pointer transition-colors"
+                          className="px-3.5 py-2.5 text-xs text-ink hover:bg-surface-soft cursor-pointer transition-colors"
                         >
                           <div className="flex items-center gap-2">
-                            <MapPin className="w-3.5 h-3.5 text-blue-500 shrink-0" />
+                            <MapPin className="w-3.5 h-3.5 text-ink shrink-0" />
                             <span className="font-medium truncate">{res.display_name}</span>
                           </div>
                         </div>
@@ -335,24 +335,24 @@ export default function SteppedDispatchDrawer({
                 </div>
 
                 {/* Work-Site Check-In Area Card */}
-                <div className="p-4 bg-zinc-50/80 dark:bg-zinc-800/40 rounded-xl border border-zinc-200/80 dark:border-zinc-700/60 space-y-3">
+                <div className="p-4 bg-surface-soft rounded-xl border border-line space-y-3">
                   <div className="flex items-start gap-2.5">
-                    <Compass className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
+                    <Compass className="w-4 h-4 text-ink shrink-0 mt-0.5" />
                     <div className="flex-1">
-                      <span className="text-xs font-bold text-zinc-900 dark:text-zinc-100 block">
+                      <span className="text-xs font-semibold text-ink block">
                         Work-site check-in area (Optional Settings)
                       </span>
-                      <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-0.5">
+                      <p className="text-micro text-ink-2 mt-0.5">
                         This controls how close a technician must be to the work site to check in on mobile. (Company standard default: {geofenceRadius} meters).
                       </p>
-                      <span className="text-xs font-semibold text-blue-600 dark:text-blue-400 mt-1 block">
+                      <span className="text-xs font-semibold text-ink mt-1 block">
                         Standard radius applied automatically
                       </span>
                     </div>
                     <button
                       type="button"
                       onClick={() => setShowAdvancedLocation(!showAdvancedLocation)}
-                      className="text-xs font-semibold text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 flex items-center gap-1 cursor-pointer"
+                      className="text-xs font-semibold text-ink-2 hover:text-ink flex items-center gap-1 cursor-pointer"
                     >
                       <SlidersHorizontal className="w-3.5 h-3.5" />
                       <span>{showAdvancedLocation ? 'Hide settings' : 'Change radius'}</span>
@@ -361,11 +361,11 @@ export default function SteppedDispatchDrawer({
 
                   {/* Advanced Settings: Slider + Map */}
                   {showAdvancedLocation && (
-                    <div className="pt-3 border-t border-zinc-200/60 dark:border-zinc-700/60 space-y-3">
+                    <div className="pt-3 border-t border-line space-y-3">
                       <div className="space-y-1">
-                        <div className="flex items-center justify-between text-xs font-medium text-zinc-600 dark:text-zinc-400">
+                        <div className="flex items-center justify-between text-xs font-medium text-ink-2">
                           <span>Check-in perimeter</span>
-                          <span className="font-mono font-bold text-blue-600">{geofenceRadius}m</span>
+                          <span className="tabular-nums font-semibold text-ink">{geofenceRadius}m</span>
                         </div>
                         <input
                           type="range"
@@ -374,11 +374,11 @@ export default function SteppedDispatchDrawer({
                           step={50}
                           value={geofenceRadius}
                           onChange={(e) => setGeofenceRadius(parseInt(e.target.value))}
-                          className="w-full h-1.5 bg-zinc-200 dark:bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                          className="w-full h-1.5 bg-surface-soft rounded-lg appearance-none cursor-pointer accent-[var(--tc-action)]"
                         />
                       </div>
 
-                      <div className="h-44 rounded-xl border border-zinc-200 dark:border-zinc-700 overflow-hidden relative">
+                      <div className="h-44 rounded-xl border border-line overflow-hidden relative">
                         <GeofenceMap
                           lat={geofenceLat}
                           lon={geofenceLon}
@@ -399,17 +399,17 @@ export default function SteppedDispatchDrawer({
             {currentStep === 2 && (
               <div className="space-y-6">
                 <div>
-                  <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-100">
+                  <h3 className="text-sm font-semibold text-ink">
                     When will the work happen?
                   </h3>
-                  <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
+                  <p className="text-xs text-ink-2 mt-0.5">
                     Set the date and working hours for this service job.
                   </p>
                 </div>
 
                 {/* Work Date */}
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-zinc-700 dark:text-zinc-300 block">
+                  <label className="text-xs font-semibold text-ink block">
                     Work date *
                   </label>
                   <input
@@ -417,9 +417,9 @@ export default function SteppedDispatchDrawer({
                     required
                     value={date}
                     onChange={(e) => setDate(e.target.value)}
-                    className="w-full px-3.5 py-2.5 text-xs bg-zinc-50/70 dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-zinc-100 font-medium focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    className="w-full px-3.5 py-2.5 text-xs bg-surface-soft border border-line rounded-xl text-ink font-medium focus:outline-none focus:ring-1 ring-focus"
                   />
-                  <div className="flex items-center gap-1.5 text-xs font-semibold text-blue-600 dark:text-blue-400 mt-1">
+                  <div className="flex items-center gap-1.5 text-xs font-semibold text-ink mt-1">
                     <CalendarIcon className="w-3.5 h-3.5" />
                     <span>Selected Date: {formatDisplayDate(date)}</span>
                   </div>
@@ -428,7 +428,7 @@ export default function SteppedDispatchDrawer({
                 {/* Times */}
                 <div className="grid grid-cols-2 gap-3.5">
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-zinc-700 dark:text-zinc-300 block">
+                    <label className="text-xs font-semibold text-ink block">
                       Start time *
                     </label>
                     <input
@@ -436,26 +436,26 @@ export default function SteppedDispatchDrawer({
                       required
                       value={startTime}
                       onChange={(e) => setStartTime(e.target.value)}
-                      className="w-full px-3.5 py-2.5 text-xs bg-zinc-50/70 dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-zinc-100 font-medium focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      className="w-full px-3.5 py-2.5 text-xs bg-surface-soft border border-line rounded-xl text-ink font-medium focus:outline-none focus:ring-1 ring-focus"
                     />
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-zinc-700 dark:text-zinc-300 block">
+                    <label className="text-xs font-semibold text-ink block">
                       Expected finish time
                     </label>
                     <input
                       type="time"
                       value={endTime}
                       onChange={(e) => setEndTime(e.target.value)}
-                      className="w-full px-3.5 py-2.5 text-xs bg-zinc-50/70 dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-zinc-100 font-medium focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      className="w-full px-3.5 py-2.5 text-xs bg-surface-soft border border-line rounded-xl text-ink font-medium focus:outline-none focus:ring-1 ring-focus"
                     />
                   </div>
                 </div>
 
                 {/* Reporting Location Option */}
                 <div className="space-y-2 pt-2">
-                  <label className="text-xs font-bold text-zinc-700 dark:text-zinc-300 block">
+                  <label className="text-xs font-semibold text-ink block">
                     Where should the technician report?
                   </label>
                   <div className="grid grid-cols-2 gap-3">
@@ -463,13 +463,13 @@ export default function SteppedDispatchDrawer({
                       type="button"
                       onClick={() => setReportingLocation('direct_dispatch')}
                       className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer ${
-                        reportingLocation === 'direct_dispatch'
-                          ? 'border-blue-600 bg-blue-50/50 dark:bg-blue-950/30 text-blue-900 dark:text-blue-100 shadow-2xs'
-                          : 'border-zinc-200 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-800/60'
-                      }`}
+ reportingLocation === 'direct_dispatch'
+ ? 'border-ink bg-info-soft text-ink shadow-2xs'
+ : 'border-line hover:bg-surface-soft'
+ }`}
                     >
-                      <span className="text-xs font-bold block">Go directly to job site</span>
-                      <span className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-0.5 block leading-relaxed">
+                      <span className="text-xs font-semibold block">Go directly to job site</span>
+                      <span className="text-micro text-ink-2 mt-0.5 block leading-relaxed">
                         Technician travels straight to customer location and clocks in on site.
                       </span>
                     </button>
@@ -478,13 +478,13 @@ export default function SteppedDispatchDrawer({
                       type="button"
                       onClick={() => setReportingLocation('hq')}
                       className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer ${
-                        reportingLocation === 'hq'
-                          ? 'border-purple-600 bg-purple-50/50 dark:bg-purple-950/30 text-purple-900 dark:text-purple-100 shadow-2xs'
-                          : 'border-zinc-200 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-800/60'
-                      }`}
+ reportingLocation === 'hq'
+ ? 'border-ink bg-info-soft/50 text-ink shadow-2xs'
+ : 'border-line hover:bg-surface-soft'
+ }`}
                     >
-                      <span className="text-xs font-bold block">Report to Pacita HQ first</span>
-                      <span className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-0.5 block leading-relaxed">
+                      <span className="text-xs font-semibold block">Report to Pacita HQ first</span>
+                      <span className="text-micro text-ink-2 mt-0.5 block leading-relaxed">
                         Technician meets at company headquarters before dispatch.
                       </span>
                     </button>
@@ -497,10 +497,10 @@ export default function SteppedDispatchDrawer({
             {currentStep === 3 && (
               <div className="space-y-6">
                 <div>
-                  <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-100">
+                  <h3 className="text-sm font-semibold text-ink">
                     Choose Your Team
                   </h3>
-                  <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
+                  <p className="text-xs text-ink-2 mt-0.5">
                     Select the people for this assignment. Availability and scheduling conflicts remain visible while you choose.
                   </p>
                 </div>
@@ -521,29 +521,29 @@ export default function SteppedDispatchDrawer({
                 />
 
                 {/* Temporary Workers Section */}
-                <div className="space-y-2 pt-3 border-t border-zinc-200 dark:border-zinc-800">
+                <div className="space-y-2 pt-3 border-t border-line">
                   <div className="flex items-center justify-between">
                     <div>
-                      <span className="text-xs font-bold text-zinc-900 dark:text-zinc-100 block">
+                      <span className="text-xs font-semibold text-ink block">
                         Temporary workers (₱610/day)
                       </span>
-                      <span className="text-[10px] text-zinc-500">
+                      <span className="text-micro text-ink-2">
                         On-demand day-wage support for heavy equipment or cable pulling.
                       </span>
                     </div>
                     <button
                       type="button"
                       onClick={onOpenCasualRegisterModal}
-                      className="text-[11px] font-bold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 cursor-pointer"
+                      className="text-micro font-semibold text-ink hover:underline flex items-center gap-1 cursor-pointer"
                     >
                       <Plus className="w-3 h-3" />
                       <span>Register worker</span>
                     </button>
                   </div>
 
-                  <div className="space-y-1 border border-zinc-200 dark:border-zinc-800 rounded-xl p-2.5 max-h-32 overflow-y-auto">
+                  <div className="space-y-1 border border-line rounded-xl p-2.5 max-h-32 overflow-y-auto">
                     {casualHelpers.length === 0 ? (
-                      <div className="py-2 text-center text-zinc-400 text-xs">
+                      <div className="py-2 text-center text-ink-3 text-xs">
                         No temporary workers currently registered.
                       </div>
                     ) : (
@@ -553,8 +553,8 @@ export default function SteppedDispatchDrawer({
                           <label
                             key={ch.id}
                             className={`flex items-center justify-between p-1.5 rounded-lg cursor-pointer text-xs ${
-                              isChecked ? 'bg-blue-50/60 dark:bg-blue-950/30' : 'hover:bg-zinc-50 dark:hover:bg-zinc-800/40'
-                            }`}
+ isChecked ? 'bg-info-soft' : 'hover:bg-surface-soft'
+ }`}
                           >
                             <div className="flex items-center gap-2 min-w-0">
                               <input
@@ -567,13 +567,13 @@ export default function SteppedDispatchDrawer({
                                     setSelectedCasualHelperIds(selectedCasualHelperIds.filter(id => id !== ch.id))
                                   }
                                 }}
-                                className="rounded border-zinc-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                                className="rounded border-line text-ink ring-focus cursor-pointer"
                               />
-                              <span className="font-medium text-zinc-800 dark:text-zinc-200 truncate">
+                              <span className="font-medium text-ink truncate">
                                 {ch.full_name}
                               </span>
                             </div>
-                            <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 font-mono">
+                            <span className="text-micro font-semibold text-success tabular-nums">
                               ₱{ch.daily_rate}/day
                             </span>
                           </label>
@@ -589,57 +589,57 @@ export default function SteppedDispatchDrawer({
             {currentStep === 4 && (
               <div className="space-y-6">
                 <div>
-                  <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-100">
+                  <h3 className="text-sm font-semibold text-ink">
                     Review assignment
                   </h3>
-                  <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
+                  <p className="text-xs text-ink-2 mt-0.5">
                     Double-check the service details before confirming the schedule.
                   </p>
                 </div>
 
                 {/* Summary Card */}
-                <div className="p-4 bg-zinc-50/80 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700 rounded-2xl space-y-3.5">
+                <div className="p-4 bg-surface-soft border border-line rounded-card space-y-3.5">
                   <div className="grid grid-cols-2 gap-3 text-xs">
                     <div>
-                      <span className="text-[10px] text-zinc-400 uppercase tracking-wider block">Job / Customer</span>
-                      <strong className="text-zinc-900 dark:text-zinc-100 text-sm block mt-0.5">
+                      <span className="text-micro text-ink-3 block">Job / Customer</span>
+                      <strong className="text-ink text-sm block mt-0.5">
                         {clientName || 'Not Set'}
                       </strong>
                     </div>
 
                     <div>
-                      <span className="text-[10px] text-zinc-400 uppercase tracking-wider block">Work Location</span>
-                      <span className="text-zinc-900 dark:text-zinc-100 block truncate mt-0.5">
+                      <span className="text-micro text-ink-3 block">Work Location</span>
+                      <span className="text-ink block truncate mt-0.5">
                         {location || 'Pacita HQ'}
                       </span>
                     </div>
 
                     <div>
-                      <span className="text-[10px] text-zinc-400 uppercase tracking-wider block">Schedule</span>
-                      <span className="text-zinc-900 dark:text-zinc-100 font-semibold block mt-0.5">
+                      <span className="text-micro text-ink-3 block">Schedule</span>
+                      <span className="text-ink font-semibold block mt-0.5">
                         {date} ({startTime} – {endTime})
                       </span>
                     </div>
 
                     <div>
-                      <span className="text-[10px] text-zinc-400 uppercase tracking-wider block">Reporting Arrangement</span>
-                      <span className="text-zinc-900 dark:text-zinc-100 block mt-0.5">
+                      <span className="text-micro text-ink-3 block">Reporting Arrangement</span>
+                      <span className="text-ink block mt-0.5">
                         {reportingLocation === 'hq' ? 'Report to Pacita HQ first' : 'Go directly to job site'} ({geofenceRadius}m radius)
                       </span>
                     </div>
                   </div>
 
-                  <div className="pt-3 border-t border-zinc-200 dark:border-zinc-700 flex items-center justify-between">
+                  <div className="pt-3 border-t border-line flex items-center justify-between">
                     <div>
-                      <span className="text-[10px] text-zinc-400 uppercase tracking-wider block">Lead Technician</span>
-                      <strong className="text-zinc-900 dark:text-zinc-100 block mt-0.5">
+                      <span className="text-micro text-ink-3 block">Lead Technician</span>
+                      <strong className="text-ink block mt-0.5">
                         {leadTech?.full_name || 'NO LEAD SELECTED'}
                       </strong>
                     </div>
 
                     <div className="text-right">
-                      <span className="text-[10px] text-zinc-400 uppercase tracking-wider block">Assigned Crew</span>
-                      <span className="text-xs font-semibold text-zinc-700 dark:text-zinc-300 block mt-0.5">
+                      <span className="text-micro text-ink-3 block">Assigned Crew</span>
+                      <span className="text-xs font-semibold text-ink block mt-0.5">
                         {selectedTechIds.filter(id => id !== leadTechId).length} Additional + {selectedCasualHelperIds.length} Temporary
                       </span>
                     </div>
@@ -648,13 +648,13 @@ export default function SteppedDispatchDrawer({
 
                 {/* Validation Status */}
                 {!leadTechId ? (
-                  <div className="p-3.5 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 rounded-xl flex items-center gap-2.5 text-xs text-rose-800 dark:text-rose-200">
-                    <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
+                  <div className="p-3.5 bg-danger-soft border border-transparent rounded-xl flex items-center gap-2.5 text-xs text-danger ">
+                    <AlertTriangle className="w-4 h-4 text-danger shrink-0" />
                     <span>Please choose who will lead this job before confirming.</span>
                   </div>
                 ) : (
-                  <div className="p-3.5 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 rounded-xl flex items-center gap-2.5 text-xs text-emerald-800 dark:text-emerald-200">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <div className="p-3.5 bg-success-soft border border-transparent rounded-xl flex items-center gap-2.5 text-xs text-success ">
+                    <CheckCircle2 className="w-4 h-4 text-success shrink-0" />
                     <span>Team hierarchy verified: Lead technician confirmed and ready for dispatch.</span>
                   </div>
                 )}
@@ -663,13 +663,13 @@ export default function SteppedDispatchDrawer({
           </div>
 
           {/* Footer Navigation Buttons */}
-          <div className="px-6 py-4 border-t border-zinc-200 dark:border-zinc-800 bg-zinc-50/80 dark:bg-zinc-900/60 flex items-center justify-between">
+          <div className="px-6 py-4 border-t border-line bg-surface-soft flex items-center justify-between">
             <div>
               {currentStep > 1 ? (
                 <button
                   type="button"
                   onClick={() => setCurrentStep((currentStep - 1) as any)}
-                  className="px-3 py-1.5 text-xs font-semibold text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors cursor-pointer flex items-center gap-1"
+                  className="px-3 py-1.5 text-xs font-semibold text-ink-2 hover:text-ink transition-colors cursor-pointer flex items-center gap-1"
                 >
                   <ChevronLeft className="w-3.5 h-3.5" />
                   <span>
@@ -680,7 +680,7 @@ export default function SteppedDispatchDrawer({
                 <button
                   type="button"
                   onClick={onClose}
-                  className="px-3 py-1.5 text-xs text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 transition-colors cursor-pointer"
+                  className="px-3 py-1.5 text-xs text-ink-2 hover:text-ink transition-colors cursor-pointer"
                 >
                   Cancel
                 </button>
@@ -696,7 +696,7 @@ export default function SteppedDispatchDrawer({
                     if (currentStep === 3 && selectedTechIds.length === 0) return;
                     setCurrentStep((currentStep + 1) as any);
                   }}
-                  className="px-4 py-2 text-xs font-bold bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl transition-colors cursor-pointer flex items-center gap-1.5 shadow-md shadow-blue-900/20"
+                  className="px-4 py-2 text-xs font-semibold bg-action hover:bg-action-hover disabled:opacity-50 disabled:cursor-not-allowed text-on-action rounded-pill transition-colors cursor-pointer flex items-center gap-1.5 shadow-md shadow-blue-900/20"
                 >
                   <span>
                     {currentStep === 1 
@@ -712,7 +712,7 @@ export default function SteppedDispatchDrawer({
                   type="button"
                   disabled={isSubmitting || !leadTechId || !clientName.trim()}
                   onClick={handleSubmit}
-                  className="px-5 py-2.5 text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-colors cursor-pointer shadow-md shadow-blue-900/30 disabled:opacity-50 flex items-center gap-1.5"
+                  className="px-5 py-2.5 text-xs font-semibold bg-action hover:bg-action-hover text-on-action rounded-pill transition-colors cursor-pointer shadow-md shadow-blue-900/30 disabled:opacity-50 flex items-center gap-1.5"
                 >
                   <Check className="w-4 h-4 stroke-[2.5]" />
                   <span>{isSubmitting ? "Scheduling..." : "Confirm & Schedule Job"}</span>

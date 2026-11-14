@@ -241,18 +241,18 @@ export default function QuickRescheduleDrawer({
   const isOfficeDuty = schedule.assignment_type === 'office_duty'
 
   return (
-    <div className="fixed inset-0 z-50 overflow-hidden bg-black/60 backdrop-blur-xs flex justify-end">
+    <div className="fixed inset-0 z-50 overflow-hidden bg-scrim flex justify-end p-3">
       <div 
-        className="w-full max-w-lg bg-white dark:bg-zinc-950 border-l border-zinc-200 dark:border-zinc-800 shadow-2xl flex flex-col h-full animate-in slide-in-from-right duration-200"
+        className="w-full max-w-lg bg-surface rounded-modal shadow-overlay overflow-hidden flex flex-col h-full animate-smooth-slide-in"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="p-4 border-b border-zinc-200/80 dark:border-zinc-800 flex items-center justify-between bg-zinc-50/50 dark:bg-zinc-900/50">
+        <div className="p-4 border-b border-line flex items-center justify-between">
           <div>
-            <h2 className="text-sm font-bold text-zinc-900 dark:text-zinc-100">
+            <h2 className="text-sm font-semibold text-ink">
               Manage Assignment
             </h2>
-            <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
+            <p className="text-micro text-ink-2">
               {schedule.project_name || schedule.client_name}
             </p>
           </div>
@@ -261,22 +261,22 @@ export default function QuickRescheduleDrawer({
             type="button"
             onClick={onClose}
             aria-label="Close Drawer"
-            className="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 hover:bg-zinc-200/50 dark:hover:bg-zinc-800 transition cursor-pointer"
+            className="p-1.5 rounded-lg text-ink-3 hover:text-ink-2 hover:bg-surface-soft transition cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Tab Switcher: 3 Explicit Tabs */}
-        <div className="flex items-center border-b border-zinc-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900 px-4 pt-1">
+        <div className="flex items-center border-b border-line bg-surface px-4 pt-1">
           <button
             type="button"
             onClick={() => { setActiveTab('reschedule'); setErrorMessage(null); }}
-            className={`px-3 py-2 text-xs font-bold border-b-2 transition-all cursor-pointer flex items-center gap-1.5 ${
-              activeTab === 'reschedule'
-                ? 'border-blue-600 text-blue-600 dark:text-blue-400'
-                : 'border-transparent text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100'
-            }`}
+            className={`px-3 py-2 text-xs font-semibold border-b-2 transition-all cursor-pointer flex items-center gap-1.5 ${
+ activeTab === 'reschedule'
+ ? 'border-ink text-ink '
+ : 'border-transparent text-ink-2 hover:text-ink'
+ }`}
           >
             <Clock className="w-3.5 h-3.5" />
             <span>Reschedule Time</span>
@@ -285,11 +285,11 @@ export default function QuickRescheduleDrawer({
           <button
             type="button"
             onClick={() => { setActiveTab('edit_details'); setErrorMessage(null); }}
-            className={`px-3 py-2 text-xs font-bold border-b-2 transition-all cursor-pointer flex items-center gap-1.5 ${
-              activeTab === 'edit_details'
-                ? 'border-blue-600 text-blue-600 dark:text-blue-400'
-                : 'border-transparent text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100'
-            }`}
+            className={`px-3 py-2 text-xs font-semibold border-b-2 transition-all cursor-pointer flex items-center gap-1.5 ${
+ activeTab === 'edit_details'
+ ? 'border-ink text-ink '
+ : 'border-transparent text-ink-2 hover:text-ink'
+ }`}
           >
             <Edit3 className="w-3.5 h-3.5" />
             <span>Edit Details</span>
@@ -298,11 +298,11 @@ export default function QuickRescheduleDrawer({
           <button
             type="button"
             onClick={() => { setActiveTab('history'); setErrorMessage(null); }}
-            className={`px-3 py-2 text-xs font-bold border-b-2 transition-all cursor-pointer flex items-center gap-1.5 ${
-              activeTab === 'history'
-                ? 'border-blue-600 text-blue-600 dark:text-blue-400'
-                : 'border-transparent text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100'
-            }`}
+            className={`px-3 py-2 text-xs font-semibold border-b-2 transition-all cursor-pointer flex items-center gap-1.5 ${
+ activeTab === 'history'
+ ? 'border-ink text-ink '
+ : 'border-transparent text-ink-2 hover:text-ink'
+ }`}
           >
             <History className="w-3.5 h-3.5" />
             <span>Change History ({changeLogs.length})</span>
@@ -312,57 +312,57 @@ export default function QuickRescheduleDrawer({
         {/* Scrollable Body */}
         <div className="flex-1 overflow-y-auto p-5 space-y-4">
           {errorMessage && (
-            <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 text-xs text-rose-700 dark:text-rose-300 flex items-center gap-2">
+            <div className="p-3 rounded-xl bg-danger-soft border border-transparent text-xs text-danger flex items-center gap-2">
               <AlertTriangle className="w-4 h-4 shrink-0" />
               <span>{errorMessage}</span>
             </div>
           )}
 
           {successMessage && (
-            <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-xs text-emerald-800 dark:text-emerald-200 flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-600" />
+            <div className="p-3 rounded-xl bg-success-soft border border-transparent text-xs text-success flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 shrink-0 text-success" />
               <span>{successMessage}</span>
             </div>
           )}
 
           {/* Current Assignment Overview Card */}
-          <div className="p-3.5 bg-zinc-50 dark:bg-zinc-900/60 rounded-xl border border-zinc-200/80 dark:border-zinc-800 space-y-2 text-xs">
+          <div className="p-3.5 bg-surface-soft rounded-xl border border-line space-y-2 text-xs">
             <div className="flex items-center justify-between">
-              <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">
+              <span className="text-micro font-semibold text-ink-3 ">
                 Current State
               </span>
-              <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                schedule.status === 'cancelled'
-                  ? 'bg-rose-50 text-rose-700 border border-rose-200'
-                  : 'bg-blue-50 text-blue-700 border border-blue-200'
-              }`}>
+              <span className={`px-2 py-0.5 rounded text-micro font-semibold ${
+ schedule.status === 'cancelled'
+ ? 'bg-danger-soft text-danger border border-transparent'
+ : 'bg-info-soft text-ink border border-transparent'
+ }`}>
                 {schedule.status?.toUpperCase() || 'SCHEDULED'}
               </span>
             </div>
 
             <div className="space-y-0.5">
-              <p className="font-bold text-zinc-900 dark:text-zinc-100 text-sm">
+              <p className="font-semibold text-ink text-sm">
                 {schedule.project_name || schedule.client_name}
               </p>
-              <p className="text-zinc-500 flex items-center gap-1.5 text-xs">
-                <MapPin className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
+              <p className="text-ink-2 flex items-center gap-1.5 text-xs">
+                <MapPin className="w-3.5 h-3.5 text-ink-3 shrink-0" />
                 <span>{schedule.location || 'Pacita HQ'}</span>
               </p>
-              <p className="text-zinc-500 flex items-center gap-1.5 text-xs">
-                <User className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
+              <p className="text-ink-2 flex items-center gap-1.5 text-xs">
+                <User className="w-3.5 h-3.5 text-ink-3 shrink-0" />
                 <span>Lead Technician: {schedule.profiles?.full_name || 'Unassigned'}</span>
               </p>
             </div>
 
             {/* Quick Reassign Shortcut */}
-            <div className="pt-2 border-t border-zinc-200/60 dark:border-zinc-800 flex items-center justify-between text-xs">
-              <span className="text-zinc-400 text-[11px]">Need to change crew?</span>
+            <div className="pt-2 border-t border-line flex items-center justify-between text-xs">
+              <span className="text-ink-3 text-micro">Need to change crew?</span>
               <button
                 type="button"
                 onClick={() => {
                   if (onReassign) onReassign(schedule)
                 }}
-                className="text-xs font-semibold text-blue-600 hover:text-blue-700 dark:text-blue-400 flex items-center gap-1 cursor-pointer"
+                className="text-xs font-semibold text-ink hover:text-ink flex items-center gap-1 cursor-pointer"
               >
                 <UserCheck className="w-3.5 h-3.5" />
                 <span>Reassign Lead Tech</span>
@@ -374,7 +374,7 @@ export default function QuickRescheduleDrawer({
           {activeTab === 'reschedule' && (
             <form onSubmit={handleSaveReschedule} className="space-y-4">
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-zinc-900 dark:text-zinc-100">
+                <label className="text-xs font-semibold text-ink">
                   New appointment date *
                 </label>
                 <input
@@ -382,16 +382,16 @@ export default function QuickRescheduleDrawer({
                   required
                   value={newDate}
                   onChange={(e) => setNewDate(e.target.value)}
-                  className="w-full px-3 py-2 text-xs rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-blue-500 font-mono"
+                  className="w-full px-3 py-2 text-xs rounded-control border border-transparent bg-surface-soft hover:border-line-strong focus:bg-surface text-ink focus:outline-none focus:ring-1 ring-focus tabular-nums"
                 />
-                <div className="text-[11px] text-blue-600 dark:text-blue-400 font-semibold mt-1">
+                <div className="text-micro text-ink font-semibold mt-1">
                   Rescheduling to: {formatDisplayDate(newDate)}
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-zinc-900 dark:text-zinc-100">
+                  <label className="text-xs font-semibold text-ink">
                     Start time *
                   </label>
                   <input
@@ -399,31 +399,31 @@ export default function QuickRescheduleDrawer({
                     required
                     value={newStartTime}
                     onChange={(e) => setNewStartTime(e.target.value)}
-                    className="w-full px-3 py-2 text-xs rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-blue-500 font-mono"
+                    className="w-full px-3 py-2 text-xs rounded-control border border-transparent bg-surface-soft hover:border-line-strong focus:bg-surface text-ink focus:outline-none focus:ring-1 ring-focus tabular-nums"
                   />
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-zinc-900 dark:text-zinc-100">
+                  <label className="text-xs font-semibold text-ink">
                     Finish time
                   </label>
                   <input
                     type="time"
                     value={newEndTime}
                     onChange={(e) => setNewEndTime(e.target.value)}
-                    className="w-full px-3 py-2 text-xs rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-blue-500 font-mono"
+                    className="w-full px-3 py-2 text-xs rounded-control border border-transparent bg-surface-soft hover:border-line-strong focus:bg-surface text-ink focus:outline-none focus:ring-1 ring-focus tabular-nums"
                   />
                 </div>
               </div>
 
               {/* Conflict Warning */}
               {conflict && (
-                <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900 space-y-1 text-xs">
-                  <div className="flex items-center gap-1.5 font-bold text-amber-800 dark:text-amber-200">
-                    <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
+                <div className="p-3 rounded-xl bg-warning-soft border border-transparent space-y-1 text-xs">
+                  <div className="flex items-center gap-1.5 font-semibold text-warning ">
+                    <AlertTriangle className="w-4 h-4 text-warning shrink-0" />
                     <span>Technician Schedule Collision</span>
                   </div>
-                  <p className="text-[11px] text-amber-700 dark:text-amber-300">
+                  <p className="text-micro text-warning">
                     {schedule.profiles?.full_name} is already assigned to "{conflict.client_name}" on this date during overlapping hours.
                   </p>
                 </div>
@@ -431,7 +431,7 @@ export default function QuickRescheduleDrawer({
 
               {/* Mandatory Reason */}
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-zinc-900 dark:text-zinc-100">
+                <label className="text-xs font-semibold text-ink">
                   Reschedule justification * (Audit Requirement)
                 </label>
                 <textarea
@@ -440,7 +440,7 @@ export default function QuickRescheduleDrawer({
                   placeholder="e.g. Customer requested afternoon visit due to building maintenance..."
                   value={rescheduleReason}
                   onChange={(e) => setRescheduleReason(e.target.value)}
-                  className="w-full px-3 py-2 text-xs rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  className="w-full px-3 py-2 text-xs rounded-xl border border-line bg-surface text-ink placeholder:text-ink-3 focus:outline-none focus:ring-1 ring-focus"
                 />
               </div>
 
@@ -448,7 +448,7 @@ export default function QuickRescheduleDrawer({
                 <button
                   type="submit"
                   disabled={isSubmitting || !rescheduleReason.trim()}
-                  className="w-full py-2.5 text-xs font-bold bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-xl transition cursor-pointer flex items-center justify-center gap-1.5 shadow-md shadow-blue-900/20"
+                  className="w-full py-2.5 text-xs font-semibold bg-action hover:bg-action-hover disabled:opacity-50 text-on-action rounded-pill transition cursor-pointer flex items-center justify-center gap-1.5 shadow-md shadow-blue-900/20"
                 >
                   <Clock className="w-3.5 h-3.5" />
                   <span>{isSubmitting ? "Saving changes..." : "Save & Reschedule Appointment"}</span>
@@ -461,7 +461,7 @@ export default function QuickRescheduleDrawer({
           {activeTab === 'edit_details' && (
             <form onSubmit={handleSaveDetails} className="space-y-4">
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-zinc-900 dark:text-zinc-100">
+                <label className="text-xs font-semibold text-ink">
                   {isDeployment ? 'Project Name / Work Order *' : 'Customer / Work Order Name *'}
                 </label>
                 <input
@@ -469,22 +469,22 @@ export default function QuickRescheduleDrawer({
                   required
                   value={clientName}
                   onChange={(e) => setClientName(e.target.value)}
-                  className="w-full px-3 py-2 text-xs rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  className="w-full px-3 py-2 text-xs rounded-control border border-transparent bg-surface-soft hover:border-line-strong focus:bg-surface text-ink focus:outline-none focus:ring-1 ring-focus"
                 />
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-zinc-900 dark:text-zinc-100">
+                <label className="text-xs font-semibold text-ink">
                   Work Location / Address *
                 </label>
                 <div className="relative">
-                  <MapPin className="w-3.5 h-3.5 text-zinc-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <MapPin className="w-3.5 h-3.5 text-ink-3 absolute left-3 top-1/2 -translate-y-1/2" />
                   <input
                     type="text"
                     required
                     value={location}
                     onChange={(e) => setLocation(e.target.value)}
-                    className="w-full pl-8 pr-3 py-2 text-xs rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    className="w-full pl-8 pr-3 py-2 text-xs rounded-control border border-transparent bg-surface-soft hover:border-line-strong focus:bg-surface text-ink focus:outline-none focus:ring-1 ring-focus"
                   />
                 </div>
               </div>
@@ -492,15 +492,15 @@ export default function QuickRescheduleDrawer({
               {/* Reporting Travel Instruction */}
               {!isOfficeDuty && (
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-zinc-900 dark:text-zinc-100">
+                  <label className="text-xs font-semibold text-ink">
                     Reporting Travel Mode
                   </label>
                   <div className="grid grid-cols-2 gap-2">
                     <label className={`flex items-center gap-2 p-2.5 rounded-xl border text-xs cursor-pointer transition ${
-                      reportingInstruction === 'direct_to_site'
-                        ? 'border-blue-500 bg-blue-50/50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 font-bold'
-                        : 'border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400'
-                    }`}>
+ reportingInstruction === 'direct_to_site'
+ ? 'border-ink bg-info-soft text-ink font-semibold'
+ : 'border-line text-ink-2'
+ }`}>
                       <input
                         type="radio"
                         name="reporting_instr"
@@ -512,10 +512,10 @@ export default function QuickRescheduleDrawer({
                     </label>
 
                     <label className={`flex items-center gap-2 p-2.5 rounded-xl border text-xs cursor-pointer transition ${
-                      reportingInstruction === 'via_pacita_hq'
-                        ? 'border-blue-500 bg-blue-50/50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 font-bold'
-                        : 'border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400'
-                    }`}>
+ reportingInstruction === 'via_pacita_hq'
+ ? 'border-ink bg-info-soft text-ink font-semibold'
+ : 'border-line text-ink-2'
+ }`}>
                       <input
                         type="radio"
                         name="reporting_instr"
@@ -531,7 +531,7 @@ export default function QuickRescheduleDrawer({
 
               {/* Mandatory Reason */}
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-zinc-900 dark:text-zinc-100">
+                <label className="text-xs font-semibold text-ink">
                   Modification Reason * (Audit Requirement)
                 </label>
                 <textarea
@@ -540,7 +540,7 @@ export default function QuickRescheduleDrawer({
                   placeholder="e.g., Client corrected building suite address / service changed from cleaning to repair"
                   value={editDetailsReason}
                   onChange={(e) => setEditDetailsReason(e.target.value)}
-                  className="w-full px-3 py-2 text-xs rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  className="w-full px-3 py-2 text-xs rounded-xl border border-line bg-surface text-ink placeholder:text-ink-3 focus:outline-none focus:ring-1 ring-focus"
                 />
               </div>
 
@@ -548,7 +548,7 @@ export default function QuickRescheduleDrawer({
                 <button
                   type="submit"
                   disabled={isSubmitting || !editDetailsReason.trim() || !clientName.trim()}
-                  className="w-full py-2.5 text-xs font-bold bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-xl transition cursor-pointer flex items-center justify-center gap-1.5 shadow-md shadow-blue-900/20"
+                  className="w-full py-2.5 text-xs font-semibold bg-action hover:bg-action-hover disabled:opacity-50 text-on-action rounded-pill transition cursor-pointer flex items-center justify-center gap-1.5 shadow-md shadow-blue-900/20"
                 >
                   <CheckCircle2 className="w-3.5 h-3.5" />
                   <span>{isSubmitting ? "Updating details..." : "Save Job Details"}</span>
@@ -560,21 +560,21 @@ export default function QuickRescheduleDrawer({
           {/* TAB 3: Change History Audit Log */}
           {activeTab === 'history' && (
             <div className="space-y-3">
-              <div className="flex items-center justify-between pb-1 border-b border-zinc-100 dark:border-zinc-800">
-                <span className="text-[10px] uppercase font-bold text-zinc-400">
+              <div className="flex items-center justify-between pb-1 border-b border-line">
+                <span className="text-micro font-semibold text-ink-3">
                   Immutable Audit Trail
                 </span>
-                <span className="text-[10px] text-zinc-400 font-mono">
+                <span className="text-micro text-ink-3 tabular-nums">
                   {changeLogs.length} events logged
                 </span>
               </div>
 
               {loadingLogs ? (
-                <div className="py-8 text-center text-xs text-zinc-400">
+                <div className="py-8 text-center text-xs text-ink-3">
                   Loading change history...
                 </div>
               ) : changeLogs.length === 0 ? (
-                <div className="py-8 text-center text-xs text-zinc-400">
+                <div className="py-8 text-center text-xs text-ink-3">
                   No previous changes recorded for this assignment.
                 </div>
               ) : (
@@ -584,21 +584,21 @@ export default function QuickRescheduleDrawer({
                     return (
                       <div
                         key={log.id}
-                        className="p-3 bg-zinc-50 dark:bg-zinc-900/60 rounded-xl border border-zinc-200/80 dark:border-zinc-800 space-y-1 text-xs"
+                        className="p-3 bg-surface-soft rounded-xl border border-line space-y-1 text-xs"
                       >
-                        <div className="flex items-center justify-between text-[11px]">
-                          <span className="font-bold text-zinc-900 dark:text-zinc-100 capitalize">
+                        <div className="flex items-center justify-between text-micro">
+                          <span className="font-semibold text-ink capitalize">
                             {log.action_type.replace('_', ' ')}
                           </span>
-                          <span className="text-zinc-400 font-mono text-[10px]">
+                          <span className="text-ink-3 tabular-nums text-micro">
                             {d.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })} {d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                           </span>
                         </div>
-                        <p className="text-zinc-600 dark:text-zinc-400 text-xs font-medium">
+                        <p className="text-ink-2 text-xs font-medium">
                           {log.reason || 'Operational adjustment'}
                         </p>
                         {log.profiles?.full_name && (
-                          <span className="text-[10px] text-zinc-400 block mt-0.5">
+                          <span className="text-micro text-ink-3 block mt-0.5">
                             Logged by: {log.profiles.full_name}
                           </span>
                         )}
@@ -612,29 +612,29 @@ export default function QuickRescheduleDrawer({
 
           {/* Cancellation Section */}
           {schedule.status !== 'cancelled' && (
-            <div className="pt-4 border-t border-zinc-200 dark:border-zinc-800">
+            <div className="pt-4 border-t border-line">
               {!showCancelPrompt ? (
                 <button
                   type="button"
                   onClick={() => setShowCancelPrompt(true)}
-                  className="w-full py-2 text-xs font-semibold text-rose-600 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-xl transition cursor-pointer flex items-center justify-center gap-1.5"
+                  className="w-full py-2 text-xs font-semibold text-danger hover:text-danger hover:bg-danger-soft rounded-xl transition cursor-pointer flex items-center justify-center gap-1.5"
                 >
                   <Ban className="w-3.5 h-3.5" />
                   <span>Cancel This Assignment</span>
                 </button>
               ) : (
-                <div className="p-3.5 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 space-y-2.5 text-xs">
-                  <div className="flex items-center gap-1.5 text-rose-800 dark:text-rose-200 font-bold">
-                    <ShieldAlert className="w-4 h-4 text-rose-600" />
+                <div className="p-3.5 rounded-xl bg-danger-soft border border-transparent space-y-2.5 text-xs">
+                  <div className="flex items-center gap-1.5 text-danger font-semibold">
+                    <ShieldAlert className="w-4 h-4 text-danger" />
                     <span>Confirm Assignment Cancellation</span>
                   </div>
-                  <p className="text-[11px] text-zinc-600 dark:text-zinc-400">
+                  <p className="text-micro text-ink-2">
                     The assignment will be cancelled and assigned crew released. The complete history is permanently preserved.
                   </p>
                   <select
                     value={cancelReason}
                     onChange={(e) => setCancelReason(e.target.value)}
-                    className="w-full px-2.5 py-1.5 text-xs rounded-lg border border-rose-200 dark:border-rose-800 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100"
+                    className="w-full px-2.5 py-1.5 text-xs rounded-lg border border-transparent bg-surface text-ink"
                   >
                     <option value="">-- Select cancellation reason --</option>
                     <option value="Customer requested cancellation">Customer requested cancellation</option>
@@ -647,7 +647,7 @@ export default function QuickRescheduleDrawer({
                     <button
                       type="button"
                       onClick={() => setShowCancelPrompt(false)}
-                      className="px-2.5 py-1 text-xs text-zinc-500 hover:text-zinc-800"
+                      className="px-2.5 py-1 text-xs text-ink-2 hover:text-ink"
                     >
                       Keep Active
                     </button>
@@ -655,7 +655,7 @@ export default function QuickRescheduleDrawer({
                       type="button"
                       disabled={isSubmitting || !cancelReason}
                       onClick={handleConfirmCancel}
-                      className="px-3.5 py-1 text-xs font-bold bg-rose-600 hover:bg-rose-700 disabled:opacity-50 text-white rounded-lg transition"
+                      className="px-3.5 py-1 text-xs font-semibold bg-danger-solid hover:opacity-90 disabled:opacity-50 text-white rounded-pill transition"
                     >
                       {isSubmitting ? "Cancelling..." : "Confirm Cancel"}
                     </button>

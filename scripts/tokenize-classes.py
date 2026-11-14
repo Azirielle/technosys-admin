@@ -75,16 +75,65 @@ RULES = [
     (r"bg-(?:rose|red)-600 hover:bg-(?:rose|red)-700", "bg-danger-solid hover:opacity-90"),
     (r"hover:bg-(?:rose|red)-50" + O + r" dark:hover:bg-(?:rose|red)-950" + O, "hover:bg-danger-soft"),
     # ---- any dark: variant still left is redundant: tokens switch for dark mode by themselves ----
-    (r"dark:(?:[a-z-]+:)*(?:text|bg|border|divide|ring)-(?:\[#[0-9A-Fa-f]{6}\]|zinc-\d+|white/\[[0-9.]+\]|black/\[[0-9.]+\])" + O, ""),
+    (r"dark:(?:[a-z-]+:)*(?:text|bg|border|divide|ring|placeholder)-(?:\[#[0-9A-Fa-f]{6}\]|[a-z]+-\d+|white|black|white/\[[0-9.]+\]|black/\[[0-9.]+\])" + O, ""),
+    # ---- single leftovers (no dark pair) ----
+    (r"(?<![\w:-])bg-(?:blue|indigo|purple|violet|emerald)-600 hover:bg-(?:blue|indigo|purple|violet|emerald)-700", "bg-action hover:bg-action-hover"),
+    (r"hover:bg-(?:blue|indigo|purple|violet|emerald)-700", "hover:bg-action-hover"),
+    (r"(?<![\w:-])bg-(?:blue|indigo|purple|violet)-600", "bg-action"),
+    (r"(?<![\w:-])bg-zinc-900", "bg-action"),
+    (r"(?:focus(?:-visible)?:)?ring-(?:blue|indigo|purple|violet|emerald|rose)-500" + O, "ring-focus"),
+    (r"placeholder-(?:zinc-400|\[#8E8D9A\])", "placeholder:text-ink-3"),
+    (r"(hover:|group-hover:)?text-zinc-(?:800|900)", r"\1text-ink"),
+    (r"(hover:|group-hover:)?text-zinc-(?:500|600|700)", r"\1text-ink-2"),
+    (r"(hover:|group-hover:)?text-zinc-(?:300|400)", r"\1text-ink-3"),
+    (r"(hover:)?bg-zinc-(?:50|100|200)" + O, r"\1bg-surface-soft"),
+    (r"(?<![\w:-])bg-white(?![\w/-])", "bg-surface"),
+    (r"hover:border-zinc-\d+", "hover:border-line-strong"),
+    (r"border-zinc-\d+" + O, "border-line"),
+    (r"bg-black/(?:40|50|60|70|75)", "bg-scrim"),
+    # status families: soft fills, text, dots
+    (r"bg-(?:rose|red)-(?:500/10|500/15|50|100)(?![\d/])", "bg-danger-soft"),
+    (r"bg-(?:emerald|green)-(?:500/10|500/15|50|100)(?![\d/])", "bg-success-soft"),
+    (r"bg-(?:amber|yellow)-(?:500/10|500/15|50|100)(?![\d/])", "bg-warning-soft"),
+    (r"bg-(?:blue|sky|indigo|purple|violet)-(?:500/10|500/15|50|100)(?![\d/])", "bg-info-soft"),
+    (r"(hover:|group-hover:)?text-(?:rose|red)-[5-8]00", r"\1text-danger"),
+    (r"(hover:|group-hover:)?text-(?:emerald|green)-[5-8]00", r"\1text-success"),
+    (r"(hover:|group-hover:)?text-(?:amber|yellow)-[5-8]00", r"\1text-warning"),
+    (r"(hover:|group-hover:)?text-(?:purple|violet|sky)-[5-8]00", r"\1text-info"),
+    (r"(hover:|group-hover:)?text-(?:blue|indigo)-[5-8]00", r"\1text-ink"),
+    (r"(?<![\w:-])bg-(?:rose|red)-500", "bg-danger"),
+    (r"(?<![\w:-])bg-(?:emerald|green)-[56]00", "bg-success"),
+    (r"(?<![\w:-])bg-(?:amber|yellow)-500", "bg-warning"),
+    (r"(?<![\w:-])bg-(?:blue|sky|purple)-500(?![\w/])", "bg-info"),
+    (r"border-(?:rose|red|emerald|green|amber|yellow|blue|sky|indigo|purple|violet)-(?:[1-3]00|500/\d+)" + O, "border-transparent"),
+    (r"border-(?:blue|indigo|purple)-[56]00", "border-ink"),
     (r"dark:(?:[a-z-]+:)+(?=\s|`|\"|$)", ""),
     # ---- weights and case (sentence case, max 600) ----
     (r"font-(?:extrabold|black|bold)", "font-semibold"),
     (r"\buppercase tracking-(?:wider|widest|wide)\b", ""),
     (r"\btracking-(?:wider|widest)\b", ""),
+    (r"(?<=[\s\"'`])uppercase(?=[\s\"'`])", ""),
+    # ---- font sizes onto the token scale (nothing below 11px) ----
+    (r"text-\[(?:8|9|10|11)px\]", "text-micro"),
+    (r"text-\[12px\]", "text-caption"),
+    (r"text-\[13px\]", "text-small"),
     # ---- radius ----
     (r"rounded-\[28px\]", "rounded-modal"),
     (r"rounded-2xl", "rounded-card"),
 ]
+
+
+def pill_buttons(text: str):
+    """Class strings that paint an action button (bg-action or bg-danger-solid) get pill corners."""
+    def fix(m):
+        cls = m.group(0)
+        if re.search(r"(?<![\w:-])bg-action(?![\w-])", cls):
+            # text on the action colour must flip with it (light text in light mode, dark in dark)
+            cls = re.sub(r"(?<![\w:-])text-(?:ink|white)(?![\w/-])", "text-on-action", cls)
+        if re.search(r"(?<![\w:-])bg-(?:action|danger-solid)(?![\w-])", cls) and re.search(r"\bp[xy]-", cls):
+            return re.sub(r"\brounded-(?:sm|md|lg|xl|card)\b", "rounded-pill", cls)
+        return cls
+    return re.sub(r"className=(?:\"[^\"]*\"|\{`[^`]*`\})|'[^'\n]*bg-action[^'\n]*'", fix, text)
 
 
 def tokenize(text: str):
@@ -92,6 +141,7 @@ def tokenize(text: str):
     for pattern, replacement in RULES:
         text, n = re.subn(pattern, replacement, text)
         total += n
+    text = pill_buttons(text)
     # tidy double spaces left inside class strings
     text = re.sub(r'(className=(?:"|\{`)[^"`]*)', lambda m: re.sub(r" {2,}", " ", m.group(1)), text)
     return text, total

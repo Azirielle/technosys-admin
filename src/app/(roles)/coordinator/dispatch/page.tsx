@@ -1,11 +1,6 @@
-import DispatchBoardClient from '@/components/dashboard/DispatchBoardClient'
+// Scheduling page (Coordinator; HR only with temporary access from the CEO).
+import { SchedulingBoard } from '@/components/dashboard/scheduling/SchedulingBoard'
 
 export default function SchedulingPage() {
-  return (
-    <div className="flex flex-col h-full w-full">
-      <div className="flex-1 min-h-0">
-        <DispatchBoardClient />
-      </div>
-    </div>
-  )
+  return <SchedulingBoard />
 }

@@ -94,22 +94,22 @@ export default function HorizonFilterBar({
   }
 
   return (
-    <div className="bg-[#F5F4F7] dark:bg-[#1E1F27] border border-black/[0.08] dark:border-white/[0.08] rounded-2xl p-3 mb-3 shadow-xs space-y-2.5">
+    <div className="bg-surface-soft border border-line rounded-card p-3 mb-3 shadow-xs space-y-2.5">
       {/* Top Layer: Date Selector & Granularity Switcher */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
         
         {/* Date Navigator Block */}
-        <div className="flex items-center gap-1.5 bg-[#FAF9FB] dark:bg-[#2B2C35] p-1 rounded-xl border border-black/[0.06] dark:border-white/[0.07] flex-1 max-w-md shadow-xs">
+        <div className="flex items-center gap-1.5 bg-surface p-1 rounded-xl border border-line flex-1 max-w-md shadow-xs">
           <button
             type="button"
             onClick={handlePrev}
             aria-label="Previous Period"
-            className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-black/[0.04] dark:hover:bg-white/[0.08] text-[#575762] dark:text-[#B0B2BD] hover:text-[#121215] dark:hover:text-[#F4F4F6] transition cursor-pointer"
+            className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-surface-soft text-ink-2 hover:text-ink transition cursor-pointer"
           >
             <ChevronLeft className="w-4 h-4" />
           </button>
 
-          <div className="flex-1 text-center font-bold text-xs sm:text-sm text-[#121215] dark:text-[#F4F4F6] font-mono tracking-tight select-none">
+          <div className="flex-1 text-center font-semibold text-xs sm:text-sm text-ink tabular-nums tracking-tight select-none">
             {formatDateLabel()}
           </div>
 
@@ -117,7 +117,7 @@ export default function HorizonFilterBar({
             type="button"
             onClick={handleNext}
             aria-label="Next Period"
-            className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-black/[0.04] dark:hover:bg-white/[0.08] text-[#575762] dark:text-[#B0B2BD] hover:text-[#121215] dark:hover:text-[#F4F4F6] transition cursor-pointer"
+            className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-surface-soft text-ink-2 hover:text-ink transition cursor-pointer"
           >
             <ChevronRight className="w-4 h-4" />
           </button>
@@ -125,48 +125,48 @@ export default function HorizonFilterBar({
           <button
             type="button"
             onClick={handleToday}
-            className="px-3 py-1 text-xs font-bold text-white bg-[#4D55CC] hover:bg-[#4338CA] rounded-lg transition-colors cursor-pointer shadow-xs"
+            className="px-3 py-1 text-xs font-semibold text-on-action bg-action hover:bg-action-hover rounded-pill transition-colors cursor-pointer shadow-xs"
           >
             Today
           </button>
         </div>
 
         {/* Granularity Tabs (Day / Week / Month / Past) */}
-        <div className="flex items-center gap-1 bg-[#EBEAEF] dark:bg-[#262732] p-1 rounded-xl border border-black/[0.04] dark:border-white/[0.05] self-start sm:self-auto">
+        <div className="flex items-center gap-1 bg-surface-soft p-1 rounded-xl border border-line self-start sm:self-auto">
           {(['day', 'week', 'month', 'past'] as HorizonGranularity[]).map((mode) => (
             <button
               key={mode}
               type="button"
               onClick={() => onGranularityChange(mode)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold capitalize transition-all cursor-pointer ${
-                granularity === mode
-                  ? 'bg-[#FAF9FB] dark:bg-[#1E1F27] text-[#121215] dark:text-[#F4F4F6] shadow-xs'
-                  : 'text-[#575762] dark:text-[#B0B2BD] hover:text-[#121215] dark:hover:text-[#F4F4F6]'
-              }`}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold capitalize transition-all cursor-pointer ${
+ granularity === mode
+ ? 'bg-surface text-ink shadow-xs'
+ : 'text-ink-2 hover:text-ink'
+ }`}
             >
-              {mode === 'past' ? 'Past Records' : mode}
+              {mode === 'past' ? 'Earlier' : mode}
             </button>
           ))}
         </div>
       </div>
 
       {/* Bottom Layer: Assignment Type Filter, Search Box & View Mode Toggle */}
-      <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-black/[0.06] dark:border-white/[0.06]">
+      <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-line">
         
         {/* Assignment Type Chips (Pill aesthetic) */}
         <div className="flex flex-wrap items-center gap-1.5">
-          <span className="text-[11px] font-bold text-[#8E8D9A] dark:text-[#7A7C88] uppercase tracking-wider mr-1 hidden md:inline">
+          <span className="text-micro font-semibold text-ink-3 mr-1 hidden md:inline">
             Type:
           </span>
 
           <button
             type="button"
             onClick={() => onAssignmentTypeFilterChange('all')}
-            className={`px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer ${
-              assignmentTypeFilter === 'all'
-                ? 'bg-[#121215] dark:bg-[#F4F4F6] text-white dark:text-[#121215] shadow-xs'
-                : 'bg-[#FAF9FB] dark:bg-[#2B2C35] text-[#575762] dark:text-[#B0B2BD] hover:text-[#121215] dark:hover:text-[#F4F4F6] border border-black/[0.05] dark:border-white/[0.06]'
-            }`}
+            className={`px-3 py-1 rounded-full text-xs font-semibold transition-all cursor-pointer ${
+ assignmentTypeFilter === 'all'
+ ? 'bg-action text-on-action shadow-xs'
+ : 'bg-surface text-ink-2 hover:text-ink border border-line'
+ }`}
           >
             All Types
           </button>
@@ -174,11 +174,11 @@ export default function HorizonFilterBar({
           <button
             type="button"
             onClick={() => onAssignmentTypeFilterChange('on_site')}
-            className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer ${
-              assignmentTypeFilter === 'on_site'
-                ? 'bg-blue-600 text-white shadow-xs'
-                : 'bg-[#FAF9FB] dark:bg-[#2B2C35] text-[#575762] dark:text-[#B0B2BD] hover:text-blue-600 border border-black/[0.05] dark:border-white/[0.06]'
-            }`}
+            className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold transition-all cursor-pointer ${
+ assignmentTypeFilter === 'on_site'
+ ? 'bg-action text-on-action shadow-xs'
+ : 'bg-surface text-ink-2 hover:text-ink border border-line'
+ }`}
           >
             <Wrench className="w-3 h-3" />
             <span>On-site</span>
@@ -187,11 +187,11 @@ export default function HorizonFilterBar({
           <button
             type="button"
             onClick={() => onAssignmentTypeFilterChange('deployment')}
-            className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer ${
-              assignmentTypeFilter === 'deployment'
-                ? 'bg-purple-600 text-white shadow-xs'
-                : 'bg-[#FAF9FB] dark:bg-[#2B2C35] text-[#575762] dark:text-[#B0B2BD] hover:text-purple-600 border border-black/[0.05] dark:border-white/[0.06]'
-            }`}
+            className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold transition-all cursor-pointer ${
+ assignmentTypeFilter === 'deployment'
+ ? 'bg-action text-on-action shadow-xs'
+ : 'bg-surface text-ink-2 hover:text-info border border-line'
+ }`}
           >
             <PlaneTakeoff className="w-3 h-3" />
             <span>Out-of-Town</span>
@@ -200,11 +200,11 @@ export default function HorizonFilterBar({
           <button
             type="button"
             onClick={() => onAssignmentTypeFilterChange('office_duty')}
-            className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer ${
-              assignmentTypeFilter === 'office_duty'
-                ? 'bg-emerald-600 text-white shadow-xs'
-                : 'bg-[#FAF9FB] dark:bg-[#2B2C35] text-[#575762] dark:text-[#B0B2BD] hover:text-emerald-600 border border-black/[0.05] dark:border-white/[0.06]'
-            }`}
+            className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold transition-all cursor-pointer ${
+ assignmentTypeFilter === 'office_duty'
+ ? 'bg-success text-white shadow-xs'
+ : 'bg-surface text-ink-2 hover:text-success border border-line'
+ }`}
           >
             <Building2 className="w-3 h-3" />
             <span>Office Duty</span>
@@ -215,19 +215,19 @@ export default function HorizonFilterBar({
         <div className="flex items-center gap-2 flex-1 sm:flex-initial justify-end">
           {/* Search Input */}
           <div className="relative flex-1 sm:w-60">
-            <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-[#8E8D9A]" />
+            <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-ink-3" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => onSearchChange(e.target.value)}
               placeholder="Search jobs, tech, sites..."
-              className="w-full pl-8 pr-7 py-1.5 text-xs rounded-xl border border-black/[0.08] dark:border-white/[0.08] bg-[#FAF9FB] dark:bg-[#2B2C35] text-[#121215] dark:text-[#F4F4F6] placeholder-[#8E8D9A] focus:outline-none focus:ring-2 focus:ring-[#4D55CC]"
+              className="w-full pl-8 pr-7 py-1.5 text-xs rounded-xl border border-line bg-surface text-ink placeholder:text-ink-3 focus:outline-none focus:ring-2 ring-focus"
             />
             {searchQuery && (
               <button
                 type="button"
                 onClick={() => onSearchChange('')}
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-[#8E8D9A] hover:text-[#121215] dark:hover:text-[#F4F4F6] cursor-pointer"
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-ink-3 hover:text-ink cursor-pointer"
               >
                 <X className="w-3 h-3" />
               </button>
@@ -235,17 +235,17 @@ export default function HorizonFilterBar({
           </div>
 
           {/* Table / Timeline Toggle */}
-          <div className="flex items-center bg-[#EBEAEF] dark:bg-[#262732] p-1 rounded-xl border border-black/[0.04] dark:border-white/[0.05] shrink-0">
+          <div className="flex items-center bg-surface-soft p-1 rounded-xl border border-line shrink-0">
             <button
               type="button"
               onClick={() => onViewModeChange('table')}
               aria-label="Table List View"
               title="Table List View"
               className={`p-1.5 rounded-lg transition-all cursor-pointer ${
-                viewMode === 'table'
-                  ? 'bg-[#FAF9FB] dark:bg-[#1E1F27] text-[#121215] dark:text-[#F4F4F6] shadow-xs'
-                  : 'text-[#575762] dark:text-[#B0B2BD] hover:text-[#121215] dark:hover:text-[#F4F4F6]'
-              }`}
+ viewMode === 'table'
+ ? 'bg-surface text-ink shadow-xs'
+ : 'text-ink-2 hover:text-ink'
+ }`}
             >
               <List className="w-3.5 h-3.5" />
             </button>
@@ -255,10 +255,10 @@ export default function HorizonFilterBar({
               aria-label={granularity === 'month' ? "Month Capacity Calendar" : "Timeline Gantt View"}
               title={granularity === 'month' ? "Month Capacity Calendar" : "Timeline Gantt View"}
               className={`p-1.5 rounded-lg transition-all cursor-pointer ${
-                viewMode === 'timeline'
-                  ? 'bg-[#FAF9FB] dark:bg-[#1E1F27] text-[#121215] dark:text-[#F4F4F6] shadow-xs'
-                  : 'text-[#575762] dark:text-[#B0B2BD] hover:text-[#121215] dark:hover:text-[#F4F4F6]'
-              }`}
+ viewMode === 'timeline'
+ ? 'bg-surface text-ink shadow-xs'
+ : 'text-ink-2 hover:text-ink'
+ }`}
             >
               {granularity === 'month' ? (
                 <CalendarIcon className="w-3.5 h-3.5" />
@@ -269,14 +269,14 @@ export default function HorizonFilterBar({
           </div>
 
           {/* Show Cancelled Toggle */}
-          <label className="flex items-center gap-1.5 text-xs text-[#575762] dark:text-[#B0B2BD] select-none cursor-pointer pl-1 hidden lg:flex">
+          <label className="flex items-center gap-1.5 text-xs text-ink-2 select-none cursor-pointer pl-1 hidden lg:flex">
             <input
               type="checkbox"
               checked={showCancelled}
               onChange={(e) => onToggleShowCancelled(e.target.checked)}
-              className="rounded border-black/20 dark:border-white/20 text-[#4D55CC] focus:ring-0 w-3.5 h-3.5 cursor-pointer"
+              className="rounded border-line-strong text-ink focus:ring-0 w-3.5 h-3.5 cursor-pointer"
             />
-            <span className="font-medium text-[11px]">Cancelled</span>
+            <span className="font-medium text-micro">Cancelled</span>
           </label>
         </div>
 

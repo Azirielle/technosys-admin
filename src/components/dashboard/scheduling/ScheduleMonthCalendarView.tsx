@@ -159,28 +159,28 @@ export default function ScheduleMonthCalendarView({
   }, [selectedMetrics.availableTechs, crewSearch, crewRoleFilter])
 
   return (
-    <div className="bg-[#F5F4F7] dark:bg-[#1E1F27] rounded-2xl border border-black/[0.08] dark:border-white/[0.08] shadow-xs overflow-hidden flex flex-col lg:flex-row min-h-[540px]">
+    <div className="bg-surface-soft rounded-card border border-line shadow-xs overflow-hidden flex flex-col lg:flex-row min-h-[540px]">
       
       {/* LEFT: Work-First Month Calendar Matrix */}
-      <div className="flex-1 p-4 border-b lg:border-b-0 lg:border-r border-black/[0.08] dark:border-white/[0.08] flex flex-col justify-between">
+      <div className="flex-1 p-4 border-b lg:border-b-0 lg:border-r border-line flex flex-col justify-between">
         <div>
           {/* Calendar Header Row */}
           <div className="flex items-center justify-between mb-3 px-1">
             <div className="flex items-center gap-2.5">
-              <span className="text-xs font-bold uppercase tracking-wider text-[#121215] dark:text-[#F4F4F6] font-mono">
+              <span className="text-xs font-semibold text-ink tabular-nums">
                 {currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
               </span>
-              <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-[#EBEAEF] dark:bg-[#2B2C35] text-[#575762] dark:text-[#B0B2BD] font-bold border border-black/[0.04] dark:border-white/[0.06]">
+              <span className="text-micro px-2.5 py-0.5 rounded-full bg-surface-soft text-ink-2 font-semibold border border-line">
                 {activeTechnicians.length} Total Field Staff
               </span>
             </div>
-            <span className="text-[11px] text-[#8E8D9A] dark:text-[#7A7C88] hidden sm:inline">
+            <span className="text-micro text-ink-3 hidden sm:inline">
               Click any date to inspect assignments
             </span>
           </div>
 
           {/* Days of week header */}
-          <div className="grid grid-cols-7 gap-1.5 text-center font-mono text-[11px] font-bold text-[#8E8D9A] dark:text-[#7A7C88] mb-1.5 uppercase tracking-wider">
+          <div className="grid grid-cols-7 gap-1.5 text-center tabular-nums text-micro font-semibold text-ink-3 mb-1.5 ">
             {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(w => (
               <div key={w} className="py-0.5">
                 {w}
@@ -195,7 +195,7 @@ export default function ScheduleMonthCalendarView({
                 return (
                   <div 
                     key={`empty-${idx}`} 
-                    className="bg-black/[0.015] dark:bg-white/[0.02] rounded-xl border border-transparent min-h-[74px]"
+                    className="bg-surface-soft rounded-xl border border-transparent min-h-[74px]"
                   />
                 )
               }
@@ -213,22 +213,22 @@ export default function ScheduleMonthCalendarView({
                     onSelectDate?.(new Date(year, month, day))
                   }}
                   className={`p-2 rounded-xl border transition-all cursor-pointer flex flex-col justify-between min-h-[74px] ${
-                    isSelected
-                      ? 'border-[#4D55CC] bg-[#4D55CC]/5 dark:bg-[#4D55CC]/15 ring-2 ring-[#4D55CC]/80 shadow-xs'
-                      : 'border-black/[0.06] dark:border-white/[0.06] hover:border-[#4D55CC]/50 hover:bg-black/[0.015] dark:hover:bg-white/[0.02] bg-[#FAF9FB] dark:bg-[#262732] shadow-xs'
-                  }`}
+ isSelected
+ ? 'border-ink bg-action ring-2 ring-focus shadow-xs'
+ : 'border-line hover:border-ink hover:bg-surface-hover bg-surface shadow-xs'
+ }`}
                 >
                   {/* Cell Header: Date Number + Job Count */}
                   <div className="flex items-center justify-between">
-                    <span className={`text-xs font-mono font-bold ${
-                      isToday(day) 
-                        ? 'w-5 h-5 flex items-center justify-center rounded-full bg-[#4D55CC] text-white text-[10px]' 
-                        : (isSelected ? 'text-[#4D55CC] dark:text-[#7A82E6]' : 'text-[#121215] dark:text-[#F4F4F6]')
-                    }`}>
+                    <span className={`text-xs tabular-nums font-semibold ${
+ isToday(day) 
+ ? 'w-5 h-5 flex items-center justify-center rounded-full bg-action text-on-action text-micro' 
+ : (isSelected ? 'text-on-action' : 'text-on-action')
+ }`}>
                       {day}
                     </span>
                     {hasWork && (
-                      <span className="text-[10px] font-mono px-2 py-0.2 rounded-full bg-[#EBEAEF] dark:bg-[#343640] font-bold text-[#121215] dark:text-[#F4F4F6]">
+                      <span className="text-micro tabular-nums px-2 py-0.2 rounded-full bg-surface-soft font-semibold text-ink">
                         {metrics.daySchedules.length} {metrics.daySchedules.length === 1 ? 'job' : 'jobs'}
                       </span>
                     )}
@@ -240,7 +240,7 @@ export default function ScheduleMonthCalendarView({
                     {metrics.deployments.length > 0 && (
                       <span 
                         title={`Out-of-Town Project: ${metrics.deployments[0].project_name || metrics.deployments[0].client_name}`}
-                        className="truncate px-1.5 py-0.5 rounded-lg text-[9px] font-bold bg-purple-500/10 text-purple-700 dark:text-purple-300 border border-purple-500/20 flex items-center gap-1"
+                        className="truncate px-1.5 py-0.5 rounded-lg text-micro font-semibold bg-info/10 text-info border border-transparent flex items-center gap-1"
                       >
                         <PlaneTakeoff className="w-2.5 h-2.5 shrink-0" />
                         <span className="truncate">{metrics.deployments[0].project_name || metrics.deployments[0].client_name}</span>
@@ -252,14 +252,14 @@ export default function ScheduleMonthCalendarView({
                       <div className="flex flex-col gap-0.5">
                         <span 
                           title={`${formatTime(metrics.onSites[0].start_time)} - ${metrics.onSites[0].client_name}`}
-                          className="truncate px-1.5 py-0.5 rounded-lg text-[9px] font-bold bg-[#FAF9FB] dark:bg-[#1E1F27] text-[#121215] dark:text-[#F4F4F6] border border-black/[0.06] dark:border-white/[0.08] flex items-center gap-1"
+                          className="truncate px-1.5 py-0.5 rounded-lg text-micro font-semibold bg-surface text-ink border border-line flex items-center gap-1"
                         >
-                          <Wrench className="w-2 h-2 text-[#4D55CC] dark:text-indigo-400 shrink-0" />
+                          <Wrench className="w-2 h-2 text-ink shrink-0" />
                           <span className="truncate">{metrics.onSites[0].client_name}</span>
                         </span>
 
                         {metrics.onSites.length > 1 && (
-                          <span className="text-[9px] font-bold text-[#8E8D9A] pl-1">
+                          <span className="text-micro font-semibold text-ink-3 pl-1">
                             +{metrics.onSites.length - 1} more
                           </span>
                         )}
@@ -270,22 +270,22 @@ export default function ScheduleMonthCalendarView({
                     {metrics.officeDuties.length > 0 && (
                       <span 
                         title={`${metrics.officeDuties.length} Office Duty shift(s)`}
-                        className="truncate px-1.5 py-0.5 rounded-lg text-[9px] font-bold bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20 flex items-center gap-1"
+                        className="truncate px-1.5 py-0.5 rounded-lg text-micro font-semibold bg-success/10 text-success border border-transparent flex items-center gap-1"
                       >
-                        <Building2 className="w-2 h-2 text-emerald-600 shrink-0" />
+                        <Building2 className="w-2 h-2 text-success shrink-0" />
                         <span>{metrics.officeDuties.length} Office</span>
                       </span>
                     )}
                   </div>
 
                   {/* Cell Footer: Quiet, Muted Availability Indicator */}
-                  <div className="pt-0.5 flex items-center justify-between text-[9px] font-mono">
-                    <span className="text-[#8E8D9A] dark:text-[#7A7C88]">
+                  <div className="pt-0.5 flex items-center justify-between text-micro tabular-nums">
+                    <span className="text-ink-3">
                       {freeCount} free
                     </span>
 
                     {freeCount === 0 && (
-                      <span className="px-1.5 py-0.2 rounded-full bg-rose-500/15 text-rose-700 dark:text-rose-400 font-bold">
+                      <span className="px-1.5 py-0.2 rounded-full bg-danger/15 text-danger font-semibold">
                         Full
                       </span>
                     )}
@@ -297,10 +297,10 @@ export default function ScheduleMonthCalendarView({
         </div>
 
         {/* Calm Bottom Legend */}
-        <div className="pt-3 mt-3 border-t border-black/[0.06] dark:border-white/[0.06] flex flex-wrap items-center justify-between gap-2 text-[11px] text-[#575762] dark:text-[#B0B2BD]">
+        <div className="pt-3 mt-3 border-t border-line flex flex-wrap items-center justify-between gap-2 text-micro text-ink-2">
           <div className="flex items-center gap-3.5 flex-wrap">
             <span className="flex items-center gap-1.5 font-medium">
-              <span className="w-2 h-2 rounded-full bg-[#4D55CC]" />
+              <span className="w-2 h-2 rounded-full bg-action" />
               <span>Selected Date</span>
             </span>
             <span className="flex items-center gap-1.5 font-medium">
@@ -313,48 +313,48 @@ export default function ScheduleMonthCalendarView({
               <span>🏢 Main Office</span>
             </span>
           </div>
-          <span className="text-[10px] font-mono text-[#8E8D9A]">
+          <span className="text-micro tabular-nums text-ink-3">
             Selected: Day {selectedDay}
           </span>
         </div>
       </div>
 
       {/* RIGHT: Selected Day Inspector & Staffing Cockpit */}
-      <div className="w-full lg:w-96 xl:w-[410px] bg-[#FAF9FB] dark:bg-[#262732] p-4 flex flex-col justify-between border-t lg:border-t-0 lg:border-l border-black/[0.08] dark:border-white/[0.08]">
+      <div className="w-full lg:w-96 xl:w-[410px] bg-surface p-4 flex flex-col justify-between border-t lg:border-t-0 lg:border-l border-line">
         <div className="flex flex-col flex-1 min-h-0">
           
           {/* Day Header & Telemetry Subline */}
-          <div className="pb-3 border-b border-black/[0.06] dark:border-white/[0.06]">
+          <div className="pb-3 border-b border-line">
             <div className="flex items-center justify-between gap-2">
               <div>
-                <h3 className="text-sm font-extrabold text-[#121215] dark:text-[#F4F4F6]">
+                <h3 className="text-sm font-semibold text-ink">
                   {selectedDateObj.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
                 </h3>
-                <p className="text-[11px] font-mono text-[#8E8D9A] dark:text-[#7A7C88] mt-0.5">
-                  <span className="font-bold text-[#121215] dark:text-[#F4F4F6]">{selectedMetrics.bookedTechs.length}/{selectedMetrics.totalTechs}</span> Dispatched &bull; <span className="font-bold text-emerald-600 dark:text-emerald-400">{selectedMetrics.availableTechs.length} Available</span>
+                <p className="text-micro tabular-nums text-ink-3 mt-0.5">
+                  <span className="font-semibold text-ink">{selectedMetrics.bookedTechs.length}/{selectedMetrics.totalTechs}</span> booked &bull; <span className="font-semibold text-success">{selectedMetrics.availableTechs.length} Available</span>
                 </p>
               </div>
 
               {isToday(selectedDay) && (
-                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#4D55CC]/15 text-[#4D55CC] dark:text-[#7A82E6]">
+                <span className="px-2.5 py-0.5 rounded-full text-micro font-semibold bg-action text-on-action">
                   Today
                 </span>
               )}
             </div>
 
             {/* Segmented Inspector Switcher: Dispatches vs. Available Crew */}
-            <div className="grid grid-cols-2 gap-1 bg-[#EBEAEF] dark:bg-[#1E1F27] p-1 rounded-xl mt-3 text-xs font-bold border border-black/[0.04] dark:border-white/[0.05]">
+            <div className="grid grid-cols-2 gap-1 bg-surface-soft p-1 rounded-xl mt-3 text-xs font-semibold border border-line">
               <button
                 type="button"
                 onClick={() => setInspectorTab('dispatches')}
                 className={`py-1.5 px-2 rounded-lg transition-all text-center cursor-pointer flex items-center justify-center gap-1.5 ${
-                  inspectorTab === 'dispatches'
-                    ? 'bg-[#FAF9FB] dark:bg-[#2B2C35] text-[#121215] dark:text-[#F4F4F6] shadow-xs'
-                    : 'text-[#575762] dark:text-[#B0B2BD] hover:text-[#121215] dark:hover:text-[#F4F4F6]'
-                }`}
+ inspectorTab === 'dispatches'
+ ? 'bg-surface text-ink shadow-xs'
+ : 'text-ink-2 hover:text-ink'
+ }`}
               >
-                <span>Dispatches</span>
-                <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-black/[0.06] dark:bg-white/[0.08] font-mono">
+                <span>Jobs</span>
+                <span className="px-1.5 py-0.2 rounded-full text-micro bg-surface-soft tabular-nums">
                   {selectedMetrics.daySchedules.length}
                 </span>
               </button>
@@ -363,17 +363,17 @@ export default function ScheduleMonthCalendarView({
                 type="button"
                 onClick={() => setInspectorTab('available_crew')}
                 className={`py-1.5 px-2 rounded-lg transition-all text-center cursor-pointer flex items-center justify-center gap-1.5 ${
-                  inspectorTab === 'available_crew'
-                    ? 'bg-[#FAF9FB] dark:bg-[#2B2C35] text-[#121215] dark:text-[#F4F4F6] shadow-xs'
-                    : 'text-[#575762] dark:text-[#B0B2BD] hover:text-[#121215] dark:hover:text-[#F4F4F6]'
-                }`}
+ inspectorTab === 'available_crew'
+ ? 'bg-surface text-ink shadow-xs'
+ : 'text-ink-2 hover:text-ink'
+ }`}
               >
-                <span>Available Crew</span>
-                <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono ${
-                  selectedMetrics.availableTechs.length > 0 
-                    ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 font-bold' 
-                    : 'bg-black/[0.06] dark:bg-white/[0.08] text-[#8E8D9A]'
-                }`}>
+                <span>Free crew</span>
+                <span className={`px-1.5 py-0.2 rounded-full text-micro tabular-nums ${
+ selectedMetrics.availableTechs.length > 0 
+ ? 'bg-success/15 text-success font-semibold' 
+ : 'bg-surface-soft text-ink-3'
+ }`}>
                   {selectedMetrics.availableTechs.length}
                 </span>
               </button>
@@ -385,13 +385,13 @@ export default function ScheduleMonthCalendarView({
             <div className="flex-1 overflow-y-auto space-y-2 py-3 pr-1 max-h-[380px]">
               {selectedMetrics.daySchedules.length === 0 ? (
                 <div className="h-40 flex flex-col items-center justify-center text-center p-3">
-                  <div className="w-10 h-10 rounded-2xl bg-black/[0.03] dark:bg-white/[0.05] border border-black/[0.05] dark:border-white/[0.07] flex items-center justify-center text-[#8E8D9A] mb-2">
+                  <div className="w-10 h-10 rounded-card bg-surface-soft border border-line flex items-center justify-center text-ink-3 mb-2">
                     <CalendarIcon className="w-5 h-5 stroke-[1.8]" />
                   </div>
-                  <p className="text-xs font-bold text-[#121215] dark:text-[#F4F4F6]">
+                  <p className="text-xs font-semibold text-ink">
                     No dispatches scheduled on this date
                   </p>
-                  <p className="text-[11px] text-[#8E8D9A] dark:text-[#7A7C88] mt-0.5">
+                  <p className="text-micro text-ink-3 mt-0.5">
                     All {selectedMetrics.availableTechs.length} field technicians are free.
                   </p>
                 </div>
@@ -405,52 +405,52 @@ export default function ScheduleMonthCalendarView({
                   return (
                     <div
                       key={s.id}
-                      className="bg-[#F5F4F7] dark:bg-[#1E1F27] rounded-xl p-3 border border-black/[0.06] dark:border-white/[0.06] shadow-xs space-y-2 transition-all hover:border-[#4D55CC]/40"
+                      className="bg-surface-soft rounded-xl p-3 border border-line shadow-xs space-y-2 transition-all hover:border-ink"
                     >
                       <div className="flex items-start justify-between gap-2">
                         <div className="space-y-1 min-w-0 flex-1">
                           <div className="flex items-center gap-1.5 flex-wrap">
                             {type === 'deployment' ? (
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-purple-500/10 text-purple-700 dark:text-purple-300 border border-purple-500/20">
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-micro font-semibold bg-info/10 text-info border border-transparent">
                                 <PlaneTakeoff className="w-2.5 h-2.5" /> Out-of-Town
                               </span>
                             ) : type === 'office_duty' ? (
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20">
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-micro font-semibold bg-success/10 text-success border border-transparent">
                                 <Building2 className="w-2.5 h-2.5" /> Office Duty
                               </span>
                             ) : (
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-blue-500/10 text-blue-700 dark:text-blue-300 border border-blue-500/20">
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-micro font-semibold bg-info/10 text-ink border border-transparent">
                                 <Wrench className="w-2.5 h-2.5" /> On-site
                               </span>
                             )}
-                            <span className="text-[10px] font-mono text-[#8E8D9A] flex items-center gap-1">
+                            <span className="text-micro tabular-nums text-ink-3 flex items-center gap-1">
                               <Clock className="w-2.5 h-2.5" />
                               {formatTime(s.start_time)}
                               {s.end_time && ` – ${formatTime(s.end_time)}`}
                             </span>
                           </div>
 
-                          <h4 className="text-xs font-bold text-[#121215] dark:text-[#F4F4F6] truncate">
+                          <h4 className="text-xs font-semibold text-ink truncate">
                             {type === 'deployment' ? (s.project_name || s.client_name) : s.client_name}
                           </h4>
                           
-                          <p className="text-[11px] text-[#8E8D9A] dark:text-[#7A7C88] truncate flex items-center gap-1">
-                            <MapPin className="w-2.5 h-2.5 shrink-0 text-[#8E8D9A]" />
+                          <p className="text-micro text-ink-3 truncate flex items-center gap-1">
+                            <MapPin className="w-2.5 h-2.5 shrink-0 text-ink-3" />
                             <span>{s.location}</span>
                           </p>
                         </div>
                       </div>
 
                       {/* Crew & Actions Footer */}
-                      <div className="pt-2 border-t border-black/[0.06] dark:border-white/[0.06] flex items-center justify-between text-[11px]">
-                        <div className="flex items-center gap-1.5 text-[#121215] dark:text-[#F4F4F6] min-w-0 pr-2">
-                          <Users className="w-3 h-3 text-[#8E8D9A] shrink-0" />
-                          <span className="font-bold truncate">{leadTech}</span>
+                      <div className="pt-2 border-t border-line flex items-center justify-between text-micro">
+                        <div className="flex items-center gap-1.5 text-ink min-w-0 pr-2">
+                          <Users className="w-3 h-3 text-ink-3 shrink-0" />
+                          <span className="font-semibold truncate">{leadTech}</span>
                           {isDriver && (
-                            <span title="Licensed Driver" className="text-[10px]">🚐</span>
+                            <span title="Licensed Driver" className="text-micro">🚐</span>
                           )}
                           {crewCount > 0 && (
-                            <span className="text-[10px] font-mono text-[#8E8D9A]">+{crewCount}</span>
+                            <span className="text-micro tabular-nums text-ink-3">+{crewCount}</span>
                           )}
                         </div>
 
@@ -458,14 +458,14 @@ export default function ScheduleMonthCalendarView({
                           <button
                             type="button"
                             onClick={() => onEdit(s)}
-                            className="px-2.5 py-1 text-[11px] font-bold text-[#121215] dark:text-[#F4F4F6] hover:bg-black/[0.05] dark:hover:bg-white/[0.05] rounded-lg transition-colors cursor-pointer"
+                            className="px-2.5 py-1 text-micro font-semibold text-ink hover:bg-surface-soft rounded-lg transition-colors cursor-pointer"
                           >
                             Details
                           </button>
                           <button
                             type="button"
                             onClick={() => onQuickReschedule(s)}
-                            className="px-2.5 py-1 text-[11px] font-bold text-[#4D55CC] dark:text-[#7A82E6] hover:bg-[#4D55CC]/10 rounded-lg transition-colors cursor-pointer"
+                            className="px-2.5 py-1 text-micro font-semibold text-ink hover:bg-action rounded-lg transition-colors cursor-pointer"
                           >
                             Reschedule
                           </button>
@@ -482,15 +482,15 @@ export default function ScheduleMonthCalendarView({
           {inspectorTab === 'available_crew' && (
             <div className="flex-1 overflow-y-auto space-y-2 py-3 pr-1 max-h-[380px]">
               {/* Search & Role Filter Header */}
-              <div className="space-y-2 pb-2 border-b border-black/[0.06] dark:border-white/[0.06]">
+              <div className="space-y-2 pb-2 border-b border-line">
                 <div className="relative">
-                  <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-[#8E8D9A]" />
+                  <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-ink-3" />
                   <input
                     type="text"
                     placeholder="Search available crew..."
                     value={crewSearch}
                     onChange={(e) => setCrewSearch(e.target.value)}
-                    className="w-full pl-8 pr-3 py-1.5 text-xs rounded-xl border border-black/[0.08] dark:border-white/[0.08] bg-[#F5F4F7] dark:bg-[#1E1F27] text-[#121215] dark:text-[#F4F4F6] placeholder-[#8E8D9A] focus:outline-none focus:ring-2 focus:ring-[#4D55CC]"
+                    className="w-full pl-8 pr-3 py-1.5 text-xs rounded-xl border border-line bg-surface-soft text-ink placeholder:text-ink-3 focus:outline-none focus:ring-2 ring-focus"
                   />
                 </div>
 
@@ -501,11 +501,11 @@ export default function ScheduleMonthCalendarView({
                       key={role}
                       type="button"
                       onClick={() => setCrewRoleFilter(role)}
-                      className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold capitalize transition-all cursor-pointer ${
-                        crewRoleFilter === role
-                          ? 'bg-[#4D55CC] text-white shadow-xs'
-                          : 'bg-[#EBEAEF] dark:bg-[#1E1F27] text-[#575762] dark:text-[#B0B2BD] hover:text-[#121215] dark:hover:text-[#F4F4F6]'
-                      }`}
+                      className={`px-2.5 py-0.5 rounded-full text-micro font-semibold capitalize transition-all cursor-pointer ${
+ crewRoleFilter === role
+ ? 'bg-action text-on-action shadow-xs'
+ : 'bg-surface-soft text-ink-2 hover:text-ink'
+ }`}
                     >
                       {role === 'driver' ? '🚐 Driver' : role === 'senior' ? 'Senior' : role}
                     </button>
@@ -515,11 +515,11 @@ export default function ScheduleMonthCalendarView({
 
               {filteredAvailableCrew.length === 0 ? (
                 <div className="h-32 flex flex-col items-center justify-center text-center p-3">
-                  <AlertCircle className="w-6 h-6 text-[#8E8D9A] mb-1" />
-                  <p className="text-xs font-bold text-[#121215] dark:text-[#F4F4F6]">
+                  <AlertCircle className="w-6 h-6 text-ink-3 mb-1" />
+                  <p className="text-xs font-semibold text-ink">
                     No matching available technicians
                   </p>
-                  <p className="text-[10px] text-[#8E8D9A] dark:text-[#7A7C88] mt-0.5">
+                  <p className="text-micro text-ink-3 mt-0.5">
                     Try clearing search or role filters.
                   </p>
                 </div>
@@ -533,41 +533,41 @@ export default function ScheduleMonthCalendarView({
                     return (
                       <div
                         key={tech.id}
-                        className="flex items-center justify-between p-2.5 rounded-xl bg-[#F5F4F7] dark:bg-[#1E1F27] border border-black/[0.06] dark:border-white/[0.06] shadow-xs hover:border-[#4D55CC]/40 transition-colors"
+                        className="flex items-center justify-between p-2.5 rounded-xl bg-surface-soft border border-line shadow-xs hover:border-ink transition-colors"
                       >
                         <div className="flex items-center gap-2.5 min-w-0">
-                          <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-extrabold shrink-0 border ${
-                            isSenior 
-                              ? 'bg-[#4D55CC]/15 border-[#4D55CC]/30 text-[#4D55CC] dark:text-[#7A82E6]'
-                              : isDriver 
-                                ? 'bg-blue-500/15 border-blue-500/30 text-blue-700 dark:text-blue-300'
-                                : 'bg-[#EBEAEF] dark:bg-[#343640] border-black/[0.08] dark:border-white/[0.1] text-[#121215] dark:text-[#F4F4F6]'
-                          }`}>
+                          <div className={`w-7 h-7 rounded-full flex items-center justify-center text-micro font-semibold shrink-0 border ${
+ isSenior 
+ ? 'bg-action border-ink text-on-action'
+ : isDriver 
+ ? 'bg-info/15 border-transparent text-on-action '
+ : 'bg-surface-soft border-line text-on-action'
+ }`}>
                             {tech.full_name.slice(0, 2).toUpperCase()}
                           </div>
 
                           <div className="min-w-0">
-                            <span className="text-xs font-bold text-[#121215] dark:text-[#F4F4F6] block truncate leading-tight">
+                            <span className="text-xs font-semibold text-ink block truncate leading-tight">
                               {tech.full_name}
                             </span>
                             <div className="flex items-center gap-1 flex-wrap mt-0.5">
                               {isSenior && (
-                                <span className="text-[8px] font-extrabold uppercase px-1.5 py-0.2 rounded-full bg-[#4D55CC]/15 text-[#4D55CC] dark:text-[#7A82E6]">
+                                <span className="text-micro font-semibold px-1.5 py-0.2 rounded-full bg-action text-on-action">
                                   Senior
                                 </span>
                               )}
                               {isDriver && (
-                                <span className="text-[8px] font-bold px-1.5 py-0.2 rounded-full bg-blue-500/15 text-blue-700 dark:text-blue-300">
+                                <span className="text-micro font-semibold px-1.5 py-0.2 rounded-full bg-info/15 text-ink ">
                                   🚐 Driver
                                 </span>
                               )}
                               {isHelper && (
-                                <span className="text-[8px] font-bold px-1.5 py-0.2 rounded-full bg-black/[0.05] dark:bg-white/[0.08] text-[#575762] dark:text-[#B0B2BD]">
+                                <span className="text-micro font-semibold px-1.5 py-0.2 rounded-full bg-surface-soft text-ink-2">
                                   Helper
                                 </span>
                               )}
                               {!isSenior && !isHelper && (
-                                <span className="text-[8px] font-bold px-1.5 py-0.2 rounded-full bg-black/[0.05] dark:bg-white/[0.08] text-[#575762] dark:text-[#B0B2BD]">
+                                <span className="text-micro font-semibold px-1.5 py-0.2 rounded-full bg-surface-soft text-ink-2">
                                   Tech
                                 </span>
                               )}
@@ -579,7 +579,7 @@ export default function ScheduleMonthCalendarView({
                           <button
                             type="button"
                             onClick={() => onDispatchTechnician(tech.id, selectedDateObj)}
-                            className="px-2.5 py-1 text-[11px] font-bold text-[#4D55CC] dark:text-[#7A82E6] hover:bg-[#4D55CC]/10 rounded-lg border border-[#4D55CC]/30 transition-colors cursor-pointer shrink-0"
+                            className="px-2.5 py-1 text-micro font-semibold text-ink hover:bg-action rounded-lg border border-ink transition-colors cursor-pointer shrink-0"
                           >
                             + Dispatch
                           </button>
@@ -596,13 +596,13 @@ export default function ScheduleMonthCalendarView({
 
         {/* BOTTOM DEEP-LINK: Switch to Day Gantt Timeline */}
         {onSwitchToTimeline && (
-          <div className="pt-3 border-t border-black/[0.06] dark:border-white/[0.06]">
+          <div className="pt-3 border-t border-line">
             <button
               type="button"
               onClick={() => onSwitchToTimeline(selectedDateObj)}
-              className="w-full flex items-center justify-center gap-2 py-2 px-3 bg-[#4D55CC] hover:bg-[#4338CA] text-white rounded-xl text-xs font-bold transition-colors cursor-pointer shadow-xs group"
+              className="w-full flex items-center justify-center gap-2 py-2 px-3 bg-action hover:bg-action-hover text-on-action rounded-pill text-xs font-semibold transition-colors cursor-pointer shadow-xs group"
             >
-              <Clock className="w-3.5 h-3.5 text-white/80 group-hover:text-white transition" />
+              <Clock className="w-3.5 h-3.5" />
               <span>Inspect in Day Gantt Timeline</span>
               <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
             </button>

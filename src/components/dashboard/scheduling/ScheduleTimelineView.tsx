@@ -82,24 +82,24 @@ export default function ScheduleTimelineView({
   }
 
   return (
-    <div className="bg-[#F5F4F7] dark:bg-[#1E1F27] rounded-2xl border border-black/[0.08] dark:border-white/[0.08] overflow-hidden shadow-xs flex flex-col">
+    <div className="bg-surface-soft rounded-card border border-line overflow-hidden shadow-xs flex flex-col">
       {/* Header with Timeline Date */}
-      <div className="px-4 py-3 bg-[#EBEAEF] dark:bg-[#262732] border-b border-black/[0.08] dark:border-white/[0.08] flex items-center justify-between">
+      <div className="px-4 py-3 bg-surface-soft border-b border-line flex items-center justify-between">
         <div className="flex items-center gap-2.5">
-          <Clock className="w-4 h-4 text-[#4D55CC] dark:text-[#7A82E6]" />
-          <span className="text-xs font-bold text-[#121215] dark:text-[#F4F4F6] font-mono">
+          <Clock className="w-4 h-4 text-ink" />
+          <span className="text-xs font-semibold text-ink tabular-nums">
             Day Gantt View: {new Date(selectedDate).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
           </span>
         </div>
-        <div className="flex items-center gap-3 text-[11px] text-[#575762] dark:text-[#B0B2BD] font-medium">
+        <div className="flex items-center gap-3 text-micro text-ink-2 font-medium">
           <span className="flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-full bg-[#4D55CC]" /> Scheduled
+            <span className="w-2.5 h-2.5 rounded-full bg-action" /> Scheduled
           </span>
           <span className="flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" /> In Duty
+            <span className="w-2.5 h-2.5 rounded-full bg-success" /> In Duty
           </span>
           <span className="flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-full bg-rose-500" /> Conflict
+            <span className="w-2.5 h-2.5 rounded-full bg-danger" /> Conflict
           </span>
         </div>
       </div>
@@ -108,15 +108,15 @@ export default function ScheduleTimelineView({
       <div className="overflow-x-auto min-w-full">
         <div className="min-w-[800px]">
           {/* Timeline Hour Scale */}
-          <div className="flex border-b border-black/[0.06] dark:border-white/[0.06] bg-[#FAF9FB]/60 dark:bg-[#1E1F27]/60 text-[10px] font-mono text-[#8E8D9A]">
-            <div className="w-56 shrink-0 p-2.5 border-r border-black/[0.06] dark:border-white/[0.06] font-sans font-bold text-[#575762] dark:text-[#B0B2BD] text-[11px] uppercase tracking-wider">
+          <div className="flex border-b border-line bg-surface text-micro tabular-nums text-ink-3">
+            <div className="w-56 shrink-0 p-2.5 border-r border-line font-sans font-semibold text-ink-2 text-micro ">
               Technician
             </div>
             <div className="flex-1 relative h-7">
               {hours.map((h, idx) => (
                 <div
                   key={h}
-                  className="absolute top-0 bottom-0 border-l border-black/[0.05] dark:border-white/[0.05] pl-1 pt-1"
+                  className="absolute top-0 bottom-0 border-l border-line pl-1 pt-1"
                   style={{ left: `${(idx / totalHours) * 100}%` }}
                 >
                   {h.toString().padStart(2, '0')}:00
@@ -127,10 +127,10 @@ export default function ScheduleTimelineView({
 
           {/* Unassigned Row if any */}
           {unassignedSchedules.length > 0 && (
-            <div className="flex border-b border-rose-500/20 bg-rose-500/[0.05] dark:bg-rose-950/[0.1]">
-              <div className="w-56 shrink-0 p-2.5 border-r border-rose-500/20 flex items-center gap-2">
-                <AlertTriangle className="w-4 h-4 text-rose-500 shrink-0" />
-                <span className="text-xs font-bold text-rose-700 dark:text-rose-400">
+            <div className="flex border-b border-transparent bg-danger/[0.05] ">
+              <div className="w-56 shrink-0 p-2.5 border-r border-transparent flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4 text-danger shrink-0" />
+                <span className="text-xs font-semibold text-danger">
                   Unassigned Queue ({unassignedSchedules.length})
                 </span>
               </div>
@@ -142,7 +142,7 @@ export default function ScheduleTimelineView({
                       key={s.id}
                       onClick={() => onQuickReschedule(s)}
                       style={styles}
-                      className="absolute top-2 h-8 rounded-lg bg-rose-500 text-white text-[10px] font-bold flex items-center px-2.5 truncate shadow-xs cursor-pointer hover:bg-rose-600 transition-colors"
+                      className="absolute top-2 h-8 rounded-lg bg-danger text-white text-micro font-semibold flex items-center px-2.5 truncate shadow-xs cursor-pointer hover:opacity-90 transition-colors"
                       title={`Unassigned: ${s.client_name} - Click to schedule`}
                     >
                       {s.client_name}
@@ -161,26 +161,26 @@ export default function ScheduleTimelineView({
             return (
               <div 
                 key={tech.id} 
-                className="flex border-b border-black/[0.05] dark:border-white/[0.05] hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors"
+                className="flex border-b border-line hover:bg-surface-hover transition-colors"
               >
                 {/* Tech Label Cell */}
-                <div className="w-56 shrink-0 p-2.5 border-r border-black/[0.06] dark:border-white/[0.06] flex items-center justify-between min-w-0">
+                <div className="w-56 shrink-0 p-2.5 border-r border-line flex items-center justify-between min-w-0">
                   <div className="flex items-center gap-2.5 min-w-0">
-                    <div className="w-7 h-7 rounded-full bg-[#EBEAEF] dark:bg-[#343640] border border-black/[0.08] dark:border-white/[0.1] flex items-center justify-center text-[10px] font-extrabold text-[#121215] dark:text-[#F4F4F6] shrink-0">
+                    <div className="w-7 h-7 rounded-full bg-surface-soft border border-line flex items-center justify-center text-micro font-semibold text-ink shrink-0">
                       {tech.full_name.slice(0, 2).toUpperCase()}
                     </div>
                     <div className="flex flex-col min-w-0">
-                      <span className="text-xs font-bold text-[#121215] dark:text-[#F4F4F6] truncate">
+                      <span className="text-xs font-semibold text-ink truncate">
                         {tech.full_name}
                       </span>
-                      <span className="text-[10px] text-[#8E8D9A] dark:text-[#7A7C88] capitalize">
+                      <span className="text-micro text-ink-3 capitalize">
                         {tech.technician_level}
                       </span>
                     </div>
                   </div>
 
                   {isOnLeave && (
-                    <span className="text-[9px] font-bold text-rose-600 bg-rose-500/10 px-2 py-0.5 rounded-full border border-rose-500/20">
+                    <span className="text-micro font-semibold text-danger bg-danger/10 px-2 py-0.5 rounded-full border border-transparent">
                       ON LEAVE
                     </span>
                   )}
@@ -192,7 +192,7 @@ export default function ScheduleTimelineView({
                   {hours.map((_, idx) => (
                     <div
                       key={idx}
-                      className="absolute top-0 bottom-0 border-l border-black/[0.04] dark:border-white/[0.04] pointer-events-none"
+                      className="absolute top-0 bottom-0 border-l border-line pointer-events-none"
                       style={{ left: `${(idx / totalHours) * 100}%` }}
                     />
                   ))}
@@ -208,26 +208,26 @@ export default function ScheduleTimelineView({
                         key={s.id}
                         onClick={() => onQuickReschedule(s)}
                         style={styles}
-                        className={`absolute top-1.5 h-9 rounded-lg px-2.5 py-0.5 border flex flex-col justify-center cursor-pointer transition-all hover:scale-[1.01] hover:shadow-xs z-10 ${
-                          isOverlap
-                            ? 'bg-rose-500/15 border-rose-500/40 text-rose-800 dark:text-rose-200 ring-1 ring-rose-400'
-                            : isInDuty
-                            ? 'bg-emerald-500/15 border-emerald-500/40 text-emerald-800 dark:text-emerald-200'
-                            : 'bg-[#4D55CC]/15 border-[#4D55CC]/30 text-[#4D55CC] dark:text-[#7A82E6]'
-                        }`}
+                        className={`absolute top-1.5 h-9 rounded-pill px-2.5 py-0.5 border flex flex-col justify-center cursor-pointer transition-all hover:scale-[1.01] hover:shadow-xs z-10 ${
+ isOverlap
+ ? 'bg-danger/15 border-transparent text-danger ring-1 ring-danger'
+ : isInDuty
+ ? 'bg-success/15 border-transparent text-success '
+ : 'bg-action border-ink text-on-action'
+ }`}
                         title={`${s.client_name} (${s.location}) - Click to reschedule or view`}
                       >
                         <div className="flex items-center justify-between gap-1">
-                          <span className="text-[11px] font-bold truncate">
+                          <span className="text-micro font-semibold truncate">
                             {s.client_name}
                           </span>
                           {isOverlap && (
-                            <span className="text-[8px] font-extrabold uppercase bg-rose-500 text-white px-1 rounded">
+                            <span className="text-micro font-semibold bg-danger text-white px-1 rounded">
                               CONFLICT
                             </span>
                           )}
                         </div>
-                        <span className="text-[9px] text-[#8E8D9A] dark:text-[#7A7C88] truncate">
+                        <span className="text-micro text-ink-3 truncate">
                           {s.location}
                         </span>
                       </div>
