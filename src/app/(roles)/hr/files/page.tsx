@@ -1,5 +1,6 @@
-import EmployeeFilesClient from "@/components/hr/EmployeeFilesClient";
+// 201 files page.
+import { FilesBoard } from '@/components/files/FilesBoard'
 
 export default function FilesPage() {
-  return <EmployeeFilesClient />;
+  return <FilesBoard />
 }
