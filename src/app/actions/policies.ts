@@ -67,17 +67,22 @@ function hashContent(content: string): string {
   return crypto.createHash('sha256').update(content || '').digest('hex')
 }
 
-// Fetch public policy for unauthenticated /login & gateway portal
+// Fetch public policy for unauthenticated /login & gateway portal.
+// A new version gets the id "<original id>_rev_<…>" and the original is archived, so look for the
+// active policy with the original id or any of its revisions, newest first.
 export async function getPublicPolicy(policyId: 'terms_of_service' | 'privacy_policy' | 'executive_governance') {
   try {
     const { data, error } = await supabaseAdmin
       .from('policies')
       .select('*')
-      .eq('id', policyId)
+      .or(`id.eq.${policyId},id.like.${policyId}_rev_*`)
       .eq('is_active', true)
-      .single()
+      .order('published_at', { ascending: false, nullsFirst: false })
+      .limit(1)
+      .maybeSingle()
 
     if (error) throw error
+    if (!data) throw new Error('No active version of this policy.')
     return { success: true, policy: data as CompanyPolicy }
   } catch (err: any) {
     console.error(`Failed to fetch public policy ${policyId}:`, err.message || err)
