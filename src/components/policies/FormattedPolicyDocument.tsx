@@ -12,7 +12,7 @@ export default function FormattedPolicyDocument({
   className = '',
 }: FormattedPolicyDocumentProps) {
   if (!content) {
-    return <p className="text-xs text-[#8E8D9A] italic">No document text available.</p>
+    return <p className="text-xs text-ink-3 italic">No document text available.</p>
   }
 
   // Parse inline markdown tokens: **bold**, *italic*, `code`
@@ -23,14 +23,14 @@ export default function FormattedPolicyDocument({
     return parts.map((part, i) => {
       if (part.startsWith('**') && part.endsWith('**')) {
         return (
-          <strong key={i} className="font-extrabold text-[#121215] dark:text-[#F4F4F6]">
+          <strong key={i} className="font-semibold text-ink">
             {part.slice(2, -2)}
           </strong>
         )
       }
       if (part.startsWith('*') && part.endsWith('*')) {
         return (
-          <em key={i} className="italic text-[#575762] dark:text-[#B0B2BD]">
+          <em key={i} className="italic text-ink-2">
             {part.slice(1, -1)}
           </em>
         )
@@ -39,7 +39,7 @@ export default function FormattedPolicyDocument({
         return (
           <code
             key={i}
-            className="px-1.5 py-0.5 rounded bg-black/[0.05] dark:bg-white/[0.08] text-[11px] font-mono text-[#4D55CC] dark:text-indigo-400 font-semibold"
+            className="px-1.5 py-0.5 rounded bg-surface-soft text-micro font-mono text-ink font-semibold"
           >
             {part.slice(1, -1)}
           </code>
@@ -57,7 +57,7 @@ export default function FormattedPolicyDocument({
   return (
     <div
       data-testid="formatted-policy-content"
-      className={`space-y-2.5 text-xs text-[#121215] dark:text-[#F4F4F6] leading-relaxed select-text ${className}`}
+      className={`space-y-2.5 text-xs text-ink leading-relaxed select-text ${className}`}
     >
       {lines.map((line, idx) => {
         const trimmed = line.trim()
@@ -71,7 +71,7 @@ export default function FormattedPolicyDocument({
           return (
             <hr
               key={idx}
-              className="my-4 border-black/[0.08] dark:border-white/[0.08]"
+              className="my-4 border-line"
             />
           )
         }
@@ -81,7 +81,7 @@ export default function FormattedPolicyDocument({
           return (
             <h1
               key={idx}
-              className="text-lg md:text-xl font-black text-[#121215] dark:text-[#F4F4F6] tracking-tight pt-2 pb-1 border-b border-black/[0.08] dark:border-white/[0.08]"
+              className="text-lg md:text-xl font-semibold text-ink tracking-tight pt-2 pb-1 border-b border-line"
             >
               {trimmed.slice(2)}
             </h1>
@@ -93,7 +93,7 @@ export default function FormattedPolicyDocument({
           return (
             <h2
               key={idx}
-              className="text-sm md:text-base font-extrabold text-[#121215] dark:text-[#F4F4F6] tracking-tight pt-3 pb-0.5 text-[#4D55CC] dark:text-indigo-400"
+              className="text-sm md:text-base font-semibold text-ink tracking-tight pt-3 pb-0.5 text-ink"
             >
               {trimmed.slice(3)}
             </h2>
@@ -105,7 +105,7 @@ export default function FormattedPolicyDocument({
           return (
             <h3
               key={idx}
-              className="text-xs md:text-sm font-bold text-[#121215] dark:text-[#F4F4F6] pt-2"
+              className="text-xs md:text-sm font-semibold text-ink pt-2"
             >
               {trimmed.slice(4)}
             </h3>
@@ -117,7 +117,7 @@ export default function FormattedPolicyDocument({
           return (
             <div
               key={idx}
-              className="pl-3.5 py-1.5 my-2 border-l-2 border-[#4D55CC] bg-blue-500/5 dark:bg-blue-950/20 text-[#575762] dark:text-[#B0B2BD] italic rounded-r-lg"
+              className="pl-3.5 py-1.5 my-2 border-l-2 border-ink bg-blue-500/5 text-ink-2 italic rounded-r-lg"
             >
               {renderInline(trimmed.slice(2))}
             </div>
@@ -128,8 +128,8 @@ export default function FormattedPolicyDocument({
         if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
           return (
             <div key={idx} className="flex items-start gap-2 ml-3 my-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#4D55CC] dark:bg-indigo-400 mt-1.5 shrink-0" />
-              <div className="flex-1 text-[#575762] dark:text-[#B0B2BD]">
+              <span className="w-1.5 h-1.5 rounded-full bg-action mt-1.5 shrink-0" />
+              <div className="flex-1 text-ink-2">
                 {renderInline(trimmed.slice(2))}
               </div>
             </div>
@@ -141,10 +141,10 @@ export default function FormattedPolicyDocument({
         if (numberedMatch) {
           return (
             <div key={idx} className="flex items-start gap-2.5 ml-2 my-1.5">
-              <span className="font-mono font-bold text-[#4D55CC] dark:text-indigo-400 text-[11px] shrink-0 pt-0.5">
+              <span className="font-mono font-semibold text-ink text-micro shrink-0 pt-0.5">
                 {numberedMatch[1]}.
               </span>
-              <div className="flex-1 text-[#575762] dark:text-[#B0B2BD]">
+              <div className="flex-1 text-ink-2">
                 {renderInline(numberedMatch[2])}
               </div>
             </div>
@@ -153,7 +153,7 @@ export default function FormattedPolicyDocument({
 
         // Regular paragraph text
         return (
-          <p key={idx} className="my-1 text-[#575762] dark:text-[#B0B2BD]">
+          <p key={idx} className="my-1 text-ink-2">
             {renderInline(trimmed)}
           </p>
         )
