@@ -40,7 +40,7 @@ export interface QuickActionItem {
 }
 
 interface AdminQuickActionsModalProps {
-  role: 'ceo' | 'hr' | 'coordinator' | 'accountant'
+  role: 'ceo' | 'hr' | 'coordinator'
 }
 
 export function AdminQuickActionsModal({ role }: AdminQuickActionsModalProps) {
@@ -147,10 +147,10 @@ export function AdminQuickActionsModal({ role }: AdminQuickActionsModalProps) {
           shortcutHint: 'G',
           perform: () => {
             setIsOpen(false)
-            if (pathname === '/ceo') {
+            if (pathname === '/ceo/access') {
               window.dispatchEvent(new CustomEvent('open-give-access-modal'))
             } else {
-              router.push('/ceo?action=give_access')
+              router.push('/ceo/access?action=give_access')
             }
           },
         },
@@ -186,8 +186,8 @@ export function AdminQuickActionsModal({ role }: AdminQuickActionsModalProps) {
         },
         {
           id: 'ceo-nav-overview',
-          title: 'Go to Executive Overview',
-          description: 'Open the main system override command hub.',
+          title: 'Go to Company Overview',
+          description: 'Today at a glance: attendance, requests, jobs and tools.',
           icon: Home,
           category: 'navigation',
           keywords: ['overview', 'hub', 'dashboard', 'home', 'overrides'],
@@ -223,6 +223,18 @@ export function AdminQuickActionsModal({ role }: AdminQuickActionsModalProps) {
           perform: () => {
             setIsOpen(false)
             router.push('/hr/tickets')
+          },
+        },
+        {
+          id: 'hr-dtr',
+          title: 'Open DTR & Attendance',
+          description: 'Review hours, lates, overtime and absences per cut-off; correct punches.',
+          icon: FileSpreadsheet,
+          category: 'primary',
+          keywords: ['dtr', 'attendance', 'audit', 'hours', 'overtime', 'late', 'cutoff'],
+          perform: () => {
+            setIsOpen(false)
+            router.push('/hr/audit')
           },
         },
         {
@@ -274,7 +286,7 @@ export function AdminQuickActionsModal({ role }: AdminQuickActionsModalProps) {
           shortcutHint: 'D',
           perform: () => {
             setIsOpen(false)
-            router.push('/coordinator')
+            router.push('/coordinator/dispatch')
           },
         },
         {
@@ -312,34 +324,6 @@ export function AdminQuickActionsModal({ role }: AdminQuickActionsModalProps) {
           perform: () => {
             setIsOpen(false)
             router.push('/coordinator/announcements')
-          },
-        }
-      )
-    } else if (role === 'accountant') {
-      list.push(
-        {
-          id: 'accountant-audit',
-          title: 'Attendance & DTR Audit Logs',
-          description: 'Verify employee attendance, clock-in timestamps, and OT hours.',
-          icon: FileSpreadsheet,
-          category: 'primary',
-          keywords: ['audit', 'dtr', 'attendance', 'payroll', 'hours', 'logs', 'overtime'],
-          shortcutHint: 'A',
-          perform: () => {
-            setIsOpen(false)
-            router.push('/accountant')
-          },
-        },
-        {
-          id: 'accountant-announcements',
-          title: 'Publish Finance Announcement',
-          description: 'Post payroll schedules and deadline notices.',
-          icon: Megaphone,
-          category: 'navigation',
-          keywords: ['announcement', 'broadcast', 'payroll', 'finance'],
-          perform: () => {
-            setIsOpen(false)
-            router.push('/accountant/announcements')
           },
         }
       )

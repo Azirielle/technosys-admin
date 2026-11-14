@@ -27,15 +27,6 @@ const nextConfig: NextConfig = {
   },
   serverExternalPackages: ['pdf-parse', '@langchain/textsplitters', 'playwright'],
   poweredByHeader: false,
-  async redirects() {
-    return [
-      {
-        source: '/coordinator/dispatch',
-        destination: '/coordinator',
-        permanent: false,
-      },
-    ];
-  },
   async headers() {
     return [
       {
@@ -60,15 +51,6 @@ const nextConfig: NextConfig = {
           {
             key: "Strict-Transport-Security",
             value: "max-age=31536000; includeSubDomains; preload",
-          },
-        ],
-      },
-      {
-        source: "/dashboard/:path*",
-        headers: [
-          {
-            key: "Cache-Control",
-            value: "no-cache, no-store, must-revalidate",
           },
         ],
       },

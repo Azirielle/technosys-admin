@@ -61,33 +61,25 @@ interface RecipientOption {
 const RECIPIENT_OPTIONS: RecipientOption[] = [
   {
     roleKey: 'hr',
-    name: 'Helena Vance',
-    title: 'Lead HR Officer',
+    name: 'Helena Garcia',
+    title: 'HR Officer',
     deptKey: 'HR',
     avatarText: 'HR',
     avatarColor: 'bg-blue-500/10 text-blue-600 dark:text-blue-400',
   },
   {
     roleKey: 'coordinator',
-    name: 'Aileen Cruz',
-    title: 'Operations Dispatcher',
+    name: 'Aileen Bautista',
+    title: 'Service Coordinator',
     deptKey: 'Service Dept',
     avatarText: 'SD',
     avatarColor: 'bg-purple-500/10 text-purple-600 dark:text-purple-400',
-  },
-  {
-    roleKey: 'accountant',
-    name: 'Alicia Rivera',
-    title: 'Senior Financial Analyst',
-    deptKey: 'Accountant',
-    avatarText: 'AC',
-    avatarColor: 'bg-amber-500/10 text-amber-600 dark:text-amber-400',
   },
 ]
 
 // Executive Department Definition
 interface DepartmentConfig {
-  id: 'service' | 'accountant' | 'hr'
+  id: 'service' | 'hr'
   label: string
   fullLabel: string
   roleKey: RoleKey
@@ -104,33 +96,22 @@ const EXECUTIVE_DEPARTMENTS: DepartmentConfig[] = [
     label: 'Service Dept',
     fullLabel: 'Service & Field Operations',
     roleKey: 'coordinator',
-    headName: 'Aileen Cruz',
+    headName: 'Aileen Bautista',
     headRole: 'Coordinator & Logistics',
     avatarText: 'SD',
     avatarColor: 'bg-purple-500/10 text-purple-600 dark:text-purple-400',
     moduleIds: ['coordinator_tracking', 'coordinator_dispatch', 'coordinator_inventory'],
   },
   {
-    id: 'accountant',
-    label: 'Accountant',
-    fullLabel: 'Finance & Payroll',
-    roleKey: 'accountant',
-    headName: 'Alicia Rivera',
-    headRole: 'Finance & Payroll Lead',
-    avatarText: 'AC',
-    avatarColor: 'bg-amber-500/10 text-amber-600 dark:text-amber-400',
-    moduleIds: ['accountant_audit'],
-  },
-  {
     id: 'hr',
     label: 'HR',
     fullLabel: 'Human Resources & Compliance',
     roleKey: 'hr',
-    headName: 'Helena Vance',
+    headName: 'Helena Garcia',
     headRole: 'HR Manager',
     avatarText: 'HR',
     avatarColor: 'bg-blue-500/10 text-blue-600 dark:text-blue-400',
-    moduleIds: ['hr_tickets', 'hr_files'],
+    moduleIds: ['hr_tickets', 'hr_files', 'hr_dtr'],
   },
 ]
 
@@ -138,7 +119,7 @@ const EXECUTIVE_DEPARTMENTS: DepartmentConfig[] = [
 interface TabConfig {
   id: string
   name: string
-  deptId: 'service' | 'accountant' | 'hr'
+  deptId: 'service' | 'hr'
   deptLabel: string
   description: string
   icon: React.ComponentType<{ className?: string }>
@@ -169,14 +150,6 @@ const TAB_CONFIGS: Record<string, TabConfig> = {
     description: 'Warehouse parts catalog, tool check-out ledger, and equipment logs.',
     icon: Box,
   },
-  accountant_audit: {
-    id: 'accountant_audit',
-    name: 'Payroll & Audit Logs',
-    deptId: 'accountant',
-    deptLabel: 'Accountant',
-    description: 'Salary calculations, overtime audits, payroll locks, and Excel exports.',
-    icon: FileSpreadsheet,
-  },
   hr_tickets: {
     id: 'hr_tickets',
     name: 'Tickets & Leave Approvals',
@@ -184,6 +157,14 @@ const TAB_CONFIGS: Record<string, TabConfig> = {
     deptLabel: 'HR',
     description: 'Employee disputes, ticket resolutions, and vacation/sick leave approvals.',
     icon: Ticket,
+  },
+  hr_dtr: {
+    id: 'hr_dtr',
+    name: 'DTR & Attendance',
+    deptId: 'hr',
+    deptLabel: 'HR',
+    description: 'Daily time records per cut-off: hours, lates, overtime, absences and corrections.',
+    icon: FileSpreadsheet,
   },
   hr_files: {
     id: 'hr_files',
@@ -209,8 +190,8 @@ interface ActiveCoverageItem {
 }
 
 export default function SystemOverridesClient() {
-  const [overrides, setOverrides] = useState<OverrideMap>({ accountant: [], coordinator: [], hr: [] })
-  const [metadata, setMetadata] = useState<OverrideMetadataMap>({ accountant: {}, coordinator: {}, hr: {} })
+  const [overrides, setOverrides] = useState<OverrideMap>({ coordinator: [], hr: [] })
+  const [metadata, setMetadata] = useState<OverrideMetadataMap>({ coordinator: {}, hr: {} })
   const [loading, setLoading] = useState<boolean>(true)
   const [isSyncing, setIsSyncing] = useState<boolean>(false)
   const [notification, setNotification] = useState<string | null>(null)
@@ -222,7 +203,7 @@ export default function SystemOverridesClient() {
   // Delegation Modal State
   const [isDelegationOpen, setIsDelegationOpen] = useState(false)
   const [selectedRecipient, setSelectedRecipient] = useState<RoleKey>('hr')
-  const [activeDeptTab, setActiveDeptTab] = useState<'service' | 'accountant' | 'hr'>('service')
+  const [activeDeptTab, setActiveDeptTab] = useState<'service' | 'hr'>('service')
   const [selectedModuleIds, setSelectedModuleIds] = useState<Set<string>>(new Set())
   const [selectedDuration, setSelectedDuration] = useState<OverrideDuration>('1_day')
   const [auditReason, setAuditReason] = useState('')
@@ -310,7 +291,7 @@ export default function SystemOverridesClient() {
   // Active Delegations list computed from metadata
   const activeCoverageList = useMemo(() => {
     const list: ActiveCoverageItem[] = []
-    const roleKeys: RoleKey[] = ['accountant', 'coordinator', 'hr']
+    const roleKeys: RoleKey[] = ['coordinator', 'hr']
 
     roleKeys.forEach((roleKey) => {
       const roleMeta = metadata[roleKey] || {}
@@ -350,7 +331,7 @@ export default function SystemOverridesClient() {
 
   // Quick summary for signal cards
   const delegationSummaryText = useMemo(() => {
-    if (activeCoverageList.length === 0) return 'All 3 departments operating in standard scope'
+    if (activeCoverageList.length === 0) return 'Everyone is working within their own role'
     if (uniqueCoveringStaffCount === 1) {
       const first = activeCoverageList[0]
       return `${first.coveringStaffName.split(' ')[0]} covering ${activeCoverageList.length} permissions`
@@ -359,7 +340,7 @@ export default function SystemOverridesClient() {
   }, [activeCoverageList, uniqueCoveringStaffCount])
 
   // Open delegation modal, optionally pre-selecting a department
-  const handleOpenDelegation = (deptId?: 'service' | 'accountant' | 'hr') => {
+  const handleOpenDelegation = (deptId?: 'service' | 'hr') => {
     if (deptId) {
       setActiveDeptTab(deptId)
       const deptModules = EXECUTIVE_DEPARTMENTS.find((d) => d.id === deptId)?.moduleIds || []
@@ -409,7 +390,7 @@ export default function SystemOverridesClient() {
   }
 
   // Calculate count of selected modules in a given department
-  const getSelectedCountInDept = (deptId: 'service' | 'accountant' | 'hr') => {
+  const getSelectedCountInDept = (deptId: 'service' | 'hr') => {
     const dept = EXECUTIVE_DEPARTMENTS.find((d) => d.id === deptId)
     if (!dept) return 0
     return dept.moduleIds.filter((id) => selectedModuleIds.has(id)).length
@@ -546,8 +527,8 @@ export default function SystemOverridesClient() {
   // Execute reset all overrides
   const handleExecuteResetAll = async () => {
     setIsResetConfirmOpen(false)
-    const defaultMap: OverrideMap = { accountant: [], coordinator: [], hr: [] }
-    const defaultMeta: OverrideMetadataMap = { accountant: {}, coordinator: {}, hr: {} }
+    const defaultMap: OverrideMap = { coordinator: [], hr: [] }
+    const defaultMeta: OverrideMetadataMap = { coordinator: {}, hr: {} }
 
     const previousOverrides = overrides
     const previousMeta = metadata
@@ -596,8 +577,8 @@ export default function SystemOverridesClient() {
 
     return {
       isElevated: false,
-      badgeText: 'Standard Scope',
-      statusDetail: 'Standard Scope',
+      badgeText: 'Normal access',
+      statusDetail: 'Normal access',
       canRevokeFirst: null,
     }
   }
@@ -624,21 +605,12 @@ export default function SystemOverridesClient() {
       <header className="px-8 py-5 border-b border-black/[0.05] dark:border-white/[0.07] flex items-center justify-between shrink-0 bg-[#F5F4F7] dark:bg-[#22232A]">
         <div>
           {/* Eyebrow Navigation */}
-          <div className="flex items-center gap-2 text-[11px] font-semibold text-[#8E8D9A] dark:text-[#7A7C88] tracking-wider uppercase">
-            <span>TechnoCycle</span>
-            <span>/</span>
-            <span className="text-[#121215] dark:text-[#F4F4F6]">Executive Suite</span>
-          </div>
 
           {/* Title Row */}
           <div className="flex items-center gap-3 mt-1">
             <h1 className="text-xl font-bold tracking-tight text-[#121215] dark:text-[#F4F4F6]">
-              Department Access & Coverage
+              Temporary Access
             </h1>
-            <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-[#EBEAEF] dark:bg-[#343640] border border-black/[0.04] dark:border-white/[0.06] text-[11px] font-medium text-[#575762] dark:text-[#B0B2BD]">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-              <span>All 3 Workstations Operational</span>
-            </div>
           </div>
         </div>
 
@@ -703,7 +675,7 @@ export default function SystemOverridesClient() {
               <div className="text-xs text-[#575762] dark:text-[#B0B2BD] mt-1.5 truncate max-w-[220px]">
                 {absencesToday.length > 0
                   ? `${absencesToday[0].name} on ${absencesToday[0].leaveType}`
-                  : 'All 3 department heads are on duty'}
+                  : 'HR and Service Dept heads are on duty'}
               </div>
             </div>
             <div className="w-9 h-9 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
@@ -749,7 +721,7 @@ export default function SystemOverridesClient() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             {EXECUTIVE_DEPARTMENTS.map((dept) => {
               const status = getDeptStatus(dept)
 
@@ -806,50 +778,19 @@ export default function SystemOverridesClient() {
                                   : 'text-[#121215] dark:text-[#F4F4F6]'
                               }`}
                             >
-                              {status.isElevated ? status.statusDetail : 'Standard Scope'}
+                              {status.isElevated ? status.statusDetail : 'Normal access'}
                             </span>
                           </div>
                           <div className="flex items-center justify-between text-[#575762] dark:text-[#B0B2BD]">
                             <span>Dispatch & Scheduling:</span>
                             <span className="font-semibold text-[#121215] dark:text-[#F4F4F6]">
-                              Standard Scope
+                              Normal access
                             </span>
                           </div>
                           <div className="flex items-center justify-between text-[#575762] dark:text-[#B0B2BD]">
                             <span>Tool & Inventory:</span>
                             <span className="font-semibold text-[#121215] dark:text-[#F4F4F6]">
-                              Standard Scope
-                            </span>
-                          </div>
-                        </>
-                      )}
-
-                      {dept.id === 'accountant' && (
-                        <>
-                          <div className="flex items-center justify-between text-[#575762] dark:text-[#B0B2BD]">
-                            <span>Payroll & Audit Logs:</span>
-                            <span className="font-semibold text-[#121215] dark:text-[#F4F4F6]">
-                              {status.isElevated ? status.statusDetail : 'Standard Scope'}
-                            </span>
-                          </div>
-                          <div className="flex items-center justify-between text-[#575762] dark:text-[#B0B2BD]">
-                            <span>Staff Attendance:</span>
-                            <span
-                              className={`font-semibold ${
-                                absencesToday.some((a) => a.role.toLowerCase().includes('accountant'))
-                                  ? 'text-amber-600 dark:text-amber-400'
-                                  : 'text-emerald-600 dark:text-emerald-400'
-                              }`}
-                            >
-                              {absencesToday.some((a) => a.role.toLowerCase().includes('accountant'))
-                                ? 'Alicia on Medical Leave'
-                                : 'Alicia on Duty'}
-                            </span>
-                          </div>
-                          <div className="flex items-center justify-between text-[#575762] dark:text-[#B0B2BD]">
-                            <span>Coverage Status:</span>
-                            <span className="font-semibold text-[#8E8D9A] dark:text-[#7A7C88]">
-                              {status.isElevated ? 'Active Delegation' : 'No Active Delegates'}
+                              Normal access
                             </span>
                           </div>
                         </>
@@ -866,7 +807,7 @@ export default function SystemOverridesClient() {
                           <div className="flex items-center justify-between text-[#575762] dark:text-[#B0B2BD]">
                             <span>201 Personnel Records:</span>
                             <span className="font-semibold text-[#121215] dark:text-[#F4F4F6]">
-                              Standard Scope
+                              Normal access
                             </span>
                           </div>
                           <div className="flex items-center justify-between text-[#575762] dark:text-[#B0B2BD]">
@@ -1035,7 +976,7 @@ export default function SystemOverridesClient() {
         <div className="flex items-center gap-2">
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
           <span>
-            Logged in as <strong className="text-[#121215] dark:text-[#F4F4F6]">Carlos Rivera (CEO)</strong>
+            Logged in as <strong className="text-[#121215] dark:text-[#F4F4F6]">Carlos Mendoza (CEO)</strong>
           </span>
         </div>
         <div className="flex items-center gap-3">
@@ -1080,7 +1021,7 @@ export default function SystemOverridesClient() {
                   1. Who needs temporary access?
                 </label>
                 <div className="grid grid-cols-2 gap-2">
-                  {RECIPIENT_OPTIONS.filter((r) => r.roleKey !== 'accountant').map((opt) => (
+                  {RECIPIENT_OPTIONS.map((opt) => (
                     <div
                       key={opt.roleKey}
                       onClick={() => setSelectedRecipient(opt.roleKey)}
@@ -1119,7 +1060,7 @@ export default function SystemOverridesClient() {
                   </button>
                 </div>
 
-                {/* Clean Department Tab Names: Service Dept | Accountant | HR */}
+                {/* Clean Department Tab Names: Service Dept | HR */}
                 <div className="flex gap-1.5 p-1 rounded-xl bg-black/[0.04] dark:bg-white/[0.04] border border-black/[0.04] dark:border-white/[0.06]">
                   {EXECUTIVE_DEPARTMENTS.map((dept) => {
                     const count = getSelectedCountInDept(dept.id)
@@ -1235,7 +1176,7 @@ export default function SystemOverridesClient() {
                   type="text"
                   value={auditReason}
                   onChange={(e) => setAuditReason(e.target.value)}
-                  placeholder="e.g. Covering for an accountant who is on leave"
+                  placeholder="e.g. Covering for HR while on leave"
                   required
                   className="w-full px-3 py-2 rounded-xl bg-[#FAF9FB] dark:bg-[#2B2C35] border border-black/[0.06] dark:border-white/[0.08] text-xs text-[#121215] dark:text-[#F4F4F6] placeholder:text-[#8E8D9A] dark:placeholder:text-[#7A7C88] focus:outline-none focus:ring-1 focus:ring-[#4D55CC]"
                 />
@@ -1341,7 +1282,7 @@ export default function SystemOverridesClient() {
                   Clear All Temporary Access
                 </div>
                 <div className="text-xs text-[#575762] dark:text-[#B0B2BD] mt-1 leading-relaxed">
-                  This will immediately return all employees across Service Dept, Accountant, and HR to standard role boundaries.
+                  This will immediately return all employees across Service Dept and HR to standard role boundaries.
                 </div>
               </div>
             </div>

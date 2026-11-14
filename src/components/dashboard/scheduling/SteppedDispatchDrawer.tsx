@@ -197,7 +197,7 @@ export default function SteppedDispatchDrawer({
       <div className="absolute inset-y-0 right-0 max-w-full flex pl-4 sm:pl-10">
         <div className="w-screen max-w-2xl lg:max-w-3xl bg-white dark:bg-[#0B0F19] border-l border-zinc-200 dark:border-zinc-800 shadow-2xl flex flex-col">
           
-          {/* Header (Matching User Mockup) */}
+          {/* Header */}
           <div className="px-6 py-5 border-b border-zinc-200 dark:border-zinc-800/80 bg-zinc-50/50 dark:bg-zinc-900/50 flex items-start justify-between">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-md">

@@ -46,13 +46,13 @@ export default function TrackingPage() {
       const dayStart = new Date(now)
       dayStart.setHours(0, 0, 0, 0)
 
-      // Parallel query: technician locations + active open time_logs (app_time_out IS NULL)
+      // Parallel query: technician locations + active open attendance_logs (app_time_out IS NULL)
       const [locRes, logsRes] = await Promise.all([
         supabase
-          .from('technician_locations')
+          .from('live_locations')
           .select('*, profiles!technician_id(id, full_name, contact_number, role)'),
         supabase
-          .from('time_logs')
+          .from('attendance_logs')
           .select('id, technician_id, app_time_in, geofence_status, status')
           .is('app_time_out', null)
           .gte('created_at', dayStart.toISOString())
@@ -60,7 +60,7 @@ export default function TrackingPage() {
 
       const activeLogs = logsRes.data || []
       const activeShiftMap = new Map<string, any>(
-        activeLogs.map(l => [l.technician_id, l])
+        activeLogs.map(l => [l.technician_id, l] as [string, any])
       )
 
       if (locRes.data) {
@@ -136,14 +136,14 @@ export default function TrackingPage() {
       .channel(channelName)
       .on(
         'postgres_changes',
-        { event: '*', schema: 'public', table: 'technician_locations' },
+        { event: '*', schema: 'public', table: 'live_locations' },
         () => {
           fetchLocations()
         }
       )
       .on(
         'postgres_changes',
-        { event: '*', schema: 'public', table: 'time_logs' },
+        { event: '*', schema: 'public', table: 'attendance_logs' },
         () => {
           // Captures instant clock-in and clock-out events
           fetchLocations()
@@ -200,7 +200,7 @@ export default function TrackingPage() {
             </div>
             <div className="min-w-0">
               <div className="flex items-center gap-2">
-                <h1 className="text-sm font-black text-zinc-900 dark:text-zinc-100 truncate">Active Field Crew</h1>
+                <h1 className="text-sm font-black text-zinc-900 dark:text-zinc-100 truncate">Field Crew</h1>
                 <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full border ${
                   activeCount > 0 
                     ? 'bg-emerald-100 text-emerald-800 border-emerald-200' 

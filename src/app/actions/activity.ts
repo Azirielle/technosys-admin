@@ -101,9 +101,7 @@ export async function getActivityLogs(category?: string, page = 1, pageSize = 50
                        action.toLowerCase().includes('override') || 
                        desc.toLowerCase().includes('override')
 
-      if (role === 'accountant' && (cat === 'inventory' || cat === 'tickets' || cat === 'leaves' || cat === 'schedule')) {
-        isOverride = true
-      } else if (role === 'coordinator' && (cat === 'tickets' || cat === 'leaves' || cat === 'audit' || cat === 'compliance')) {
+      if (role === 'coordinator' && (cat === 'tickets' || cat === 'leaves' || cat === 'audit' || cat === 'compliance' || cat === 'employee')) {
         isOverride = true
       } else if (role === 'hr' && (cat === 'inventory' || cat === 'schedule' || cat === 'audit')) {
         isOverride = true

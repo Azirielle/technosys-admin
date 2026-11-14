@@ -1,8 +1,9 @@
+import type { Database } from './database.types'
 import { createClient } from '@supabase/supabase-js'
 
 // We use the raw @supabase/supabase-js here because the admin client 
 // runs exclusively on the server and bypasses Row Level Security.
-export const supabaseAdmin = createClient(
+export const supabaseAdmin = createClient<Database>(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!,
   {

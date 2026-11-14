@@ -30,7 +30,7 @@ export default async function LoginPage({
           {/* Master Inverted Dark Mode Brand Emblem */}
           <div className="relative inline-flex items-center justify-center w-22 h-22 mb-3 filter drop-shadow-[0_0_16px_rgba(56,189,248,0.35)] transition-transform duration-300 hover:scale-105">
             <Image 
-              src="/technocycle_logo_dark.png" 
+              src="/technocycle-logo-dark.png" 
               alt="TechnoCycle Logo" 
               width={88} 
               height={88} 

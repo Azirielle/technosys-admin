@@ -1,16 +1,16 @@
 import { NextResponse } from 'next/server';
 
-const MOCK_LANDMARKS = [
-  { place_id: 'mock-1', display_name: 'Pacita Complex 1, San Pedro City, Laguna, Philippines', lat: '14.35410', lon: '121.06650' },
-  { place_id: 'mock-2', display_name: 'San Pedro City Hall, San Pedro City, Laguna, Philippines', lat: '14.35920', lon: '121.05050' },
-  { place_id: 'mock-3', display_name: 'SM Center San Pedro, National Highway, San Pedro, Laguna, Philippines', lat: '14.36480', lon: '121.05430' },
-  { place_id: 'mock-4', display_name: 'Biñan City Hall, Zapote, Biñan City, Laguna, Philippines', lat: '14.33840', lon: '121.08250' },
-  { place_id: 'mock-5', display_name: 'Ayala Center, Makati City, Metro Manila, Philippines', lat: '14.55180', lon: '121.02568' },
-  { place_id: 'mock-6', display_name: 'Bonifacio Global City (BGC), Taguig City, Metro Manila, Philippines', lat: '14.55200', lon: '121.04780' },
-  { place_id: 'mock-7', display_name: 'Ortigas Center, Pasig City, Metro Manila, Philippines', lat: '14.58690', lon: '121.06140' },
-  { place_id: 'mock-8', display_name: 'Alabang Town Center, Muntinlupa City, Metro Manila, Philippines', lat: '14.42580', lon: '121.03050' },
-  { place_id: 'mock-9', display_name: 'SM Mall of Asia, Pasay City, Metro Manila, Philippines', lat: '14.53530', lon: '120.98210' },
-  { place_id: 'mock-10', display_name: 'Festival Mall, Filinvest City, Alabang, Muntinlupa, Philippines', lat: '14.41720', lon: '121.04010' }
+const OFFLINE_LANDMARKS = [
+  { place_id: 'offline-1', display_name: 'Pacita Complex 1, San Pedro City, Laguna, Philippines', lat: '14.35410', lon: '121.06650' },
+  { place_id: 'offline-2', display_name: 'San Pedro City Hall, San Pedro City, Laguna, Philippines', lat: '14.35920', lon: '121.05050' },
+  { place_id: 'offline-3', display_name: 'SM Center San Pedro, National Highway, San Pedro, Laguna, Philippines', lat: '14.36480', lon: '121.05430' },
+  { place_id: 'offline-4', display_name: 'Biñan City Hall, Zapote, Biñan City, Laguna, Philippines', lat: '14.33840', lon: '121.08250' },
+  { place_id: 'offline-5', display_name: 'Ayala Center, Makati City, Metro Manila, Philippines', lat: '14.55180', lon: '121.02568' },
+  { place_id: 'offline-6', display_name: 'Bonifacio Global City (BGC), Taguig City, Metro Manila, Philippines', lat: '14.55200', lon: '121.04780' },
+  { place_id: 'offline-7', display_name: 'Ortigas Center, Pasig City, Metro Manila, Philippines', lat: '14.58690', lon: '121.06140' },
+  { place_id: 'offline-8', display_name: 'Alabang Town Center, Muntinlupa City, Metro Manila, Philippines', lat: '14.42580', lon: '121.03050' },
+  { place_id: 'offline-9', display_name: 'SM Mall of Asia, Pasay City, Metro Manila, Philippines', lat: '14.53530', lon: '120.98210' },
+  { place_id: 'offline-10', display_name: 'Festival Mall, Filinvest City, Alabang, Muntinlupa, Philippines', lat: '14.41720', lon: '121.04010' }
 ];
 
 export async function GET(request: Request) {
@@ -84,19 +84,14 @@ export async function GET(request: Request) {
   }
 
   // 3. Tertiary: Local Philippines Landmark Dictionary
-  const matchedMocks = MOCK_LANDMARKS.filter(m => 
+  const offlineMatches = OFFLINE_LANDMARKS.filter(m => 
     m.display_name.toLowerCase().includes(query.toLowerCase())
   );
 
-  if (matchedMocks.length > 0) {
-    return NextResponse.json(matchedMocks);
+  if (offlineMatches.length > 0) {
+    return NextResponse.json(offlineMatches);
   }
 
-  // Fallback with unique place_id
-  return NextResponse.json([{
-    place_id: `fallback-${Date.now()}`,
-    display_name: `${query}, Philippines`,
-    lat: '14.35410',
-    lon: '121.06650'
-  }]);
+  // Nothing found: return no results rather than a guessed location (a wrong pin would set a wrong geofence).
+  return NextResponse.json([]);
 }

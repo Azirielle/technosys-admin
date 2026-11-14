@@ -1,5 +1,5 @@
-import AuditLogClient from "@/components/accountant/AuditLogClient";
+import DtrClient from "@/components/dtr/DtrClient";
 
 export default function HRAuditPage() {
-  return <AuditLogClient />;
+  return <DtrClient />;
 }

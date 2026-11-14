@@ -87,7 +87,7 @@ export default function GatewayPortal() {
           {/* Logo */}
           <div className="mb-8 p-3 rounded-2xl bg-white/8 ring-1 ring-white/10">
             <Image
-              src="/logo.png"
+              src="/technocycle-logo-light.png"
               alt="TechnoCycle Admin"
               width={64}
               height={64}

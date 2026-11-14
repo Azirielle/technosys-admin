@@ -44,8 +44,8 @@ export async function registerAppVersion(version_name: string, apk_file_url: str
       try {
         const { data: technicians, error: techError } = await supabaseAdmin
           .from('profiles')
-          .select('phone_number')
-          .not('phone_number', 'is', null)
+          .select('contact_number')
+          .not('contact_number', 'is', null)
           .in('role', ['technician', 'helper'])
 
         if (!techError && technicians && technicians.length > 0) {
@@ -55,7 +55,7 @@ export async function registerAppVersion(version_name: string, apk_file_url: str
           await Promise.all(technicians.map(tech => 
             supabase.functions.invoke('send-sms', {
               body: { 
-                phone: tech.phone_number, 
+                phone: tech.contact_number, 
                 message: smsMessage,
                 type: 'SYSTEM_UPDATE' 
               }

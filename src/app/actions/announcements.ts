@@ -1,229 +1,123 @@
-"use server"
-import { supabaseAdmin } from "@/lib/supabase/admin"
-import { createClient } from "@/lib/supabase/server"
-import { revalidatePath } from "next/cache"
-import { logActivity } from "@/app/actions/activity"
-import { batchDispatchNotificationCascade } from "@/lib/notification-cascade"
+'use server'
 
-// ------------------------------------------------------------
-// Announcements Server Actions
-// ------------------------------------------------------------
+import { revalidatePath } from 'next/cache'
+import { createClient } from '@/lib/supabase/server'
+import { supabaseAdmin } from '@/lib/supabase/admin'
+import { verifyRoleAccess } from '@/lib/permissions'
+import { sendPushToUser } from '@/lib/push'
 
-export async function getAnnouncements() {
-  try {
-    const { data, error } = await supabaseAdmin
-      .from('announcements')
-      .select('*, branch:office_locations(name)')
-      .order('created_at', { ascending: false })
-    if (error) throw error
-    return data || []
-  } catch (err: any) {
-    console.error("Failed to fetch announcements:", err.message)
-    return []
-  }
+export type AnnouncementAudience = 'all' | 'field_staff' | 'office_staff'
+export type AnnouncementStatus = 'draft' | 'scheduled' | 'published'
+export type AnnouncementPriority = 'normal' | 'important' | 'urgent'
+
+export interface AnnouncementRow {
+  id: string
+  title: string
+  content: string
+  priority: AnnouncementPriority
+  status: AnnouncementStatus
+  audience: AnnouncementAudience
+  scheduled_for: string | null
+  send_push: boolean
+  is_edited: boolean
+  created_by: string | null
+  created_at: string
+  updated_at: string | null
+  last_edited_by: string | null
+  author: { full_name: string; role: string } | null
+  editor: { full_name: string; role: string } | null
 }
 
-export async function createAnnouncement(formData: FormData) {
-  try {
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return { error: "Not authenticated" }
+const FIELD_ROLES = ['technician', 'helper'] as const
+const OFFICE_ROLES = ['ceo', 'hr', 'coordinator'] as const
 
-    const { data: profile } = await supabaseAdmin
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single()
+function rolesFor(audience: AnnouncementAudience) {
+  if (audience === 'field_staff') return [...FIELD_ROLES]
+  if (audience === 'office_staff') return [...OFFICE_ROLES]
+  return [...FIELD_ROLES, ...OFFICE_ROLES]
+}
 
-    if (!profile || ['technician', 'helper'].includes(profile.role)) {
-      return { error: "Security Restriction: Only administrators or coordinators can broadcast announcements." }
-    }
+/** All announcements (office staff see drafts and scheduled ones too). */
+export async function listAnnouncements(): Promise<{ data: AnnouncementRow[]; error?: string }> {
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from('announcements')
+    .select('*, author:profiles!announcements_created_by_fkey(full_name, role), editor:profiles!announcements_last_edited_by_fkey(full_name, role)')
+    .order('created_at', { ascending: false })
+  if (error) return { data: [], error: error.message }
+  return { data: (data || []) as unknown as AnnouncementRow[] }
+}
 
-    const title = formData.get("title") as string
-    const content = formData.get("content") as string
-    const branchIdStr = formData.get("targetBranchId") as string
-    const targetBranchId = branchIdStr && branchIdStr !== "" ? branchIdStr : null
+/** How many active staff each audience reaches (shown before publishing). */
+export async function getAudienceCounts(): Promise<Record<AnnouncementAudience, number>> {
+  const { data } = await supabaseAdmin.from('profiles').select('role').eq('lifecycle_status', 'active')
+  const roles = (data || []).map((p) => p.role as string)
+  const field = roles.filter((r) => (FIELD_ROLES as readonly string[]).includes(r)).length
+  const office = roles.filter((r) => (OFFICE_ROLES as readonly string[]).includes(r)).length
+  return { all: field + office, field_staff: field, office_staff: office }
+}
 
-    if (!title || !content) {
-      return { error: "Title and content are required." }
-    }
+export async function saveAnnouncement(input: {
+  id?: string | null
+  title: string
+  content: string
+  priority: AnnouncementPriority
+  status: AnnouncementStatus
+  audience: AnnouncementAudience
+  scheduled_for: string | null
+  send_push: boolean
+}): Promise<{ success: boolean; error?: string }> {
+  const { authorized, userId } = await verifyRoleAccess('broadcaster', true)
+  if (!authorized || !userId) return { success: false, error: 'You are not allowed to post announcements.' }
 
+  const title = input.title.trim()
+  const content = input.content.trim()
+  if (!title || !content) return { success: false, error: 'Title and message are required.' }
+  if (input.status === 'scheduled' && !input.scheduled_for) return { success: false, error: 'Pick a date and time to publish.' }
+
+  const values = {
+    title,
+    content,
+    priority: input.priority,
+    status: input.status,
+    audience: input.audience,
+    scheduled_for: input.status === 'scheduled' ? input.scheduled_for : null,
+    send_push: input.send_push,
+  }
+
+  let wasPublished = false
+  if (input.id) {
+    const { data: before } = await supabaseAdmin.from('announcements').select('status').eq('id', input.id).single()
+    wasPublished = before?.status === 'published'
     const { error } = await supabaseAdmin
       .from('announcements')
-      .insert({
-        title,
-        content,
-        target_branch_id: targetBranchId,
-        created_by: user.id
-      })
-
-    if (error) throw error
-
-    // Log the announcement creation activity
-    try {
-      await logActivity({
-        action: 'create',
-        category: 'announcement',
-        description: `Published a new company announcement: "${title}"`
-      })
-    } catch (logErr: any) {
-      console.warn("Failed to log announcement activity:", logErr.message || logErr)
-    }
-
-    // Trigger Dual-Channel Notification Cascade (Push -> SMS Fallback)
-    try {
-      let query = supabaseAdmin
-        .from('profiles')
-        .select('id, full_name, contact_number, push_token')
-        .in('role', ['technician', 'helper'])
-
-      if (targetBranchId) {
-        query = query.eq('branch_id', targetBranchId)
-      }
-
-      const { data: staffList } = await query
-
-      if (staffList && staffList.length > 0) {
-        const recipients = staffList.map(s => ({
-          id: s.id,
-          phone: s.contact_number,
-          pushToken: s.push_token,
-          name: s.full_name
-        }))
-
-        // Broadcast with bounded concurrency
-        await batchDispatchNotificationCascade(
-          recipients,
-          `Announcement: ${title}`,
-          content,
-          'CRITICAL_ANNOUNCEMENT',
-          { announcementId: title, type: 'CRITICAL_ANNOUNCEMENT' }
-        )
-      }
-    } catch (broadcastErr) {
-      console.warn("[ANNOUNCEMENT_CASCADE_ERROR]:", broadcastErr)
-    }
-
-    revalidatePath('/dashboard/settings')
-    revalidatePath('/dashboard')
-    return { success: true }
-  } catch (err: any) {
-    console.error("Failed to create announcement:", err.message)
-    return { error: err.message || "Failed to publish announcement" }
+      .update({ ...values, is_edited: true, last_edited_by: userId, updated_at: new Date().toISOString() })
+      .eq('id', input.id)
+    if (error) return { success: false, error: error.message }
+  } else {
+    const { error } = await supabaseAdmin.from('announcements').insert({ ...values, created_by: userId })
+    if (error) return { success: false, error: error.message }
   }
-}
 
-export async function deleteAnnouncement(id: string) {
-  try {
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return { error: "Not authenticated" }
-
-    const { error } = await supabaseAdmin
-      .from('announcements')
-      .delete()
-      .eq('id', id)
-
-    if (error) throw error
-
-    revalidatePath('/dashboard/settings')
-    revalidatePath('/dashboard')
-    return { success: true }
-  } catch (err: any) {
-    console.error("Failed to delete announcement:", err.message)
-    return { error: err.message || "Failed to delete announcement" }
-  }
-}
-
-// ------------------------------------------------------------
-// Holidays Server Actions
-// ------------------------------------------------------------
-
-export async function getHolidays() {
-  try {
-    const { data, error } = await supabaseAdmin
-      .from('holidays')
-      .select('*')
-      .order('holiday_date', { ascending: true })
-    if (error) throw error
-    return data || []
-  } catch (err: any) {
-    console.error("Failed to fetch holidays:", err.message)
-    return []
-  }
-}
-
-export async function createHoliday(formData: FormData) {
-  try {
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return { error: "Not authenticated" }
-
-    const { data: profile } = await supabaseAdmin
+  // Push only when it goes live for the first time (not on every edit, not for drafts).
+  if (input.status === 'published' && input.send_push && !wasPublished) {
+    const { data: recipients } = await supabaseAdmin
       .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single()
-
-    if (!profile || !['super_admin', 'admin'].includes(profile.role)) {
-      return { error: "Security Restriction: Only administrators can create holidays." }
-    }
-
-    const name = formData.get("name") as string
-    const holidayDate = formData.get("holidayDate") as string
-    const multiplier = Number(formData.get("multiplier") || 1.30)
-
-    if (!name || !holidayDate) {
-      return { error: "Name and date are required." }
-    }
-
-    const { error } = await supabaseAdmin
-      .from('holidays')
-      .insert({
-        name,
-        holiday_date: holidayDate,
-        multiplier
-      })
-
-    if (error) throw error
-
-    revalidatePath('/dashboard/settings')
-    revalidatePath('/dashboard/payroll')
-    return { success: true }
-  } catch (err: any) {
-    console.error("Failed to create holiday:", err.message)
-    return { error: err.message || "Failed to save holiday" }
+      .select('id')
+      .eq('lifecycle_status', 'active')
+      .in('role', rolesFor(input.audience))
+    await Promise.all((recipients || []).map((r) => sendPushToUser(r.id, title, content.slice(0, 150), { type: 'announcement' })))
   }
+
+  revalidatePath('/', 'layout')
+  return { success: true }
 }
 
-export async function deleteHoliday(id: string) {
-  try {
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return { error: "Not authenticated" }
-
-    const { data: profile } = await supabaseAdmin
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single()
-
-    if (!profile || !['super_admin', 'admin'].includes(profile.role)) {
-      return { error: "Security Restriction: Only administrators can delete holidays." }
-    }
-
-    const { error } = await supabaseAdmin
-      .from('holidays')
-      .delete()
-      .eq('id', id)
-
-    if (error) throw error
-
-    revalidatePath('/dashboard/settings')
-    revalidatePath('/dashboard/payroll')
-    return { success: true }
-  } catch (err: any) {
-    console.error("Failed to delete holiday:", err.message)
-    return { error: err.message || "Failed to delete holiday" }
-  }
+export async function deleteAnnouncement(id: string): Promise<{ success: boolean; error?: string }> {
+  const { authorized } = await verifyRoleAccess('broadcaster', true)
+  if (!authorized) return { success: false, error: 'You are not allowed to remove announcements.' }
+  const { error } = await supabaseAdmin.from('announcements').delete().eq('id', id)
+  if (error) return { success: false, error: error.message }
+  revalidatePath('/', 'layout')
+  return { success: true }
 }

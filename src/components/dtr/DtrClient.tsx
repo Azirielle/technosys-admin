@@ -1,0 +1,1349 @@
+'use client'
+
+import PageHeader from '@/components/ui/PageHeader'
+import { KpiCard } from '@/components/ui/KpiCard'
+import Pagination from '@/components/ui/Pagination'
+import ModalDialog from '@/components/ui/ModalDialog'
+import { 
+  TableContainer, 
+  Table, 
+  TableHead, 
+  TableHeaderCell, 
+  TableBody, 
+  TableRow, 
+  TableCell, 
+  TableEmptyState, 
+  StatusDot, 
+  MutedBadge 
+} from '@/components/ui/DataTable'
+
+import { useState, useEffect, useMemo } from 'react';
+import { 
+  Calendar, 
+  Search, 
+  Download, 
+  AlertCircle, 
+  ChevronLeft, 
+  ChevronRight, 
+  Eye, 
+  X, 
+  Filter, 
+  Clock, 
+  UserCheck, 
+  ShieldAlert, 
+  FileSpreadsheet, 
+  CheckCircle2, 
+  AlertTriangle, 
+  Moon, 
+  Sun,
+  Users,
+  Briefcase,
+  Edit3,
+  History,
+  Calculator,
+  Loader2,
+  Info,
+  Pencil,
+  Check,
+  Lock,
+  Unlock,
+  ShieldCheck,
+  RefreshCw
+} from 'lucide-react';
+import { 
+  getDtrRecords, 
+  EmployeeAuditSummary, 
+  DailyAuditRecord 
+} from '@/app/actions/audit';
+import { correctTimeLogPunch } from '@/app/actions/audit-corrections';
+import { createClient } from '@/lib/supabase/client';
+
+function getManila24HourTime(date: Date): string {
+  try {
+    const parts = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'Asia/Manila',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+    }).formatToParts(date);
+    let hour = '08';
+    let minute = '00';
+    for (const p of parts) {
+      if (p.type === 'hour') hour = p.value.padStart(2, '0');
+      if (p.type === 'minute') minute = p.value.padStart(2, '0');
+    }
+    if (hour === '24') hour = '00';
+    return `${hour}:${minute}`;
+  } catch (e) {
+    return '08:00';
+  }
+}
+
+interface KinsenasPeriod {
+  id: string;
+  label: string;
+  startDate: string;
+  endDate: string;
+}
+
+const KINSENAS_PERIODS: KinsenasPeriod[] = [
+  { id: '2026-09-01_2026-09-15', label: 'September 1 - 15, 2026', startDate: '2026-09-01', endDate: '2026-09-15' },
+  { id: '2026-08-16_2026-08-31', label: 'August 16 - 31, 2026', startDate: '2026-08-16', endDate: '2026-08-31' },
+  { id: '2026-08-01_2026-08-15', label: 'August 1 - 15, 2026', startDate: '2026-08-01', endDate: '2026-08-15' },
+  { id: '2026-07-16_2026-07-31', label: 'July 16 - 31, 2026', startDate: '2026-07-16', endDate: '2026-07-31' },
+  { id: '2026-07-01_2026-07-15', label: 'July 1 - 15, 2026', startDate: '2026-07-01', endDate: '2026-07-15' },
+  { id: '2026-06-16_2026-06-30', label: 'June 16 - 30, 2026', startDate: '2026-06-16', endDate: '2026-06-30' },
+  { id: '2026-06-01_2026-06-15', label: 'June 1 - 15, 2026', startDate: '2026-06-01', endDate: '2026-06-15' },
+];
+
+export default function DtrClient() {
+  const [records, setRecords] = useState<EmployeeAuditSummary[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  
+  // Filters
+  const [search, setSearch] = useState('');
+  const [selectedPeriodId, setSelectedPeriodId] = useState('2026-08-16_2026-08-31');
+  const [roleFilter, setRoleFilter] = useState<'all' | 'technician' | 'helper'>('all');
+
+  // Inspection Modal
+  const [selectedEmployee, setSelectedEmployee] = useState<EmployeeAuditSummary | null>(null);
+
+  // Correction Modal State
+  const [editingDay, setEditingDay] = useState<{
+    employee: EmployeeAuditSummary;
+    day: DailyAuditRecord;
+  } | null>(null);
+  const [editTimeIn, setEditTimeIn] = useState('08:00');
+  const [editTimeOut, setEditTimeOut] = useState('17:00');
+  const [isNextDay, setIsNextDay] = useState(false);
+  const [editReason, setEditReason] = useState('');
+  const [savingCorrection, setSavingCorrection] = useState(false);
+  const [correctionError, setCorrectionError] = useState<string | null>(null);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  // History Inspector State
+  const [viewingHistoryTech, setViewingHistoryTech] = useState<{
+    employeeId: string;
+    employeeName: string;
+    targetDate: string;
+  } | null>(null);
+  const [historyRecords, setHistoryRecords] = useState<any[]>([]);
+  const [loadingHistory, setLoadingHistory] = useState(false);
+
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 8;
+
+  const [currentUserRole, setCurrentUserRole] = useState<string | null>(null);
+
+  const currentPeriod = useMemo(() => {
+    return KINSENAS_PERIODS.find(p => p.id === selectedPeriodId) || KINSENAS_PERIODS[1];
+  }, [selectedPeriodId]);
+
+  useEffect(() => {
+    const resolveUser = async () => {
+      try {
+        const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', user.id)
+            .single();
+          if (profile) {
+            setCurrentUserRole(profile.role);
+          }
+        }
+      } catch (err) {
+        console.warn("Could not determine user role:", err);
+      }
+    };
+    resolveUser();
+  }, []);
+
+  const openCorrectionModal = (employee: EmployeeAuditSummary, day: DailyAuditRecord) => {
+    setEditingDay({ employee, day });
+    setCorrectionError(null);
+    setEditReason('');
+    setIsNextDay(false);
+
+    if (day.rawTimeIn) {
+      setEditTimeIn(getManila24HourTime(new Date(day.rawTimeIn)));
+    } else {
+      setEditTimeIn('08:00');
+    }
+
+    if (day.rawTimeOut) {
+      setEditTimeOut(getManila24HourTime(new Date(day.rawTimeOut)));
+    } else {
+      setEditTimeOut('17:00');
+    }
+  };
+
+  const openHistoryModal = async (employeeId: string, employeeName: string, targetDate: string) => {
+    setViewingHistoryTech({ employeeId, employeeName, targetDate });
+    setLoadingHistory(true);
+    try {
+      const { getTimeLogCorrectionHistory } = await import('@/app/actions/audit-corrections');
+      const res = await getTimeLogCorrectionHistory(employeeId, targetDate, targetDate);
+      if (res.success) {
+        setHistoryRecords(res.records);
+      }
+    } catch (err) {
+      console.error("Failed to load history:", err);
+    } finally {
+      setLoadingHistory(false);
+    }
+  };
+
+  const correctionPreview = useMemo(() => {
+    if (!editingDay) return null;
+    const { day } = editingDay;
+    const targetDate = day.date;
+    const inDate = new Date(`${targetDate}T${editTimeIn}:00+08:00`);
+    let outDate = new Date(`${targetDate}T${editTimeOut}:00+08:00`);
+    if (isNextDay) {
+      outDate = new Date(new Date(`${targetDate}T12:00:00+08:00`).getTime() + 24 * 3600 * 1000);
+      const nextDateStr = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Manila' }).format(outDate);
+      outDate = new Date(`${nextDateStr}T${editTimeOut}:00+08:00`);
+    }
+
+    if (isNaN(inDate.getTime()) || isNaN(outDate.getTime()) || outDate <= inDate) {
+      return null;
+    }
+
+    const grossHours = (outDate.getTime() - inDate.getTime()) / (1000 * 60 * 60);
+    const netHours = grossHours > 5 ? Math.max(0, grossHours - 1) : grossHours;
+
+    const defStart = new Date(`${targetDate}T08:00:00+08:00`);
+    let lateMins = 0;
+    if (inDate.getTime() > defStart.getTime()) {
+      lateMins = Math.floor((inDate.getTime() - defStart.getTime()) / (1000 * 60));
+    }
+
+    let regOt = 0;
+    let sunHolOt = 0;
+    if (day.isSunday || day.isHoliday) {
+      sunHolOt = netHours;
+    } else if (netHours > 8) {
+      regOt = netHours - 8;
+    }
+
+    return {
+      grossHours: grossHours.toFixed(1),
+      netHours: netHours.toFixed(1),
+      mealBreakDeducted: grossHours > 5,
+      lateMins,
+      regOt: regOt.toFixed(1),
+      sunHolOt: sunHolOt.toFixed(1),
+    };
+  }, [editingDay, editTimeIn, editTimeOut, isNextDay]);
+
+  const handleSaveCorrection = async () => {
+    if (!editingDay) return;
+    const trimmed = editReason.trim();
+    if (trimmed.length < 10) {
+      setCorrectionError("A substantive audit rationale of at least 10 characters is required.");
+      return;
+    }
+
+    const { employee, day } = editingDay;
+    const targetDate = day.date;
+    const inIso = `${targetDate}T${editTimeIn}:00+08:00`;
+    let outIso = `${targetDate}T${editTimeOut}:00+08:00`;
+    if (isNextDay) {
+      const nextDate = new Date(new Date(`${targetDate}T12:00:00+08:00`).getTime() + 24 * 3600 * 1000);
+      const nextDateStr = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Manila' }).format(nextDate);
+      outIso = `${nextDateStr}T${editTimeOut}:00+08:00`;
+    }
+
+    if (new Date(outIso).getTime() <= new Date(inIso).getTime()) {
+      setCorrectionError("Clock-out time must be after clock-in time. If the shift crossed midnight, check 'Shift Ends Next Day'.");
+      return;
+    }
+
+    setSavingCorrection(true);
+    setCorrectionError(null);
+
+    try {
+      const res = await correctTimeLogPunch({
+        timeLogId: day.timeLogId,
+        technicianId: employee.id,
+        targetDate: targetDate,
+        timeIn: inIso,
+        timeOut: outIso,
+        reason: trimmed
+      });
+
+      if (!res.success) {
+        setCorrectionError(res.error || "Failed to persist correction.");
+        setSavingCorrection(false);
+        return;
+      }
+
+      setToastMessage(`Attendance punch corrected on ${targetDate} for ${employee.name}. Permanent audit trail recorded.`);
+      setTimeout(() => setToastMessage(null), 5000);
+      setEditingDay(null);
+
+      // Re-fetch data
+      await loadAuditData();
+
+      // Update current inspection modal if open
+      const freshRes = await getDtrRecords(
+        currentPeriod.startDate,
+        currentPeriod.endDate,
+        roleFilter
+      );
+      if (freshRes.success) {
+        const updatedEmp = freshRes.records.find(r => r.id === employee.id);
+        if (updatedEmp) setSelectedEmployee(updatedEmp);
+      }
+    } catch (err: any) {
+      setCorrectionError(err?.message || "Unexpected error submitting punch correction.");
+    } finally {
+      setSavingCorrection(false);
+    }
+  };
+
+  useEffect(() => {
+    loadAuditData();
+  }, [selectedPeriodId, roleFilter]);
+
+  const loadAuditData = async (isRetry = false) => {
+    setLoading(true);
+    setErrorMsg(null);
+    try {
+      const res = await getDtrRecords(
+        currentPeriod.startDate,
+        currentPeriod.endDate,
+        roleFilter
+      );
+      if (res.success) {
+        setRecords(res.records);
+      } else {
+        setErrorMsg(res.error || 'Failed to load DTR records');
+      }
+    } catch (err: any) {
+      const msg = err?.message || 'Server error loading audit logs';
+      if (!isRetry && (msg.includes('fetch') || msg.includes('network') || msg.includes('Failed'))) {
+        // Automatic single-shot retry after 1s for transient compilation/network hiccups
+        setTimeout(() => {
+          loadAuditData(true);
+        }, 1000);
+        return;
+      }
+      setErrorMsg(msg);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Filtered Records
+  const filteredRecords = useMemo(() => {
+    return records.filter(r => 
+      r.name?.toLowerCase().includes(search.toLowerCase()) ||
+      r.level?.toLowerCase().includes(search.toLowerCase())
+    );
+  }, [records, search]);
+
+  // Aggregate Metrics for Top Cards
+  const telemetry = useMemo(() => {
+    let totCrew = records.length;
+    let totDays = 0;
+    let totHours = 0;
+    let totLates = 0;
+    let totLateMins = 0;
+    let totRegOt = 0;
+    let totSunHolOt = 0;
+    let totNd = 0;
+    let totAbsences = 0;
+    let totLeaves = 0;
+
+    records.forEach(r => {
+      totDays += r.daysWorked;
+      totHours += r.totalHours;
+      totLates += r.lateCount;
+      totLateMins += r.totalLateMinutes;
+      totRegOt += r.regOtHours;
+      totSunHolOt += r.sunHolidayOtHours;
+      totNd += r.nightDiffHours;
+      totAbsences += r.absences;
+      totLeaves += r.approvedLeaves;
+    });
+
+    return {
+      totCrew,
+      totDays,
+      totHours: totHours.toFixed(1),
+      totLates,
+      totLateMins,
+      totOt: (totRegOt + totSunHolOt).toFixed(1),
+      totRegOt: totRegOt.toFixed(1),
+      totSunHolOt: totSunHolOt.toFixed(1),
+      totNd: totNd.toFixed(1),
+      totAbsences,
+      totLeaves
+    };
+  }, [records]);
+
+  // Pagination
+  const totalPages = Math.ceil(filteredRecords.length / ITEMS_PER_PAGE) || 1;
+  const paginatedRecords = filteredRecords.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, selectedPeriodId, roleFilter]);
+
+  // Export to Excel (.xlsx) with Lazy Dynamic Import
+  const exportToExcel = async () => {
+    const XLSX = await import('xlsx');
+    
+    const data: any[][] = [
+      ['TECHNOCYCLE - DAILY TIME RECORD (DTR)'],
+      ['Cut-off Period:', currentPeriod.label],
+      ['Date Range:', `${currentPeriod.startDate} to ${currentPeriod.endDate}`],
+      ['Generated On:', new Date().toLocaleString()],
+      [],
+      [
+        'Employee Name',
+        'Role',
+        'Level & Status',
+        'Days Worked',
+        'Total Hours Worked',
+        'Late Incidents',
+        'Total Late Minutes',
+        'Reg OT (Hrs)',
+        'Sun/Hol OT (Hrs)',
+        'Night Diff (Hrs)',
+        'Unexcused Absences',
+        'Approved Leaves'
+      ]
+    ];
+
+    let totDays = 0, totHours = 0, totLates = 0, totLateMins = 0;
+    let totRegOt = 0, totSunOt = 0, totNd = 0, totAbsences = 0, totLeaves = 0;
+
+    filteredRecords.forEach(r => {
+      totDays += r.daysWorked;
+      totHours += r.totalHours;
+      totLates += r.lateCount;
+      totLateMins += r.totalLateMinutes;
+      totRegOt += r.regOtHours;
+      totSunOt += r.sunHolidayOtHours;
+      totNd += r.nightDiffHours;
+      totAbsences += r.absences;
+      totLeaves += r.approvedLeaves;
+
+      data.push([
+        r.name,
+        r.role.toUpperCase(),
+        `${r.level.toUpperCase()} • ${r.status.toUpperCase()}`,
+        r.daysWorked,
+        r.totalHours,
+        r.lateCount,
+        r.totalLateMinutes,
+        r.regOtHours,
+        r.sunHolidayOtHours,
+        r.nightDiffHours,
+        r.absences,
+        r.approvedLeaves
+      ]);
+    });
+
+    data.push([]);
+    data.push([
+      'TOTALS',
+      '',
+      '',
+      totDays,
+      parseFloat(totHours.toFixed(1)),
+      totLates,
+      totLateMins,
+      parseFloat(totRegOt.toFixed(1)),
+      parseFloat(totSunOt.toFixed(1)),
+      parseFloat(totNd.toFixed(1)),
+      totAbsences,
+      totLeaves
+    ]);
+
+    const worksheet = XLSX.utils.aoa_to_sheet(data);
+    worksheet['!cols'] = [
+      { wch: 28 },
+      { wch: 16 },
+      { wch: 26 },
+      { wch: 14 },
+      { wch: 18 },
+      { wch: 15 },
+      { wch: 18 },
+      { wch: 14 },
+      { wch: 16 },
+      { wch: 16 },
+      { wch: 20 },
+      { wch: 16 }
+    ];
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Audit Log');
+    XLSX.writeFile(workbook, `technosys_audit_log_${currentPeriod.id}.xlsx`);
+  };
+
+  // Export to CSV with UTF-8 BOM
+  const exportToCSV = () => {
+    const BOM = "\uFEFF";
+    const escapeCSV = (val: any) => `"${String(val ?? '').replace(/"/g, '""')}"`;
+
+    const headers = [
+      "Employee Name",
+      "Role",
+      "Level & Status",
+      "Days Worked",
+      "Total Hours Worked",
+      "Late Incidents",
+      "Total Late Minutes",
+      "Reg OT (Hrs)",
+      "Sun/Hol OT (Hrs)",
+      "Night Diff (Hrs)",
+      "Unexcused Absences",
+      "Approved Leaves"
+    ];
+
+    let totDays = 0, totHours = 0, totLates = 0, totLateMins = 0;
+    let totRegOt = 0, totSunOt = 0, totNd = 0, totAbsences = 0, totLeaves = 0;
+
+    const rows = filteredRecords.map(r => {
+      totDays += r.daysWorked;
+      totHours += r.totalHours;
+      totLates += r.lateCount;
+      totLateMins += r.totalLateMinutes;
+      totRegOt += r.regOtHours;
+      totSunOt += r.sunHolidayOtHours;
+      totNd += r.nightDiffHours;
+      totAbsences += r.absences;
+      totLeaves += r.approvedLeaves;
+
+      return [
+        escapeCSV(r.name),
+        escapeCSV(r.role.toUpperCase()),
+        escapeCSV(`${r.level.toUpperCase()} • ${r.status.toUpperCase()}`),
+        r.daysWorked,
+        r.totalHours,
+        r.lateCount,
+        r.totalLateMinutes,
+        r.regOtHours,
+        r.sunHolidayOtHours,
+        r.nightDiffHours,
+        r.absences,
+        r.approvedLeaves
+      ].join(",");
+    });
+
+    const metadataRows = [
+      escapeCSV("TECHNOCYCLE - DAILY TIME RECORD (DTR)"),
+      `${escapeCSV("Cut-off Period:")},${escapeCSV(currentPeriod.label)}`,
+      `${escapeCSV("Date Range:")},${escapeCSV(`${currentPeriod.startDate} to ${currentPeriod.endDate}`)}`,
+      `${escapeCSV("Generated On:")},${escapeCSV(new Date().toLocaleString())}`,
+      ""
+    ];
+
+    const totalsRow = [
+      escapeCSV("TOTALS"),
+      '""',
+      '""',
+      totDays,
+      totHours.toFixed(1),
+      totLates,
+      totLateMins,
+      totRegOt.toFixed(1),
+      totSunOt.toFixed(1),
+      totNd.toFixed(1),
+      totAbsences,
+      totLeaves
+    ].join(",");
+
+    const csvContent = BOM + metadataRows.join("\n") + headers.map(escapeCSV).join(",") + "\n" + rows.join("\n") + "\n\n" + totalsRow;
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `technosys_audit_log_${currentPeriod.id}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  return (
+    <div className="h-full flex flex-col bg-zinc-50 dark:bg-zinc-950 overflow-hidden">
+      {/* Top Header */}
+      <PageHeader
+        title="DTR &amp; Attendance"
+        subtitle="Days worked, lates, overtime, absences and leaves for each cut-off. Correct a punch from the employee's DTR."
+        icon={FileSpreadsheet}
+        actions={
+          <>
+            <button 
+              onClick={exportToExcel}
+              disabled={loading || filteredRecords.length === 0}
+              className="flex items-center gap-2 px-3.5 py-2 bg-[#4D55CC] hover:bg-[#4338CA] disabled:opacity-50 text-white text-xs font-bold rounded-lg transition-colors shadow-xs cursor-pointer"
+              title="Export formatted Excel spreadsheet (.xlsx)"
+            >
+              <Download className="w-4 h-4" /> Export Excel (.xlsx)
+            </button>
+            <button 
+              onClick={exportToCSV}
+              disabled={loading || filteredRecords.length === 0}
+              className="flex items-center gap-2 px-3.5 py-2 bg-white hover:bg-zinc-50 border border-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 dark:border-zinc-700 disabled:opacity-50 text-zinc-800 dark:text-zinc-100 text-xs font-bold rounded-lg transition-colors shadow-xs cursor-pointer"
+              title="Export formatted CSV file (.csv)"
+            >
+              <Download className="w-4 h-4" /> Export CSV
+            </button>
+          </>
+        }
+      />
+
+      {/* Main Container */}
+      <div className="flex-1 p-6 overflow-hidden flex flex-col">
+        <div className="max-w-7xl mx-auto w-full flex-1 flex flex-col overflow-hidden gap-4">
+
+          {/* 5 KPI Telemetry Cards */}
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3.5 shrink-0">
+            <KpiCard
+              label="Field Crew"
+              value={telemetry.totCrew}
+              icon={Users}
+              subtext="Technicians & Helpers"
+              variant="default"
+            />
+            <KpiCard
+              label="Days Worked"
+              value={`${telemetry.totDays}d`}
+              icon={Clock}
+              subtext={`${telemetry.totHours} net work hours`}
+              variant="blue"
+            />
+            <KpiCard
+              label="Tardiness"
+              value={`${telemetry.totLates}`}
+              icon={AlertTriangle}
+              subtext={`${telemetry.totLateMins} total late mins`}
+              variant="amber"
+            />
+            <KpiCard
+              label="Overtime"
+              value={`${telemetry.totOt}h`}
+              icon={Clock}
+              subtext={`Reg: ${telemetry.totRegOt}h • Sun: ${telemetry.totSunHolOt}h`}
+              variant="emerald"
+            />
+            <KpiCard
+              label="Night Diff"
+              value={`${telemetry.totNd}h`}
+              icon={Moon}
+              subtext={`Absences: ${telemetry.totAbsences} • Leaves: ${telemetry.totLeaves}d`}
+              variant="default"
+            />
+          </div>
+          
+          {/* Controls Bar */}
+          <div className="bg-white dark:bg-zinc-900 p-3.5 rounded-t-xl border border-zinc-200/80 dark:border-zinc-800 border-b-0 flex flex-wrap items-center justify-between gap-3 shrink-0">
+            <div className="flex flex-wrap items-center gap-3">
+              {/* Search */}
+              <div className="relative w-64">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
+                <input 
+                  type="text" 
+                  placeholder="Search staff by name or level..." 
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
+                  className="w-full pl-9 pr-4 py-1.5 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-xs text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium"
+                />
+              </div>
+
+              {/* Kinsenas Period Selector */}
+              <div className="flex items-center gap-1.5 bg-zinc-50 dark:bg-zinc-800 px-2.5 py-1 rounded-lg border border-zinc-200 dark:border-zinc-700">
+                <Calendar className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                <select 
+                  value={selectedPeriodId}
+                  onChange={e => setSelectedPeriodId(e.target.value)}
+                  className="bg-transparent text-xs font-bold text-zinc-800 dark:text-zinc-200 outline-none cursor-pointer"
+                >
+                  {KINSENAS_PERIODS.map(p => (
+                    <option key={p.id} value={p.id} className="bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100">{p.label}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Role Filter */}
+              <div className="flex items-center gap-1.5 bg-zinc-50 dark:bg-zinc-800 px-2.5 py-1 rounded-lg border border-zinc-200 dark:border-zinc-700">
+                <Filter className="w-3.5 h-3.5 text-zinc-500 dark:text-zinc-400" />
+                <select 
+                  value={roleFilter}
+                  onChange={e => setRoleFilter(e.target.value as any)}
+                  className="bg-transparent text-xs font-semibold text-zinc-700 dark:text-zinc-300 outline-none cursor-pointer"
+                >
+                  <option value="all" className="bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100">All Field Staff</option>
+                  <option value="technician" className="bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100">Technicians Only</option>
+                  <option value="helper" className="bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100">Helpers Only</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 text-xs font-semibold shadow-2xs">
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                <span>Attendance Records</span>
+              </div>
+
+              <div className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 hidden md:block">
+                Active Range: <span className="text-blue-600 dark:text-blue-400 font-mono">{currentPeriod.startDate}</span> to <span className="text-blue-600 dark:text-blue-400 font-mono">{currentPeriod.endDate}</span>
+              </div>
+            </div>
+          </div>
+
+                    {/* Main Table - Linear Density & Alignment Standard */}
+          <TableContainer className="border-b-0 rounded-b-none flex-1">
+            <Table fixed={false} className="whitespace-nowrap">
+              <TableHead sticky>
+                <tr>
+                  <TableHeaderCell className="sticky left-0 bg-zinc-50 dark:bg-zinc-800/90 z-10 min-w-[220px]">Employee / Spec</TableHeaderCell>
+                  <TableHeaderCell numeric>Days Worked</TableHeaderCell>
+                  <TableHeaderCell numeric>Tardiness</TableHeaderCell>
+                  <TableHeaderCell numeric>Reg OT</TableHeaderCell>
+                  <TableHeaderCell numeric>Sun/Hol OT</TableHeaderCell>
+                  <TableHeaderCell numeric>Night Diff</TableHeaderCell>
+                  <TableHeaderCell numeric>Absences</TableHeaderCell>
+                  <TableHeaderCell numeric>Leaves</TableHeaderCell>
+                  <TableHeaderCell align="right">Audit</TableHeaderCell>
+                </tr>
+              </TableHead>
+              <TableBody>
+                {loading ? (
+                  <tr>
+                    <td colSpan={9} className="p-12 text-center text-zinc-400 font-medium">
+                      <div className="flex flex-col items-center justify-center gap-2">
+                        <Clock className="w-5 h-5 animate-spin text-zinc-500" />
+                        <span className="text-xs font-medium">Calculating Kinsenas attendance records...</span>
+                      </div>
+                    </td>
+                  </tr>
+                ) : errorMsg ? (
+                  <tr>
+                    <td colSpan={9} className="p-8 text-center text-rose-500 font-semibold bg-rose-50/50 dark:bg-rose-950/20">
+                      <div className="flex flex-col items-center justify-center gap-2.5">
+                        <div className="flex items-center gap-2 text-rose-600 dark:text-rose-400 text-xs">
+                          <AlertCircle className="w-5 h-5 shrink-0" />
+                          <span>{errorMsg}</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => loadAuditData(true)}
+                          className="mt-1 px-3 py-1.5 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-md shadow-none transition-colors flex items-center gap-1.5 cursor-pointer"
+                        >
+                          <RefreshCw className="w-3.5 h-3.5" />
+                          Retry Loading Attendance
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ) : paginatedRecords.length === 0 ? (
+                  <TableEmptyState 
+                    colSpan={9} 
+                    title="No field crew or attendance records found" 
+                    description="No records match your filters for this Kinsenas period." 
+                  />
+                ) : (
+                  paginatedRecords.map((r) => (
+                    <TableRow key={r.id}>
+                      {/* Sticky Employee column */}
+                      <TableCell className="sticky left-0 bg-white dark:bg-zinc-900 z-10">
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-6 h-6 rounded-md flex items-center justify-center text-[10px] font-bold shrink-0 bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200/80 dark:border-zinc-700">
+                            {r.name.slice(0, 2).toUpperCase()}
+                          </div>
+                          <div className="min-w-0">
+                            <div className="font-bold text-zinc-900 dark:text-zinc-100 leading-tight truncate text-[12px]">{r.name}</div>
+                            <div className="flex items-center gap-1.5 mt-0.5">
+                              <MutedBadge>{r.role}</MutedBadge>
+                              <span className="text-[10px] text-zinc-400 font-medium uppercase truncate">
+                                {r.level} &bull; {r.status}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </TableCell>
+
+                      {/* Days Worked (Numeric, Tabular) */}
+                      <TableCell numeric>
+                        <span className="font-bold text-zinc-900 dark:text-zinc-100 text-[12px]">{r.daysWorked}</span>
+                        <span className="text-[11px] text-zinc-400 ml-1 font-mono">({r.totalHours}h)</span>
+                      </TableCell>
+
+                      {/* Tardiness (Numeric, Tabular) */}
+                      <TableCell numeric>
+                        {r.lateCount > 0 ? (
+                          <span className="font-bold text-amber-600 dark:text-amber-400 text-[11px]">
+                            {r.lateCount} <span className="text-zinc-400 font-normal">({r.totalLateMinutes}m)</span>
+                          </span>
+                        ) : (
+                          <span className="text-zinc-300 dark:text-zinc-600 font-mono text-[11px]">0</span>
+                        )}
+                      </TableCell>
+
+                      {/* Regular OT (Numeric, Tabular) */}
+                      <TableCell numeric>
+                        {r.regOtHours > 0 ? (
+                          <span className="font-mono font-bold text-zinc-900 dark:text-zinc-100 text-[11px]">
+                            {r.regOtHours}h
+                          </span>
+                        ) : (
+                          <span className="font-mono text-zinc-300 dark:text-zinc-600 text-[11px]">0.0</span>
+                        )}
+                      </TableCell>
+
+                      {/* Sun/Holiday OT (Numeric, Tabular) */}
+                      <TableCell numeric>
+                        {r.sunHolidayOtHours > 0 ? (
+                          <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400 text-[11px]">
+                            {r.sunHolidayOtHours}h
+                          </span>
+                        ) : (
+                          <span className="font-mono text-zinc-300 dark:text-zinc-600 text-[11px]">0.0</span>
+                        )}
+                      </TableCell>
+
+                      {/* Night Diff (Numeric, Tabular) */}
+                      <TableCell numeric>
+                        {r.nightDiffHours > 0 ? (
+                          <span className="font-mono font-bold text-purple-600 dark:text-purple-400 text-[11px]">
+                            {r.nightDiffHours}h
+                          </span>
+                        ) : (
+                          <span className="font-mono text-zinc-300 dark:text-zinc-600 text-[11px]">0.0</span>
+                        )}
+                      </TableCell>
+
+                      {/* Absences (Numeric, Tabular) */}
+                      <TableCell numeric>
+                        {r.absences > 0 ? (
+                          <span className="font-bold text-rose-600 dark:text-rose-400 text-[11px]">
+                            {r.absences}
+                          </span>
+                        ) : (
+                          <span className="font-mono text-zinc-300 dark:text-zinc-600 text-[11px]">0</span>
+                        )}
+                      </TableCell>
+
+                      {/* Approved Leaves (Numeric, Tabular) */}
+                      <TableCell numeric>
+                        {r.approvedLeaves > 0 ? (
+                          <span className="font-bold text-blue-600 dark:text-blue-400 text-[11px]">
+                            {r.approvedLeaves}d
+                          </span>
+                        ) : (
+                          <span className="font-mono text-zinc-300 dark:text-zinc-600 text-[11px]">0</span>
+                        )}
+                      </TableCell>
+
+                      {/* Action Button: Inspect DTR */}
+                      <TableCell align="right">
+                        <button
+                          onClick={() => setSelectedEmployee(r)}
+                          className="inline-flex items-center gap-1 px-2 py-1 text-[11px] font-semibold text-zinc-700 dark:text-zinc-300 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 border border-zinc-200 dark:border-zinc-700 rounded-md transition-colors shadow-none cursor-pointer"
+                        >
+                          <Eye className="w-3.5 h-3.5 text-zinc-500 dark:text-zinc-400" />
+                          <span>Inspect DTR</span>
+                        </button>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </TableContainer>
+
+          {/* Bottom Pagination Bar */}
+          <div className="rounded-b-xl overflow-hidden border border-zinc-200/80 dark:border-zinc-800 border-t-0 shadow-2xs shrink-0">
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={filteredRecords.length}
+              itemsPerPage={ITEMS_PER_PAGE}
+              onPageChange={setCurrentPage}
+              itemNamePlural="staff"
+            />
+          </div>
+
+        </div>
+      </div>
+
+      {/* 15-Day Kinsenas DTR Inspection Modal */}
+      <ModalDialog
+        isOpen={!!selectedEmployee}
+        onClose={() => setSelectedEmployee(null)}
+        title={selectedEmployee?.name}
+        subtitle={selectedEmployee ? `${selectedEmployee.level || 'Technician'} • ${selectedEmployee.status.toUpperCase()} • Field Operations` : undefined}
+        maxWidth="5xl"
+        headerExtra={
+          <div className="flex items-center gap-2 mr-2">
+            <MutedBadge className="text-[10px] font-mono">
+              {currentPeriod.label}
+            </MutedBadge>
+          </div>
+        }
+        footer={
+          <button
+            type="button"
+            onClick={() => setSelectedEmployee(null)}
+            className="px-3.5 py-1.5 bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-white text-white text-xs font-medium rounded-md transition-colors cursor-pointer"
+          >
+            Done Auditing
+          </button>
+        }
+      >
+        {selectedEmployee && (
+          <div className="flex flex-col space-y-3">
+
+            {/* Modal Mini Telemetry Bar */}
+            <div className="px-6 py-2.5 bg-zinc-50 dark:bg-zinc-950 border-b border-zinc-200/80 dark:border-zinc-800 grid grid-cols-2 sm:grid-cols-6 gap-2 text-center text-xs shrink-0">
+              <div className="bg-white dark:bg-zinc-900 p-2 rounded-lg border border-zinc-200/80 dark:border-zinc-800 shadow-2xs">
+                <span className="text-zinc-500 block text-[10px] uppercase font-semibold">Days Worked</span>
+                <span className="font-bold text-zinc-900 text-sm">{selectedEmployee.daysWorked} <span className="text-xs font-normal text-zinc-500">({selectedEmployee.totalHours}h)</span></span>
+              </div>
+              <div className="bg-white dark:bg-zinc-900 p-2 rounded-lg border border-zinc-200/80 dark:border-zinc-800 shadow-2xs">
+                <span className="text-zinc-500 block text-[10px] uppercase font-semibold">Tardiness</span>
+                <span className="font-bold text-amber-600 text-sm">{selectedEmployee.lateCount} <span className="text-xs font-normal text-zinc-500">({selectedEmployee.totalLateMinutes}m)</span></span>
+              </div>
+              <div className="bg-white dark:bg-zinc-900 p-2 rounded-lg border border-zinc-200/80 dark:border-zinc-800 shadow-2xs">
+                <span className="text-zinc-500 block text-[10px] uppercase font-semibold">Reg OT</span>
+                <span className="font-bold text-emerald-600 text-sm">{selectedEmployee.regOtHours}h</span>
+              </div>
+              <div className="bg-white dark:bg-zinc-900 p-2 rounded-lg border border-zinc-200/80 dark:border-zinc-800 shadow-2xs">
+                <span className="text-zinc-500 block text-[10px] uppercase font-semibold">Sun/Hol OT</span>
+                <span className="font-bold text-emerald-700 text-sm">{selectedEmployee.sunHolidayOtHours}h</span>
+              </div>
+              <div className="bg-white dark:bg-zinc-900 p-2 rounded-lg border border-zinc-200/80 dark:border-zinc-800 shadow-2xs">
+                <span className="text-zinc-500 block text-[10px] uppercase font-semibold">Night Diff</span>
+                <span className="font-bold text-purple-600 text-sm">{selectedEmployee.nightDiffHours}h</span>
+              </div>
+              <div className="bg-white dark:bg-zinc-900 p-2 rounded-lg border border-zinc-200/80 dark:border-zinc-800 shadow-2xs">
+                <span className="text-zinc-500 block text-[10px] uppercase font-semibold">Absences / Leaves</span>
+                <span className="font-bold text-red-600 text-sm">{selectedEmployee.absences} <span className="text-xs font-bold text-blue-600">/ {selectedEmployee.approvedLeaves}d</span></span>
+              </div>
+            </div>
+
+                        {/* Daily Chronological Breakdown Table - Linear Density & Precision Alignment */}
+            <div className="flex-1 overflow-y-auto p-5 [scrollbar-gutter:stable]">
+              <TableContainer className="rounded-lg shadow-none">
+                <Table fixed={true} className="text-xs">
+                  <TableHead sticky>
+                    <tr>
+                      <TableHeaderCell width="10%">Date</TableHeaderCell>
+                      <TableHeaderCell width="11%">Scheduled Shift</TableHeaderCell>
+                      <TableHeaderCell width="13%">Dispatch Site</TableHeaderCell>
+                      <TableHeaderCell width="17%" align="center">Actual In / Out</TableHeaderCell>
+                      <TableHeaderCell width="6%" numeric>Hours</TableHeaderCell>
+                      <TableHeaderCell width="6%" numeric>Late</TableHeaderCell>
+                      <TableHeaderCell width="6%" numeric>Reg OT</TableHeaderCell>
+                      <TableHeaderCell width="6%" numeric>Sun/Hol</TableHeaderCell>
+                      <TableHeaderCell width="5%" numeric>ND</TableHeaderCell>
+                      <TableHeaderCell width="12%">Daily Status</TableHeaderCell>
+                      <TableHeaderCell width="8%" align="right">Audit Action</TableHeaderCell>
+                    </tr>
+                  </TableHead>
+                  <TableBody>
+                    {selectedEmployee.dailyBreakdown.map((day) => (
+                      <TableRow key={day.date} className="h-[32px]">
+                        {/* Date */}
+                        <TableCell className="overflow-hidden truncate">
+                          <span className="font-semibold text-zinc-900 dark:text-zinc-100">{day.date}</span>
+                          <span className={`ml-1 text-[10px] font-bold ${day.isSunday ? 'text-rose-500' : 'text-zinc-400'}`}>
+                            ({day.dayOfWeek})
+                          </span>
+                        </TableCell>
+
+                        {/* Scheduled Shift */}
+                        <TableCell className="text-zinc-600 dark:text-zinc-400 font-medium overflow-hidden truncate">
+                          {day.scheduledStart ? (
+                            <span>{day.scheduledStart} - {day.scheduledEnd || '17:00'}</span>
+                          ) : (
+                            <span className="text-zinc-400 italic">Unscheduled</span>
+                          )}
+                        </TableCell>
+
+                        {/* Dispatch Site */}
+                        <TableCell className="text-zinc-700 dark:text-zinc-300 overflow-hidden truncate">
+                          {day.scheduleClient ? (
+                            <span className="font-medium" title={day.scheduleClient}>{day.scheduleClient}</span>
+                          ) : (
+                            <span className="text-zinc-300 dark:text-zinc-600">-</span>
+                          )}
+                        </TableCell>
+
+                        {/* Actual In / Out - Center Aligned Monospace */}
+                        <TableCell align="center" className="whitespace-nowrap">
+                          {day.actualTimeIn ? (
+                            <div className="font-mono font-bold text-zinc-900 dark:text-zinc-100 flex items-center justify-center gap-1.5 text-[11px]">
+                              <span>{day.actualTimeIn}</span>
+                              <span className="text-zinc-400 font-normal">&rarr;</span>
+                              <span>{day.actualTimeOut || 'Open'}</span>
+                            </div>
+                          ) : (
+                            <span className="text-zinc-300 dark:text-zinc-600 font-mono text-[11px]">-</span>
+                          )}
+                        </TableCell>
+
+                        {/* Hours (Numeric, Tabular) */}
+                        <TableCell numeric className="font-bold text-zinc-800 dark:text-zinc-200">
+                          {day.hoursWorked > 0 ? `${day.hoursWorked}h` : '-'}
+                        </TableCell>
+
+                        {/* Late Mins (Numeric, Tabular) */}
+                        <TableCell numeric>
+                          {day.lateMinutes > 0 ? (
+                            <span className="font-bold text-amber-600 dark:text-amber-400 text-[11px]">
+                              {day.lateMinutes}m
+                            </span>
+                          ) : (
+                            <span className="text-zinc-300 dark:text-zinc-600">-</span>
+                          )}
+                        </TableCell>
+
+                        {/* Reg OT (Numeric, Tabular) */}
+                        <TableCell numeric>
+                          {day.regOtHours > 0 ? (
+                            <span className="font-bold text-zinc-900 dark:text-zinc-100 text-[11px]">
+                              {day.regOtHours}h
+                            </span>
+                          ) : (
+                            <span className="text-zinc-300 dark:text-zinc-600">-</span>
+                          )}
+                        </TableCell>
+
+                        {/* Sun/Hol OT (Numeric, Tabular) */}
+                        <TableCell numeric>
+                          {day.sunHolidayOtHours > 0 ? (
+                            <span className="font-bold text-emerald-600 dark:text-emerald-400 text-[11px]">
+                              {day.sunHolidayOtHours}h
+                            </span>
+                          ) : (
+                            <span className="text-zinc-300 dark:text-zinc-600">-</span>
+                          )}
+                        </TableCell>
+
+                        {/* Night Diff (Numeric, Tabular) */}
+                        <TableCell numeric>
+                          {day.nightDiffHours > 0 ? (
+                            <span className="font-bold text-purple-600 dark:text-purple-400 text-[11px]">
+                              {day.nightDiffHours}h
+                            </span>
+                          ) : (
+                            <span className="text-zinc-300 dark:text-zinc-600">-</span>
+                          )}
+                        </TableCell>
+
+                        {/* Daily Status - StatusDot Implementation (Purging Rainbow Skittles) */}
+                        <TableCell className="overflow-hidden">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            {day.status === 'present' && <StatusDot status="active" label="Present" />}
+                            {day.status === 'late' && <StatusDot status="warning" label={`Late (${day.lateMinutes}m)`} />}
+                            {day.status === 'overtime' && <StatusDot status="info" label="Overtime" />}
+                            {day.status === 'absent' && <StatusDot status="danger" label="Missed" title={day.notes} />}
+                            {day.status === 'approved_leave' && <StatusDot status="info" label={`Leave (${day.leaveType})`} />}
+                            {day.status === 'rest_day' && <StatusDot status="neutral" label="Rest Day" />}
+                            {day.status === 'holiday' && <StatusDot status="info" label="Holiday" title={day.holidayName || ''} />}
+                            {day.status === 'off_duty' && <StatusDot status="neutral" label="Standby" />}
+                            {day.status === 'unclosed' && <StatusDot status="danger" label="Incomplete" />}
+
+                            {day.isMocked && (
+                              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-400 border border-rose-300 dark:border-rose-800 text-[10px] font-bold" title="Spoofed/Mock GPS provider intercepted during punch">
+                                <AlertTriangle className="w-3 h-3 text-rose-600 dark:text-rose-400" />
+                                MOCK GPS
+                              </span>
+                            )}
+
+                            {day.isSuspicious && (
+                              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 border border-amber-300 dark:border-amber-800 text-[10px] font-bold" title="Flagged as suspicious punch (rooted device or clock skew)">
+                                <ShieldAlert className="w-3 h-3 text-amber-600 dark:text-amber-400" />
+                                SUSPICIOUS
+                              </span>
+                            )}
+
+                            {day.hasLeaveCollision && (
+                              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-400 border border-purple-300 dark:border-purple-800 text-[10px] font-bold" title={`Attended shift on approved ${day.leaveType || 'paid'} leave. HR review required.`}>
+                                <Briefcase className="w-3 h-3 text-purple-600 dark:text-purple-400" />
+                                LEAVE CONFLICT
+                              </span>
+                            )}
+
+                            {day.gpsAccuracy && day.gpsAccuracy > 65 && (
+                              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border border-zinc-300 dark:border-zinc-700 text-[10px] font-mono" title={`GPS Accuracy degraded: ±${Math.round(day.gpsAccuracy)}m`}>
+                                ±{Math.round(day.gpsAccuracy)}m
+                              </span>
+                            )}
+
+                            {day.isCorrected && (
+                              <span className="inline-flex items-center gap-1 font-semibold text-amber-700 dark:text-amber-400 text-[10px]" title={day.correctionDetails?.reason}>
+                                <History className="w-3 h-3 text-amber-500" />
+                                Audited
+                              </span>
+                            )}
+                          </div>
+                        </TableCell>
+
+                        {/* Audit Action Buttons */}
+                        <TableCell align="right" className="whitespace-nowrap">
+                          <div className="flex items-center justify-end gap-1">
+                            {day.isCorrected && (
+                              <button
+                                onClick={() => openHistoryModal(selectedEmployee.id, selectedEmployee.name, day.date)}
+                                title="Inspect compliance audit trail for this date"
+                                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-800 text-[10px] font-semibold hover:bg-amber-100 dark:hover:bg-amber-900/60 transition-colors cursor-pointer shadow-none"
+                              >
+                                <History className="w-3 h-3 text-amber-600 dark:text-amber-400" />
+                                Trail
+                              </button>
+                            )}
+                            <button
+                              onClick={() => openCorrectionModal(selectedEmployee, day)}
+                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold transition-colors shadow-none bg-blue-50 dark:bg-blue-950/50 hover:bg-blue-100 dark:hover:bg-blue-900/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 cursor-pointer"
+                            >
+                              <Edit3 className="w-3 h-3" />
+                              {day.actualTimeIn ? 'Correct' : 'Add Shift'}
+                            </button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            </div>
+          </div>
+        )}
+      </ModalDialog>
+
+      {/* Floating Success Toast Banner */}
+      {toastMessage && (
+        <div className="fixed bottom-6 right-6 z-50 bg-emerald-900 text-white px-5 py-3 rounded-xl shadow-2xl border border-emerald-700 flex items-center gap-2.5 text-xs font-bold animate-in slide-in-from-bottom-5">
+          <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+          <span>{toastMessage}</span>
+        </div>
+      )}
+
+      {/* Punch Correction Modal */}
+      <ModalDialog
+        isOpen={!!editingDay}
+        onClose={() => setEditingDay(null)}
+        title="DTR Punch Correction"
+        subtitle={editingDay ? `${editingDay.employee.name} • ${editingDay.day.date} (${editingDay.day.dayOfWeek})` : undefined}
+        icon={Clock}
+        iconVariant="blue"
+        maxWidth="lg"
+        footer={
+          <div className="flex items-center justify-end gap-2 w-full">
+            <button
+              type="button"
+              onClick={() => setEditingDay(null)}
+              disabled={savingCorrection}
+              className="px-3 py-1.5 border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 rounded-md font-medium hover:bg-zinc-50 dark:hover:bg-zinc-700/60 disabled:opacity-50 text-xs transition-colors cursor-pointer"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={handleSaveCorrection}
+              disabled={savingCorrection || editReason.trim().length < 10 || !correctionPreview}
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-white text-white font-medium rounded-md text-xs transition-colors shadow-xs disabled:opacity-50 cursor-pointer"
+            >
+              {savingCorrection ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  Recording Audit...
+                </>
+              ) : (
+                <>
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  Save Auditable Correction
+                </>
+              )}
+            </button>
+          </div>
+        }
+      >
+        {editingDay && (
+          <div className="space-y-4 text-xs">
+            {/* Compliance Warning */}
+            <div className="p-3 bg-zinc-50/80 dark:bg-zinc-800/40 border border-zinc-200/80 dark:border-zinc-700/80 rounded-lg text-zinc-700 dark:text-zinc-300 flex items-start gap-2.5">
+              <ShieldAlert className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+              <div className="leading-relaxed text-[11px]">
+                <span className="font-semibold text-zinc-900 dark:text-zinc-100">DOLE Audit Requirement:</span> All punch modifications are permanently logged into the compliance register under your administrator credentials. Raw punch history is preserved.
+              </div>
+            </div>
+
+              {/* Input Fields */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-zinc-700 font-semibold mb-1">Time In (PST / UTC+8)</label>
+                  <input
+                    type="time"
+                    value={editTimeIn}
+                    onChange={(e) => setEditTimeIn(e.target.value)}
+                    className="w-full px-3 py-2 border border-zinc-200 rounded-lg font-mono text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-zinc-700 font-semibold mb-1">Time Out (PST / UTC+8)</label>
+                  <input
+                    type="time"
+                    value={editTimeOut}
+                    onChange={(e) => setEditTimeOut(e.target.value)}
+                    className="w-full px-3 py-2 border border-zinc-200 rounded-lg font-mono text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+              </div>
+
+              {/* Next Day Toggle */}
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="isNextDay"
+                  checked={isNextDay}
+                  onChange={(e) => setIsNextDay(e.target.checked)}
+                  className="w-4 h-4 text-blue-600 rounded border-zinc-300 focus:ring-blue-500 cursor-pointer"
+                />
+                <label htmlFor="isNextDay" className="text-zinc-700 font-medium cursor-pointer">
+                  Shift crosses midnight (Clock-out occurs on the following day)
+                </label>
+              </div>
+
+              {/* Real-time Math Preview Card */}
+              {correctionPreview ? (
+                <div className="bg-zinc-50 border border-zinc-200 rounded-xl p-3.5 space-y-2">
+                  <div className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500 flex items-center gap-1.5">
+                    <Calculator className="w-3.5 h-3.5 text-blue-600" />
+                    DOLE Kinsenas Computation Breakdown
+                  </div>
+                  <div className="grid grid-cols-4 gap-2 text-center">
+                    <div className="bg-white p-2 rounded-lg border border-zinc-200">
+                      <span className="text-[10px] text-zinc-400 block font-semibold">Net Hours</span>
+                      <span className="font-bold text-zinc-900 text-xs">{correctionPreview.netHours}h</span>
+                      {correctionPreview.mealBreakDeducted && (
+                        <span className="text-[9px] text-zinc-400 block">-1h meal break</span>
+                      )}
+                    </div>
+                    <div className="bg-white p-2 rounded-lg border border-zinc-200">
+                      <span className="text-[10px] text-zinc-400 block font-semibold">Late</span>
+                      <span className={`font-bold text-xs ${correctionPreview.lateMins > 0 ? 'text-amber-600' : 'text-zinc-400'}`}>
+                        {correctionPreview.lateMins}m
+                      </span>
+                    </div>
+                    <div className="bg-white p-2 rounded-lg border border-zinc-200">
+                      <span className="text-[10px] text-zinc-400 block font-semibold">Reg OT</span>
+                      <span className={`font-bold text-xs ${Number(correctionPreview.regOt) > 0 ? 'text-emerald-600' : 'text-zinc-400'}`}>
+                        {correctionPreview.regOt}h
+                      </span>
+                    </div>
+                    <div className="bg-white p-2 rounded-lg border border-zinc-200">
+                      <span className="text-[10px] text-zinc-400 block font-semibold">Sun/Hol OT</span>
+                      <span className={`font-bold text-xs ${Number(correctionPreview.sunHolOt) > 0 ? 'text-emerald-700' : 'text-zinc-400'}`}>
+                        {correctionPreview.sunHolOt}h
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="bg-rose-50 border border-rose-200 text-rose-700 p-2.5 rounded-lg text-xs font-semibold">
+                  Invalid shift range: Clock-out must be after clock-in.
+                </div>
+              )}
+
+              {/* Mandatory Rationale */}
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="font-semibold text-zinc-700">Audit Rationale & Rationale Notes *</label>
+                  <span className={`text-[10px] font-mono ${editReason.trim().length >= 10 ? 'text-emerald-600 font-bold' : 'text-zinc-400'}`}>
+                    {editReason.trim().length} / 10 characters minimum
+                  </span>
+                </div>
+                <textarea
+                  rows={3}
+                  value={editReason}
+                  onChange={(e) => setEditReason(e.target.value)}
+                  placeholder="e.g., Technician completed off-grid field emergency at Makati Med; device battery depleted during sign-off. Verified with coordinator dispatch log."
+                  className="w-full px-3 py-2 border border-zinc-200 rounded-lg text-xs leading-relaxed focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+
+              {correctionError && (
+                <div className="p-2.5 bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-800/40 rounded-lg text-rose-700 dark:text-rose-400 text-xs flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 shrink-0" />
+                  <span>{correctionError}</span>
+                </div>
+              )}
+            </div>
+        )}
+      </ModalDialog>
+
+      {/* History Inspector Modal */}
+      <ModalDialog
+        isOpen={Boolean(viewingHistoryTech)}
+        onClose={() => setViewingHistoryTech(null)}
+        title="Audit Correction Trail"
+        subtitle={viewingHistoryTech ? `${viewingHistoryTech.employeeName} • ${viewingHistoryTech.targetDate}` : undefined}
+        icon={History}
+        iconVariant="blue"
+        maxWidth="md"
+        contentHeight="max-h-[80vh]"
+        footer={
+          <div className="flex items-center justify-end w-full">
+            <button
+              type="button"
+              onClick={() => setViewingHistoryTech(null)}
+              className="px-3.5 py-1.5 border border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 rounded-lg text-xs font-semibold hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+            >
+              Close Trail
+            </button>
+          </div>
+        }
+      >
+        <div className="space-y-3 text-xs">
+          {loadingHistory ? (
+            <div className="p-8 text-center text-zinc-400">Loading audit history...</div>
+          ) : historyRecords.length === 0 ? (
+            <div className="p-8 text-center text-zinc-400">No correction history found for this date.</div>
+          ) : (
+            historyRecords.map((h) => (
+              <div key={h.id} className="p-3 bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-700/80 rounded-xl space-y-1.5">
+                <div className="flex items-center justify-between text-[11px]">
+                  <span className="font-semibold text-zinc-900 dark:text-zinc-100">{h.actor_name} ({h.actor_role.toUpperCase()})</span>
+                  <span className="text-[10px] text-zinc-400 font-mono">
+                    {new Date(h.created_at).toLocaleString('en-US', { timeZone: 'Asia/Manila' })}
+                  </span>
+                </div>
+                <div className="text-zinc-700 dark:text-zinc-300 font-mono text-[11px] bg-white dark:bg-zinc-900 p-2 rounded-lg border border-zinc-200 dark:border-zinc-800">
+                  {h.original_time_in ? (
+                    <div>
+                      <span className="text-zinc-400">Original:</span> {new Date(h.original_time_in).toLocaleTimeString('en-US', { timeZone: 'Asia/Manila', hour: '2-digit', minute: '2-digit' })} &rarr; {h.original_time_out ? new Date(h.original_time_out).toLocaleTimeString('en-US', { timeZone: 'Asia/Manila', hour: '2-digit', minute: '2-digit' }) : 'Open'}
+                    </div>
+                  ) : (
+                    <div className="text-zinc-400 italic">Original: No mobile punch recorded</div>
+                  )}
+                  <div className="text-blue-600 dark:text-blue-400 font-semibold">
+                    <span className="text-zinc-400 font-normal">Corrected:</span> {new Date(h.corrected_time_in).toLocaleTimeString('en-US', { timeZone: 'Asia/Manila', hour: '2-digit', minute: '2-digit' })} &rarr; {new Date(h.corrected_time_out).toLocaleTimeString('en-US', { timeZone: 'Asia/Manila', hour: '2-digit', minute: '2-digit' })}
+                  </div>
+                </div>
+                <div className="text-zinc-600 dark:text-zinc-400 text-[11px] italic bg-amber-50/50 dark:bg-amber-950/20 p-2 rounded-lg border border-amber-200/50 dark:border-amber-800/30">
+                  "{h.reason}"
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </ModalDialog>
+
+    </div>
+  );
+}

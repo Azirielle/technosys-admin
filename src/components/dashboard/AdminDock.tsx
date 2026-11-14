@@ -52,7 +52,7 @@ export type NavItem = {
   isOverride?: boolean
 }
 
-export type AdminRole = 'ceo' | 'hr' | 'coordinator' | 'accountant'
+export type AdminRole = 'ceo' | 'hr' | 'coordinator'
 
 const ICON_MAP: Record<string, LucideIcon> = {
   Home,
@@ -85,33 +85,25 @@ const ROLE_DEFAULTS: Record<
     rootHref: '/ceo',
     portalTitle: 'TechnoCycle',
     portalSubtitle: 'Executive Portal',
-    defaultName: 'Carlos Rivera',
+    defaultName: 'Carlos Mendoza',
     defaultTitle: 'Chief Executive Officer',
-    defaultInitials: 'CR',
+    defaultInitials: 'CM',
   },
   hr: {
-    rootHref: '/hr/leaves',
+    rootHref: '/hr',
     portalTitle: 'TechnoCycle',
     portalSubtitle: 'HR Department',
-    defaultName: 'Helena Vance',
-    defaultTitle: 'Lead HR Officer',
-    defaultInitials: 'HR',
+    defaultName: 'Helena Garcia',
+    defaultTitle: 'HR Officer',
+    defaultInitials: 'HG',
   },
   coordinator: {
     rootHref: '/coordinator',
     portalTitle: 'TechnoCycle',
-    portalSubtitle: 'Field Operations',
-    defaultName: 'Aileen Cruz',
-    defaultTitle: 'Operations Dispatcher',
-    defaultInitials: 'AC',
-  },
-  accountant: {
-    rootHref: '/accountant',
-    portalTitle: 'TechnoCycle',
-    portalSubtitle: 'Finance & Audit',
-    defaultName: 'Alicia Rivera',
-    defaultTitle: 'Senior Financial Analyst',
-    defaultInitials: 'AA',
+    portalSubtitle: 'Service Dept',
+    defaultName: 'Aileen Bautista',
+    defaultTitle: 'Service Coordinator',
+    defaultInitials: 'AB',
   },
 }
 
@@ -222,7 +214,7 @@ export function AdminDock({
 
             setActiveProfile({
               name: profile.full_name,
-              title: profile.role?.toUpperCase() || roleMeta.defaultTitle,
+              title: roleMeta.defaultTitle,
               initials: derivedInitials,
             })
           }
@@ -292,7 +284,7 @@ export function AdminDock({
 
   const isItemActive = (href: string) => {
     if (pathname === href) return true
-    if (href !== '/ceo' && href !== '/coordinator' && href !== '/accountant' && href !== '/hr') {
+    if (href !== '/ceo' && href !== '/coordinator' && href !== '/hr') {
       return pathname.startsWith(href)
     }
     return false
@@ -367,7 +359,7 @@ export function AdminDock({
             >
               <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 transition-transform duration-250 group-hover/dock:scale-105">
                 <Image
-                  src={isDark ? '/technocycle_logo_dark_cutout.png' : '/technocycle_logo_cutout.png'}
+                  src={isDark ? '/technocycle-logo-dark.png' : '/technocycle-logo-light.png'}
                   alt="TechnoCycle Logo"
                   width={36}
                   height={36}

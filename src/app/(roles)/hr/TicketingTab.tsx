@@ -267,7 +267,7 @@ export function TicketingTab() {
       ticket_id: selectedTicket.id,
       content: 'An HR Administrator has taken over the chat. The AI assistant has been disabled.',
       sender_role: 'system',
-      author_id: user?.id,
+      author_id: user?.id as string,
     })
 
     await supabase.channel('system-updates').send({
@@ -411,7 +411,7 @@ export function TicketingTab() {
 
     const commentData = {
       ticket_id: selectedTicket.id,
-      author_id: user?.id,
+      author_id: user?.id as string,
       content: commentContent,
       sender_role: 'admin',
       attachment_url: uploadedUrl,
@@ -481,7 +481,7 @@ export function TicketingTab() {
       .from('ticket_comments')
       .insert({
         ticket_id: selectedTicket.id,
-        author_id: user?.id,
+        author_id: user?.id as string,
         content: decisionCard,
         sender_role: 'admin',
       })
@@ -1046,7 +1046,7 @@ export function TicketingTab() {
                 onChange={(e) => setDecisionModal((prev) => ({ ...prev, remarks: e.target.value }))}
                 placeholder={
                   decisionModal.type === 'resolve'
-                    ? 'e.g. Issue resolved. Updated payroll ledger and cleared discrepancy.'
+                    ? 'e.g. Issue resolved. Corrected the attendance record and cleared the discrepancy.'
                     : 'e.g. Inquiry addressed or duplicate submission.'
                 }
                 className="w-full p-3 rounded-xl bg-[#F5F4F7] dark:bg-[#16171E] border border-black/[0.08] dark:border-white/[0.1] text-xs text-[#121215] dark:text-[#F4F4F6] placeholder-[#8E8D9A] focus:outline-hidden focus:ring-2 focus:ring-[#4D55CC]"

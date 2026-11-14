@@ -83,7 +83,7 @@ export default function LiveMapWrapper({ locations, selectedTechId }: LiveMapWra
   };
 
   // Default center if no locations: Metro Manila coordinates
-  const defaultCenter: [number, number] = [14.5995, 120.9842];
+  const defaultCenter: [number, number] = [14.3439, 121.0617]; // Pacita HQ
   
   // Calculate bounds to fit all markers if locations exist
   const bounds = locations.length > 0 && !selectedTechId

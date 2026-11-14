@@ -1,4 +1,4 @@
-export type RoleKey = 'accountant' | 'coordinator' | 'hr';
+export type RoleKey = 'coordinator' | 'hr';
 
 export type SystemModule = {
   id: string;
@@ -16,7 +16,7 @@ export const SYSTEM_MODULES: SystemModule[] = [
     name: 'Tickets & Leaves',
     department: 'HR Department',
     description: 'Manage employee disputes, ticket resolutions, and leave approvals.',
-    href: '/hr',
+    href: '/hr/tickets',
     iconName: 'Ticket',
     defaultRoles: ['hr'],
   },
@@ -30,26 +30,26 @@ export const SYSTEM_MODULES: SystemModule[] = [
     defaultRoles: ['hr'],
   },
   {
-    id: 'accountant_audit',
-    name: 'Audit Logs',
-    department: 'Accountant',
-    description: 'Payroll audit logs, salary calculations, OT, and Excel/CSV exports.',
-    href: '/accountant',
+    id: 'hr_dtr',
+    name: 'DTR & Attendance',
+    department: 'HR Department',
+    description: 'Daily time records per cut-off: hours, lates, overtime, absences, corrections and Excel/CSV export.',
+    href: '/hr/audit',
     iconName: 'FileSpreadsheet',
-    defaultRoles: ['accountant'],
+    defaultRoles: ['hr'],
   },
   {
     id: 'coordinator_dispatch',
     name: 'Dispatch & Scheduling',
     department: 'Field Operations',
     description: 'Create dispatches, geocode addresses, and assign technician teams.',
-    href: '/coordinator',
+    href: '/coordinator/dispatch',
     iconName: 'Calendar',
     defaultRoles: ['coordinator'],
   },
   {
     id: 'coordinator_tracking',
-    name: 'Fleet Tracking',
+    name: 'Live Map',
     department: 'Field Operations',
     description: 'Fleet GPS location tracking, technician map spotlighting, and field status.',
     href: '/coordinator/tracking',
@@ -102,7 +102,7 @@ const STORAGE_META_KEY = 'technosys_system_overrides_metadata';
 
 export function getSystemOverrides(): OverrideMap {
   if (typeof window === 'undefined') {
-    return { accountant: [], coordinator: [], hr: [] };
+    return { coordinator: [], hr: [] };
   }
 
   try {
@@ -113,7 +113,7 @@ export function getSystemOverrides(): OverrideMap {
       const meta: OverrideMetadataMap = rawMeta ? JSON.parse(rawMeta) : ({} as any);
       
       // Filter out expired overrides on the fly
-      const filtered: OverrideMap = { accountant: [], coordinator: [], hr: [] };
+      const filtered: OverrideMap = { coordinator: [], hr: [] };
       (Object.keys(overrides) as RoleKey[]).forEach(role => {
         filtered[role] = (overrides[role] || []).filter(modId => {
           const item = meta[role]?.[modId];
@@ -126,12 +126,12 @@ export function getSystemOverrides(): OverrideMap {
     console.error('Failed to parse system overrides:', e);
   }
 
-  return { accountant: [], coordinator: [], hr: [] };
+  return { coordinator: [], hr: [] };
 }
 
 export function getSystemOverridesMetadata(): OverrideMetadataMap {
   if (typeof window === 'undefined') {
-    return { accountant: {}, coordinator: {}, hr: {} };
+    return { coordinator: {}, hr: {} };
   }
 
   try {
@@ -143,7 +143,7 @@ export function getSystemOverridesMetadata(): OverrideMetadataMap {
     console.error('Failed to parse system overrides metadata:', e);
   }
 
-  return { accountant: {}, coordinator: {}, hr: {} };
+  return { coordinator: {}, hr: {} };
 }
 
 export function saveSystemOverrides(overrides: OverrideMap, metadata?: OverrideMetadataMap): void {
@@ -165,22 +165,22 @@ export function saveSystemOverrides(overrides: OverrideMap, metadata?: OverrideM
  */
 export async function fetchRemoteOverrides(): Promise<{ overrides: OverrideMap; metadata: OverrideMetadataMap }> {
   if (typeof window === 'undefined') {
-    return { overrides: { accountant: [], coordinator: [], hr: [] }, metadata: { accountant: {}, coordinator: {}, hr: {} } };
+    return { overrides: { coordinator: [], hr: [] }, metadata: { coordinator: {}, hr: {} } };
   }
 
   try {
     const { createClient } = await import('@/lib/supabase/client');
     const supabase = createClient();
     const { data, error } = await supabase
-      .from('system_overrides')
+      .from('role_access')
       .select('role_key, granted_modules, override_metadata');
 
     if (!error && data) {
-      const map: OverrideMap = { accountant: [], coordinator: [], hr: [] };
-      const metaMap: OverrideMetadataMap = { accountant: {}, coordinator: {}, hr: {} };
+      const map: OverrideMap = { coordinator: [], hr: [] };
+      const metaMap: OverrideMetadataMap = { coordinator: {}, hr: {} };
 
       data.forEach((row: { role_key: string; granted_modules: string[]; override_metadata?: any }) => {
-        if (row.role_key === 'accountant' || row.role_key === 'coordinator' || row.role_key === 'hr') {
+        if (row.role_key === 'coordinator' || row.role_key === 'hr') {
           const role = row.role_key as RoleKey;
           const rawList = Array.isArray(row.granted_modules) ? row.granted_modules : [];
           const roleMeta = row.override_metadata || {};
@@ -222,7 +222,7 @@ export function subscribeToOverrideChanges(onUpdate?: (overrides: OverrideMap, m
         .channel(channelName)
         .on(
           'postgres_changes',
-          { event: '*', schema: 'public', table: 'system_overrides' },
+          { event: '*', schema: 'public', table: 'role_access' },
           async () => {
             const fresh = await fetchRemoteOverrides();
             if (onUpdate) onUpdate(fresh.overrides, fresh.metadata);
@@ -259,13 +259,13 @@ export function getModuleHref(modId: string, role: RoleKey): string {
     case 'hr_files':
       return role === 'hr' ? '/hr/files' : `/${role}/files`;
     case 'hr_tickets':
-      return role === 'hr' ? '/hr' : `/${role}/tickets`;
-    case 'accountant_audit':
-      return role === 'accountant' ? '/accountant' : `/${role}/audit`;
+      return `/${role}/tickets`;
+    case 'hr_dtr':
+      return `/${role}/audit`;
     case 'coordinator_tracking':
       return role === 'coordinator' ? '/coordinator/tracking' : `/${role}/tracking`;
     case 'coordinator_dispatch':
-      return role === 'coordinator' ? '/coordinator' : `/${role}/dispatch`;
+      return `/${role}/dispatch`;
     case 'coordinator_inventory':
       return role === 'coordinator' ? '/coordinator/inventory' : `/${role}/inventory`;
     default:

@@ -34,7 +34,7 @@ export function LoginForm() {
               autoComplete="username"
               spellCheck={false}
               required
-              placeholder="e.g. CEO, hr@technocycle.ph"
+              placeholder="e.g. ceo, hr or coordinator"
               className="block w-full rounded-xl border-0 py-2.5 pl-10 pr-3 text-sm text-white placeholder:text-slate-500 focus:outline-none bg-transparent font-medium"
             />
           </div>

@@ -48,7 +48,6 @@ export interface EmployeeAuditSummary {
   role: 'technician' | 'helper';
   level: string;
   status: string;
-  base_salary: number;
   branch_id?: string | null;
   daysWorked: number;
   totalHours: number;
@@ -62,7 +61,7 @@ export interface EmployeeAuditSummary {
   dailyBreakdown: DailyAuditRecord[];
 }
 
-export interface AuditPayrollResult {
+export interface DtrResult {
   success: boolean;
   periodLabel: string;
   startDate: string;
@@ -148,11 +147,11 @@ function getDatesInRange(startDateStr: string, endDateStr: string): string[] {
   return dates;
 }
 
-export async function getAuditPayrollRecords(
+export async function getDtrRecords(
   startDate: string,
   endDate: string,
   roleFilter: 'all' | 'technician' | 'helper' = 'all'
-): Promise<AuditPayrollResult> {
+): Promise<DtrResult> {
   try {
     const { authorized } = await verifyRoleAccess('attendance', false);
     if (!authorized) {
@@ -175,7 +174,7 @@ export async function getAuditPayrollRecords(
     // 2. Fetch Profiles (technicians and helpers)
     let profileQuery = supabaseAdmin
       .from('profiles')
-      .select('id, full_name, role, technician_level, employment_status, base_salary, branch_id')
+      .select('id, full_name, role, technician_level, employment_status, branch_id')
       .in('role', roleFilter === 'all' ? ['technician', 'helper'] : [roleFilter])
       .order('full_name');
 
@@ -199,7 +198,7 @@ export async function getAuditPayrollRecords(
 
     // 3. Batch Fetch Time Logs for the period
     const { data: timeLogs, error: logsErr } = await supabaseAdmin
-      .from('time_logs')
+      .from('attendance_logs')
       .select('id, technician_id, app_time_in, app_time_out, total_hours, status, is_manual_entry, is_mocked, gps_accuracy, is_suspicious')
       .in('technician_id', profileIds)
       .gte('app_time_in', utcStart)
@@ -243,7 +242,7 @@ export async function getAuditPayrollRecords(
 
     // 7. Batch Fetch DTR Corrections in Range
     const { data: corrections } = await supabaseAdmin
-      .from('time_log_corrections')
+      .from('attendance_corrections')
       .select('id, time_log_id, technician_id, target_date, reason, actor_role, created_at')
       .in('technician_id', profileIds)
       .gte('target_date', startDate)
@@ -593,7 +592,6 @@ export async function getAuditPayrollRecords(
         role: profile.role as 'technician' | 'helper',
         level: profile.technician_level || (profile.role === 'helper' ? 'Helper' : 'Technician'),
         status: profile.employment_status || 'regular',
-        base_salary: Number(profile.base_salary || 0),
         branch_id: profile.branch_id,
         daysWorked,
         totalHours: parseFloat(totalHours.toFixed(1)),
@@ -616,14 +614,14 @@ export async function getAuditPayrollRecords(
       records: aggregatedSummaries,
     };
   } catch (err: any) {
-    console.error('getAuditPayrollRecords error:', err);
+    console.error('getDtrRecords error:', err);
     return {
       success: false,
       periodLabel: '',
       startDate,
       endDate,
       records: [],
-      error: err.message || 'Failed to aggregate audit payroll records',
+      error: err.message || 'Failed to load DTR records',
     };
   }
 }

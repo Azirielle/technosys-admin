@@ -19,33 +19,31 @@ export async function getPersistentOverrides(): Promise<{
   try {
     const supabase = await createClient()
     const { data, error } = await supabase
-      .from('system_overrides')
+      .from('role_access')
       .select('role_key, granted_modules, override_metadata')
 
     if (error) {
       console.error("[SYSTEM_OVERRIDES_FETCH_ERROR]:", error.message)
       return {
         success: false,
-        overrides: { accountant: [], coordinator: [], hr: [] },
-        metadata: { accountant: {}, coordinator: {}, hr: {} },
+        overrides: { coordinator: [], hr: [] },
+        metadata: { coordinator: {}, hr: {} },
         error: error.message
       }
     }
 
     const map: OverrideMap = {
-      accountant: [],
       coordinator: [],
       hr: []
     }
     const metaMap: OverrideMetadataMap = {
-      accountant: {},
       coordinator: {},
       hr: {}
     }
 
     if (data) {
       data.forEach((row: any) => {
-        if (row.role_key === 'accountant' || row.role_key === 'coordinator' || row.role_key === 'hr') {
+        if (row.role_key === 'coordinator' || row.role_key === 'hr') {
           const role = row.role_key as RoleKey
           const rawModules = Array.isArray(row.granted_modules) ? row.granted_modules : []
           const meta = row.override_metadata || {}
@@ -64,8 +62,8 @@ export async function getPersistentOverrides(): Promise<{
     console.error("[SYSTEM_OVERRIDES_EXCEPTION]:", err.message)
     return {
       success: false,
-      overrides: { accountant: [], coordinator: [], hr: [] },
-      metadata: { accountant: {}, coordinator: {}, hr: {} },
+      overrides: { coordinator: [], hr: [] },
+      metadata: { coordinator: {}, hr: {} },
       error: err.message
     }
   }
@@ -85,12 +83,12 @@ export async function updatePersistentOverride(
     if (!user) return { success: false, error: "Not authenticated" }
 
     const { authorized, role } = await verifyRoleAccess('settings', true)
-    if (!authorized || (role !== 'ceo' && role !== 'super_admin')) {
-      return { success: false, error: "Unauthorized. Strictly CEO or Super Admin can modify system overrides." }
+    if (!authorized || role !== 'ceo') {
+      return { success: false, error: "Unauthorized. Only the CEO can modify system overrides." }
     }
 
     const { error } = await supabaseAdmin
-      .from('system_overrides')
+      .from('role_access')
       .upsert({
         role_key: roleKey,
         granted_modules: grantedModules,
@@ -104,11 +102,9 @@ export async function updatePersistentOverride(
     // Record auditable change in activity_logs
     try {
       const roleDisplay: Record<string, string> = {
-        accountant: 'Accountant',
         coordinator: 'Field Operations',
         hr: 'HR Department',
-        ceo: 'CEO',
-        super_admin: 'Super Admin'
+        ceo: 'CEO'
       }
       const roleLabel = roleDisplay[roleKey] || roleKey
       const friendlyModules = grantedModules.map(m => {
@@ -143,8 +139,7 @@ export async function updatePersistentOverride(
     // Revalidate paths for all affected roles
     revalidatePath('/ceo')
     revalidatePath('/ceo/activities')
-    revalidatePath('/accountant')
-    revalidatePath('/coordinator')
+    revalidatePath('/coordinator', 'layout')
     revalidatePath('/hr')
 
     return { success: true }
@@ -164,8 +159,8 @@ export async function grantAllPersistentOverrides(): Promise<{ success: boolean;
     if (!user) return { success: false, error: "Not authenticated" }
 
     const { authorized, role } = await verifyRoleAccess('settings', true)
-    if (!authorized || (role !== 'ceo' && role !== 'super_admin')) {
-      return { success: false, error: "Unauthorized. Strictly CEO or Super Admin can modify system overrides." }
+    if (!authorized || role !== 'ceo') {
+      return { success: false, error: "Unauthorized. Only the CEO can modify system overrides." }
     }
 
     const allModuleIds = SYSTEM_MODULES.map(m => m.id)
@@ -179,11 +174,11 @@ export async function grantAllPersistentOverrides(): Promise<{ success: boolean;
       }
     })
 
-    const roles: RoleKey[] = ['accountant', 'coordinator', 'hr']
+    const roles: RoleKey[] = ['coordinator', 'hr']
 
     for (const r of roles) {
       const { error } = await supabaseAdmin
-        .from('system_overrides')
+        .from('role_access')
         .upsert({
           role_key: r,
           granted_modules: allModuleIds,
@@ -207,8 +202,7 @@ export async function grantAllPersistentOverrides(): Promise<{ success: boolean;
 
     revalidatePath('/ceo')
     revalidatePath('/ceo/activities')
-    revalidatePath('/accountant')
-    revalidatePath('/coordinator')
+    revalidatePath('/coordinator', 'layout')
     revalidatePath('/hr')
 
     return { success: true }
@@ -227,15 +221,15 @@ export async function resetAllPersistentOverrides(): Promise<{ success: boolean;
     if (!user) return { success: false, error: "Not authenticated" }
 
     const { authorized, role } = await verifyRoleAccess('settings', true)
-    if (!authorized || (role !== 'ceo' && role !== 'super_admin')) {
-      return { success: false, error: "Unauthorized. Strictly CEO or Super Admin can modify system overrides." }
+    if (!authorized || role !== 'ceo') {
+      return { success: false, error: "Unauthorized. Only the CEO can modify system overrides." }
     }
 
-    const roles: RoleKey[] = ['accountant', 'coordinator', 'hr']
+    const roles: RoleKey[] = ['coordinator', 'hr']
 
     for (const r of roles) {
       const { error } = await supabaseAdmin
-        .from('system_overrides')
+        .from('role_access')
         .upsert({
           role_key: r,
           granted_modules: [],
@@ -259,8 +253,7 @@ export async function resetAllPersistentOverrides(): Promise<{ success: boolean;
 
     revalidatePath('/ceo')
     revalidatePath('/ceo/activities')
-    revalidatePath('/accountant')
-    revalidatePath('/coordinator')
+    revalidatePath('/coordinator', 'layout')
     revalidatePath('/hr')
 
     return { success: true }

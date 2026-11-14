@@ -29,34 +29,22 @@ import ModalDialog from '@/components/ui/ModalDialog'
 // Known Department Heads & Staff Profiles
 const RECIPIENT_DIRECTORY: Record<string, { name: string; title: string; dept: string; avatar: string }> = {
   hr: {
-    name: 'Helena Vance',
-    title: 'Lead HR Officer',
+    name: 'Helena Garcia',
+    title: 'HR Officer',
     dept: 'HR Department',
-    avatar: 'HV',
+    avatar: 'HG',
   },
   coordinator: {
-    name: 'Aileen Cruz',
-    title: 'Operations Dispatcher',
+    name: 'Aileen Bautista',
+    title: 'Service Coordinator',
     dept: 'Service Dept',
-    avatar: 'AC',
-  },
-  accountant: {
-    name: 'Alicia Rivera',
-    title: 'Senior Financial Analyst',
-    dept: 'Accounting',
-    avatar: 'AR',
+    avatar: 'AB',
   },
   ceo: {
-    name: 'Carlos Rivera',
+    name: 'Carlos Mendoza',
     title: 'Chief Executive Officer',
     dept: 'Executive Office',
-    avatar: 'CR',
-  },
-  super_admin: {
-    name: 'TechnoSys Admin',
-    title: 'System Administrator',
-    dept: 'System Administration',
-    avatar: 'TA',
+    avatar: 'CM',
   },
 }
 
@@ -65,7 +53,7 @@ const PERMISSION_FRIENDLY_NAMES: Record<string, { label: string; dept: string }>
   coordinator_tracking: { label: 'Fleet GPS Tracking', dept: 'Service Dept' },
   coordinator_dispatch: { label: 'Dispatch & Scheduling', dept: 'Service Dept' },
   coordinator_inventory: { label: 'Inventory & Assets', dept: 'Service Dept' },
-  accountant_audit: { label: 'Audit & Transaction Records', dept: 'Accounting' },
+  hr_dtr: { label: 'DTR & Attendance', dept: 'HR Department' },
   hr_tickets: { label: 'Tickets & Leave Requests', dept: 'HR Department' },
   hr_files: { label: 'Personnel 201 Records', dept: 'HR Department' },
   system_overrides: { label: 'System Access Overrides', dept: 'Executive Office' },
@@ -74,8 +62,7 @@ const PERMISSION_FRIENDLY_NAMES: Record<string, { label: string; dept: string }>
   tickets: { label: 'Tickets & Leave Requests', dept: 'HR Department' },
   leaves: { label: 'Leave Requests', dept: 'HR Department' },
   employee: { label: 'Personnel 201 Records', dept: 'HR Department' },
-  audit: { label: 'Financial Audit Records', dept: 'Accounting' },
-  payroll: { label: 'Payroll Verification', dept: 'Accounting' },
+  audit: { label: 'DTR & Attendance', dept: 'HR Department' },
 }
 
 // Normalized parsed activity for executive presentation
@@ -143,8 +130,8 @@ function formatFullDateTime(isoString: string): string {
 
 export default function AdminActivitiesClient() {
   const [activities, setActivities] = useState<ActivityLog[]>([])
-  const [activeOverrides, setActiveOverrides] = useState<OverrideMap>({ accountant: [], coordinator: [], hr: [] })
-  const [overridesMetadata, setOverridesMetadata] = useState<OverrideMetadataMap>({ accountant: {}, coordinator: {}, hr: {} })
+  const [activeOverrides, setActiveOverrides] = useState<OverrideMap>({ coordinator: [], hr: [] })
+  const [overridesMetadata, setOverridesMetadata] = useState<OverrideMetadataMap>({ coordinator: {}, hr: {} })
   const [isLoading, setIsLoading] = useState(true)
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [search, setSearch] = useState('')
@@ -171,7 +158,7 @@ export default function AdminActivitiesClient() {
       }
       if (overridesRes.success && overridesRes.overrides) {
         setActiveOverrides(overridesRes.overrides)
-        setOverridesMetadata(overridesRes.metadata || { accountant: {}, coordinator: {}, hr: {} })
+        setOverridesMetadata(overridesRes.metadata || { coordinator: {}, hr: {} })
       }
       setLastRefreshedAt(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }))
     } catch (err) {
@@ -198,7 +185,7 @@ export default function AdminActivitiesClient() {
   const parsedActivities: ParsedActivity[] = useMemo(() => {
     return activities.map((log) => {
       const rawDesc = log.description || ''
-      const actorName = log.performed_by_name || 'Carlos CEO'
+      const actorName = log.performed_by_name || 'CEO'
       const timestampFormatted = formatExecutiveTimestamp(log.created_at)
       const fullDateFormatted = formatFullDateTime(log.created_at)
 
@@ -226,21 +213,16 @@ export default function AdminActivitiesClient() {
 
       // 2. Check for Role Boundary Restoration / Revocation
       if (/restored standard role boundaries/i.test(rawDesc) || /Revoked all active overrides/i.test(rawDesc)) {
-        let recipientRoleKey = 'accountant'
-        let deptLabel = 'Accounting'
-        let recipientName = 'Alicia Rivera'
-        let recipientAvatar = 'AR'
+        let recipientRoleKey = 'hr'
+        let deptLabel = 'HR Department'
+        let recipientName = 'Helena Garcia'
+        let recipientAvatar = 'HG'
 
-        if (/HR Department/i.test(rawDesc) || /\[hr\]/i.test(rawDesc)) {
-          recipientRoleKey = 'hr'
-          deptLabel = 'HR Department'
-          recipientName = 'Helena Vance'
-          recipientAvatar = 'HV'
-        } else if (/Field Operations/i.test(rawDesc) || /coordinator/i.test(rawDesc)) {
+        if (/Field Operations/i.test(rawDesc) || /coordinator/i.test(rawDesc)) {
           recipientRoleKey = 'coordinator'
           deptLabel = 'Service Dept'
-          recipientName = 'Aileen Cruz'
-          recipientAvatar = 'AC'
+          recipientName = 'Aileen Bautista'
+          recipientAvatar = 'AB'
         }
 
         return {
@@ -266,23 +248,17 @@ export default function AdminActivitiesClient() {
       // 3. Check for Temporary Overrides Grant
       if (/granted temporary override access/i.test(rawDesc) || /CEO[- ]?[Uu]pdated cross-departmental/i.test(rawDesc) || (log as any).target_category === 'system_overrides' || log.category === 'system_overrides') {
         let recipientKey = 'hr'
-        let recipientName = 'Helena Vance'
-        let recipientRole = 'Lead HR Officer'
+        let recipientName = 'Helena Garcia'
+        let recipientRole = 'HR Officer'
         let recipientDept = 'HR'
-        let recipientAvatar = 'HV'
+        let recipientAvatar = 'HG'
 
-        if (/for Accountant/i.test(rawDesc) || /role \[accountant\]/i.test(rawDesc)) {
-          recipientKey = 'accountant'
-          recipientName = 'Alicia Rivera'
-          recipientRole = 'Senior Financial Analyst'
-          recipientDept = 'Accounting'
-          recipientAvatar = 'AR'
-        } else if (/for Field Operations/i.test(rawDesc) || /role \[coordinator\]/i.test(rawDesc)) {
+        if (/for Field Operations/i.test(rawDesc) || /role \[coordinator\]/i.test(rawDesc)) {
           recipientKey = 'coordinator'
-          recipientName = 'Aileen Cruz'
-          recipientRole = 'Operations Dispatcher'
+          recipientName = 'Aileen Bautista'
+          recipientRole = 'Service Coordinator'
           recipientDept = 'Service Dept'
-          recipientAvatar = 'AC'
+          recipientAvatar = 'AB'
         }
 
         // Extract permissions granted
@@ -293,7 +269,7 @@ export default function AdminActivitiesClient() {
           { key: 'Fleet Tracking', label: 'Fleet GPS Tracking', dept: 'Service Dept' },
           { key: 'Dispatch & Scheduling', label: 'Dispatch & Scheduling', dept: 'Service Dept' },
           { key: 'Inventory Management', label: 'Inventory & Assets', dept: 'Service Dept' },
-          { key: 'Audit Logs', label: 'Audit & Transaction Records', dept: 'Accounting' },
+          { key: 'DTR & Attendance', label: 'DTR & Attendance', dept: 'HR Department' },
           { key: 'Tickets & Leaves', label: 'Tickets & Leave Requests', dept: 'HR Department' },
           { key: '201 Files', label: 'Personnel 201 Records', dept: 'HR Department' },
         ]
@@ -311,12 +287,10 @@ export default function AdminActivitiesClient() {
 
         // If covering multiple departments
         const hasService = permissions.some((p) => p.includes('Fleet') || p.includes('Dispatch') || p.includes('Inventory'))
-        const hasAccountant = permissions.some((p) => p.includes('Audit'))
-        const hasHR = permissions.some((p) => p.includes('Tickets') || p.includes('201'))
+        const hasHR = permissions.some((p) => p.includes('Tickets') || p.includes('201') || p.includes('DTR'))
 
         const deptPills: string[] = []
         if (hasService) deptPills.push('Service Dept')
-        if (hasAccountant) deptPills.push('Accounting')
         if (hasHR) deptPills.push('HR')
         if (deptPills.length > 0) targetDept = deptPills.join(' & ')
 

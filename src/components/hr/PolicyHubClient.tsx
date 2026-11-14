@@ -680,7 +680,7 @@ export default function PolicyHubClient() {
       {/* Main Content Area: Standard Page Scrolling, Balanced Width */}
       <div className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
         <div className="w-full max-w-5xl mx-auto space-y-6">
-          {/* 1. Header Area Matching Mockup media_1792933400147_76e5c751.png */}
+          {/* 1. Header Area */}
           <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
             <div>
               <h1 className="text-xl md:text-2xl font-black tracking-tight text-[#121215] dark:text-[#F4F4F6]">
@@ -703,7 +703,7 @@ export default function PolicyHubClient() {
             </button>
           </div>
 
-          {/* 2. Unified 3-Segment Navigation Bar (Directly Matching Mockup) */}
+          {/* 2. Unified 3-Segment Navigation Bar */}
           <div className="grid grid-cols-3 gap-2.5 max-w-xl">
             <button
               type="button"
@@ -741,7 +741,7 @@ export default function PolicyHubClient() {
             </button>
           </div>
 
-          {/* VIEW 1: WORKSPACE (Directly Matching User Mockup media_1792933400147_76e5c751.png) */}
+          {/* VIEW 1: WORKSPACE */}
           {currentView === 'workspace' && (
             <div id="view-workspace" className="space-y-4 animate-in fade-in duration-150">
               {/* Section: Needs attention */}

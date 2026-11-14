@@ -1,9 +1,3 @@
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
-
-serve(async (req) => {
-  // Logic to process push_notifications_queue and send to Expo Push API
-  return new Response(
-    JSON.stringify({ success: true, message: 'Push queue processed' }),
-    { headers: { 'Content-Type': 'application/json' } }
-  )
-})
+// Retired 2026-11-14: pushes are sent directly by the admin server (lib/push.ts) and send-push.
+// Delete this function in Supabase > Edge Functions.
+Deno.serve(() => new Response(JSON.stringify({ error: "This function has been retired." }), { status: 410, headers: { "Content-Type": "application/json" } }));

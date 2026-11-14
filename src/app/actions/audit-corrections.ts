@@ -49,7 +49,7 @@ async function getAuthorizedActor() {
     throw new Error("Unable to resolve authenticated user profile.")
   }
 
-  const allowedRoles = ['accountant', 'hr', 'ceo', 'super_admin']
+  const allowedRoles = ['hr', 'ceo', 'coordinator']
   if (!allowedRoles.includes(profile.role)) {
     throw new Error(`Forbidden. Role '${profile.role}' is not authorized to execute DTR audit corrections.`)
   }
@@ -98,7 +98,7 @@ export async function correctTimeLogPunch(
     // 3. Update existing time log or insert new shift
     if (effectiveTimeLogId) {
       const { data: existingLog, error: fetchErr } = await supabaseAdmin
-        .from('time_logs')
+        .from('attendance_logs')
         .select('*')
         .eq('id', effectiveTimeLogId)
         .single()
@@ -111,7 +111,7 @@ export async function correctTimeLogPunch(
       originalTimeOut = existingLog.app_time_out
 
       const { error: updateErr } = await supabaseAdmin
-        .from('time_logs')
+        .from('attendance_logs')
         .update({
           app_time_in: inDate.toISOString(),
           app_time_out: outDate.toISOString(),
@@ -127,7 +127,7 @@ export async function correctTimeLogPunch(
       correctionType = 'insert_missing_shift'
 
       const { data: newLog, error: insertErr } = await supabaseAdmin
-        .from('time_logs')
+        .from('attendance_logs')
         .insert({
           technician_id: input.technicianId,
           app_time_in: inDate.toISOString(),
@@ -147,7 +147,7 @@ export async function correctTimeLogPunch(
 
     // 4. Record Immutable Audit Correction in public.time_log_corrections
     const { error: correctionErr } = await supabaseAdmin
-      .from('time_log_corrections')
+      .from('attendance_corrections')
       .insert({
         time_log_id: effectiveTimeLogId,
         technician_id: input.technicianId,
@@ -186,7 +186,8 @@ export async function correctTimeLogPunch(
     }
 
     // 6. Path Revalidation
-    revalidatePath('/accountant')
+    revalidatePath('/hr/audit')
+    revalidatePath('/coordinator/audit')
     revalidatePath('/hr')
     revalidatePath('/hr/audit')
 
@@ -209,7 +210,7 @@ export async function getTimeLogCorrectionHistory(
     await getAuthorizedActor()
 
     let query = supabaseAdmin
-      .from('time_log_corrections')
+      .from('attendance_corrections')
       .select(`
         id,
         time_log_id,
@@ -224,7 +225,7 @@ export async function getTimeLogCorrectionHistory(
         corrected_by,
         actor_role,
         created_at,
-        profiles!time_log_corrections_corrected_by_fkey (
+        profiles!attendance_corrections_corrected_by_fkey (
           full_name
         )
       `)

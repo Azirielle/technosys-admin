@@ -5,10 +5,11 @@ import AdminRoleLayout from '@/components/dashboard/AdminRoleLayout'
 import { NavItem } from '@/components/dashboard/AdminDock'
 
 const navItems: NavItem[] = [
-  { title: 'Scheduling', href: '/coordinator', iconName: 'Calendar' },
-  { title: 'Fleet Tracking', href: '/coordinator/tracking', iconName: 'MapPin' },
+  { title: 'Overview', href: '/coordinator', iconName: 'Home' },
+  { title: 'Scheduling', href: '/coordinator/dispatch', iconName: 'Calendar' },
+  { title: 'Live Map', href: '/coordinator/tracking', iconName: 'MapPin' },
   { title: 'Inventory', href: '/coordinator/inventory', iconName: 'Box' },
-  { title: 'Broadcaster', href: '/coordinator/announcements', iconName: 'Megaphone' },
+  { title: 'Announcements', href: '/coordinator/announcements', iconName: 'Megaphone' },
 ]
 
 export default function CoordinatorLayout({ children }: { children: React.ReactNode }) {
@@ -16,7 +17,7 @@ export default function CoordinatorLayout({ children }: { children: React.ReactN
     <AdminRoleLayout
       role="coordinator"
       portalTitle="TechnoCycle"
-      portalSubtitle="Field Operations"
+      portalSubtitle="Service Dept"
       navItems={navItems}
     >
       {children}

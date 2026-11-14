@@ -1,5 +1,5 @@
-import AuditLogClient from "@/components/accountant/AuditLogClient";
+import DtrClient from "@/components/dtr/DtrClient";
 
 export default function CoordinatorAuditPage() {
-  return <AuditLogClient />;
+  return <DtrClient />;
 }

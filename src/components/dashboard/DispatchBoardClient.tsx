@@ -59,7 +59,7 @@ export default function DispatchBoardClient() {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 8;
 
-  // KPI Metrics State (Matching Mockup 2: On-site, Deployments, Needs a team, Conflicts)
+  // KPI Metrics State
   const [kpiMetrics, setKpiMetrics] = useState({
     onSiteCount: 0,
     deploymentsCount: 0,
@@ -170,7 +170,7 @@ export default function DispatchBoardClient() {
           *,
           profiles!technician_id(full_name, role, technician_level, is_driver),
           senior_partner:profiles!senior_partner_id(full_name),
-          schedule_crew_assignments(
+          schedule_crew_assignments:schedule_crew(
             id, technician_id, assignment_role, status, joined_at, released_at, notes,
             profiles(full_name, role, technician_level, is_driver)
           ),
@@ -227,7 +227,7 @@ export default function DispatchBoardClient() {
       const { data: regularData, error: regularErr } = await query;
       if (regularErr) throw regularErr;
 
-      let combined = (regularData || []) as ScheduleItem[];
+      let combined = (regularData || []) as unknown as ScheduleItem[];
 
       // If viewing active horizon, pull ongoing multi-day deployments that started earlier
       if (granularity !== 'past') {
@@ -237,7 +237,7 @@ export default function DispatchBoardClient() {
             *,
             profiles!technician_id(full_name, role, technician_level, is_driver),
             senior_partner:profiles!senior_partner_id(full_name),
-            schedule_crew_assignments(
+            schedule_crew_assignments:schedule_crew(
               id, technician_id, assignment_role, status, joined_at, released_at, notes,
               profiles(full_name, role, technician_level, is_driver)
             ),
@@ -488,8 +488,8 @@ export default function DispatchBoardClient() {
     );
 
   return (
-    <div className="flex flex-col h-full w-full max-w-full">
-      {/* Executive Clean Header (Matching HR & CEO Design DNA) */}
+    <div className="flex flex-col h-full w-full max-w-full px-6 pt-5 pb-4">
+      {/* Page header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 shrink-0 mb-3 px-0.5">
         <div className="flex flex-col gap-0.5">
           <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-[#121215] dark:text-[#F4F4F6]">
@@ -497,8 +497,8 @@ export default function DispatchBoardClient() {
           </h1>
           <p className="text-xs sm:text-sm text-[#575762] dark:text-[#B0B2BD]">
             {viewTab === 'dispatches'
-              ? 'Manage field personnel assignments, team allocations, and scheduling horizons.'
-              : 'Register and manage on-demand temporary support crew with daily wage tracking.'}
+              ? 'Assign technicians and crews to jobs, and see who is working where.'
+              : 'Helpers hired per job who do not use the mobile app.'}
           </p>
         </div>
 
@@ -555,7 +555,7 @@ export default function DispatchBoardClient() {
       {/* TAB 1: SCHEDULING & DISPATCH WORKSPACE */}
       {viewTab === 'dispatches' && (
         <div className="flex flex-col flex-1 min-h-0 space-y-0">
-          {/* 1. Live Period-Aware KPI Cards (Mockup 2) */}
+          {/* 1. Live Period-Aware KPI Cards */}
           <SchedulingKpis
             onSiteCount={kpiMetrics.onSiteCount}
             deploymentsCount={kpiMetrics.deploymentsCount}
@@ -836,7 +836,7 @@ export default function DispatchBoardClient() {
 
       {/* DRAWERS & MODALS */}
 
-      {/* 1. New Assignment Branching Modal (Mockup 3) */}
+      {/* 1. New Assignment Branching Modal */}
       <NewAssignmentModal
         isOpen={isNewAssignmentModalOpen}
         onClose={() => setIsNewAssignmentModalOpen(false)}
@@ -854,7 +854,7 @@ export default function DispatchBoardClient() {
         }}
       />
 
-      {/* 2. On-Site Service Stepped Dispatch Drawer (Mockup 4) */}
+      {/* 2. On-Site Service Stepped Dispatch Drawer */}
       <SteppedDispatchDrawer
         isOpen={isDispatchDrawerOpen}
         onClose={() => setIsDispatchDrawerOpen(false)}

@@ -16,7 +16,7 @@ export async function getBranchFilter(): Promise<string | null> {
     if (!profile || !profile.branch_id) return null
 
     // Global administrative roles see everything
-    const globalRoles = ['super_admin', 'ceo', 'coo', 'svp', 'hr', 'accountant']
+    const globalRoles = ['ceo', 'hr']
     if (globalRoles.includes(profile.role)) return null
 
     // Check if user's branch is the mother branch
@@ -27,7 +27,7 @@ export async function getBranchFilter(): Promise<string | null> {
       .single()
 
     if (branch) {
-      const isMotherBranch = branch.name === 'Main Office' || branch.name.toLowerCase().includes('pacita')
+      const isMotherBranch = branch.name.toLowerCase().includes('pacita')
       if (isMotherBranch) return null
     }
 

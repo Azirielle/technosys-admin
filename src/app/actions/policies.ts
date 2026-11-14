@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server"
 import { supabaseAdmin } from "@/lib/supabase/admin"
 import { revalidatePath } from "next/cache"
 import { logActivity } from "./activity"
+import { sendPushToUser } from "@/lib/push"
 import crypto from 'crypto'
 
 export type PolicyCategory = 
@@ -86,7 +87,7 @@ function hashContent(content: string): string {
 export async function getPublicPolicy(policyId: 'terms_of_service' | 'privacy_policy' | 'executive_governance') {
   try {
     const { data, error } = await supabaseAdmin
-      .from('company_policies')
+      .from('policies')
       .select('*')
       .eq('id', policyId)
       .eq('is_active', true)
@@ -105,7 +106,7 @@ export async function getAllPolicies() {
   try {
     const supabase = await createClient()
     const { data, error } = await supabase
-      .from('company_policies')
+      .from('policies')
       .select('*')
       .order('is_mandatory', { ascending: false })
       .order('title', { ascending: true })
@@ -120,9 +121,9 @@ export async function getAllPolicies() {
       archived: 4,
     }
 
-    const sorted = [...(data || [])].sort((a: CompanyPolicy, b: CompanyPolicy) => {
-      const weightA = statusWeight[a.status] || 99
-      const weightB = statusWeight[b.status] || 99
+    const sorted = [...(data || [])].sort((a: any, b: any) => {
+      const weightA = statusWeight[a.status as PolicyLifecycleStatus] || 99
+      const weightB = statusWeight[b.status as PolicyLifecycleStatus] || 99
       if (weightA !== weightB) return weightA - weightB
       return a.title.localeCompare(b.title)
     })
@@ -177,7 +178,7 @@ export async function getPolicyComplianceMetrics(): Promise<PolicyComplianceSumm
   try {
     // 1. Get all policies
     const { data: allPolicies } = await supabaseAdmin
-      .from('company_policies')
+      .from('policies')
       .select('id, version, is_mandatory, is_active, status')
 
     const totalPolicies = allPolicies?.length || 0
@@ -337,7 +338,7 @@ export async function createPolicyDraft(formData: {
     }
 
     const { data, error } = await supabaseAdmin
-      .from('company_policies')
+      .from('policies')
       .insert(newPolicy)
       .select()
       .single()
@@ -367,7 +368,7 @@ export async function forkPolicyRevision(policyId: string) {
 
     // Enforce the Single-Draft Invariant: Check if a draft or under_review revision already exists
     const { data: existingDraft } = await supabaseAdmin
-      .from('company_policies')
+      .from('policies')
       .select('*')
       .eq('parent_policy_id', policyId)
       .in('status', ['draft', 'under_review'])
@@ -384,7 +385,7 @@ export async function forkPolicyRevision(policyId: string) {
 
     // Fetch original published policy
     const { data: original, error: fetchErr } = await supabaseAdmin
-      .from('company_policies')
+      .from('policies')
       .select('*')
       .eq('id', policyId)
       .single()
@@ -425,7 +426,7 @@ export async function forkPolicyRevision(policyId: string) {
     }
 
     const { data: inserted, error: insertErr } = await supabaseAdmin
-      .from('company_policies')
+      .from('policies')
       .insert(forkedPolicy)
       .select()
       .single()
@@ -465,7 +466,7 @@ export async function updatePolicyDraft(formData: {
 
     // Verify policy is actually in draft or under_review
     const { data: existing } = await supabaseAdmin
-      .from('company_policies')
+      .from('policies')
       .select('status, id, is_active')
       .eq('id', formData.id)
       .single()
@@ -480,7 +481,7 @@ export async function updatePolicyDraft(formData: {
     const content_hash = hashContent(formData.content_markdown)
 
     const { data, error } = await supabaseAdmin
-      .from('company_policies')
+      .from('policies')
       .update({
         title: formData.title,
         category: formData.category,
@@ -518,7 +519,7 @@ export async function submitPolicyForReview(policyId: string, customReviewNotes?
     const notesToSet = customReviewNotes || defaultNotes
 
     const { data, error } = await supabaseAdmin
-      .from('company_policies')
+      .from('policies')
       .update({
         status: 'under_review',
         review_notes: notesToSet,
@@ -552,7 +553,7 @@ export async function requestPolicyChanges(policyId: string, reviewNotes: string
     if (!user) return { success: false, error: "Unauthorized access" }
 
     const { data, error } = await supabaseAdmin
-      .from('company_policies')
+      .from('policies')
       .update({
         status: 'draft',
         review_notes: reviewNotes || 'Revision requested by reviewer.',
@@ -605,7 +606,7 @@ export async function publishPolicy(
 
     // Fetch candidate policy
     const { data: candidate, error: candErr } = await supabaseAdmin
-      .from('company_policies')
+      .from('policies')
       .select('*')
       .eq('id', policyId)
       .single()
@@ -637,7 +638,7 @@ export async function publishPolicy(
     // Step A: If this policy replaces an existing published parent policy, archive the parent
     if (candidate.parent_policy_id) {
       await supabaseAdmin
-        .from('company_policies')
+        .from('policies')
         .update({
           status: 'archived',
           is_active: false,
@@ -649,7 +650,7 @@ export async function publishPolicy(
 
     // Step B: Publish the candidate policy
     const { data: published, error: pubErr } = await supabaseAdmin
-      .from('company_policies')
+      .from('policies')
       .update({
         status: 'active',
         is_active: true,
@@ -701,7 +702,7 @@ export async function archivePolicy(policyId: string) {
     if (!user) return { success: false, error: "Unauthorized access" }
 
     const { data, error } = await supabaseAdmin
-      .from('company_policies')
+      .from('policies')
       .update({
         status: 'archived',
         is_active: false,
@@ -736,30 +737,20 @@ export async function dispatchPolicyReminder(policyId: string, userIds: string[]
     if (!user) return { success: false, error: "Unauthorized access" }
 
     const { data: policy } = await supabaseAdmin
-      .from('company_policies')
+      .from('policies')
       .select('title, version')
       .eq('id', policyId)
       .single()
 
     if (!policy) return { success: false, error: "Policy not found" }
 
-    // Insert into push notification queue for target users
-    const notifications = userIds.map((uid) => ({
-      user_id: uid,
-      title: "Mandatory Policy Signature Required",
-      body: `Please review and digitally acknowledge the updated ${policy.title} (${policy.version}) in your Mobile Kiosk.`,
-      channel: 'compliance',
-      status: 'pending',
-      created_at: new Date().toISOString()
-    }))
-
-    if (notifications.length > 0) {
-      try {
-        await supabaseAdmin.from('push_notifications_queue').insert(notifications)
-      } catch (e) {
-        console.warn('Could not queue push notifications:', e)
-      }
-    }
+    // Push a reminder to each person who still has to sign
+    await Promise.all(userIds.map((uid) => sendPushToUser(
+      uid,
+      "Policy Signature Required",
+      `Please read and acknowledge ${policy.title} (${policy.version}) in the TechnoSys app.`,
+      { type: 'policy_acknowledgment', policyId }
+    )))
 
     await logActivity(
       'policy_reminder_dispatch',

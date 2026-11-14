@@ -33,6 +33,8 @@ import {
 } from 'lucide-react'
 import ModalDialog from '@/components/ui/ModalDialog'
 import { logAdminActivity } from '@/lib/auditLogger'
+import { normalizePhMobile } from '@/lib/phone'
+import { notifyEmployee } from '@/app/actions/notifications'
 
 // ---------------------------------------------------------------------------
 // Document Requirement Schema
@@ -96,7 +98,6 @@ export interface EmployeeRecord {
   role: string
   employment_status?: string
   technician_level?: string
-  base_salary?: number
   hire_date?: string
   contact_number?: string
   has_sss_id?: boolean
@@ -150,7 +151,6 @@ export default function EmployeeFilesClient() {
   const [editForm, setEditForm] = useState({
     employment_status: 'regular',
     technician_level: 'technician',
-    base_salary: 0,
     contact_number: '',
   })
   const [isSavingSettings, setIsSavingSettings] = useState(false)
@@ -192,12 +192,12 @@ export default function EmployeeFilesClient() {
           ...profile,
           employee_warnings: (warningsData || []).filter((w) => w.employee_id === profile.id),
         }))
-        setEmployees(enriched)
+        setEmployees(enriched as unknown as EmployeeRecord[])
 
         // If an employee is currently selected, refresh their state
         if (selectedEmp) {
           const freshSelected = enriched.find((e) => e.id === selectedEmp.id)
-          if (freshSelected) setSelectedEmp(freshSelected)
+          if (freshSelected) setSelectedEmp(freshSelected as unknown as EmployeeRecord)
         }
       }
     } catch (err: any) {
@@ -351,7 +351,7 @@ export default function EmployeeFilesClient() {
         // Update database column
         const { error } = await supabase
           .from('profiles')
-          .update({ [doc.key]: true })
+          .update({ [doc.key]: true } as any)
           .eq('id', selectedEmp.id)
 
         if (error) throw error
@@ -380,7 +380,7 @@ export default function EmployeeFilesClient() {
         // Audit log
         try {
           await logAdminActivity({
-            adminName: 'Helena Vance',
+            adminName: 'Helena Garcia',
             adminRole: 'HR Department',
             adminRoleKey: 'hr',
             moduleKey: 'hr_files',
@@ -405,7 +405,7 @@ export default function EmployeeFilesClient() {
     try {
       const { error } = await supabase
         .from('profiles')
-        .update({ [deletingDoc.key]: false })
+        .update({ [deletingDoc.key]: false } as any)
         .eq('id', selectedEmp.id)
 
       if (error) throw error
@@ -440,18 +440,17 @@ export default function EmployeeFilesClient() {
     try {
       const missingLabels = stats.missingDocs.map((d) => d.label).join(', ')
 
-      // Record in notifications queue
-      await supabase.from('push_notifications_queue').insert({
-        user_id: selectedEmp.id,
-        title: 'HR Document Request',
-        body: `Please submit your missing 201 requirements: ${missingLabels}.`,
-        notification_type: '201_compliance_reminder',
-        status: 'pending',
-      })
+      // Push the request to the employee's phone
+      await notifyEmployee(
+        selectedEmp.id,
+        'HR Document Request',
+        `Please submit your missing 201 requirements: ${missingLabels}.`,
+        '201_compliance_reminder'
+      )
 
       // Record in activity logs
       await logAdminActivity({
-        adminName: 'Helena Vance',
+        adminName: 'Helena Garcia',
         adminRole: 'HR Department',
         adminRoleKey: 'hr',
         moduleKey: 'hr_files',
@@ -510,6 +509,12 @@ export default function EmployeeFilesClient() {
     e.preventDefault()
     if (!selectedEmp) return
 
+    const contactNumber = normalizePhMobile(editForm.contact_number)
+    if (editForm.contact_number.trim() && !contactNumber) {
+      showToast('Enter an 11-digit mobile number, e.g. 09171234567 or +639171234567.', 'error')
+      return
+    }
+
     try {
       setIsSavingSettings(true)
       const { error } = await supabase
@@ -517,8 +522,7 @@ export default function EmployeeFilesClient() {
         .update({
           employment_status: editForm.employment_status,
           technician_level: editForm.technician_level,
-          base_salary: Number(editForm.base_salary),
-          contact_number: editForm.contact_number,
+          contact_number: contactNumber,
         })
         .eq('id', selectedEmp.id)
 
@@ -651,7 +655,7 @@ export default function EmployeeFilesClient() {
                 {kpiMetrics.total}
               </span>
               <span className="text-[10px] font-medium text-[#8E8D9A] dark:text-[#7A7C88]">
-                in ledger
+                active
               </span>
             </div>
           </button>
@@ -707,7 +711,7 @@ export default function EmployeeFilesClient() {
                 {kpiMetrics.withWarnings}
               </span>
               <span className="text-[10px] font-medium text-amber-600 dark:text-amber-400">
-                infractions overlay
+                need follow-up
               </span>
             </div>
           </button>
@@ -1021,7 +1025,6 @@ export default function EmployeeFilesClient() {
                                 setEditForm({
                                   employment_status: emp.employment_status || 'regular',
                                   technician_level: emp.technician_level || 'technician',
-                                  base_salary: emp.base_salary || 0,
                                   contact_number: emp.contact_number || '',
                                 })
                               }}
@@ -1459,9 +1462,6 @@ export default function EmployeeFilesClient() {
                         <span className="font-bold text-[#121215] dark:text-[#F4F4F6]">
                           Status: {selectedEmp.employment_status.toUpperCase()}
                         </span>
-                        <span className="text-[11px] text-[#8E8D9A]">
-                          Base salary set to ₱{selectedEmp.base_salary?.toLocaleString() || '0'}/mo.
-                        </span>
                       </div>
                     )}
                   </div>
@@ -1693,19 +1693,7 @@ export default function EmployeeFilesClient() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs font-semibold text-[#575762] dark:text-[#B0B2BD] mb-1">
-                  Base Monthly Salary (₱)
-                </label>
-                <input
-                  type="number"
-                  value={editForm.base_salary}
-                  onChange={(e) => setEditForm({ ...editForm, base_salary: Number(e.target.value) })}
-                  className="w-full px-3 py-2 rounded-xl border border-black/[0.08] dark:border-white/[0.1] bg-[#FAF9FB] dark:bg-[#343640] text-xs text-[#121215] dark:text-[#F4F4F6]"
-                />
-              </div>
-
+            <div className="grid grid-cols-1 gap-3">
               <div>
                 <label className="block text-xs font-semibold text-[#575762] dark:text-[#B0B2BD] mb-1">
                   Contact Phone Number
@@ -1714,7 +1702,9 @@ export default function EmployeeFilesClient() {
                   type="text"
                   value={editForm.contact_number}
                   onChange={(e) => setEditForm({ ...editForm, contact_number: e.target.value })}
-                  placeholder="0917-000-0000"
+                  placeholder="09171234567"
+                  inputMode="tel"
+                  maxLength={16}
                   className="w-full px-3 py-2 rounded-xl border border-black/[0.08] dark:border-white/[0.1] bg-[#FAF9FB] dark:bg-[#343640] text-xs text-[#121215] dark:text-[#F4F4F6]"
                 />
               </div>

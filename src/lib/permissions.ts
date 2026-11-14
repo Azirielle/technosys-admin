@@ -33,7 +33,7 @@ export async function verifyRoleAccess(moduleName: string, requiresWrite: boolea
     // 2. Check overrides if base role isn't enough
     if (!isAuthorized && allowedRoles) {
       const { data: overrides } = await supabaseAdmin
-        .from('role_overrides')
+        .from('temporary_access')
         .select('granted_role')
         .eq('target_user_id', user.id)
         .gt('expires_at', new Date().toISOString())

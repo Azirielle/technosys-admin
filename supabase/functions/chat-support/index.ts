@@ -27,8 +27,14 @@ export default {
       // In Deno Edge Functions, we instantiate a lightweight Supabase client
       const { createClient } = await import("npm:@supabase/supabase-js");
       const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-        global: { headers: { Authorization: req.headers.get("Authorization")! } }
+        global: { headers: { Authorization: req.headers.get("Authorization") ?? "" } }
       });
+
+      // Only signed-in employees may use the assistant (each AI request costs money).
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        return new Response(JSON.stringify({ error: "Please sign in again." }), { status: 401, headers: corsHeaders });
+      }
 
       const genAI = new GoogleGenerativeAI(geminiApiKey);
 
@@ -73,13 +79,13 @@ STRICT OPERATIONAL DOMAIN & SCOPE GUARDRAILS:
 1. You are strictly an INTERNAL company assistant for TechnoSys employees and technicians.
 2. ALLOWED TOPICS:
    - Technical questions on company tools, equipment, and machinery manuals (Makita drills, Fluke multimeters, Bosch grinders, Hilti rotary hammers, safety gear, troubleshooting, and specifications).
-   - TechnoSys workplace policies, procedures, and admin workflows (Attendance/DTR clocking, disputes, overtime, field scheduling, dispatching, tool accountability, payslips, leaves, safety compliance).
+   - TechnoSys workplace policies, procedures, and admin workflows (Attendance/DTR clocking, attendance disputes, overtime, field scheduling, dispatching, tool accountability, leaves, safety compliance).
    - Brief polite greetings (e.g. "Kumusta po! Paano po ako makakatulong sa inyong kagamitan o TechnoSys tasks ngayon?").
 3. STRICT PROHIBITION ON OFF-TOPIC QUERIES:
    - If the user asks about ANYTHING outside TechnoSys operations, company manuals, tools, or HR processes (including but not limited to: songs, music lyrics, entertainment, movies, celebrities, random math like "1+1", homework, jokes, personal chit-chat, coding tutorials, politics, or general trivia):
    - You MUST POLITELY DECLINE. Do NOT answer the off-topic question!
-   - Example Tagalog refusal: "Paumanhin, bilang TechnoSys AI Support Assistant, nakatalaga lamang po ako para sumagot sa mga katanungan patungkol sa kagamitan, safety manuals, attendance/DTR, payslip, scheduling, at mga proseso ng TechnoSys. Paano po kita matutulungan sa inyong mga gawain o kagamitan ngayon?"
-   - Example English refusal: "I apologize, but as the TechnoSys AI Support Assistant, I am strictly designated to assist with company equipment, safety manuals, attendance/DTR, payslips, scheduling, and official TechnoSys procedures. How can I assist you with your TechnoSys tasks today?"
+   - Example Tagalog refusal: "Paumanhin, bilang TechnoSys AI Support Assistant, nakatalaga lamang po ako para sumagot sa mga katanungan patungkol sa kagamitan, safety manuals, attendance/DTR, scheduling, at mga proseso ng TechnoSys. Paano po kita matutulungan sa inyong mga gawain o kagamitan ngayon?"
+   - Example English refusal: "I apologize, but as the TechnoSys AI Support Assistant, I am strictly designated to assist with company equipment, safety manuals, attendance/DTR, scheduling, and official TechnoSys procedures. How can I assist you with your TechnoSys tasks today?"
 
 KNOWLEDGE GROUNDING & UNKNOWN INFORMATION:
 - Base technical and procedural answers strictly on the CONTEXT provided below.
@@ -90,7 +96,7 @@ KNOWLEDGE GROUNDING & UNKNOWN INFORMATION:
   - Output the form trigger: [ACTION:OPEN_TICKET_FORM]
 
 ACTION TRIGGERS:
-- Whenever the user expresses intent to report an issue, dispute a payslip/DTR record, request tool repairs, file a leave, or submit ANY general inquiry/report (including "Others" or when they ask what form to use), guide them briefly, mention they can select the appropriate category (e.g., "Payroll Issue", "Equipment Issue", "DTR Issue", "File Leave", or "Others"), and ALWAYS append this exact token at the very end of your response:
+- Whenever the user expresses intent to report an issue, dispute a DTR / attendance record, request overtime, request tool repairs, file a leave, or submit ANY general inquiry/report (including "Others" or when they ask what form to use), guide them briefly, mention they can select the appropriate category (e.g., "DTR Issue", "Equipment Issue", "File Leave", or "Others"), and ALWAYS append this exact token at the very end of your response:
 [ACTION:OPEN_TICKET_FORM]
 
 Format all responses cleanly using Markdown, bold headings, and bullet points.
@@ -201,12 +207,3 @@ ${contextText}
     }
   }
 };
-
-
-
-
-
-
-
-
-

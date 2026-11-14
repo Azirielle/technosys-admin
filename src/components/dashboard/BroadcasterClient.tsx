@@ -24,13 +24,11 @@ import {
   Sparkles,
   Building2,
   Truck,
-  Wrench,
-  Calculator,
   UserCheck,
   Eye,
   Check
 } from 'lucide-react'
-import { createClient } from '@/lib/supabase/client'
+import { listAnnouncements, saveAnnouncement, deleteAnnouncement, getAudienceCounts } from '@/app/actions/announcements'
 import { logAdminActivity, formatRelativeTime, formatExactDate } from '@/lib/auditLogger'
 import { RoleKey } from '@/lib/overrides'
 
@@ -40,7 +38,7 @@ import { RoleKey } from '@/lib/overrides'
 export type AnnouncementImportance = 'normal' | 'important' | 'urgent'
 export type AnnouncementStatus = 'published' | 'scheduled' | 'draft'
 
-export type TargetAudienceKey = 'all' | 'field_technicians' | 'service_dept' | 'accounting' | 'hr'
+export type TargetAudienceKey = 'all' | 'field_staff' | 'office_staff'
 
 export interface TargetAudienceOption {
   key: TargetAudienceKey
@@ -77,123 +75,24 @@ export interface AnnouncementItem {
 const AUDIENCE_OPTIONS: TargetAudienceOption[] = [
   {
     key: 'all',
-    label: 'Everyone in TechnoCycle',
-    description: 'All 48 employees across headquarters and branch operations',
+    label: 'Everyone',
+    description: 'All active staff: office and field',
     icon: Building2,
-    recipientEstimate: 48
+    recipientEstimate: 0
   },
   {
-    key: 'field_technicians',
-    label: 'Field Technicians & Drivers',
-    description: '28 active mobile technicians and vehicle operators',
+    key: 'field_staff',
+    label: 'Field Staff',
+    description: 'Technicians and helpers (mobile app)',
     icon: Truck,
-    recipientEstimate: 28
+    recipientEstimate: 0
   },
   {
-    key: 'service_dept',
-    label: 'Service Dept',
-    description: '12 diagnostic engineers and dispatch coordinators',
-    icon: Wrench,
-    recipientEstimate: 12
-  },
-  {
-    key: 'accounting',
-    label: 'Accounting',
-    description: '4 finance officers and payroll administrators',
-    icon: Calculator,
-    recipientEstimate: 4
-  },
-  {
-    key: 'hr',
-    label: 'Human Resources',
-    description: '4 compliance officers and talent recruiters',
+    key: 'office_staff',
+    label: 'Office Staff',
+    description: 'CEO, HR and Service Dept',
     icon: UserCheck,
-    recipientEstimate: 4
-  }
-]
-
-// ---------------------------------------------------------------------------
-// Initial Seed Data (Authentic, Non-Technical Executive Content)
-// ---------------------------------------------------------------------------
-const INITIAL_ANNOUNCEMENTS: AnnouncementItem[] = [
-  {
-    id: 'ann-101',
-    title: 'Emergency Safety Protocol: Direct Dispatches in Subic & Cavite',
-    content: 'Due to severe weather warnings in coastal sectors, all field technicians assigned to Subic and Cavite routes must confirm their safe arrival via the mobile check-in feature within 10 minutes of arrival at client premises.',
-    importance: 'urgent',
-    status: 'published',
-    target_audience: 'field_technicians',
-    target_audience_label: 'Field Technicians & Drivers',
-    created_by: 'ceo-user-id',
-    created_at: new Date(Date.now() - 45 * 60 * 1000).toISOString(),
-    authorName: 'Carlos CEO',
-    authorRole: 'Chief Executive Officer',
-    is_edited: false,
-    send_push: true
-  },
-  {
-    id: 'ann-102',
-    title: 'Annual Compliance Audit: Updated 201 Document Verification',
-    content: 'The company-wide Q3 2026 personnel audit is currently underway. Please upload your updated NBI Clearances and Medical Certificates under your digital profile before the end of next week.',
-    importance: 'important',
-    status: 'published',
-    target_audience: 'all',
-    target_audience_label: 'Everyone in TechnoCycle',
-    created_by: 'hr-user-id',
-    created_at: new Date(Date.now() - 3 * 3600 * 1000).toISOString(),
-    authorName: 'Helena Vance',
-    authorRole: 'Lead HR Officer',
-    is_edited: true,
-    updated_at: new Date(Date.now() - 40 * 60 * 1000).toISOString(),
-    editorName: 'Carlos CEO',
-    editorRole: 'Chief Executive Officer',
-    send_push: true
-  },
-  {
-    id: 'ann-103',
-    title: 'Mid-Month Payroll Verification Cutoff for October',
-    content: 'The Accounting department has finalized verified time logs and overtime calculations for the October 1-15 cycle. Digital payslips will be published to your mobile app by 5:00 PM tomorrow.',
-    importance: 'normal',
-    status: 'published',
-    target_audience: 'accounting',
-    target_audience_label: 'Accounting',
-    created_by: 'acc-user-id',
-    created_at: new Date(Date.now() - 8 * 3600 * 1000).toISOString(),
-    authorName: 'Elena Rostova',
-    authorRole: 'Chief Accountant',
-    is_edited: false,
-    send_push: false
-  },
-  {
-    id: 'ann-104',
-    title: 'Upcoming Scheduled Power Maintenance at Main Facility',
-    content: 'The local utility provider has scheduled power maintenance for this coming Saturday from 1:00 PM to 6:00 PM. Backup generators will maintain critical server infrastructure, but dispatch workstations should save open logs beforehand.',
-    importance: 'important',
-    status: 'scheduled',
-    scheduled_for: new Date(Date.now() + 48 * 3600 * 1000).toISOString(),
-    target_audience: 'service_dept',
-    target_audience_label: 'Service Dept',
-    created_by: 'ceo-user-id',
-    created_at: new Date(Date.now() - 24 * 3600 * 1000).toISOString(),
-    authorName: 'Carlos CEO',
-    authorRole: 'Chief Executive Officer',
-    is_edited: false,
-    send_push: true
-  },
-  {
-    id: 'ann-105',
-    title: 'Draft: Fleet Winterization & Preventive Vehicle Checkups',
-    content: 'Preliminary guidelines for mandatory quarterly vehicle inspection including brake pad calibration, tire depth verification, and emergency road kit checks.',
-    importance: 'normal',
-    status: 'draft',
-    target_audience: 'field_technicians',
-    target_audience_label: 'Field Technicians & Drivers',
-    created_by: 'ceo-user-id',
-    created_at: new Date(Date.now() - 2 * 3600 * 1000).toISOString(),
-    authorName: 'Carlos CEO',
-    authorRole: 'Chief Executive Officer',
-    is_edited: false,
-    send_push: false
+    recipientEstimate: 0
   }
 ]
 
@@ -234,81 +133,43 @@ export default function BroadcasterClient({ currentRole, adminName, adminRoleLab
   const [toastMessage, setToastMessage] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const supabase = createClient()
+  const [audienceCounts, setAudienceCounts] = useState<Record<TargetAudienceKey, number>>({ all: 0, field_staff: 0, office_staff: 0 })
 
   // ---------------------------------------------------------------------------
   // Load Announcements with Local Storage Fallback
   // ---------------------------------------------------------------------------
   useEffect(() => {
     fetchAnnouncements()
+    getAudienceCounts().then(setAudienceCounts).catch(() => {})
   }, [])
 
   const fetchAnnouncements = async () => {
     setLoading(true)
-    try {
-      // Check local storage first for session edits
-      const cached = localStorage.getItem('technocycle_announcements_v2')
-      if (cached) {
-        try {
-          const parsed = JSON.parse(cached)
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            setAnnouncements(parsed)
-            setLoading(false)
-            return
-          }
-        } catch (e) {}
-      }
-
-      const { data, error } = await supabase
-        .from('announcements')
-        .select(`
-          *,
-          author:created_by (full_name, role),
-          editor:last_edited_by (full_name, role)
-        `)
-        .order('created_at', { ascending: false })
-
-      if (data && data.length > 0) {
-        const formatted: AnnouncementItem[] = data.map((item: any) => ({
-          id: item.id,
-          title: item.title,
-          content: item.content,
-          importance: (item.priority || item.importance || 'normal') as AnnouncementImportance,
-          status: (item.status || 'published') as AnnouncementStatus,
-          target_audience: (item.target_audience || 'all') as TargetAudienceKey,
-          target_audience_label: getAudienceLabel(item.target_audience || 'all'),
-          created_by: item.created_by,
-          created_at: item.created_at,
-          scheduled_for: item.scheduled_for || null,
-          authorName: item.author?.full_name || 'System Admin',
-          authorRole: formatRoleBadge(item.author?.role || 'admin'),
-          is_edited: item.is_edited || false,
-          updated_at: item.updated_at,
-          last_edited_by: item.last_edited_by,
-          editorName: item.editor?.full_name || undefined,
-          editorRole: item.editor?.role ? formatRoleBadge(item.editor.role) : undefined,
-          send_push: item.send_push !== false
-        }))
-        setAnnouncements(formatted)
-        localStorage.setItem('technocycle_announcements_v2', JSON.stringify(formatted))
-      } else {
-        setAnnouncements(INITIAL_ANNOUNCEMENTS)
-        localStorage.setItem('technocycle_announcements_v2', JSON.stringify(INITIAL_ANNOUNCEMENTS))
-      }
-    } catch (err) {
-      console.log('Using initial announcements fallback:', err)
-      setAnnouncements(INITIAL_ANNOUNCEMENTS)
-      localStorage.setItem('technocycle_announcements_v2', JSON.stringify(INITIAL_ANNOUNCEMENTS))
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const saveAnnouncementsState = (updatedList: AnnouncementItem[]) => {
-    setAnnouncements(updatedList)
-    try {
-      localStorage.setItem('technocycle_announcements_v2', JSON.stringify(updatedList))
-    } catch (e) {}
+    const { data, error } = await listAnnouncements()
+    if (error) showToast(`Could not load announcements: ${error}`)
+    setAnnouncements(
+      data.map((item) => ({
+        id: item.id,
+        title: item.title,
+        content: item.content,
+        importance: (item.priority || 'normal') as AnnouncementImportance,
+        status: item.status as AnnouncementStatus,
+        target_audience: item.audience as TargetAudienceKey,
+        target_audience_label: getAudienceLabel(item.audience),
+        created_by: item.created_by || '',
+        created_at: item.created_at,
+        scheduled_for: item.scheduled_for,
+        authorName: item.author?.full_name || 'Office',
+        authorRole: formatRoleBadge(item.author?.role || ''),
+        is_edited: !!item.is_edited,
+        updated_at: item.updated_at || undefined,
+        last_edited_by: item.last_edited_by || undefined,
+        editorName: item.editor?.full_name || undefined,
+        editorRole: item.editor?.role ? formatRoleBadge(item.editor.role) : undefined,
+        send_push: item.send_push,
+      }))
+    )
+    setLoading(false)
   }
 
   const getAudienceLabel = (key: string): string => {
@@ -319,16 +180,13 @@ export default function BroadcasterClient({ currentRole, adminName, adminRoleLab
   const formatRoleBadge = (roleStr: string) => {
     switch (roleStr) {
       case 'ceo':
-      case 'super_admin':
         return 'Chief Executive Officer'
       case 'hr':
         return 'HR Department'
       case 'coordinator':
-        return 'Field Operations'
-      case 'accountant':
-        return 'Accountant'
+        return 'Service Dept'
       default:
-        return roleStr.toUpperCase()
+        return roleStr ? roleStr.toUpperCase() : 'Office'
     }
   }
 
@@ -426,83 +284,44 @@ export default function BroadcasterClient({ currentRole, adminName, adminRoleLab
     const audienceOption = AUDIENCE_OPTIONS.find(o => o.key === formAudience)
     const audienceLabel = audienceOption ? audienceOption.label : 'Everyone in TechnoCycle'
 
-    if (viewMode === 'edit' && editingId) {
-      // Update existing item
-      const updatedList = announcements.map(item => {
-        if (item.id === editingId) {
-          return {
-            ...item,
-            title: formTitle.trim(),
-            content: formContent.trim(),
-            importance: formImportance,
-            status: targetStatus,
-            target_audience: formAudience,
-            target_audience_label: audienceLabel,
-            scheduled_for: targetStatus === 'scheduled' ? new Date(formScheduleDate).toISOString() : null,
-            send_push: formSendPush,
-            is_edited: true,
-            updated_at: new Date().toISOString(),
-            editorName: adminName,
-            editorRole: adminRoleLabel
-          }
-        }
-        return item
-      })
+    const isEdit = viewMode === 'edit' && !!editingId
+    const result = await saveAnnouncement({
+      id: isEdit ? editingId : null,
+      title: formTitle,
+      content: formContent,
+      priority: formImportance,
+      status: targetStatus,
+      audience: formAudience,
+      scheduled_for: targetStatus === 'scheduled' ? new Date(formScheduleDate).toISOString() : null,
+      send_push: formSendPush,
+    })
 
-      saveAnnouncementsState(updatedList)
+    if (!result.success) {
+      showToast(result.error || 'Could not save the announcement.')
+      setIsSubmitting(false)
+      return
+    }
 
-      // Audit Log
-      logAdminActivity({
-        adminName,
-        adminRole: adminRoleLabel,
-        adminRoleKey: currentRole,
-        moduleKey: 'broadcaster',
-        moduleName: 'Announcements',
-        action: 'Updated Announcement',
-        targetEntity: `"${formTitle.trim()}" (${targetStatus.toUpperCase()})`
-      })
+    logAdminActivity({
+      adminName,
+      adminRole: adminRoleLabel,
+      adminRoleKey: currentRole,
+      moduleKey: 'broadcaster',
+      moduleName: 'Announcements',
+      action: isEdit ? 'Updated Announcement' : asDraft ? 'Saved Draft Announcement' : 'Published Announcement',
+      targetEntity: `"${formTitle.trim()}" (${targetStatus.toUpperCase()})`
+    })
 
-      showToast(`Updated announcement: "${formTitle.trim()}"`)
-    } else {
-      // Create new item
-      const newItem: AnnouncementItem = {
-        id: `ann-${Date.now().toString().slice(-6)}`,
-        title: formTitle.trim(),
-        content: formContent.trim(),
-        importance: formImportance,
-        status: targetStatus,
-        target_audience: formAudience,
-        target_audience_label: audienceLabel,
-        created_by: 'current-user-id',
-        created_at: new Date().toISOString(),
-        scheduled_for: targetStatus === 'scheduled' ? new Date(formScheduleDate).toISOString() : null,
-        authorName: adminName,
-        authorRole: adminRoleLabel,
-        is_edited: false,
-        send_push: formSendPush
-      }
-
-      saveAnnouncementsState([newItem, ...announcements])
-
-      // Audit Log
-      logAdminActivity({
-        adminName,
-        adminRole: adminRoleLabel,
-        adminRoleKey: currentRole,
-        moduleKey: 'broadcaster',
-        moduleName: 'Announcements',
-        action: asDraft ? 'Saved Draft Announcement' : 'Published Announcement',
-        targetEntity: `"${formTitle.trim()}" (${targetStatus.toUpperCase()})`
-      })
-
-      showToast(
-        asDraft
+    showToast(
+      isEdit
+        ? `Updated announcement: "${formTitle.trim()}"`
+        : asDraft
           ? `Draft saved: "${formTitle.trim()}"`
           : targetStatus === 'scheduled'
             ? `Announcement scheduled for ${new Date(formScheduleDate).toLocaleDateString()}`
             : `Announcement published to ${audienceLabel}!`
-      )
-    }
+    )
+    await fetchAnnouncements()
 
     setIsSubmitting(false)
     setViewMode('list')
@@ -512,10 +331,14 @@ export default function BroadcasterClient({ currentRole, adminName, adminRoleLab
   // ---------------------------------------------------------------------------
   // Delete Announcement Action
   // ---------------------------------------------------------------------------
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (!deletingItem) return
-    const updatedList = announcements.filter(a => a.id !== deletingItem.id)
-    saveAnnouncementsState(updatedList)
+    const result = await deleteAnnouncement(deletingItem.id)
+    if (!result.success) {
+      showToast(result.error || 'Could not remove the announcement.')
+      return
+    }
+    setAnnouncements((prev) => prev.filter((a) => a.id !== deletingItem.id))
 
     logAdminActivity({
       adminName,
@@ -1014,7 +837,7 @@ export default function BroadcasterClient({ currentRole, adminName, adminRoleLab
                 <div className="flex items-center gap-2 font-bold text-indigo-950 dark:text-indigo-200">
                   <Sparkles className="w-4 h-4 text-[#4D55CC] dark:text-indigo-400" />
                   <span>
-                    Will be delivered to approx. <strong>{selectedAudienceObj.recipientEstimate} recipients</strong> in{' '}
+                    Will be delivered to <strong>{audienceCounts[selectedAudienceObj.key]} recipients</strong> in{' '}
                     <strong>{selectedAudienceObj.label}</strong>
                   </span>
                 </div>

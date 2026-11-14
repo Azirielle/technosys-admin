@@ -3,7 +3,7 @@ import { supabaseAdmin } from "@/lib/supabase/admin"
 import { revalidatePath } from "next/cache"
 import { logActivity } from "./activity"
 import { verifyRoleAccess } from "@/lib/permissions"
-import { sendPushNotification } from "@/lib/push"
+import { sendPushToUser } from "@/lib/push"
 import { getCleanErrorMessage } from "@/lib/error-sanitizer"
 
 // Normalize a date string that may be date-only (YYYY-MM-DD) to a full ISO timestamp
@@ -143,14 +143,9 @@ export async function createSchedule(formData: FormData) {
     if (error) throw error
 
     // Look up target profile and send push notification
-    const { data: targetProfile } = await supabaseAdmin
-      .from('profiles')
-      .select('push_token')
-      .eq('id', technicianId)
-      .single();
-    if (targetProfile?.push_token) {
-      await sendPushNotification(
-        targetProfile.push_token,
+    if (technicianId) {
+      await sendPushToUser(
+        technicianId,
         "New Dispatch Assigned",
         "You have been assigned to a new schedule. Please check dispatches on home screen."
       );
@@ -277,14 +272,9 @@ export async function bulkCreateSchedules(data: {
         await supabaseAdmin.from('schedules').insert(insertData)
 
         // Look up target profile and send push notification
-        const { data: targetProfile } = await supabaseAdmin
-          .from('profiles')
-          .select('push_token')
-          .eq('id', staffId)
-          .single();
-        if (targetProfile?.push_token) {
-          await sendPushNotification(
-            targetProfile.push_token,
+        if (staffId) {
+          await sendPushToUser(
+            staffId,
             "New Dispatch Assigned",
             "You have been assigned to a new schedule. Please check dispatches on home screen."
           );
@@ -504,28 +494,18 @@ export async function updateSchedule(formData: FormData) {
     // Send push notification to technician if changed or updated
     const targetTechId = technicianId || originalSchedule.technician_id
     if (targetTechId) {
-      const { data: targetProfile } = await supabaseAdmin
-        .from('profiles')
-        .select('push_token')
-        .eq('id', targetTechId)
-        .single();
-      if (targetProfile?.push_token) {
-        await sendPushNotification(
-          targetProfile.push_token,
+      if (targetTechId) {
+        await sendPushToUser(
+          targetTechId,
           "Dispatch Schedule Updated",
           `Your schedule for client "${clientName}" has been updated.`
         );
       }
 
       if (technicianId && originalSchedule.technician_id && originalSchedule.technician_id !== technicianId) {
-        const { data: oldProfile } = await supabaseAdmin
-          .from('profiles')
-          .select('push_token')
-          .eq('id', originalSchedule.technician_id)
-          .single();
-        if (oldProfile?.push_token) {
-          await sendPushNotification(
-            oldProfile.push_token,
+        if (originalSchedule.technician_id) {
+          await sendPushToUser(
+            originalSchedule.technician_id,
             "Dispatch Reassigned",
             `Your assignment for client "${originalSchedule.client_name}" has been transferred.`
           );
@@ -535,7 +515,7 @@ export async function updateSchedule(formData: FormData) {
 
     await logActivity('update_schedule', 'schedule', `Updated schedule details for client "${clientName}"`)
 
-    revalidatePath("/coordinator")
+    revalidatePath("/coordinator", "layout")
     return { success: true }
   } catch (err: any) {
     console.error("Failed to update schedule:", err.message || err)
@@ -590,7 +570,7 @@ export async function reassignSchedule(scheduleId: string, newTechnicianId: stri
     // Fetch names, role, and level for validation, logging, and push
     const { data: newTechProfile } = await supabaseAdmin
       .from('profiles')
-      .select('full_name, push_token, role, technician_level')
+      .select('full_name, role, technician_level')
       .eq('id', newTechnicianId)
       .single()
 
@@ -622,15 +602,9 @@ export async function reassignSchedule(scheduleId: string, newTechnicianId: stri
 
     // Notify old technician
     if (originalSchedule.technician_id) {
-      const { data: oldProfile } = await supabaseAdmin
-        .from('profiles')
-        .select('push_token')
-        .eq('id', originalSchedule.technician_id)
-        .single()
-
-      if (oldProfile?.push_token) {
-        await sendPushNotification(
-          oldProfile.push_token,
+      if (originalSchedule.technician_id) {
+        await sendPushToUser(
+          originalSchedule.technician_id,
           "Dispatch Reassigned",
           `Your assignment for "${originalSchedule.client_name}" has been transferred to ${newTechName}.${reason ? ` Reason: ${reason}` : ''}`
         )
@@ -638,16 +612,16 @@ export async function reassignSchedule(scheduleId: string, newTechnicianId: stri
     }
 
     // Notify new technician
-    if (newTechProfile?.push_token) {
-      await sendPushNotification(
-        newTechProfile.push_token,
+    if (newTechnicianId) {
+      await sendPushToUser(
+        newTechnicianId,
         "New Dispatch Assigned",
         `You have been assigned to client "${originalSchedule.client_name}".`
       )
     }
 
     await logActivity('reassign_schedule', 'schedule', `Reassigned schedule for "${originalSchedule.client_name}" from ${oldTechName} to ${newTechName}${reason ? ` (${reason})` : ''}`)
-    revalidatePath("/coordinator")
+    revalidatePath("/coordinator", "layout")
     return { success: true }
   } catch (err: any) {
     console.error("Failed to reassign schedule:", err.message || err)
@@ -672,7 +646,7 @@ export async function cancelSchedule(scheduleId: string, reason: string) {
 
     const { data: originalSchedule, error: fetchErr } = await supabaseAdmin
       .from('schedules')
-      .select('*, profiles!technician_id(full_name, push_token)')
+      .select('*, profiles!technician_id(full_name)')
       .eq('id', scheduleId)
       .single()
 
@@ -692,17 +666,16 @@ export async function cancelSchedule(scheduleId: string, reason: string) {
     if (updateErr) throw updateErr
 
     // Send push notification to technician if assigned
-    const techProfile = originalSchedule.profiles as any
-    if (techProfile?.push_token) {
-      await sendPushNotification(
-        techProfile.push_token,
+    if (originalSchedule.technician_id) {
+      await sendPushToUser(
+        originalSchedule.technician_id,
         "Dispatch Cancelled",
         `Your schedule for "${originalSchedule.client_name}" has been cancelled. Reason: ${reason.trim()}`
       )
     }
 
     await logActivity('cancel_schedule', 'schedule', `Cancelled dispatch for "${originalSchedule.client_name}". Reason: ${reason.trim()}`)
-    revalidatePath("/coordinator")
+    revalidatePath("/coordinator", "layout")
     return { success: true }
   } catch (err: any) {
     console.error("Failed to cancel schedule:", err.message || err)
@@ -812,7 +785,7 @@ export async function createDispatchesWithCrew(data: {
     // 1. Fetch lead technician profile
     const { data: leadProfile } = await supabaseAdmin
       .from('profiles')
-      .select('id, full_name, role, technician_level, push_token')
+      .select('id, full_name, role, technician_level')
       .eq('id', leadTechnicianId)
       .single();
 
@@ -826,7 +799,7 @@ export async function createDispatchesWithCrew(data: {
     }
 
     // Operational Hierarchy: A helper cannot be designated as lead
-    if (leadProfile.technician_level === 'helper' || leadProfile.role === 'helper') {
+    if (leadProfile.technician_level === 'helper') {
       return { error: "Operational Hierarchy: A Helper cannot be designated as Lead Technician. Please select a Senior or Standard Technician." };
     }
 
@@ -887,7 +860,7 @@ export async function createDispatchesWithCrew(data: {
     if (helperTechnicianIds.length > 0) {
       const { data: helperProfiles } = await supabaseAdmin
         .from('profiles')
-        .select('id, full_name, role, push_token')
+        .select('id, full_name, role')
         .in('id', helperTechnicianIds);
 
       const helperInserts = helperTechnicianIds.map(hId => {
@@ -923,9 +896,9 @@ export async function createDispatchesWithCrew(data: {
 
       // Push notification to helpers
       for (const hProf of helperProfiles || []) {
-        if (hProf.push_token) {
-          await sendPushNotification(
-            hProf.push_token,
+        {
+          await sendPushToUser(
+            hProf.id,
             "New Field Dispatch",
             `You are assigned to support Lead Tech ${leadProfile.full_name} at "${clientName.trim()}".`
           );
@@ -950,10 +923,10 @@ export async function createDispatchesWithCrew(data: {
     }
 
     // Push notification to lead technician
-    if (leadProfile.push_token) {
+    {
       const crewCount = helperTechnicianIds.length + casualHelperIds.length;
-      await sendPushNotification(
-        leadProfile.push_token,
+      await sendPushToUser(
+        leadProfile.id,
         "New Dispatch Assigned",
         `You are Lead Technician for "${clientName.trim()}"${crewCount > 0 ? ` with ${crewCount} crew members` : ''}.`
       );
@@ -967,7 +940,7 @@ export async function createDispatchesWithCrew(data: {
       `Dispatched Lead ${leadProfile.full_name} to "${clientName.trim()}" (Crew: ${crewSummary})`
     );
 
-    revalidatePath("/coordinator");
+    revalidatePath("/coordinator", "layout");
     return { success: true, scheduleId: leadScheduleId };
   } catch (err: any) {
     console.error("Failed to create dispatches with crew:", err.message || err);
@@ -1049,7 +1022,7 @@ export async function createCasualHelper(data: {
       `Registered casual worker "${data.fullName.trim()}" (Daily Rate: ₱${data.dailyRate || 610})`
     );
 
-    revalidatePath("/coordinator");
+    revalidatePath("/coordinator", "layout");
     return { success: true, helper: created };
   } catch (err: any) {
     console.error("Failed to create casual helper:", err.message || err);
@@ -1089,7 +1062,7 @@ export async function updateCasualHelper(id: string, data: {
     if (error) throw error;
 
     await logActivity('update_casual_helper', 'casual_helpers', `Updated details for casual worker ID ${id}`);
-    revalidatePath("/coordinator");
+    revalidatePath("/coordinator", "layout");
     return { success: true };
   } catch (err: any) {
     console.error("Failed to update casual helper:", err.message || err);
@@ -1186,7 +1159,7 @@ export async function createOnSiteServiceAction(data: {
     ];
 
     const { error: crewErr } = await supabaseAdmin
-      .from('schedule_crew_assignments')
+      .from('schedule_crew')
       .insert(crewInserts);
 
     if (crewErr) console.warn("Notice: crew assignments insert:", crewErr);
@@ -1201,7 +1174,7 @@ export async function createOnSiteServiceAction(data: {
     }
 
     // 4. Log change in schedule_change_logs
-    await supabaseAdmin.from('schedule_change_logs').insert({
+    await supabaseAdmin.from('schedule_history').insert({
       schedule_id: scheduleId,
       action_type: 'created',
       new_payload: { ...schedulePayload, crew: crewInserts },
@@ -1209,7 +1182,7 @@ export async function createOnSiteServiceAction(data: {
     });
 
     await logActivity('create_schedule', 'schedule', `Created on-site dispatch: "${clientName.trim()}" at ${location.trim()}`);
-    revalidatePath("/coordinator");
+    revalidatePath("/coordinator", "layout");
     return { success: true, scheduleId };
   } catch (err: any) {
     console.error("Failed to create on-site service:", err.message || err);
@@ -1287,10 +1260,10 @@ export async function createDeploymentAction(data: {
       notes: notes || 'Initial deployment crew'
     }));
 
-    await supabaseAdmin.from('schedule_crew_assignments').insert(crewInserts);
+    await supabaseAdmin.from('schedule_crew').insert(crewInserts);
 
     // 3. Log change in schedule_change_logs
-    await supabaseAdmin.from('schedule_change_logs').insert({
+    await supabaseAdmin.from('schedule_history').insert({
       schedule_id: scheduleId,
       action_type: 'created',
       new_payload: { ...schedulePayload, crew: crewInserts },
@@ -1298,7 +1271,7 @@ export async function createDeploymentAction(data: {
     });
 
     await logActivity('create_schedule', 'schedule', `Created out-of-town deployment: "${projectName.trim()}" at ${location.trim()}`);
-    revalidatePath("/coordinator");
+    revalidatePath("/coordinator", "layout");
     return { success: true, scheduleId };
   } catch (err: any) {
     console.error("Failed to create deployment:", err.message || err);
@@ -1355,7 +1328,7 @@ export async function createOfficeDutyAction(data: {
       if (created) {
         createdIds.push(created.id);
         // Link crew assignment
-        await supabaseAdmin.from('schedule_crew_assignments').insert({
+        await supabaseAdmin.from('schedule_crew').insert({
           schedule_id: created.id,
           technician_id: techId,
           assignment_role: 'crew',
@@ -1365,7 +1338,7 @@ export async function createOfficeDutyAction(data: {
         });
 
         // Log creation
-        await supabaseAdmin.from('schedule_change_logs').insert({
+        await supabaseAdmin.from('schedule_history').insert({
           schedule_id: created.id,
           action_type: 'created',
           new_payload: schedulePayload,
@@ -1375,7 +1348,7 @@ export async function createOfficeDutyAction(data: {
     }
 
     await logActivity('create_schedule', 'schedule', `Scheduled Pacita HQ Office Duty for ${technicianIds.length} staff member(s)`);
-    revalidatePath("/coordinator");
+    revalidatePath("/coordinator", "layout");
     return { success: true, count: createdIds.length };
   } catch (err: any) {
     console.error("Failed to create office duty:", err.message || err);
@@ -1422,7 +1395,7 @@ export async function rescheduleAssignmentAction(data: {
     if (updateErr) throw updateErr;
 
     // Log historical change
-    await supabaseAdmin.from('schedule_change_logs').insert({
+    await supabaseAdmin.from('schedule_history').insert({
       schedule_id: scheduleId,
       action_type: 'rescheduled',
       previous_payload: { start_time: existing.start_time, end_time: existing.end_time },
@@ -1431,7 +1404,7 @@ export async function rescheduleAssignmentAction(data: {
     });
 
     await logActivity('update_schedule', 'schedule', `Rescheduled "${existing.client_name}" to ${newDate} (${newStartTime}). Reason: ${reason}`);
-    revalidatePath("/coordinator");
+    revalidatePath("/coordinator", "layout");
     return { success: true };
   } catch (err: any) {
     console.error("Failed to reschedule assignment:", err.message || err);
@@ -1472,7 +1445,7 @@ export async function cancelAssignmentAction(data: {
 
     // Release all active crew in schedule_crew_assignments
     await supabaseAdmin
-      .from('schedule_crew_assignments')
+      .from('schedule_crew')
       .update({
         status: 'released',
         released_at: new Date().toISOString(),
@@ -1482,7 +1455,7 @@ export async function cancelAssignmentAction(data: {
       .eq('status', 'active');
 
     // Log audit
-    await supabaseAdmin.from('schedule_change_logs').insert({
+    await supabaseAdmin.from('schedule_history').insert({
       schedule_id: scheduleId,
       action_type: 'cancelled',
       previous_payload: { status: existing.status },
@@ -1491,7 +1464,7 @@ export async function cancelAssignmentAction(data: {
     });
 
     await logActivity('cancel_schedule', 'schedule', `Cancelled assignment "${existing.client_name}". Reason: ${reason}`);
-    revalidatePath("/coordinator");
+    revalidatePath("/coordinator", "layout");
     return { success: true };
   } catch (err: any) {
     console.error("Failed to cancel assignment:", err.message || err);
@@ -1513,7 +1486,7 @@ export async function addCrewToDeploymentAction(data: {
     const { scheduleId, technicianId, role = 'crew', joinedAt, notes } = data;
 
     const { error } = await supabaseAdmin
-      .from('schedule_crew_assignments')
+      .from('schedule_crew')
       .upsert({
         schedule_id: scheduleId,
         technician_id: technicianId,
@@ -1525,14 +1498,14 @@ export async function addCrewToDeploymentAction(data: {
 
     if (error) throw error;
 
-    await supabaseAdmin.from('schedule_change_logs').insert({
+    await supabaseAdmin.from('schedule_history').insert({
       schedule_id: scheduleId,
       action_type: 'crew_added',
       new_payload: { technicianId, role, joinedAt },
       reason: notes || 'Added crew member to deployment'
     });
 
-    revalidatePath("/coordinator");
+    revalidatePath("/coordinator", "layout");
     return { success: true };
   } catch (err: any) {
     return { error: err.message || "Failed to add crew member." };
@@ -1551,7 +1524,7 @@ export async function releaseCrewFromDeploymentAction(data: {
     const { scheduleId, technicianId, reason } = data;
 
     const { error } = await supabaseAdmin
-      .from('schedule_crew_assignments')
+      .from('schedule_crew')
       .update({
         status: 'released',
         released_at: new Date().toISOString(),
@@ -1562,14 +1535,14 @@ export async function releaseCrewFromDeploymentAction(data: {
 
     if (error) throw error;
 
-    await supabaseAdmin.from('schedule_change_logs').insert({
+    await supabaseAdmin.from('schedule_history').insert({
       schedule_id: scheduleId,
       action_type: 'crew_released',
       new_payload: { technicianId, released_at: new Date().toISOString() },
       reason: reason || 'Released technician from deployment'
     });
 
-    revalidatePath("/coordinator");
+    revalidatePath("/coordinator", "layout");
     return { success: true };
   } catch (err: any) {
     return { error: err.message || "Failed to release crew member." };
@@ -1579,7 +1552,7 @@ export async function releaseCrewFromDeploymentAction(data: {
 export async function getScheduleChangeLogs(scheduleId: string) {
   try {
     const { data, error } = await supabaseAdmin
-      .from('schedule_change_logs')
+      .from('schedule_history')
       .select('*, profiles:changed_by(full_name)')
       .eq('schedule_id', scheduleId)
       .order('created_at', { ascending: false });
@@ -1630,12 +1603,12 @@ export async function updateAssignmentDetailsAction(data: {
 
     const { error: updateErr } = await supabaseAdmin
       .from('schedules')
-      .update(updatePayload)
+      .update(updatePayload as any)
       .eq('id', scheduleId);
 
     if (updateErr) throw updateErr;
 
-    await supabaseAdmin.from('schedule_change_logs').insert({
+    await supabaseAdmin.from('schedule_history').insert({
       schedule_id: scheduleId,
       action_type: 'details_updated',
       previous_payload: {
@@ -1648,7 +1621,7 @@ export async function updateAssignmentDetailsAction(data: {
     });
 
     await logActivity('edit_schedule', 'schedule', `Updated details for assignment "${clientName.trim()}"`);
-    revalidatePath("/coordinator");
+    revalidatePath("/coordinator", "layout");
     return { success: true };
   } catch (err: any) {
     return { error: err.message || "Failed to update assignment details." };
