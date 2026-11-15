@@ -72,9 +72,22 @@ export function TableRow({
   return (
     <tr
       onClick={onClick}
+      // Clickable rows can be reached with ↑/↓ (see commands/useShortcuts) or Tab, and opened with Enter.
+      tabIndex={onClick ? 0 : undefined}
+      data-nav-row={onClick ? '' : undefined}
+      onKeyDown={
+        onClick
+          ? (e) => {
+              if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) {
+                e.preventDefault()
+                onClick()
+              }
+            }
+          : undefined
+      }
       className={cx(
         'group h-12 transition-colors duration-75',
-        onClick && 'cursor-pointer',
+        onClick && 'cursor-pointer outline-none focus-visible:bg-surface-soft focus-visible:[&>td:first-child]:shadow-[inset_3px_0_0_var(--tc-focus)]',
         selected ? 'bg-surface-soft' : 'hover:bg-surface-hover',
         className,
       )}

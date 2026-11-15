@@ -37,6 +37,7 @@ export function TicketList({
           <li key={ticket.id}>
             <button
               type="button"
+              data-nav-row
               onClick={() => onSelect(ticket)}
               aria-current={selected || undefined}
               className={cx(

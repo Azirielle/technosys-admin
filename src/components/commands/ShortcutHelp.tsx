@@ -10,6 +10,8 @@ const GENERAL: { keys: string[]; what: string }[] = [
   { keys: ['Ctrl', 'K'], what: 'Quick actions: find a page, an action, a person or a record' },
   { keys: ['N'], what: 'Start a new one on this page (job, tool, policy, announcement…)' },
   { keys: ['/'], what: "Jump to this page's search box" },
+  { keys: ['↑', '↓'], what: 'Move between rows in a list or table' },
+  { keys: ['Enter'], what: 'Open the highlighted row' },
   { keys: ['?'], what: 'Show this list' },
   { keys: ['Esc'], what: 'Close a window' },
 ]
@@ -32,6 +34,15 @@ export function ShortcutHelp({ role, open, onClose }: { role: AdminRole; open: b
           <h3 className="text-caption font-medium text-ink-3">Anywhere</h3>
           <ul className="divide-y divide-line">{GENERAL.map((r) => <Row key={r.what} {...r} />)}</ul>
         </section>
+        {role === 'hr' && (
+          <section>
+            <h3 className="text-caption font-medium text-ink-3">In a leave request</h3>
+            <ul className="divide-y divide-line">
+              <Row keys={['A']} what="Approve the leave" />
+              <Row keys={['D']} what="Decline it (write the reason, then Ctrl Enter)" />
+            </ul>
+          </section>
+        )}
         <section>
           <h3 className="text-caption font-medium text-ink-3">Go to a page (press G, then the letter)</h3>
           <ul className="divide-y divide-line">{pages.map((p) => <Row key={p.id} keys={p.keys ?? []} what={p.title} />)}</ul>

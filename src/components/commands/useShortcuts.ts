@@ -1,6 +1,7 @@
 // useShortcuts: keyboard shortcuts for experienced admins, anywhere in the admin.
 //   G then a letter → go to a page (G L = Leave requests …)   N → start a new one on this page
 //   /  → jump to this page's search box                       ?  → show every shortcut
+//   ↑ ↓ → move between rows you can open; Enter opens the row
 // They are ignored while you type in a box or while a window (modal, drawer, Quick actions) is open.
 'use client'
 
@@ -34,6 +35,17 @@ function focusPageSearch() {
   return true
 }
 
+/** ↑/↓: move between the rows you can open on this page (table rows, the ticket list). Enter opens one. */
+function moveRow(step: 1 | -1) {
+  const rows = Array.from(document.querySelectorAll<HTMLElement>('main [data-nav-row]')).filter((r) => r.offsetParent !== null)
+  if (rows.length === 0) return false
+  const at = rows.indexOf(document.activeElement as HTMLElement)
+  const next = at === -1 ? (step === 1 ? 0 : rows.length - 1) : Math.min(Math.max(at + step, 0), rows.length - 1)
+  rows[next].focus()
+  rows[next].scrollIntoView({ block: 'nearest' })
+  return true
+}
+
 export function useShortcuts(role: AdminRole, onHelp: () => void) {
   const router = useRouter()
   const pathname = usePathname()
@@ -63,6 +75,8 @@ export function useShortcuts(role: AdminRole, onHelp: () => void) {
       } else if (key === 'n') {
         e.preventDefault()
         runPageCommand(router, pathname, { path: pathname, command: 'new' })
+      } else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+        if (moveRow(e.key === 'ArrowDown' ? 1 : -1)) e.preventDefault()
       } else if (e.key === '/') {
         if (focusPageSearch()) e.preventDefault()
       } else if (e.key === '?') {

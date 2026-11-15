@@ -6,6 +6,7 @@ import { AlertTriangle, CalendarDays, Check, CheckCircle2, ExternalLink, X } fro
 import { formatLeaveDuration, formatTimeAgo } from '@/lib/hr-status'
 import { LEAVE_LABELS, REQUEST_STATUS } from '@/lib/labels'
 import { Badge, Button, Checkbox, Modal, cx } from '@/components/ui'
+import { Keys } from '@/components/commands/Keys'
 import { applicantName, type LeaveRecord } from './types'
 
 export function LeaveReviewModal({
@@ -27,11 +28,34 @@ export function LeaveReviewModal({
   const [checkedDates, setCheckedDates] = useState(false)
   const [checkedDocs, setCheckedDocs] = useState(false)
 
-  // Fresh checklist for every request.
-  useEffect(() => {
+  // Fresh checklist for every request (reset while rendering when a different leave opens).
+  const [shownId, setShownId] = useState(leave?.id)
+  if (shownId !== leave?.id) {
+    setShownId(leave?.id)
     setCheckedDates(false)
     setCheckedDocs(false)
-  }, [leave?.id])
+  }
+
+  // Keyboard: A approves, D opens Decline (only for a request still waiting, and not while typing).
+  useEffect(() => {
+    if (!leave || leave.status !== 'pending' || saving) return
+    const onKey = (e: KeyboardEvent) => {
+      const el = e.target as HTMLElement
+      const typing = el.isContentEditable || el.tagName === 'TEXTAREA' || el.tagName === 'SELECT' ||
+        (el.tagName === 'INPUT' && (el as HTMLInputElement).type !== 'checkbox')
+      if (typing || e.ctrlKey || e.metaKey || e.altKey) return
+      const key = e.key.toLowerCase()
+      if (key === 'a') {
+        e.preventDefault()
+        onApprove(leave)
+      } else if (key === 'd') {
+        e.preventDefault()
+        onDecline()
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [leave, saving, onApprove, onDecline])
 
   if (!leave) return null
   const { dateRangeStr, daysCount } = formatLeaveDuration(leave.start_date, leave.end_date)
@@ -103,6 +127,14 @@ export function LeaveReviewModal({
             <Checkbox checked={checkedDates} onChange={(e) => setCheckedDates(e.target.checked)} label="The dates match the schedule" />
             <Checkbox checked={checkedDocs} onChange={(e) => setCheckedDocs(e.target.checked)} label="Supporting documents are complete (if needed)" />
           </section>
+        )}
+
+        {isPending && (
+          <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-caption text-ink-3">
+            <span className="flex items-center gap-1.5"><Keys keys={['A']} /> approve</span>
+            <span className="flex items-center gap-1.5"><Keys keys={['D']} /> decline</span>
+            <span className="flex items-center gap-1.5"><Keys keys={['Esc']} /> close</span>
+          </p>
         )}
       </div>
     </Modal>
