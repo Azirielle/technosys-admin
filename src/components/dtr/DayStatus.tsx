@@ -11,7 +11,7 @@ const STATUS: Record<DailyAuditRecord['status'], { label: string; tone: Tone }> 
   approved_leave: { label: 'On leave', tone: 'info' },
   rest_day: { label: 'Rest day', tone: 'neutral' },
   holiday: { label: 'Holiday', tone: 'info' },
-  off_duty: { label: 'No schedule', tone: 'neutral' },
+  off_duty: { label: 'Not yet', tone: 'neutral' },
   unclosed: { label: 'No time out', tone: 'danger' },
 }
 
@@ -36,6 +36,9 @@ export function DayStatus({ day }: { day: DailyAuditRecord }) {
       )}
       {day.gpsAccuracy != null && day.gpsAccuracy > 65 && (
         <Badge title="GPS was not precise during this punch">GPS ±{Math.round(day.gpsAccuracy)} m</Badge>
+      )}
+      {(day.unapprovedOtHours ?? 0) >= 0.1 && (
+        <Badge title="Worked past 8 hours without an approved overtime request, so it isn't counted as overtime">+{day.unapprovedOtHours} h not approved</Badge>
       )}
       {day.isCorrected && (
         <Badge icon={History} title={day.correctionDetails?.reason}>Corrected</Badge>
