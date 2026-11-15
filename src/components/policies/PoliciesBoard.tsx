@@ -2,6 +2,7 @@
 'use client'
 
 import { useMemo, useState } from 'react'
+import { usePageCommand } from '@/components/commands/pageCommands'
 import { BookOpen, CheckCircle2, FileClock, Plus, ScrollText, Search, Users } from 'lucide-react'
 import { dispatchPolicyReminder, forkPolicyRevision, submitPolicyForReview, type CompanyPolicy } from '@/app/actions/policies'
 import { Button, Input, Page, PageHeader, StatRow, StatTile, TableContainer, Tabs, useToast } from '@/components/ui'
@@ -32,6 +33,13 @@ export function PoliciesBoard() {
   const [openId, setOpenId] = useState<string | null>(null)
   const [dialog, setDialog] = useState<Dialog>('none')
   const [editing, setEditing] = useState<CompanyPolicy | null>(null)
+  // Quick actions and the N shortcut: start a new policy, or open one by id.
+  usePageCommand(['new', 'open'], (command, id) => {
+    if (command === 'new') {
+      setEditing(null)
+      setDialog('form')
+    } else if (id) setOpenId(id)
+  })
   const [busy, setBusy] = useState(false)
 
   const open = policies.find((p) => p.id === openId) ?? null

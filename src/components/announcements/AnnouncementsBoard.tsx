@@ -2,6 +2,7 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { usePageCommand } from '@/components/commands/pageCommands'
 import { Plus, Search } from 'lucide-react'
 import { getAudienceCounts, listAnnouncements } from '@/app/actions/announcements'
 import { logAdminActivity } from '@/lib/auditLogger'
@@ -37,13 +38,8 @@ export function AnnouncementsBoard({ currentRole, adminName, adminRoleLabel }: {
     getAudienceCounts().then(setCounts).catch(() => {})
   }, [load])
 
-  // The quick-actions palette and "?action=create" open a new announcement straight away.
-  useEffect(() => {
-    const openNew = () => setForm({ open: true, item: null })
-    window.addEventListener('open-create-announcement', openNew)
-    if (new URLSearchParams(window.location.search).get('action') === 'create') openNew()
-    return () => window.removeEventListener('open-create-announcement', openNew)
-  }, [])
+  // Quick actions and the N shortcut open a new announcement straight away.
+  usePageCommand(['new'], () => setForm({ open: true, item: null }))
 
   function log(action: string, target: string) {
     logAdminActivity({ adminName, adminRole: adminRoleLabel, adminRoleKey: currentRole, moduleKey: 'broadcaster', moduleName: 'Announcements', action, targetEntity: target })

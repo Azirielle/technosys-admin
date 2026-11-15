@@ -2,6 +2,7 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { usePageCommand } from '@/components/commands/pageCommands'
 import { Box, Package, Plus, Search, ShieldAlert, Wrench } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { getTechnicians } from '@/app/actions/inventory'
@@ -44,6 +45,22 @@ export function InventoryBoard() {
   const [deleting, setDeleting] = useState<Tool | null>(null)
   const [returning, setReturning] = useState<Borrowing | null>(null)
   const [viewing, setViewing] = useState<Borrowing | null>(null)
+
+  // Quick actions and the N shortcut: add a tool, or open "Lend" for a tool once the list has loaded.
+  const [pendingLend, setPendingLend] = useState<string | null>(null)
+  usePageCommand(['new', 'lend'], (command, id) => {
+    if (command === 'new') setToolForm({ open: true, tool: null })
+    else if (id) setPendingLend(id)
+  })
+  if (pendingLend && !loading) {
+    // Adjusting state while rendering (React's pattern for this): runs once, when the tools are ready.
+    setPendingLend(null)
+    const tool = tools.find((t) => t.id === pendingLend)
+    if (tool) {
+      setTab('tools')
+      setLending(tool)
+    }
+  }
 
   const load = useCallback(async () => {
     const [toolsRes, borrowRes, staff] = await Promise.all([

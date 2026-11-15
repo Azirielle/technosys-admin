@@ -1,70 +1,106 @@
-// AdminQuickActionsModal: the Ctrl K palette. Type to find a page or action; arrows to move, Enter to open, Esc to close.
+// AdminQuickActionsModal: Quick actions (Ctrl K). Type to find an action, a page, a person or a record, then Enter.
+// Also turns on the keyboard shortcuts (G + letter, N, /, ?) and the "?" shortcut list.
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
-import { CornerDownLeft, Moon, Search, Sun } from 'lucide-react'
+import { Keyboard, Moon, Search, Sun } from 'lucide-react'
+import { createClient } from '@/lib/supabase/client'
 import { useTheme } from '@/components/theme/ThemeProvider'
-import { cx } from '@/components/ui'
-import { QUICK_ACTIONS, type AdminRole, type QuickAction } from './quickActionList'
+import { Keys } from '@/components/commands/Keys'
+import { PaletteList, type PaletteItem } from '@/components/commands/PaletteList'
+import { runPageCommand } from '@/components/commands/pageCommands'
+import { searchRecords, type RecordResult } from '@/components/commands/searchRecords'
+import { ShortcutHelp } from '@/components/commands/ShortcutHelp'
+import { useShortcuts } from '@/components/commands/useShortcuts'
+import { QUICK_ACTIONS, type AdminRole } from './quickActionList'
 
-type Item = Pick<QuickAction, 'id' | 'title' | 'hint' | 'icon' | 'keywords'> & { run: () => void }
+const SEARCH_DELAY_MS = 200
 
-function Key({ children }: { children: React.ReactNode }) {
-  return <kbd className="rounded-chip bg-surface-soft px-1.5 py-0.5 font-mono text-micro text-ink-2">{children}</kbd>
+function matches(item: { title: string; hint: string; keywords?: string[] }, q: string) {
+  return item.title.toLowerCase().includes(q) || item.hint.toLowerCase().includes(q) || (item.keywords ?? []).some((k) => k.includes(q))
 }
 
 export function AdminQuickActionsModal({ role }: { role: AdminRole }) {
   const router = useRouter()
   const pathname = usePathname()
+  const supabase = useMemo(() => createClient(), [])
   const { resolvedTheme, toggleTheme } = useTheme()
   const [open, setOpen] = useState(false)
+  const [helpOpen, setHelpOpen] = useState(false)
   const [query, setQuery] = useState('')
   const [index, setIndex] = useState(0)
+  const [records, setRecords] = useState<RecordResult[]>([])
+  const [searching, setSearching] = useState(false)
 
-  const items = useMemo<Item[]>(() => {
-    const go = (a: QuickAction) => () => {
-      setOpen(false)
-      const path = a.href.split('?')[0]
-      if (a.event && pathname === path) window.dispatchEvent(new CustomEvent(a.event))
-      else router.push(a.href)
+  const showHelp = useCallback(() => setHelpOpen(true), [])
+  useShortcuts(role, showHelp)
+
+  /** Typing: show the "looking up" rows at once (2+ letters), or clear old results. */
+  function changeQuery(text: string) {
+    setQuery(text)
+    setIndex(0)
+    const long = text.trim().length >= 2
+    setSearching(long)
+    if (!long) setRecords([])
+  }
+
+  // Look up people and records a moment after typing stops.
+  useEffect(() => {
+    if (!open || query.trim().length < 2) return
+    let current = true
+    const timer = window.setTimeout(() => {
+      searchRecords(supabase, role, query)
+        .then((r) => current && setRecords(r))
+        .catch(() => current && setRecords([]))
+        .finally(() => current && setSearching(false))
+    }, SEARCH_DELAY_MS)
+    return () => {
+      current = false
+      window.clearTimeout(timer)
     }
-    const dark = resolvedTheme === 'dark'
-    return [
-      ...QUICK_ACTIONS[role].map((a) => ({ ...a, run: go(a) })),
-      {
-        id: 'theme',
-        title: dark ? 'Light mode' : 'Dark mode',
-        hint: 'Change how the admin looks',
-        icon: dark ? Sun : Moon,
-        keywords: ['theme', 'dark', 'light', 'mode'],
-        run: () => {
-          toggleTheme()
-          setOpen(false)
-        },
-      },
-    ]
-  }, [role, pathname, router, resolvedTheme, toggleTheme])
+  }, [open, query, role, supabase])
 
-  const shown = useMemo(() => {
+  const items = useMemo<PaletteItem[]>(() => {
+    const close = (fn: () => void) => () => {
+      setOpen(false)
+      fn()
+    }
     const q = query.trim().toLowerCase()
-    if (!q) return items
-    return items.filter((i) => i.title.toLowerCase().includes(q) || i.hint.toLowerCase().includes(q) || i.keywords.some((k) => k.includes(q)))
-  }, [items, query])
+    const actions = QUICK_ACTIONS[role]
+      .filter((a) => !q || matches(a, q))
+      .map((a) => ({
+        ...a,
+        run: close(() => (a.command ? runPageCommand(router, pathname, { path: a.path, command: a.command }) : router.push(a.path))),
+      }))
+      // Actions first, then pages.
+      .sort((a, b) => (a.group === b.group ? 0 : a.group === 'Do' ? -1 : 1))
+    const found = records.map((r) => ({ ...r, group: 'People and records', run: close(() => runPageCommand(router, pathname, r.target)) }))
+    const dark = resolvedTheme === 'dark'
+    const settings: PaletteItem[] = [
+      { id: 'shortcuts', group: 'Settings', title: 'Keyboard shortcuts', hint: 'Every shortcut, to work without the mouse', icon: Keyboard, keys: ['?'], run: close(showHelp) },
+      { id: 'theme', group: 'Settings', title: dark ? 'Light mode' : 'Dark mode', hint: 'Change how the admin looks', icon: dark ? Sun : Moon, run: close(toggleTheme) },
+    ].filter((s) => !q || matches({ ...s, keywords: ['theme', 'dark', 'light', 'keyboard', 'shortcut', 'keys'] }, q))
+    return [...actions, ...found, ...settings]
+  }, [role, query, records, router, pathname, resolvedTheme, toggleTheme, showHelp])
 
   // Opened by Ctrl K / Cmd K anywhere, or by the "Quick actions" button in the menu.
   useEffect(() => {
-    const show = () => {
-      setOpen(true)
+    const reset = () => {
       setQuery('')
       setIndex(0)
+      setRecords([])
+      setSearching(false)
+    }
+    const show = () => {
+      setOpen(true)
+      reset()
     }
     const onKey = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault()
         setOpen((o) => !o)
-        setQuery('')
-        setIndex(0)
+        reset()
       }
     }
     window.addEventListener('open-quick-actions', show)
@@ -75,70 +111,45 @@ export function AdminQuickActionsModal({ role }: { role: AdminRole }) {
     }
   }, [])
 
-  if (!open) return null
-
   function onKeyDown(e: React.KeyboardEvent) {
     if (e.key === 'Escape') setOpen(false)
-    else if (e.key === 'ArrowDown') setIndex((i) => (i + 1) % Math.max(shown.length, 1))
-    else if (e.key === 'ArrowUp') setIndex((i) => (i - 1 + shown.length) % Math.max(shown.length, 1))
-    else if (e.key === 'Enter') shown[index]?.run()
+    else if (e.key === 'ArrowDown') setIndex((i) => (i + 1) % Math.max(items.length, 1))
+    else if (e.key === 'ArrowUp') setIndex((i) => (i - 1 + items.length) % Math.max(items.length, 1))
+    else if (e.key === 'Enter') items[Math.min(index, items.length - 1)]?.run()
     else return
     e.preventDefault()
   }
 
   return (
-    <div className="fixed inset-0 z-[9999] flex items-start justify-center bg-scrim p-4 pt-[12vh] animate-in fade-in duration-150" onClick={() => setOpen(false)}>
-      <div role="dialog" aria-modal="true" aria-label="Quick actions" className="w-full max-w-xl overflow-hidden rounded-modal bg-surface shadow-overlay" onClick={(e) => e.stopPropagation()} onKeyDown={onKeyDown}>
-        <div className="flex items-center gap-3 border-b border-line px-5">
-          <Search className="size-4 shrink-0 text-ink-3" aria-hidden />
-          {/* autoFocus: focused the moment it appears, so typing right after Ctrl K is never lost. */}
-          <input
-            autoFocus
-            value={query}
-            onChange={(e) => {
-              setQuery(e.target.value)
-              setIndex(0)
-            }}
-            placeholder="Search pages and actions"
-            aria-label="Search pages and actions"
-            className="h-14 flex-1 bg-transparent text-body text-ink outline-none placeholder:text-ink-3"
-          />
-          <Key>Esc</Key>
-        </div>
+    <>
+      <ShortcutHelp role={role} open={helpOpen} onClose={() => setHelpOpen(false)} />
+      {open && (
+        <div className="fixed inset-0 z-[9999] flex items-start justify-center bg-scrim p-4 pt-[12vh] animate-in fade-in duration-150" onClick={() => setOpen(false)}>
+          <div role="dialog" aria-modal="true" aria-label="Quick actions" className="w-full max-w-xl overflow-hidden rounded-modal bg-surface shadow-overlay" onClick={(e) => e.stopPropagation()} onKeyDown={onKeyDown}>
+            <div className="flex items-center gap-3 border-b border-line px-5">
+              <Search className="size-4 shrink-0 text-ink-3" aria-hidden />
+              {/* autoFocus: focused the moment it appears, so typing right after Ctrl K is never lost. */}
+              <input
+                autoFocus
+                value={query}
+                onChange={(e) => changeQuery(e.target.value)}
+                placeholder="Find an action, page, person or record"
+                aria-label="Find an action, page, person or record"
+                className="h-14 flex-1 bg-transparent text-body text-ink outline-none placeholder:text-ink-3"
+              />
+              <Keys keys={['Esc']} />
+            </div>
 
-        <ul role="listbox" aria-label="Results" className="max-h-[50vh] overflow-y-auto p-2">
-          {shown.length === 0 && <li className="px-3 py-8 text-center text-small text-ink-3">Nothing matches “{query}”.</li>}
-          {shown.map((item, i) => {
-            const Icon = item.icon
-            const active = i === index
-            return (
-              <li key={item.id} role="option" aria-selected={active}>
-                <button
-                  type="button"
-                  onMouseEnter={() => setIndex(i)}
-                  onClick={item.run}
-                  className={cx('flex w-full cursor-pointer items-center gap-3 rounded-control px-3 py-2.5 text-left', active && 'bg-surface-soft')}
-                >
-                  <span className={cx('flex size-9 shrink-0 items-center justify-center rounded-pill', active ? 'bg-action text-on-action' : 'bg-surface-soft text-ink-2')}>
-                    <Icon className="size-4" aria-hidden />
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block text-small font-medium text-ink">{item.title}</span>
-                    <span className="block truncate text-caption text-ink-3">{item.hint}</span>
-                  </span>
-                  {active && <CornerDownLeft className="size-4 text-ink-3" aria-hidden />}
-                </button>
-              </li>
-            )
-          })}
-        </ul>
+            <PaletteList items={items} index={index} searching={searching} query={query} onHover={setIndex} />
 
-        <div className="flex items-center gap-4 border-t border-line px-5 py-3 text-caption text-ink-3">
-          <span className="flex items-center gap-1.5"><Key>↑</Key><Key>↓</Key> move</span>
-          <span className="flex items-center gap-1.5"><Key>Enter</Key> open</span>
-          <span className="ml-auto flex items-center gap-1.5"><Key>Ctrl</Key><Key>K</Key> open or close</span>
+            <div className="flex items-center gap-4 border-t border-line px-5 py-3 text-caption text-ink-3">
+              <span className="flex items-center gap-1.5"><Keys keys={['↑', '↓']} /> move</span>
+              <span className="flex items-center gap-1.5"><Keys keys={['Enter']} /> open</span>
+              <span className="ml-auto flex items-center gap-1.5"><Keys keys={['?']} /> all shortcuts</span>
+            </div>
+          </div>
         </div>
-      </div>
-    </div>
+      )}
+    </>
   )
 }

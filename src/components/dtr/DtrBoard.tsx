@@ -2,6 +2,7 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { usePageCommand } from '@/components/commands/pageCommands'
 import { AlertTriangle, CalendarCheck, Clock, Download, Search, Users } from 'lucide-react'
 import { getDtrRecords, type DailyAuditRecord, type EmployeeAuditSummary } from '@/app/actions/audit'
 import {
@@ -43,6 +44,8 @@ export function DtrBoard() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [openId, setOpenId] = useState<string | null>(null)
+  // Quick actions: open a person's DTR for this cut-off by id.
+  usePageCommand(['open'], (_command, id) => id && setOpenId(id))
   const [correcting, setCorrecting] = useState<DailyAuditRecord | null>(null)
   const [history, setHistory] = useState<HistoryTarget | null>(null)
 

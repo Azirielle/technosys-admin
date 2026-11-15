@@ -1,7 +1,8 @@
 // AccessBoard: the CEO's Temporary access page — who is away today, who can use which extra pages, give or remove access.
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
+import { usePageCommand } from '@/components/commands/pageCommands'
 import { CalendarOff, KeyRound, Plus, ShieldOff, Users, X } from 'lucide-react'
 import { resetAllPersistentOverrides } from '@/app/actions/system-overrides'
 import type { OverrideMetadataItem, RoleKey } from '@/lib/overrides'
@@ -41,13 +42,8 @@ export function AccessBoard() {
   const [removing, setRemoving] = useState<Grant | 'all' | null>(null)
   const [busy, setBusy] = useState(false)
 
-  // The quick-actions palette and "?action=give_access" open the form straight away.
-  useEffect(() => {
-    const open = () => setGiving(true)
-    window.addEventListener('open-give-access-modal', open)
-    if (new URLSearchParams(window.location.search).get('action') === 'give_access') open()
-    return () => window.removeEventListener('open-give-access-modal', open)
-  }, [])
+  // Quick actions and the N shortcut open the form straight away.
+  usePageCommand(['new'], () => setGiving(true))
 
   async function give(role: RoleKey, list: string[], meta: Record<string, OverrideMetadataItem>) {
     const res = await saveRole(role, list, { ...(metadata[role] ?? {}), ...meta })

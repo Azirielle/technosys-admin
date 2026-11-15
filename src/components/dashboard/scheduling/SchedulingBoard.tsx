@@ -2,6 +2,7 @@
 'use client'
 
 import { useMemo, useState } from 'react'
+import { usePageCommand } from '@/components/commands/pageCommands'
 import { CalendarDays, Plus, UserPlus, Users } from 'lucide-react'
 import { Button, PageHeader, Skeleton, Tabs, useToast } from '@/components/ui'
 import { formatLocalDate, type AssignmentType, type AssignmentTypeFilter, type CasualHelperItem, type HorizonGranularity, type ScheduleItem, type ViewMode } from './types'
@@ -65,6 +66,25 @@ export function SchedulingBoard() {
   function openJobDrawer(job: ScheduleItem, view: 'reschedule' | 'edit_details') {
     setOpenJob(job)
     setJobTab(view)
+    setDrawer('job')
+  }
+
+  // Quick actions and the N shortcut: "new" starts a job; "open" jumps to the job's day and opens its panel.
+  const [pendingJobId, setPendingJobId] = useState<string | null>(null)
+  usePageCommand(['new', 'open'], (command, id, jobDate) => {
+    setTab('jobs')
+    if (command === 'new') return setDrawer('new')
+    if (!id) return
+    changeGranularity('day')
+    if (jobDate) setDate(new Date(jobDate))
+    setPendingJobId(id)
+  })
+  const pendingJob = pendingJobId && !loading ? schedules.find((s) => s.id === pendingJobId) : undefined
+  if (pendingJob) {
+    // Adjusting state while rendering (React's pattern for this): runs once, when the job's day has loaded.
+    setPendingJobId(null)
+    setOpenJob(pendingJob)
+    setJobTab('reschedule')
     setDrawer('job')
   }
 

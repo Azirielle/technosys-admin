@@ -2,6 +2,7 @@
 'use client'
 
 import { useMemo, useRef, useState } from 'react'
+import { usePageCommand } from '@/components/commands/pageCommands'
 import { Search, X } from 'lucide-react'
 import { IconButton, Input, PageHeader, Tabs, cx, useToast } from '@/components/ui'
 import { TicketList } from './TicketList'
@@ -33,6 +34,13 @@ export function TicketsBoard() {
   const [savingFinish, setSavingFinish] = useState(false)
   const [lightbox, setLightbox] = useState<string | null>(null)
   const stopTypingTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // Quick actions: open a ticket by id (shown under "All" so it's in the list whatever its status).
+  usePageCommand(['open'], (_command, id) => {
+    if (!id) return
+    setFilter('all')
+    openTicket(id)
+  })
 
   const selected = tickets.find((t) => t.id === selectedId) ?? null
   const counts = useMemo(

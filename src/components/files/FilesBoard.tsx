@@ -2,6 +2,7 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { usePageCommand } from '@/components/commands/pageCommands'
 import { CheckCircle2, Download, FileWarning, Search, ShieldAlert, Users } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { Button, Input, Page, PageHeader, Pagination, StatRow, StatTile, TableContainer, Tabs, useToast } from '@/components/ui'
@@ -32,6 +33,8 @@ export function FilesBoard() {
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
   const [openId, setOpenId] = useState<string | null>(null)
+  // Quick actions: open a person's 201 file by id.
+  usePageCommand(['open'], (_command, id) => id && setOpenId(id))
   const [savingKey, setSavingKey] = useState<DocKey | null>(null)
   const [reminding, setReminding] = useState(false)
   const [warningOpen, setWarningOpen] = useState(false)

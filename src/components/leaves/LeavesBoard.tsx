@@ -2,6 +2,7 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { usePageCommand } from '@/components/commands/pageCommands'
 import { ArrowRight, CalendarOff, Paperclip } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { formatLeaveDuration, formatTimeAgo } from '@/lib/hr-status'
@@ -48,6 +49,16 @@ export function LeavesBoard() {
   const [selected, setSelected] = useState<LeaveRecord | null>(null)
   const [declining, setDeclining] = useState(false)
   const [saving, setSaving] = useState(false)
+
+  // Quick actions: open a leave request by id once the list has loaded.
+  const [pendingId, setPendingId] = useState<string | null>(null)
+  usePageCommand(['open'], (_command, id) => id && setPendingId(id))
+  if (pendingId && !loading) {
+    // Adjusting state while rendering (React's pattern for this): runs once, when the list is ready.
+    setPendingId(null)
+    const leave = leaves.find((l) => l.id === pendingId)
+    if (leave) setSelected(leave)
+  }
 
   const fetchLeaves = useCallback(async () => {
     const { data, error } = await supabase
