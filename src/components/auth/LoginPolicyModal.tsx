@@ -5,7 +5,7 @@ import { useState } from 'react'
 import { ShieldCheck } from 'lucide-react'
 import { getPublicPolicy, type CompanyPolicy } from '@/app/actions/policies'
 import { formatDay } from '@/lib/format'
-import { Button, Modal, Tabs } from '@/components/ui'
+import { Button, Modal, Tabs, SkeletonArea, SkeletonText } from '@/components/ui'
 import FormattedPolicyDocument from '@/components/policies/FormattedPolicyDocument'
 
 type PolicyId = 'executive_governance' | 'terms_of_service'
@@ -60,7 +60,9 @@ export function LoginPolicyModal() {
             ]}
           />
           {loading ? (
-            <p className="py-10 text-center text-small text-ink-3">Loading…</p>
+            <SkeletonArea label="Loading the policy" className="py-2">
+              <SkeletonText lines={6} />
+            </SkeletonArea>
           ) : policy ? (
             <article>
               <p className="text-caption text-ink-3">{policy.version}{policy.effective_date ? ` · in effect since ${formatDay(policy.effective_date)}` : ''}</p>

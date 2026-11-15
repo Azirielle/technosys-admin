@@ -51,6 +51,7 @@ To change the look (for example, the warm "Sand" palette), edit only `tokens.css
 | `Modal` | Short confirmations and small forms (2–4 fields) | Put long forms in it; use a Drawer |
 | `Drawer` | Long forms and detail views (ticket thread, 201 file, new job) | |
 | `EmptyState` | A page or card with nothing in it yet. Name what goes there and the next step | Write "No data" |
+| `Skeleton` and friends | Grey shapes while something loads: `SkeletonTableRows` inside a `TableBody`, `SkeletonStatRow`, `SkeletonListCard`, `SkeletonPageHeader`, `SkeletonText`, `SkeletonTable`. `StatTile loading` hides the number until it is known. Wrap a group in `SkeletonArea` so screen readers hear "Loading" once. Whole-page shapes for `loading.tsx` are in `components/loading/PageSkeletons.tsx`. They pulse, and stay still with "reduce motion" | Show a spinner, "Loading…" text, or an empty state / `0` before the data has arrived |
 | `Avatar`, `AvatarStack` | A person (photo or initials); a crew on a job | |
 | `useToast()` | Feedback after an action: `toast.success('Leave approved')`, `toast.error('Couldn't save. Try again.')` | Use `alert()` or build a toast inside the page |
 

@@ -4,6 +4,7 @@ import type { LucideIcon } from 'lucide-react'
 import type { ReactNode } from 'react'
 import type { Tone } from './Badge'
 import { cx } from './cx'
+import { Skeleton } from './Skeleton'
 
 const HINT: Record<Tone, string> = {
   neutral: 'text-ink-2',
@@ -22,9 +23,12 @@ export function StatTile({
   icon: Icon,
   href,
   className,
+  loading = false,
 }: {
   label: string
   value: ReactNode
+  /** True until the number is known: shows a grey block instead of a misleading 0. */
+  loading?: boolean
   /** Shown small after the value: 14 / 18. */
   total?: ReactNode
   hint?: ReactNode
@@ -50,11 +54,20 @@ export function StatTile({
           </span>
         )}
       </div>
-      <div className="mt-2 text-display font-semibold text-ink tabular-nums">
-        {value}
-        {total !== undefined && <span className="ml-0.5 text-heading font-medium text-ink-3">/{total}</span>}
-      </div>
-      {hint && <p className={cx('mt-1 text-caption font-medium', HINT[tone])}>{hint}</p>}
+      {loading ? (
+        <>
+          <Skeleton className="mt-3 h-8 w-16" />
+          {hint && <Skeleton className="mt-2 h-3 w-28" />}
+        </>
+      ) : (
+        <>
+          <div className="mt-2 text-display font-semibold text-ink tabular-nums">
+            {value}
+            {total !== undefined && <span className="ml-0.5 text-heading font-medium text-ink-3">/{total}</span>}
+          </div>
+          {hint && <p className={cx('mt-1 text-caption font-medium', HINT[tone])}>{hint}</p>}
+        </>
+      )}
     </div>
   )
   if (!href) return body

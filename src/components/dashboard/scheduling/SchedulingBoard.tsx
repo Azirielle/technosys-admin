@@ -3,7 +3,7 @@
 
 import { useMemo, useState } from 'react'
 import { CalendarDays, Plus, UserPlus, Users } from 'lucide-react'
-import { Button, PageHeader, Tabs, useToast } from '@/components/ui'
+import { Button, PageHeader, Skeleton, Tabs, useToast } from '@/components/ui'
 import { formatLocalDate, type AssignmentType, type AssignmentTypeFilter, type CasualHelperItem, type HorizonGranularity, type ScheduleItem, type ViewMode } from './types'
 import { useSchedules } from './useSchedules'
 import SchedulingKpis from './SchedulingKpis'
@@ -107,13 +107,17 @@ export function SchedulingBoard() {
           if (v === 'casual') loadHelpers()
         }}
         items={[
-          { value: 'jobs', label: <span className="inline-flex items-center gap-1.5"><CalendarDays className="size-4" aria-hidden />Jobs</span>, count: schedules.length },
-          { value: 'casual', label: <span className="inline-flex items-center gap-1.5"><Users className="size-4" aria-hidden />Temporary workers</span>, count: casualHelpers.length },
+          { value: 'jobs', label: <span className="inline-flex items-center gap-1.5"><CalendarDays className="size-4" aria-hidden />Jobs</span>, count: loading ? undefined : schedules.length },
+          { value: 'casual', label: <span className="inline-flex items-center gap-1.5"><Users className="size-4" aria-hidden />Temporary workers</span>, count: loadingHelpers ? undefined : casualHelpers.length },
         ]}
       />
 
       {tab === 'jobs' ? (
         <>
+          {/* Until the first jobs arrive, a grey bar instead of a row of zeros. */}
+          {loading && schedules.length === 0 ? (
+            <Skeleton className="mb-3 h-11 w-full rounded-card" />
+          ) : (
           <SchedulingKpis
             onSiteCount={counts.onSite}
             deploymentsCount={counts.deployments}
@@ -131,6 +135,7 @@ export function SchedulingBoard() {
               }
             }}
           />
+          )}
           <HorizonFilterBar
             currentDate={date}
             onDateChange={(d) => { setDate(d); setPage(1) }}

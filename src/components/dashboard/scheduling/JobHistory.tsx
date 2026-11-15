@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react'
 import { History } from 'lucide-react'
 import { getScheduleChangeLogs } from '@/app/actions/schedules'
 import { formatDay, formatTime } from '@/lib/format'
-import { EmptyState } from '@/components/ui'
+import { EmptyState, Skeleton, SkeletonArea } from '@/components/ui'
 import type { ScheduleChangeLogItem } from './types'
 
 const ACTION: Record<ScheduleChangeLogItem['action_type'], string> = {
@@ -33,7 +33,12 @@ export function JobHistory({ jobId, onCount }: { jobId: string; onCount?: (n: nu
       .finally(() => setLoading(false))
   }, [jobId, onCount])
 
-  if (loading) return <p className="py-8 text-center text-small text-ink-3">Loading history…</p>
+  if (loading)
+    return (
+      <SkeletonArea label="Loading history" className="flex flex-col gap-3">
+        {Array.from({ length: 3 }, (_, i) => <Skeleton key={i} className="h-16 w-full rounded-control" />)}
+      </SkeletonArea>
+    )
   if (logs.length === 0) return <EmptyState icon={History} title="No changes yet" description="Moves, crew changes and cancellations are listed here." />
 
   return (

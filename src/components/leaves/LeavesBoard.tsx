@@ -23,6 +23,7 @@ import {
   TableRow,
   Tabs,
   useToast,
+  SkeletonTableRows,
 } from '@/components/ui'
 import { LeaveReviewModal } from './LeaveReviewModal'
 import { LeaveDeclineModal } from './LeaveDeclineModal'
@@ -156,9 +157,7 @@ export function LeavesBoard() {
             </TableHead>
             <TableBody>
               {loading && (
-                <TableRow>
-                  <TableCell colSpan={7} className="py-10 text-center text-ink-3">Loading leave requests…</TableCell>
-                </TableRow>
+                <SkeletonTableRows cols={7} />
               )}
               {pageRows.map((leave) => {
                 const { dateRangeStr, daysCount } = formatLeaveDuration(leave.start_date, leave.end_date)

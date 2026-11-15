@@ -3,7 +3,7 @@
 
 import { Megaphone } from 'lucide-react'
 import { formatDay, formatTime } from '@/lib/format'
-import { Badge, EmptyState, Table, TableBody, TableCell, TableHead, TableHeaderCell, TableRow } from '@/components/ui'
+import { Badge, EmptyState, Table, TableBody, TableCell, TableHead, TableHeaderCell, TableRow, SkeletonTableRows } from '@/components/ui'
 import { STATUS, audienceLabel, priorityOf, type Announcement } from './types'
 
 function when(a: Announcement) {
@@ -36,9 +36,7 @@ export function AnnouncementList({
       </TableHead>
       <TableBody>
         {loading && (
-          <TableRow>
-            <TableCell colSpan={5} className="py-10 text-center text-ink-3">Loading announcements…</TableCell>
-          </TableRow>
+          <SkeletonTableRows cols={5} />
         )}
         {!loading &&
           items.map((a) => {

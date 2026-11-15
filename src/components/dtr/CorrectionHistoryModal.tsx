@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react'
 import { History } from 'lucide-react'
 import { getTimeLogCorrectionHistory, type CorrectionHistoryRecord } from '@/app/actions/audit-corrections'
 import { formatDay, formatTime } from '@/lib/format'
-import { Button, EmptyState, Modal } from '@/components/ui'
+import { Button, EmptyState, Modal, Skeleton, SkeletonArea } from '@/components/ui'
 
 export interface HistoryTarget {
   employeeId: string
@@ -43,7 +43,9 @@ export function CorrectionHistoryModal({ target, onClose }: { target: HistoryTar
       footer={<Button onClick={onClose}>Close</Button>}
     >
       {loading ? (
-        <p className="py-8 text-center text-small text-ink-3">Loading history…</p>
+        <SkeletonArea label="Loading history" className="flex flex-col gap-3">
+        {Array.from({ length: 3 }, (_, i) => <Skeleton key={i} className="h-16 w-full rounded-control" />)}
+      </SkeletonArea>
       ) : records.length === 0 ? (
         <EmptyState icon={History} title="No corrections" description="This day hasn't been changed." />
       ) : (

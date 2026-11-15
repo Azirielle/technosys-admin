@@ -24,6 +24,7 @@ import {
   TableRow,
   Tabs,
   useToast,
+  SkeletonTableRows,
 } from '@/components/ui'
 import { GROUPS, areaLabel, roleName } from './activityLabels'
 
@@ -112,9 +113,7 @@ export function ActivityBoard() {
             </TableHead>
             <TableBody>
               {loading && (
-                <TableRow>
-                  <TableCell colSpan={4} className="py-10 text-center text-ink-3">Loading activity…</TableCell>
-                </TableRow>
+                <SkeletonTableRows cols={4} />
               )}
               {shown.slice((page - 1) * PER_PAGE, page * PER_PAGE).map((l) => (
                 <TableRow key={l.id} onClick={() => setOpen(l)}>

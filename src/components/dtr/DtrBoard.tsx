@@ -108,10 +108,10 @@ export function DtrBoard() {
       />
 
       <StatRow>
-        <StatTile icon={Users} label="Field staff" value={records.length} hint={role === 'all' ? 'Technicians and helpers' : role === 'technician' ? 'Technicians' : 'Helpers'} />
-        <StatTile icon={CalendarCheck} label="Days worked" value={totals.days} hint={`${totals.hours} hours in total`} />
-        <StatTile icon={AlertTriangle} label="Lates" value={totals.lates} hint={totals.lates ? `${totals.lateMinutes} minutes in total` : 'No one was late'} tone={totals.lates ? 'warning' : 'success'} />
-        <StatTile icon={Clock} label="Overtime" value={`${totals.ot} h`} hint={`Absent ${totals.absences} d · leave ${totals.leaves} d · night ${totals.nightDiff} h`} />
+        <StatTile loading={loading} icon={Users} label="Field staff" value={records.length} hint={role === 'all' ? 'Technicians and helpers' : role === 'technician' ? 'Technicians' : 'Helpers'} />
+        <StatTile loading={loading} icon={CalendarCheck} label="Days worked" value={totals.days} hint={`${totals.hours} hours in total`} />
+        <StatTile loading={loading} icon={AlertTriangle} label="Lates" value={totals.lates} hint={totals.lates ? `${totals.lateMinutes} minutes in total` : 'No one was late'} tone={totals.lates ? 'warning' : 'success'} />
+        <StatTile loading={loading} icon={Clock} label="Overtime" value={`${totals.ot} h`} hint={`Absent ${totals.absences} d · leave ${totals.leaves} d · night ${totals.nightDiff} h`} />
       </StatRow>
 
       <div className="flex flex-wrap items-center gap-3">

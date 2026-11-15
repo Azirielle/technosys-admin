@@ -26,5 +26,17 @@ export { Steps } from './Steps'
 export { Modal, type ModalProps } from './Modal'
 export { Drawer } from './Drawer'
 export { EmptyState } from './EmptyState'
+export {
+  Skeleton,
+  SkeletonArea,
+  SkeletonText,
+  SkeletonPageHeader,
+  SkeletonStatTile,
+  SkeletonStatRow,
+  SkeletonTabs,
+  SkeletonTableRows,
+  SkeletonTable,
+  SkeletonListCard,
+} from './Skeleton'
 export { Avatar, AvatarStack, initialsOf } from './Avatar'
 export { ToastProvider, ToastCard, useToast } from './Toast'

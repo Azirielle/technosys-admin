@@ -94,9 +94,9 @@ export function AccessBoard() {
       />
 
       <StatRow className="xl:grid-cols-3">
-        <StatTile icon={KeyRound} label="Extra pages open" value={grants.length} hint={grants.length ? 'Shown below' : 'Everyone is in their own role'} />
-        <StatTile icon={Users} label="People covering" value={covering} hint={covering ? [...new Set(grants.map((g) => people[g.role]))].join(', ') : 'Nobody'} />
-        <StatTile icon={CalendarOff} label="On leave today" value={absences.length} hint={absences.length ? 'See the list below' : 'Everyone is in'} tone={absences.length ? 'warning' : 'success'} />
+        <StatTile loading={loading} icon={KeyRound} label="Extra pages open" value={grants.length} hint={grants.length ? 'Shown below' : 'Everyone is in their own role'} />
+        <StatTile loading={loading} icon={Users} label="People covering" value={covering} hint={covering ? [...new Set(grants.map((g) => people[g.role]))].join(', ') : 'Nobody'} />
+        <StatTile loading={loading} icon={CalendarOff} label="On leave today" value={absences.length} hint={absences.length ? 'See the list below' : 'Everyone is in'} tone={absences.length ? 'warning' : 'success'} />
       </StatRow>
 
       <TableContainer>

@@ -4,7 +4,7 @@
 import { ScrollText } from 'lucide-react'
 import type { CompanyPolicy } from '@/app/actions/policies'
 import { formatDay } from '@/lib/format'
-import { Badge, EmptyState, Table, TableBody, TableCell, TableHead, TableHeaderCell, TableRow } from '@/components/ui'
+import { Badge, EmptyState, Table, TableBody, TableCell, TableHead, TableHeaderCell, TableRow, SkeletonTableRows } from '@/components/ui'
 import { STATUS, categoryLabel, nextStep } from './policyLabels'
 import type { Signatures } from './usePolicies'
 
@@ -37,9 +37,7 @@ export function PolicyTable({
       </TableHead>
       <TableBody>
         {loading && (
-          <TableRow>
-            <TableCell colSpan={5} className="py-10 text-center text-ink-3">Loading policies…</TableCell>
-          </TableRow>
+          <SkeletonTableRows cols={5} />
         )}
         {!loading &&
           policies.map((p) => {

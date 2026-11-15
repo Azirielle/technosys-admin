@@ -12,6 +12,7 @@ import {
   TableHead,
   TableHeaderCell,
   TableRow,
+  SkeletonTableRows,
 } from '@/components/ui'
 import { JobRow } from './JobRow'
 import type { HorizonGranularity, ScheduleItem } from './types'
@@ -63,9 +64,7 @@ export default function ScheduleTableView({
           </TableHead>
           <TableBody>
             {loading && (
-              <TableRow>
-                <TableCell colSpan={5} className="py-10 text-center text-ink-3">Loading jobs…</TableCell>
-              </TableRow>
+              <SkeletonTableRows cols={5} />
             )}
             {!loading &&
               rows.map((job) => (

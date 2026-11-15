@@ -126,10 +126,10 @@ export function FilesBoard() {
       />
 
       <StatRow>
-        <StatTile icon={Users} label="Field staff" value={employees.length} hint="Technicians and helpers" />
-        <StatTile icon={FileWarning} label="Missing documents" value={counts.incomplete} hint={counts.incomplete ? 'Files still incomplete' : 'Every file is complete'} tone={counts.incomplete ? 'warning' : 'success'} />
-        <StatTile icon={ShieldAlert} label="With warnings" value={counts.warnings} hint={counts.warnings ? 'Have at least one warning' : 'No warnings on record'} />
-        <StatTile icon={CheckCircle2} label="Complete" value={counts.complete} hint="All six documents received" tone={counts.complete ? 'success' : 'neutral'} />
+        <StatTile loading={loading} icon={Users} label="Field staff" value={employees.length} hint="Technicians and helpers" />
+        <StatTile loading={loading} icon={FileWarning} label="Missing documents" value={counts.incomplete} hint={counts.incomplete ? 'Files still incomplete' : 'Every file is complete'} tone={counts.incomplete ? 'warning' : 'success'} />
+        <StatTile loading={loading} icon={ShieldAlert} label="With warnings" value={counts.warnings} hint={counts.warnings ? 'Have at least one warning' : 'No warnings on record'} />
+        <StatTile loading={loading} icon={CheckCircle2} label="Complete" value={counts.complete} hint="All six documents received" tone={counts.complete ? 'success' : 'neutral'} />
       </StatRow>
 
       <div className="flex flex-wrap items-center justify-between gap-3">

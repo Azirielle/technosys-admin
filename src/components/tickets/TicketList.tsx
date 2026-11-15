@@ -1,9 +1,10 @@
 // TicketList: the left column of the Tickets page, one row per ticket. Click a row to open it.
 'use client'
 
+import { TicketRowSkeleton } from '@/components/loading/PageSkeletons'
 import { Bot, MessageSquare, UserRound } from 'lucide-react'
 import { formatTimeAgo } from '@/lib/hr-status'
-import { Avatar, Badge, EmptyState, cx } from '@/components/ui'
+import { Avatar, Badge, EmptyState, cx, SkeletonArea } from '@/components/ui'
 import { employeeName, ticketStatus, type Ticket } from './types'
 
 export function TicketList({
@@ -19,7 +20,12 @@ export function TicketList({
   emptyText: string
   onSelect: (ticket: Ticket) => void
 }) {
-  if (loading) return <p className="py-16 text-center text-small text-ink-3">Loading tickets…</p>
+  if (loading)
+    return (
+      <SkeletonArea label="Loading tickets" className="flex flex-col gap-4 p-card">
+        {Array.from({ length: 5 }, (_, i) => <TicketRowSkeleton key={i} />)}
+      </SkeletonArea>
+    )
   if (tickets.length === 0) return <EmptyState icon={MessageSquare} title="No tickets here" description={emptyText} />
 
   return (

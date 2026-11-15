@@ -3,6 +3,7 @@ import type { Metadata } from 'next'
 import { PageHeader } from '@/components/ui'
 import { ShowcaseControls } from '@/components/ui-preview/ShowcaseControls'
 import { ShowcaseData } from '@/components/ui-preview/ShowcaseData'
+import { ShowcaseLoading } from '@/components/ui-preview/ShowcaseLoading'
 
 export const metadata: Metadata = { title: 'UI library · TechnoSys' }
 
@@ -12,6 +13,7 @@ function Column({ theme }: { theme: 'light' | 'dark' }) {
       <p className="text-caption font-medium text-ink-3">{theme === 'light' ? 'Light' : 'Dark'}</p>
       <ShowcaseControls />
       <ShowcaseData />
+      <ShowcaseLoading />
     </div>
   )
 }

@@ -1,6 +1,7 @@
 // TicketThread: the right side of the Tickets page — ticket title, actions, the conversation and the reply box.
 'use client'
 
+import { ConversationSkeleton } from '@/components/loading/PageSkeletons'
 import { useEffect, useRef } from 'react'
 import { ArrowLeft, Check, MessageSquare, UserRound, X } from 'lucide-react'
 import { Badge, Button, EmptyState, IconButton } from '@/components/ui'
@@ -101,7 +102,7 @@ export function TicketThread({
           </div>
         )}
         {loadingMessages && messages.length === 0 ? (
-          <p className="py-8 text-center text-small text-ink-3">Loading conversation…</p>
+          <ConversationSkeleton />
         ) : (
           messages.map((m) => <ChatMessage key={m.id} message={m} employeeName={name} onOpenImage={onOpenImage} />)
         )}

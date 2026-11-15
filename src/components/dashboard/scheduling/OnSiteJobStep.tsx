@@ -4,11 +4,11 @@
 import { useState } from 'react'
 import dynamic from 'next/dynamic'
 import { MapPin, Search, SlidersHorizontal } from 'lucide-react'
-import { Button, Field, Input } from '@/components/ui'
+import { Button, Field, Input, Skeleton } from '@/components/ui'
 
 const GeofenceMap = dynamic(() => import('../GeofenceMap'), {
   ssr: false,
-  loading: () => <div className="flex h-44 items-center justify-center rounded-control bg-surface-soft text-caption text-ink-3">Loading map…</div>,
+  loading: () => <Skeleton className="h-44 w-full rounded-control" />,
 })
 
 export interface JobPlace {

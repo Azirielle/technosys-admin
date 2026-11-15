@@ -4,7 +4,7 @@
 import { useState } from 'react'
 import { ChevronDown, ChevronUp, MapPin, Phone, RefreshCw, Search } from 'lucide-react'
 import { formatAgo, formatTime } from '@/lib/format'
-import { Avatar, Badge, EmptyState, IconButton, Input, Tabs, cx } from '@/components/ui'
+import { Avatar, Badge, EmptyState, IconButton, Input, Tabs, cx, Skeleton, SkeletonArea } from '@/components/ui'
 import { STATUS, timeOnShift, type CrewLocation } from './useCrewLocations'
 
 export function CrewPanel({
@@ -47,7 +47,18 @@ export function CrewPanel({
             <Input icon={Search} size="sm" aria-label="Search crew" placeholder="Search name" value={search} onChange={(e) => setSearch(e.target.value)} />
           </div>
           <ul className="flex-1 overflow-y-auto border-t border-line p-2">
-            {loading && crew.length === 0 && <li className="py-8 text-center text-small text-ink-3">Loading crew…</li>}
+            {loading && crew.length === 0 && (
+              <li>
+                <SkeletonArea label="Loading crew" className="flex flex-col gap-3 py-2">
+                  {Array.from({ length: 4 }, (_, i) => (
+                    <span key={i} className="flex items-center gap-2.5">
+                      <Skeleton className="size-8 shrink-0 rounded-pill" />
+                      <Skeleton className="h-4 w-32" />
+                    </span>
+                  ))}
+                </SkeletonArea>
+              </li>
+            )}
             {!loading && shown.length === 0 && (
               <li>
                 <EmptyState

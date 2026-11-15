@@ -1,6 +1,7 @@
 // LiveMapBoard: the Coordinator's Live map page — the map fills the page, the crew list floats on top.
 'use client'
 
+import { MapSkeleton } from '@/components/loading/PageSkeletons'
 import dynamic from 'next/dynamic'
 import { useState } from 'react'
 import { CrewPanel } from './CrewPanel'
@@ -9,7 +10,7 @@ import { useCrewLocations } from './useCrewLocations'
 // Leaflet needs the browser's window, so the map loads only in the browser.
 const CrewMap = dynamic(() => import('./CrewMap'), {
   ssr: false,
-  loading: () => <div className="flex h-full items-center justify-center text-small text-ink-3">Loading map…</div>,
+  loading: () => <MapSkeleton />,
 })
 
 export function LiveMapBoard() {

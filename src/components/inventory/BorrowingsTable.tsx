@@ -14,6 +14,7 @@ import {
   TableHead,
   TableHeaderCell,
   TableRow,
+  SkeletonTableRows,
 } from '@/components/ui'
 import { BORROW_STATUS, CONDITIONS, daysOut, isOverdue, type Borrowing } from './types'
 
@@ -46,9 +47,7 @@ export function BorrowingsTable({
       </TableHead>
       <TableBody>
         {loading && (
-          <TableRow>
-            <TableCell colSpan={5} className="py-10 text-center text-ink-3">Loading borrowed tools…</TableCell>
-          </TableRow>
+          <SkeletonTableRows cols={5} />
         )}
         {!loading &&
           borrowings.map((b) => {

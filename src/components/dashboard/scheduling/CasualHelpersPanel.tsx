@@ -20,6 +20,7 @@ import {
   TableRow,
   Tabs,
   useToast,
+  SkeletonTableRows,
 } from '@/components/ui'
 import type { CasualHelperItem } from './types'
 
@@ -95,9 +96,7 @@ export function CasualHelpersPanel({
             </TableHead>
             <TableBody>
               {loading && (
-                <TableRow>
-                  <TableCell colSpan={5} className="py-10 text-center text-ink-3">Loading temporary workers…</TableCell>
-                </TableRow>
+                <SkeletonTableRows cols={5} />
               )}
               {shown.slice((page - 1) * PER_PAGE, page * PER_PAGE).map((h) => {
                 const active = (h.status || 'active') === 'active'

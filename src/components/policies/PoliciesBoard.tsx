@@ -118,10 +118,10 @@ export function PoliciesBoard() {
       />
 
       <StatRow>
-        <StatTile icon={ScrollText} label="Published" value={counts.active} hint={`${counts.archived} archived`} />
-        <StatTile icon={FileClock} label="Waiting for approval" value={counts.waiting} hint={counts.waiting ? 'Read and decide' : 'Nothing waiting'} tone={counts.waiting ? 'warning' : 'success'} />
-        <StatTile icon={Users} label="Signatures missing" value={counts.unsigned} hint="Across required policies" tone={counts.unsigned ? 'warning' : 'success'} />
-        <StatTile icon={CheckCircle2} label="Drafts" value={counts.drafts - counts.waiting} hint="Still being written" />
+        <StatTile loading={loading} icon={ScrollText} label="Published" value={counts.active} hint={`${counts.archived} archived`} />
+        <StatTile loading={loading} icon={FileClock} label="Waiting for approval" value={counts.waiting} hint={counts.waiting ? 'Read and decide' : 'Nothing waiting'} tone={counts.waiting ? 'warning' : 'success'} />
+        <StatTile loading={loading} icon={Users} label="Signatures missing" value={counts.unsigned} hint="Across required policies" tone={counts.unsigned ? 'warning' : 'success'} />
+        <StatTile loading={loading} icon={CheckCircle2} label="Drafts" value={counts.drafts - counts.waiting} hint="Still being written" />
       </StatRow>
 
       <div className="flex flex-wrap items-center justify-between gap-3">

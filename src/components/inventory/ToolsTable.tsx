@@ -14,6 +14,7 @@ import {
   TableHead,
   TableHeaderCell,
   TableRow,
+  SkeletonTableRows,
 } from '@/components/ui'
 import { LOW_STOCK, TOOL_STATUS, type Tool } from './types'
 
@@ -82,9 +83,7 @@ export function ToolsTable({
       </TableHead>
       <TableBody>
         {loading && (
-          <TableRow>
-            <TableCell colSpan={5} className="py-10 text-center text-ink-3">Loading tools…</TableCell>
-          </TableRow>
+          <SkeletonTableRows cols={5} />
         )}
         {!loading &&
           tools.map((tool) => {

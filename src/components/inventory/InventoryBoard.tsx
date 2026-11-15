@@ -104,10 +104,10 @@ export function InventoryBoard() {
       />
 
       <StatRow>
-        <StatTile icon={Package} label="Tools owned" value={totals.owned} hint={`${tools.length} kinds of tools`} />
-        <StatTile icon={Box} label="In the warehouse" value={totals.inWarehouse} hint={totals.low ? `${totals.low} running low` : 'Stock looks fine'} tone={totals.low ? 'warning' : 'success'} />
-        <StatTile icon={Wrench} label="Out with crews" value={totals.out} hint={totals.overdue ? `${totals.overdue} overdue` : 'None overdue'} tone={totals.overdue ? 'danger' : 'neutral'} />
-        <StatTile icon={ShieldAlert} label="Damaged or lost" value={totals.problems} hint="Checked in as damaged or lost" tone={totals.problems ? 'warning' : 'neutral'} />
+        <StatTile loading={loading} icon={Package} label="Tools owned" value={totals.owned} hint={`${tools.length} kinds of tools`} />
+        <StatTile loading={loading} icon={Box} label="In the warehouse" value={totals.inWarehouse} hint={totals.low ? `${totals.low} running low` : 'Stock looks fine'} tone={totals.low ? 'warning' : 'success'} />
+        <StatTile loading={loading} icon={Wrench} label="Out with crews" value={totals.out} hint={totals.overdue ? `${totals.overdue} overdue` : 'None overdue'} tone={totals.overdue ? 'danger' : 'neutral'} />
+        <StatTile loading={loading} icon={ShieldAlert} label="Damaged or lost" value={totals.problems} hint="Checked in as damaged or lost" tone={totals.problems ? 'warning' : 'neutral'} />
       </StatRow>
 
       <div className="flex flex-wrap items-center gap-3">
