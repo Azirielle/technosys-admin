@@ -906,6 +906,7 @@ export async function createDispatchesWithCrew(data: {
 
 export async function getCasualHelpers() {
   try {
+    if (!(await verifyRoleAccess('schedules')).authorized) return { success: false, error: 'Office staff only.', helpers: [] };
     const { data, error } = await supabaseAdmin
       .from('casual_helpers')
       .select('*, schedule_casual_helpers(id)')
@@ -1501,6 +1502,7 @@ export async function releaseCrewFromDeploymentAction(data: {
 
 export async function getScheduleChangeLogs(scheduleId: string) {
   try {
+    if (!(await verifyRoleAccess('schedules')).authorized) return { error: 'Office staff only.' };
     const { data, error } = await supabaseAdmin
       .from('schedule_history')
       .select('*, profiles:changed_by(full_name)')

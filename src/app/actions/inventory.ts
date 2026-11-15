@@ -2,10 +2,18 @@
 import { supabaseAdmin } from "@/lib/supabase/admin"
 import { revalidatePath } from "next/cache"
 import { logActivity } from "./activity"
+import { verifyRoleAccess } from "@/lib/permissions"
+
+/** Office staff only. write = lending, returns and tool edits. */
+async function canUseInventory(write = false) {
+  return (await verifyRoleAccess('inventory', write)).authorized
+}
+const NOT_ALLOWED = "Only office staff can manage tools."
 
 // 1. Fetch all inventory items (Tools Catalog)
 export async function getInventoryItems() {
   try {
+    if (!(await canUseInventory())) return []
     const { data, error } = await supabaseAdmin
       .from('tools')
       .select('*')
@@ -22,6 +30,7 @@ export async function getInventoryItems() {
 // 2. Create or update a tool item (Coordinator Encoder)
 export async function createOrUpdateInventoryItem(formData: FormData) {
   try {
+    if (!(await canUseInventory(true))) return { error: NOT_ALLOWED }
     const id = formData.get("id")?.toString()
     const name = formData.get("name")?.toString().trim()
     const description = formData.get("description")?.toString().trim() || ""
@@ -171,6 +180,7 @@ export async function createOrUpdateInventoryItem(formData: FormData) {
 // 3. Delete a tool item
 export async function deleteInventoryItem(id: string) {
   try {
+    if (!(await canUseInventory(true))) return { error: NOT_ALLOWED }
     // Check if there are active borrows for this tool
     const { count, error: countErr } = await supabaseAdmin
       .from('tool_borrowings')
@@ -208,6 +218,7 @@ export async function deleteInventoryItem(id: string) {
 // 4. Fetch list of active technicians and helpers
 export async function getTechnicians() {
   try {
+    if (!(await canUseInventory())) return []
     const { data, error } = await supabaseAdmin
       .from('profiles')
       .select('id, full_name, role, avatar_url')
@@ -225,6 +236,7 @@ export async function getTechnicians() {
 // 5. Fetch tool assignments (optionally filtered by technician)
 export async function getToolAssignments(technicianId?: string) {
   try {
+    if (!(await canUseInventory())) return []
     let query = supabaseAdmin
       .from('tool_borrowings')
       .select(`
@@ -250,6 +262,7 @@ export async function getToolAssignments(technicianId?: string) {
 // 6. Assign/Borrow a tool to a technician
 export async function assignTool(technicianId: string, toolId: string, quantity: number = 1, notes?: string) {
   try {
+    if (!(await canUseInventory(true))) return { error: NOT_ALLOWED }
     if (isNaN(quantity) || quantity <= 0) {
       return { error: "Quantity must be greater than 0." }
     }
@@ -327,6 +340,7 @@ export async function returnTool(
   receivedBy?: string
 ) {
   try {
+    if (!(await canUseInventory(true))) return { error: NOT_ALLOWED }
     // Fetch active assignment record
     const { data: assign, error: assignErr } = await supabaseAdmin
       .from('tool_borrowings')
