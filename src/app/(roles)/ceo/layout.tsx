@@ -9,6 +9,7 @@ const navItems: NavItem[] = [
   { title: 'Temporary Access', href: '/ceo/access', iconName: 'ShieldCheck' },
   { title: 'Activity History', href: '/ceo/activities', iconName: 'FileSpreadsheet' },
   { title: 'Announcements', href: '/ceo/announcements', iconName: 'Megaphone' },
+  { title: 'Policies', href: '/ceo/policies', iconName: 'ScrollText' },
 ]
 
 export default function CEOLayout({ children }: { children: React.ReactNode }) {

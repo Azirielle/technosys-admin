@@ -29,6 +29,7 @@ export const QUICK_ACTIONS: Record<AdminRole, QuickAction[]> = {
   ceo: [
     { id: 'give-access', title: 'Give temporary access', hint: 'Let HR or Service Dept use the other pages', icon: KeyRound, keywords: ['access', 'permission', 'cover', 'temporary'], href: '/ceo/access?action=give_access', event: 'open-give-access-modal' },
     { id: 'activity', title: 'Activity history', hint: 'Who did what in the admin', icon: History, keywords: ['history', 'log', 'audit', 'activity'], href: '/ceo/activities' },
+    { id: 'policies', title: 'Policies', hint: 'Approve and publish policies HR sent for review', icon: ScrollText, keywords: ['policy', 'handbook', 'rules', 'approve'], href: '/ceo/policies' },
     ANNOUNCE('ceo'),
     { id: 'overview', title: 'Company overview', hint: 'Today at a glance', icon: Home, keywords: ['overview', 'home', 'dashboard'], href: '/ceo' },
   ],
