@@ -6,6 +6,13 @@ import { revalidatePath } from "next/cache"
 import { logActivity } from "./activity"
 import { sendPushToUser } from "@/lib/push"
 import crypto from 'crypto'
+import { verifyRoleAccess } from "@/lib/permissions"
+
+/** The signed-in person, if they are HR or the CEO (the only roles that manage policies). */
+async function policyStaff() {
+  const { authorized, userId } = await verifyRoleAccess('policies', true)
+  return authorized && userId ? { id: userId } : null
+}
 
 export type PolicyCategory = 
   | 'employment' 
@@ -127,7 +134,8 @@ export async function getAllPolicies() {
 // Fetch acknowledgments with joined profile records
 export async function getPolicyAcknowledgments(policyId?: string) {
   try {
-    const supabase = await createClient()
+    // Signers' names, phone numbers and IP addresses: HR and the CEO only.
+    if (!(await policyStaff())) return { success: false, error: "Only HR and the CEO can see signatures.", acknowledgments: [] }
     let query = supabaseAdmin
       .from('policy_acknowledgments')
       .select(`
@@ -179,8 +187,8 @@ export async function createPolicyDraft(formData: {
 }) {
   try {
     const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return { success: false, error: "Unauthorized access" }
+    const user = await policyStaff()
+    if (!user) return { success: false, error: "Only HR and the CEO can change policies." }
 
     const slug = formData.title
       .toLowerCase()
@@ -235,8 +243,8 @@ export async function createPolicyDraft(formData: {
 export async function forkPolicyRevision(policyId: string) {
   try {
     const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return { success: false, error: "Unauthorized access" }
+    const user = await policyStaff()
+    if (!user) return { success: false, error: "Only HR and the CEO can change policies." }
 
     // Enforce the Single-Draft Invariant: Check if a draft or under_review revision already exists
     const { data: existingDraft } = await supabaseAdmin
@@ -333,8 +341,8 @@ export async function updatePolicyDraft(formData: {
 }) {
   try {
     const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return { success: false, error: "Unauthorized access" }
+    const user = await policyStaff()
+    if (!user) return { success: false, error: "Only HR and the CEO can change policies." }
 
     // Verify policy is actually in draft or under_review
     const { data: existing } = await supabaseAdmin
@@ -384,8 +392,8 @@ export async function updatePolicyDraft(formData: {
 export async function submitPolicyForReview(policyId: string, customReviewNotes?: string) {
   try {
     const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return { success: false, error: "Unauthorized access" }
+    const user = await policyStaff()
+    if (!user) return { success: false, error: "Only HR and the CEO can change policies." }
 
     const defaultNotes = 'Awaiting formal review and sign-off by Lead HR Officer or CEO.'
     const notesToSet = customReviewNotes || defaultNotes
@@ -421,8 +429,8 @@ export async function submitPolicyForReview(policyId: string, customReviewNotes?
 export async function requestPolicyChanges(policyId: string, reviewNotes: string) {
   try {
     const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return { success: false, error: "Unauthorized access" }
+    const user = await policyStaff()
+    if (!user) return { success: false, error: "Only HR and the CEO can change policies." }
 
     const { data, error } = await supabaseAdmin
       .from('policies')
@@ -462,8 +470,8 @@ export async function publishPolicy(
 ) {
   try {
     const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return { success: false, error: "Unauthorized access" }
+    const user = await policyStaff()
+    if (!user) return { success: false, error: "Only HR and the CEO can change policies." }
 
     // Fetch user profile to verify role
     const { data: profile } = await supabaseAdmin
@@ -570,8 +578,8 @@ export async function publishPolicy(
 export async function archivePolicy(policyId: string) {
   try {
     const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return { success: false, error: "Unauthorized access" }
+    const user = await policyStaff()
+    if (!user) return { success: false, error: "Only HR and the CEO can change policies." }
 
     const { data, error } = await supabaseAdmin
       .from('policies')
@@ -605,8 +613,8 @@ export async function archivePolicy(policyId: string) {
 export async function dispatchPolicyReminder(policyId: string, userIds: string[]) {
   try {
     const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return { success: false, error: "Unauthorized access" }
+    const user = await policyStaff()
+    if (!user) return { success: false, error: "Only HR and the CEO can change policies." }
 
     const { data: policy } = await supabaseAdmin
       .from('policies')

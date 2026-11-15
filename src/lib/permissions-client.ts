@@ -16,6 +16,7 @@ export const MODULE_ROLES: Record<string, UserRole[]> = {
   broadcaster: ['ceo', 'hr', 'coordinator'],
   warnings: ['ceo', 'hr', 'coordinator'],
   app_management: ['ceo'],
+  policies: ['ceo', 'hr'],
 }
 
 // Who can change data in each module.
@@ -30,4 +31,5 @@ export const WRITE_ROLES: Record<string, UserRole[]> = {
   broadcaster: ['ceo', 'hr', 'coordinator'],
   warnings: ['ceo', 'hr', 'coordinator'],
   app_management: ['ceo'],
+  policies: ['ceo', 'hr'],
 }
