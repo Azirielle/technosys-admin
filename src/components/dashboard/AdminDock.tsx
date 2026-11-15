@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
-import { usePathname, useRouter } from 'next/navigation'
+import { usePathname } from 'next/navigation'
 import Image from 'next/image'
 import {
   Home,
@@ -11,10 +11,6 @@ import {
   Command,
   Sun,
   Moon,
-  LogOut,
-  KeyRound,
-  CheckCircle2,
-  AlertTriangle,
   Calendar,
   FolderOpen,
   ScrollText,
@@ -30,9 +26,9 @@ import {
   LucideIcon,
 } from 'lucide-react'
 import { useTheme } from '@/components/theme/ThemeProvider'
+import { AccountModals } from './AccountModals'
 import { createClient } from '@/lib/supabase/client'
-import { Avatar, Button, Field, Input, Modal } from '@/components/ui'
-import { updateAdminPassword } from '@/app/actions/credentials'
+import { Avatar } from '@/components/ui'
 import {
   getSystemOverrides,
   fetchRemoteOverrides,
@@ -126,7 +122,6 @@ export function AdminDock({
   initials,
 }: AdminDockProps) {
   const pathname = usePathname()
-  const router = useRouter()
   const { resolvedTheme, toggleTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
 
@@ -142,17 +137,6 @@ export function AdminDock({
 
   const [effectiveItems, setEffectiveItems] = useState<NavItem[]>(navItems)
   const [showProfileMenu, setShowProfileMenu] = useState(false)
-  const [showPasswordModal, setShowPasswordModal] = useState(false)
-  const [showLogoutModal, setShowLogoutModal] = useState(false)
-  const [isLoggingOut, setIsLoggingOut] = useState(false)
-
-  // Password rotation state
-  const [newPassword, setNewPassword] = useState('')
-  const [confirmPassword, setConfirmPassword] = useState('')
-  const [passwordError, setPasswordError] = useState<string | null>(null)
-  const [passwordSuccess, setPasswordSuccess] = useState(false)
-  const [isUpdatingPassword, setIsUpdatingPassword] = useState(false)
-
   // Sidebar Dock Pinning State (persisted across admin sessions)
   const [isPinned, setIsPinned] = useState(false)
 
@@ -287,57 +271,6 @@ export function AdminDock({
       return pathname.startsWith(href)
     }
     return false
-  }
-
-  const handleLogout = async () => {
-    try {
-      setIsLoggingOut(true)
-      const supabase = createClient()
-      await supabase.auth.signOut()
-      router.push('/login')
-    } catch (err) {
-      console.error('Logout error:', err)
-      router.push('/login')
-    }
-  }
-
-  const handleUpdatePassword = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setPasswordError(null)
-
-    if (newPassword.length < 6) {
-      setPasswordError('Password must be at least 6 characters.')
-      return
-    }
-
-    if (newPassword !== confirmPassword) {
-      setPasswordError('Passwords do not match.')
-      return
-    }
-
-    try {
-      setIsUpdatingPassword(true)
-      const formData = new FormData()
-      formData.append('new_password', newPassword)
-      formData.append('confirm_password', confirmPassword)
-
-      const res = await updateAdminPassword(formData)
-      if (!res.success) {
-        setPasswordError(res.error || 'Failed to update password')
-      } else {
-        setPasswordSuccess(true)
-        setTimeout(() => {
-          setShowPasswordModal(false)
-          setPasswordSuccess(false)
-          setNewPassword('')
-          setConfirmPassword('')
-        }, 1500)
-      }
-    } catch (err: any) {
-      setPasswordError(err.message || 'Failed to update credentials')
-    } finally {
-      setIsUpdatingPassword(false)
-    }
   }
 
   return (
@@ -543,7 +476,8 @@ export function AdminDock({
           {/* Profile Avatar & Menu */}
           <button
             type="button"
-            onClick={() => setShowProfileMenu((prev) => !prev)}
+            onClick={() => setShowProfileMenu(true)}
+            aria-haspopup="dialog"
             title={`${activeProfile.name} (${activeProfile.title})`}
             className="flex items-center gap-3 px-1.5 py-1.5 rounded-pill hover:bg-surface-soft transition-colors cursor-pointer w-full overflow-hidden"
           >
@@ -564,101 +498,13 @@ export function AdminDock({
         </div>
       </aside>
 
-      {/* Profile Popover Menu (Rendered outside aside to prevent overflow clipping) */}
-      {showProfileMenu && (
-        <>
-          <div
-            className="fixed inset-0 z-40"
-            onClick={() => setShowProfileMenu(false)}
-          />
-          <div className="fixed left-[246px] md:left-[252px] bottom-5 md:bottom-6 w-56 bg-surface rounded-card p-2 shadow-overlay z-50 text-small animate-in fade-in zoom-in-95 duration-150 select-none">
-            <div className="px-3 py-2 border-b border-line mb-1">
-              <div className="font-medium text-small text-ink">
-                {activeProfile.name}
-              </div>
-              <div className="text-caption text-ink-3 truncate">
-                {activeProfile.title}
-              </div>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => {
-                setShowProfileMenu(false)
-                setShowPasswordModal(true)
-              }}
-              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-pill text-ink-2 hover:text-ink hover:bg-surface-soft transition-colors cursor-pointer font-medium"
-            >
-              <KeyRound className="w-3.5 h-3.5 text-ink-3" />
-              <span>Change password</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => {
-                setShowProfileMenu(false)
-                setShowLogoutModal(true)
-              }}
-              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-pill text-danger hover:bg-danger-soft transition-colors cursor-pointer font-medium"
-            >
-              <LogOut className="w-3.5 h-3.5" />
-              <span>Sign out</span>
-            </button>
-          </div>
-        </>
-      )}
-
-      {/* Change password dialog */}
-      <Modal
-        isOpen={showPasswordModal}
-        onClose={() => setShowPasswordModal(false)}
-        title="Change password"
-        subtitle="Use at least 8 characters."
-        icon={KeyRound}
-      >
-        <form onSubmit={handleUpdatePassword} className="flex flex-col gap-stack">
-          {passwordError && (
-            <p role="alert" className="flex items-center gap-2 rounded-control bg-danger-soft p-3 text-small text-danger">
-              <AlertTriangle className="size-4 shrink-0" aria-hidden />
-              {passwordError}
-            </p>
-          )}
-          {passwordSuccess && (
-            <p className="flex items-center gap-2 rounded-control bg-success-soft p-3 text-small text-success">
-              <CheckCircle2 className="size-4 shrink-0" aria-hidden />
-              Password changed.
-            </p>
-          )}
-          <Field label="New password" htmlFor="new-password">
-            <Input id="new-password" type="password" required value={newPassword} onChange={(e) => setNewPassword(e.target.value)} autoComplete="new-password" />
-          </Field>
-          <Field label="Type it again" htmlFor="confirm-password">
-            <Input id="confirm-password" type="password" required value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} autoComplete="new-password" />
-          </Field>
-          <div className="flex justify-end gap-inline pt-2">
-            <Button variant="ghost" onClick={() => setShowPasswordModal(false)}>Cancel</Button>
-            <Button type="submit" variant="primary" loading={isUpdatingPassword}>Save password</Button>
-          </div>
-        </form>
-      </Modal>
-
-      {/* Sign-out confirmation */}
-      <Modal
-        isOpen={showLogoutModal}
-        onClose={() => setShowLogoutModal(false)}
-        title="Sign out?"
-        subtitle="You'll need your username and password to come back in."
-        icon={LogOut}
-        maxWidth="md"
-        footer={
-          <>
-            <Button variant="ghost" onClick={() => setShowLogoutModal(false)}>Stay signed in</Button>
-            <Button variant="danger" onClick={handleLogout} loading={isLoggingOut}>Sign out</Button>
-          </>
-        }
-      >
-        {null}
-      </Modal>
+      {/* Account pop-up: name and role, Change password, Sign out */}
+      <AccountModals
+        open={showProfileMenu}
+        onClose={() => setShowProfileMenu(false)}
+        name={activeProfile.name}
+        title={activeProfile.title}
+      />
     </>
   )
 }

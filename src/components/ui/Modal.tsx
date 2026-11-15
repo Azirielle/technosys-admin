@@ -40,6 +40,8 @@ export interface ModalProps {
   iconTone?: Tone
   /** @deprecated use iconTone */
   iconVariant?: 'blue' | 'emerald' | 'rose' | 'amber' | 'default'
+  /** Shown where the icon goes instead of an icon, e.g. a person's Avatar. */
+  leading?: ReactNode
   maxWidth?: keyof typeof WIDTH
   /** Tailwind height class for the box, e.g. "h-[80vh]". */
   contentHeight?: string
@@ -59,6 +61,7 @@ export function Modal({
   icon: Icon,
   iconTone,
   iconVariant = 'default',
+  leading,
   maxWidth = 'lg',
   contentHeight,
   footer,
@@ -90,7 +93,8 @@ export function Modal({
       >
         <div className="flex shrink-0 items-start justify-between gap-3 px-6 pt-6 pb-4">
           <div className="flex min-w-0 items-center gap-3">
-            {Icon && (
+            {leading}
+            {Icon && !leading && (
               <span className={cx('flex size-10 shrink-0 items-center justify-center rounded-pill', ICON_TONE[tone])}>
                 <Icon className="size-5" aria-hidden />
               </span>
