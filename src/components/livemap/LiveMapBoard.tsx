@@ -19,7 +19,8 @@ export function LiveMapBoard() {
 
   return (
     <div className="h-full px-page py-page-y">
-      <div className="relative h-full overflow-hidden rounded-card bg-surface-soft shadow-card">
+      {/* isolate: the crew panel floats above the map, but the whole map card stays under the side menu. */}
+      <div className="relative isolate h-full overflow-hidden rounded-card bg-surface-soft shadow-card">
         <CrewMap crew={crew} selectedId={selectedId} />
         <CrewPanel crew={crew} loading={loading} selectedId={selectedId} onSelect={setSelectedId} onRefresh={reload} />
       </div>

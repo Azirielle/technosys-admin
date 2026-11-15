@@ -7,6 +7,12 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* Leaflet stacks its tiles at z-index 400 and its controls at 1000. Keep those numbers inside each map,
+   so the side menu (and anything else on the page) is never drawn under a map. */
+.leaflet-container {
+  isolation: isolate;
+}
+
 /* Old shadcn names, pointed at our tokens so any leftover shadcn class matches the new look. */
 @theme inline {
   --color-background: var(--tc-bg);
