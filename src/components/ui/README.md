@@ -39,6 +39,7 @@ To change the look (for example, the warm "Sand" palette), edit only `tokens.css
 | `Field` | Label + hint + error around an input | Write your own `<label>` styling |
 | `Input`, `Textarea` | Typing text. `icon={Search}` for search boxes | |
 | `Select` | Picking one of a short list (status, leave type) | Build a custom dropdown for simple choices |
+| `SearchSelect` | Picking one from a long list by typing part of a name (who borrows a tool, which person). Each option can have a `hint` (e.g. the role), which is searched too. ↑/↓, Enter, Esc | Use it for 5 or fewer fixed choices; use `Select` |
 | `Checkbox` | Checklists and yes/no options, with the label beside it | |
 | `Badge` | Status words: Pending (`warning`), Approved (`success`), Rejected (`danger`), Draft (`neutral`), Drafted by AI (`info`) | Show status by colour alone |
 | `StatusDot` | A quieter status in busy tables ("Timed in") | |

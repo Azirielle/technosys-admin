@@ -4,6 +4,7 @@ export { Button, ButtonLink, IconButton, buttonClasses, type ButtonVariant, type
 export { Field, FIELD_CLASSES } from './Field'
 export { Input, Textarea } from './Input'
 export { Select, type SelectOption } from './Select'
+export { SearchSelect, type SearchSelectOption } from './SearchSelect'
 export { Checkbox } from './Checkbox'
 export { Badge, StatusDot, type Tone } from './Badge'
 export { Card, CardHeader } from './Card'

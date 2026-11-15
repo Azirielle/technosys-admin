@@ -1,11 +1,24 @@
 // LendToolModal: hand a tool to a technician or helper (who, how many, notes).
+// The person is found by typing part of the name; "How many" is checked against the stock as you type.
 'use client'
 
-import { useEffect, useState, useTransition } from 'react'
+import { useState, useTransition } from 'react'
 import { HandHelping } from 'lucide-react'
 import { assignTool } from '@/app/actions/inventory'
-import { Button, Field, Input, Modal, Select } from '@/components/ui'
+import { Button, Field, Input, Modal, SearchSelect } from '@/components/ui'
 import type { Person, Tool } from './types'
+
+const ROLE: Record<string, string> = { technician: 'Technician', helper: 'Helper' }
+
+/** What's wrong with the amount typed, or null when it can be lent. */
+function quantityProblem(text: string, inStock: number): string | null {
+  if (text.trim() === '') return 'Enter how many.'
+  const n = Number(text)
+  if (!Number.isInteger(n)) return 'Use a whole number.'
+  if (n < 1) return 'Lend at least 1.'
+  if (n > inStock) return inStock === 0 ? 'None left in the warehouse.' : `Only ${inStock} in the warehouse.`
+  return null
+}
 
 export function LendToolModal({
   tool,
@@ -19,27 +32,36 @@ export function LendToolModal({
   onDone: () => void
 }) {
   const [personId, setPersonId] = useState('')
-  const [qty, setQty] = useState(1)
+  const [qty, setQty] = useState('1')
   const [notes, setNotes] = useState('')
-  const [error, setError] = useState<string | null>(null)
+  const [tried, setTried] = useState(false)
+  const [serverError, setServerError] = useState<string | null>(null)
   const [saving, startSaving] = useTransition()
 
-  useEffect(() => {
+  // Start fresh for every tool (reset while rendering when a different tool opens).
+  const [shownId, setShownId] = useState(tool?.id)
+  if (shownId !== tool?.id) {
+    setShownId(tool?.id)
     setPersonId('')
-    setQty(1)
+    setQty('1')
     setNotes('')
-    setError(null)
-  }, [tool?.id])
+    setTried(false)
+    setServerError(null)
+  }
 
   if (!tool) return null
+  const inStock = tool.available_stock
+  const qtyError = quantityProblem(qty, inStock)
+  const personError = tried && !personId ? 'Choose who is borrowing it.' : null
 
   function save() {
     if (!tool) return
-    if (!personId) return setError('Choose who is borrowing it.')
-    if (qty < 1 || qty > tool.available_stock) return setError(`Choose 1 to ${tool.available_stock}.`)
+    setTried(true)
+    setServerError(null)
+    if (!personId || qtyError) return
     startSaving(async () => {
-      const res = await assignTool(personId, tool.id, qty, notes)
-      if (res?.error) setError(res.error)
+      const res = await assignTool(personId, tool.id, Number(qty), notes)
+      if (res?.error) setServerError(res.error)
       else onDone()
     })
   }
@@ -50,31 +72,53 @@ export function LendToolModal({
       onClose={onClose}
       icon={HandHelping}
       title={`Lend ${tool.name}`}
-      subtitle={`${tool.available_stock} in the warehouse`}
+      subtitle={inStock === 0 ? 'None left in the warehouse' : `${inStock} in the warehouse`}
       maxWidth="md"
       footer={
         <>
           <Button variant="ghost" onClick={onClose}>Cancel</Button>
-          <Button variant="primary" loading={saving} onClick={save}>Lend tool</Button>
+          <Button variant="primary" loading={saving} disabled={!!qtyError} onClick={save}>Lend tool</Button>
         </>
       }
     >
       <div className="flex flex-col gap-stack">
-        <Field label="Borrowed by" htmlFor="lend-person" required>
-          <Select
+        <Field label="Borrowed by" htmlFor="lend-person" required error={personError}>
+          <SearchSelect
             id="lend-person"
-            placeholder="Choose a technician or helper"
             value={personId}
-            onChange={(e) => setPersonId(e.target.value)}
-            options={people.map((p) => ({ value: p.id, label: `${p.full_name} (${p.role})` }))}
+            onChange={(id) => {
+              setPersonId(id)
+              setServerError(null)
+            }}
+            options={people.map((p) => ({ value: p.id, label: p.full_name, hint: ROLE[p.role] ?? p.role }))}
+            placeholder="Type a name"
+            emptyText="No technician or helper with that name."
+            invalid={!!personError}
+            autoFocus
           />
         </Field>
-        <Field label="How many" htmlFor="lend-qty" required>
-          <Input id="lend-qty" type="number" min={1} max={tool.available_stock} value={qty} onChange={(e) => setQty(Number(e.target.value))} />
+        <Field label="How many" htmlFor="lend-qty" required error={qtyError} hint={`Up to ${inStock}`}>
+          <Input
+            id="lend-qty"
+            type="number"
+            inputMode="numeric"
+            min={1}
+            max={inStock}
+            step={1}
+            value={qty}
+            invalid={!!qtyError}
+            onChange={(e) => {
+              setQty(e.target.value)
+              setServerError(null)
+            }}
+          />
         </Field>
-        <Field label="Notes" htmlFor="lend-notes" hint="Optional, e.g. the job or site" error={error}>
+        <Field label="Notes" htmlFor="lend-notes" hint="Optional, e.g. the job or site">
           <Input id="lend-notes" value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="For the SM Southmall job" />
         </Field>
+        {serverError && (
+          <p role="alert" className="rounded-control bg-danger-soft p-3 text-small text-danger">{serverError}</p>
+        )}
       </div>
     </Modal>
   )

@@ -12,6 +12,7 @@ import {
   Field,
   IconButton,
   Input,
+  SearchSelect,
   Select,
   StatusDot,
   Tabs,
@@ -22,6 +23,7 @@ const CREW = [{ name: 'Ramon Santos' }, { name: 'Juan Dela Cruz' }, { name: 'Ped
 
 export function ShowcaseControls() {
   const [tab, setTab] = useState<'all' | 'pending' | 'approved'>('pending')
+  const [person, setPerson] = useState('')
 
   return (
     <>
@@ -59,6 +61,15 @@ export function ShowcaseControls() {
                 { value: 'sick', label: 'Sick leave' },
                 { value: 'vacation', label: 'Vacation leave' },
               ]}
+            />
+          </Field>
+          <Field label="Borrowed by (SearchSelect)" htmlFor="pv-person" hint="Type part of a name">
+            <SearchSelect
+              id="pv-person"
+              value={person}
+              onChange={setPerson}
+              placeholder="Type a name"
+              options={CREW.map((c, i) => ({ value: c.name, label: c.name, hint: i === 0 ? 'Senior' : i % 2 ? 'Technician' : 'Helper' }))}
             />
           </Field>
           <Field label="Mobile number" htmlFor="pv-phone" hint="11 digits, starts with 09" required>

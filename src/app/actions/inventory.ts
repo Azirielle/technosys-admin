@@ -263,9 +263,10 @@ export async function getToolAssignments(technicianId?: string) {
 export async function assignTool(technicianId: string, toolId: string, quantity: number = 1, notes?: string) {
   try {
     if (!(await canUseInventory(true))) return { error: NOT_ALLOWED }
-    if (isNaN(quantity) || quantity <= 0) {
-      return { error: "Quantity must be greater than 0." }
+    if (!Number.isInteger(quantity) || quantity <= 0) {
+      return { error: "Lend a whole number of 1 or more." }
     }
+    if (!technicianId) return { error: "Choose who is borrowing it." }
 
     // Fetch tool to verify available stock level
     const { data: tool, error: toolErr } = await supabaseAdmin
@@ -280,10 +281,26 @@ export async function assignTool(technicianId: string, toolId: string, quantity:
 
     const inStock = tool.available_stock ?? 0
     if (inStock < quantity) {
-      return { error: `Insufficient stock. Only ${inStock} available in warehouse.` }
+      return { error: inStock === 0 ? 'None left in the warehouse.' : `Only ${inStock} in the warehouse.` }
     }
 
-    // Insert borrow checkout assignment
+    // Take the stock first, and only if nobody else changed it since we read it (two people lending at the
+    // same moment can't both take the last ones). Then record the borrowing; if that fails, put the stock back.
+    const { data: taken, error: updateErr } = await supabaseAdmin
+      .from('tools')
+      .update({
+        available_stock: inStock - quantity,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', toolId)
+      .eq('available_stock', inStock)
+      .select('id')
+
+    if (updateErr) throw updateErr
+    if (!taken || taken.length === 0) {
+      return { error: "The stock just changed (someone else lent or returned this tool). Close this window and try again." }
+    }
+
     const { error: insertErr } = await supabaseAdmin
       .from('tool_borrowings')
       .insert({
@@ -294,18 +311,10 @@ export async function assignTool(technicianId: string, toolId: string, quantity:
         notes: notes?.trim() || null
       })
 
-    if (insertErr) throw insertErr
-
-    // Decrement available quantity in catalog
-    const { error: updateErr } = await supabaseAdmin
-      .from('tools')
-      .update({
-        available_stock: inStock - quantity,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', toolId)
-
-    if (updateErr) throw updateErr
+    if (insertErr) {
+      await supabaseAdmin.from('tools').update({ available_stock: inStock }).eq('id', toolId)
+      throw insertErr
+    }
 
     // Fetch technician name
     const { data: tech } = await supabaseAdmin
