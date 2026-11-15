@@ -1,10 +1,10 @@
 // ReassignModal: give a job's lead role to another technician, with an optional reason.
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { UserRoundCog } from 'lucide-react'
 import { reassignSchedule } from '@/app/actions/schedules'
-import { Button, Field, Input, Modal, Select } from '@/components/ui'
+import { Button, Field, Input, Modal, SearchSelect } from '@/components/ui'
 import type { ProfileItem, ScheduleItem } from './types'
 
 export function ReassignModal({
@@ -23,16 +23,23 @@ export function ReassignModal({
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
+  // Start fresh for every job (reset while rendering when a different job opens).
+  const [shownId, setShownId] = useState(job?.id)
+  if (shownId !== job?.id) {
+    setShownId(job?.id)
     setTechId('')
     setReason('')
     setError(null)
-  }, [job?.id])
+  }
 
   if (!job) return null
   const choices = profiles
     .filter((p) => p.role === 'technician' && p.technician_level !== 'helper' && p.id !== job.technician_id)
-    .map((p) => ({ value: p.id, label: `${p.full_name}${p.lifecycle_status === 'on_leave' ? ' (on leave)' : ''}` }))
+    .map((p) => ({
+      value: p.id,
+      label: p.full_name,
+      hint: [p.technician_level === 'senior' ? 'Senior' : 'Technician', p.lifecycle_status === 'on_leave' ? 'on leave' : null].filter(Boolean).join(' · '),
+    }))
 
   async function save() {
     if (!job) return
@@ -61,7 +68,19 @@ export function ReassignModal({
     >
       <div className="flex flex-col gap-stack">
         <Field label="New lead technician" htmlFor="reassign-tech" required error={error}>
-          <Select id="reassign-tech" placeholder="Choose a technician" value={techId} onChange={(e) => setTechId(e.target.value)} options={choices} />
+          <SearchSelect
+            id="reassign-tech"
+            value={techId}
+            onChange={(id) => {
+              setTechId(id)
+              setError(null)
+            }}
+            options={choices}
+            placeholder="Type a name"
+            emptyText="No technician with that name."
+            invalid={!!error}
+            autoFocus
+          />
         </Field>
         <Field label="Reason" htmlFor="reassign-reason" hint="Optional. Saved in the job's history.">
           <Input id="reassign-reason" value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Ramon is still at the previous job" />
