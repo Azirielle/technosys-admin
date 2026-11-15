@@ -1,3 +1,6 @@
+// sync-policies-rag: rebuilds the AI assistant's policy library (document_chunks) from the active policies.
+// Run after publishing a new policy version:  npx tsx scripts/sync-policies-rag.ts
+// Needs NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY and GEMINI_API_KEY in .env.local.
 import { createClient } from "@supabase/supabase-js";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
@@ -18,135 +21,86 @@ if (!supabaseUrl || !supabaseServiceKey || !geminiApiKey) {
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 const genAI = new GoogleGenerativeAI(geminiApiKey);
 
-// Gemini embedding model with 768 dimensions matching match_documents RPC
+// 768 dimensions, matching the match_documents search.
 const embeddingModel = genAI.getGenerativeModel({ model: "gemini-embedding-2" });
 
 async function getEmbedding(text: string): Promise<number[]> {
   try {
-    const res = await embeddingModel.embedContent({
-      content: { role: "user", parts: [{ text }] },
-      outputDimensionality: 768,
-    });
+    const res = await embeddingModel.embedContent({ content: { role: "user", parts: [{ text }] }, outputDimensionality: 768 } as any);
     return res.embedding.values;
   } catch (err: any) {
-    // Failover to text-embedding-004 if gemini-embedding-2 hits limits
-    console.warn("Retrying with text-embedding-004 fallback...", err.message || err);
-    const fallbackModel = genAI.getGenerativeModel({ model: "text-embedding-004" });
-    const res = await fallbackModel.embedContent({
-      content: { role: "user", parts: [{ text }] },
-      outputDimensionality: 768,
-    });
+    console.warn("Retrying with text-embedding-004...", err.message || err);
+    const fallback = genAI.getGenerativeModel({ model: "text-embedding-004" });
+    const res = await fallback.embedContent({ content: { role: "user", parts: [{ text }] }, outputDimensionality: 768 } as any);
     return res.embedding.values;
   }
+}
+
+/** A new version's id is "<original id>_rev_<…>". The library keeps one entry per policy, under the original id. */
+function libraryId(policyId: string) {
+  return `policy_${policyId.replace(/_rev_.*$/, "")}`;
 }
 
 async function main() {
-  console.log("=== TechnoCycle Enterprise Policies RAG Sync ===");
-  console.log("Fetching active policies from public.company_policies...");
-
-  const { data: policies, error: fetchErr } = await supabase
-    .from("company_policies")
-    .select("*")
+  const { data: policies, error } = await supabase
+    .from("policies")
+    .select("id, title, category, version, target_audience, content_markdown")
     .eq("is_active", true);
-
-  if (fetchErr || !policies || policies.length === 0) {
-    console.error("Failed to fetch policies:", fetchErr?.message || "No policies found");
+  if (error || !policies?.length) {
+    console.error("Couldn't load active policies:", error?.message || "none found");
     process.exit(1);
   }
+  console.log(`${policies.length} active policies.`);
 
-  console.log(`Found ${policies.length} active policies. Preparing vector ingestion...`);
+  // Remove passages of policies that are no longer active (archived or deleted).
+  const keep = new Set(policies.map((p) => libraryId(p.id)));
+  const { data: existing } = await supabase.from("document_chunks").select("document_id").like("document_id", "policy_%");
+  const stale = [...new Set((existing ?? []).map((r) => r.document_id as string))].filter((id) => !keep.has(id));
+  for (const id of stale) {
+    await supabase.from("document_chunks").delete().eq("document_id", id);
+    console.log(`Removed old passages: ${id}`);
+  }
 
-  const splitter = new RecursiveCharacterTextSplitter({
-    chunkSize: 600,
-    chunkOverlap: 80,
-  });
+  const splitter = new RecursiveCharacterTextSplitter({ chunkSize: 600, chunkOverlap: 80 });
 
   for (const policy of policies) {
-    const docId = `policy_${policy.id}`;
-    console.log(`\nProcessing Policy: ${policy.title} (${docId})`);
-
-    // Clean up previous chunks for this policy
-    const { error: delErr } = await supabase
-      .from("document_chunks")
-      .delete()
-      .eq("document_id", docId);
-
-    if (delErr) {
-      console.warn(`Warning deleting old chunks for ${docId}:`, delErr.message);
-    }
-
-    // Split policy content into rich chunks
+    const docId = libraryId(policy.id);
     const chunks = await splitter.createDocuments(
       [policy.content_markdown],
-      [
-        {
-          policy_id: policy.id,
-          title: policy.title,
-          category: policy.category,
-          version: policy.version,
-          target_audience: policy.target_audience,
-        },
-      ]
+      [{ policy_id: policy.id, title: policy.title, category: policy.category, version: policy.version, target_audience: policy.target_audience }],
     );
-
-    console.log(`Created ${chunks.length} chunks. Generating embeddings...`);
 
     const rows = [];
     for (let i = 0; i < chunks.length; i++) {
-      const chunk = chunks[i];
-      const contextAugmentedText = `TechnoCycle Official Policy: ${policy.title} (${policy.category})\n${chunk.pageContent}`;
-      
-      const embedding = await getEmbedding(contextAugmentedText);
+      const content = `TechnoCycle Official Policy: ${policy.title} (${policy.category})\n${chunks[i].pageContent}`;
       rows.push({
         document_id: docId,
-        content: contextAugmentedText,
-        metadata: {
-          ...chunk.metadata,
-          chunk_index: i,
-          total_chunks: chunks.length,
-        },
-        embedding,
+        content,
+        metadata: { ...chunks[i].metadata, chunk_index: i, total_chunks: chunks.length },
+        embedding: await getEmbedding(content),
       });
-
-      // Brief delay to respect rate limits
-      await new Promise((resolve) => setTimeout(resolve, 400));
+      await new Promise((r) => setTimeout(r, 400)); // stay under the API rate limit
     }
 
-    // Insert new chunks into Supabase
+    // Replace this policy's passages only after every new one is ready.
+    const { error: delErr } = await supabase.from("document_chunks").delete().eq("document_id", docId);
+    if (delErr) throw delErr;
     const { error: insErr } = await supabase.from("document_chunks").insert(rows);
-    if (insErr) {
-      console.error(`Error inserting chunks for ${docId}:`, insErr.message);
-    } else {
-      console.log(`✅ Successfully ingested ${rows.length} vector chunks for ${policy.id}`);
-    }
+    if (insErr) throw insErr;
+    console.log(`${policy.title} ${policy.version}: ${rows.length} passages`);
   }
 
-  // Verification Search
-  console.log("\n--- Testing Vector Retrieval via match_documents RPC ---");
-  const testQuery = "What is the policy for sick leave medical certificates?";
-  console.log(`Query: "${testQuery}"`);
-  
-  const queryEmbedding = await getEmbedding(testQuery);
+  // Quick check that the search still finds something.
   const { data: matches, error: rpcErr } = await supabase.rpc("match_documents", {
-    query_embedding: queryEmbedding,
+    query_embedding: await getEmbedding("Do I need a medical certificate for sick leave?"),
     match_threshold: 0.25,
     match_count: 2,
   });
-
-  if (rpcErr) {
-    console.error("match_documents test error:", rpcErr);
-  } else {
-    console.log(`Retrieved ${matches?.length || 0} matching document chunks:`);
-    matches?.forEach((m: any, idx: number) => {
-      console.log(`\n[Match #${idx + 1} | Similarity: ${(m.similarity * 100).toFixed(1)}% | Source: ${m.document_id}]`);
-      console.log(m.content.slice(0, 200) + "...");
-    });
-  }
-
-  console.log("\n✅ Chunk 37.1 Vector Sync Completed Successfully.");
+  if (rpcErr) throw rpcErr;
+  console.log(`Search check: ${matches?.length ?? 0} matches, top: ${matches?.[0]?.document_id ?? "none"}`);
 }
 
 main().catch((err) => {
-  console.error("Fatal sync error:", err);
+  console.error("Sync failed:", err.message || err);
   process.exit(1);
 });
