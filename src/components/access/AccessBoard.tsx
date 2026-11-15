@@ -28,6 +28,7 @@ import {
   TableHeaderCell,
   TableRow,
   useToast,
+  SkeletonTableRows,
 } from '@/components/ui'
 import { useAccess, type Grant } from './useAccess'
 import { GiveAccessModal } from './GiveAccessModal'
@@ -114,6 +115,7 @@ export function AccessBoard() {
               </tr>
             </TableHead>
             <TableBody>
+              {loading && <SkeletonTableRows cols={5} />}
               {grants.map((g) => (
                 <TableRow key={`${g.role}-${g.moduleId}`}>
                   <TableCell>

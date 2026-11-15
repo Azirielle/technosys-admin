@@ -13,6 +13,7 @@ import {
   TableHead,
   TableHeaderCell,
   TableRow,
+  SkeletonTableRows,
 } from '@/components/ui'
 import { EMPLOYMENT_STATUS, LEVELS, fileStatus, labelOf, type EmployeeFile } from './requirements'
 
@@ -45,11 +46,7 @@ export function FilesTable({ employees, loading, onOpen }: { employees: Employee
         </tr>
       </TableHead>
       <TableBody>
-        {loading && (
-          <TableRow>
-            <TableCell colSpan={6} className="py-10 text-center text-ink-3">Loading 201 files…</TableCell>
-          </TableRow>
-        )}
+        {loading && <SkeletonTableRows cols={6} />}
         {!loading &&
           employees.map((emp) => {
             const s = fileStatus(emp)

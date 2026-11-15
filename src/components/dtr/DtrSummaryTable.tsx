@@ -13,6 +13,7 @@ import {
   TableHead,
   TableHeaderCell,
   TableRow,
+  SkeletonTableRows,
 } from '@/components/ui'
 
 /** Number with unit, coloured only when it needs attention; a quiet dash for zero. */
@@ -65,11 +66,7 @@ export function DtrSummaryTable({
         </tr>
       </TableHead>
       <TableBody>
-        {loading && (
-          <TableRow>
-            <TableCell colSpan={9} className="py-10 text-center text-ink-3">Working out the DTR for this cut-off…</TableCell>
-          </TableRow>
-        )}
+        {loading && <SkeletonTableRows cols={9} />}
         {!loading &&
           records.map((r) => (
             <TableRow key={r.id} onClick={() => onOpen(r)}>
