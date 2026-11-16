@@ -2,12 +2,13 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { AlertTriangle, CalendarDays, Check, CheckCircle2, ExternalLink, X } from 'lucide-react'
+import { AlertTriangle, CalendarDays, Check, CheckCircle2, X } from 'lucide-react'
 import { formatLeaveDuration, formatTimeAgo } from '@/lib/hr-status'
 import { LEAVE_LABELS, REQUEST_STATUS } from '@/lib/labels'
 import { Badge, Button, Checkbox, Modal, cx } from '@/components/ui'
 import { Keys } from '@/components/commands/Keys'
 import { applicantName, type LeaveRecord } from './types'
+import { CertificateLink } from './CertificateLink'
 
 export function LeaveReviewModal({
   leave,
@@ -98,16 +99,7 @@ export function LeaveReviewModal({
           </section>
         )}
 
-        {leave.attachment_url && (
-          <a
-            href={leave.attachment_url}
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex w-fit items-center gap-1.5 text-small font-medium text-link hover:underline"
-          >
-            View attachment (medical certificate) <ExternalLink className="size-3.5" aria-hidden />
-          </a>
-        )}
+        {leave.attachment_url && <CertificateLink attachment={leave.attachment_url} />}
 
         <p
           className={cx(

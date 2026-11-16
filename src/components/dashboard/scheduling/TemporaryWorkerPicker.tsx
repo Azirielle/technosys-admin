@@ -36,7 +36,7 @@ export function TemporaryWorkerPicker({
               checked={selected.includes(h.id)}
               onChange={(e) => onChange(e.target.checked ? [...selected, h.id] : selected.filter((id) => id !== h.id))}
               label={h.full_name}
-              hint={`₱${h.daily_rate}/day · ${h.contact_number}`}
+              hint={h.contact_number}
             />
           ))}
         </div>

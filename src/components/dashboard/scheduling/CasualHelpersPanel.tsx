@@ -89,14 +89,13 @@ export function CasualHelpersPanel({
               <tr>
                 <TableHeaderCell>Name</TableHeaderCell>
                 <TableHeaderCell>Mobile number</TableHeaderCell>
-                <TableHeaderCell numeric>Daily rate</TableHeaderCell>
                 <TableHeaderCell>Status</TableHeaderCell>
                 <TableHeaderCell align="right"><span className="sr-only">Actions</span></TableHeaderCell>
               </tr>
             </TableHead>
             <TableBody>
               {loading && (
-                <SkeletonTableRows cols={5} />
+                <SkeletonTableRows cols={4} />
               )}
               {shown.slice((page - 1) * PER_PAGE, page * PER_PAGE).map((h) => {
                 const active = (h.status || 'active') === 'active'
@@ -109,7 +108,6 @@ export function CasualHelpersPanel({
                       </span>
                     </TableCell>
                     <TableCell mono>{h.contact_number}</TableCell>
-                    <TableCell numeric>₱{(h.daily_rate || 0).toLocaleString('en-PH', { minimumFractionDigits: 2 })}</TableCell>
                     <TableCell><Badge tone={active ? 'success' : 'neutral'} dot>{active ? 'Active' : 'Inactive'}</Badge></TableCell>
                     <TableCell align="right">
                       <span className="flex justify-end gap-1">

@@ -920,7 +920,6 @@ export async function getCasualHelpers() {
         id: ch.id,
         full_name: ch.full_name,
         contact_number: ch.contact_number,
-        daily_rate: Number(ch.daily_rate) || 610.00,
         emergency_contact: ch.emergency_contact,
         notes: ch.notes,
         status: ch.status,
@@ -937,7 +936,6 @@ export async function getCasualHelpers() {
 export async function createCasualHelper(data: {
   fullName: string;
   contactNumber: string;
-  dailyRate?: number;
   emergencyContact?: string;
   notes?: string;
 }) {
@@ -959,7 +957,6 @@ export async function createCasualHelper(data: {
       .insert({
         full_name: data.fullName.trim(),
         contact_number: data.contactNumber.trim(),
-        daily_rate: data.dailyRate && !isNaN(data.dailyRate) ? data.dailyRate : 610.00,
         emergency_contact: data.emergencyContact?.trim() || null,
         notes: data.notes?.trim() || null,
         status: 'active'
@@ -972,7 +969,7 @@ export async function createCasualHelper(data: {
     await logActivity(
       'create_casual_helper',
       'casual_helpers',
-      `Registered casual worker "${data.fullName.trim()}" (Daily Rate: ₱${data.dailyRate || 610})`
+      `Registered casual worker "${data.fullName.trim()}"`
     );
 
     revalidatePath("/coordinator", "layout");
@@ -986,7 +983,6 @@ export async function createCasualHelper(data: {
 export async function updateCasualHelper(id: string, data: {
   fullName?: string;
   contactNumber?: string;
-  dailyRate?: number;
   emergencyContact?: string;
   notes?: string;
   status?: 'active' | 'inactive' | 'blacklisted';
@@ -1002,7 +998,6 @@ export async function updateCasualHelper(id: string, data: {
     const updatePayload: any = { updated_at: new Date().toISOString() };
     if (data.fullName !== undefined) updatePayload.full_name = data.fullName.trim();
     if (data.contactNumber !== undefined) updatePayload.contact_number = data.contactNumber.trim();
-    if (data.dailyRate !== undefined && !isNaN(data.dailyRate)) updatePayload.daily_rate = data.dailyRate;
     if (data.emergencyContact !== undefined) updatePayload.emergency_contact = data.emergencyContact?.trim() || null;
     if (data.notes !== undefined) updatePayload.notes = data.notes?.trim() || null;
     if (data.status !== undefined) updatePayload.status = data.status;

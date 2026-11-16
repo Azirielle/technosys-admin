@@ -15,7 +15,7 @@ const JOB_SELECT = `
     id, technician_id, assignment_role, status, joined_at, released_at, notes,
     profiles(full_name, role, technician_level, is_driver)
   ),
-  schedule_casual_helpers(id, casual_helper_id, casual_helpers(id, full_name, contact_number, daily_rate))
+  schedule_casual_helpers(id, casual_helper_id, casual_helpers(id, full_name, contact_number))
 `
 
 /** Start and end of the period shown. "past" is everything before today. */

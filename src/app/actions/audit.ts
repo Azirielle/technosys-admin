@@ -260,7 +260,7 @@ export async function getDtrRecords(
     // 5. Batch Fetch Holidays
     const { data: holidays, error: holErr } = await supabaseAdmin
       .from('holidays')
-      .select('id, name, holiday_date, multiplier, is_active')
+      .select('id, name, holiday_date, is_active')
       .gte('holiday_date', startDate)
       .lte('holiday_date', endDate)
       .eq('is_active', true);
@@ -288,9 +288,9 @@ export async function getDtrRecords(
       .order('created_at', { ascending: false });
 
     // Create lookup maps for fast access
-    const holidayMap = new Map<string, { name: string; multiplier: number }>();
+    const holidayMap = new Map<string, { name: string }>();
     (holidays || []).forEach(h => {
-      holidayMap.set(h.holiday_date, { name: h.name, multiplier: Number(h.multiplier || 1.0) });
+      holidayMap.set(h.holiday_date, { name: h.name });
     });
 
     const datesList = getDatesInRange(startDate, endDate);

@@ -54,7 +54,6 @@ export interface ScheduleItem {
       id: string;
       full_name: string;
       contact_number?: string;
-      daily_rate?: number;
     };
   }>;
 }
@@ -72,7 +71,6 @@ export interface CasualHelperItem {
   id: string;
   full_name: string;
   contact_number: string;
-  daily_rate: number;
   emergency_contact?: string;
   notes?: string;
   status?: string;

@@ -7,8 +7,6 @@ import { createCasualHelper, updateCasualHelper } from '@/app/actions/schedules'
 import { Button, Field, Input, Modal } from '@/components/ui'
 import type { CasualHelperItem } from './types'
 
-const DEFAULT_RATE = 610
-
 export function CasualHelperModal({
   isOpen,
   helper,
@@ -21,7 +19,7 @@ export function CasualHelperModal({
   onClose: () => void
   onDone: () => void
 }) {
-  const [form, setForm] = useState({ fullName: '', contactNumber: '', dailyRate: DEFAULT_RATE, emergencyContact: '', notes: '' })
+  const [form, setForm] = useState({ fullName: '', contactNumber: '', emergencyContact: '', notes: '' })
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -31,7 +29,6 @@ export function CasualHelperModal({
     setForm({
       fullName: helper?.full_name ?? '',
       contactNumber: helper?.contact_number ?? '',
-      dailyRate: helper?.daily_rate || DEFAULT_RATE,
       emergencyContact: helper?.emergency_contact ?? '',
       notes: helper?.notes ?? '',
     })
@@ -67,15 +64,9 @@ export function CasualHelperModal({
         <Field label="Full name" htmlFor="casual-name" required>
           <Input id="casual-name" value={form.fullName} onChange={(e) => setForm({ ...form, fullName: e.target.value })} placeholder="Mario Santos" />
         </Field>
-        <div className="grid grid-cols-1 gap-stack sm:grid-cols-2">
-          <Field label="Mobile number" htmlFor="casual-phone" required>
-            <Input id="casual-phone" type="tel" value={form.contactNumber} onChange={(e) => setForm({ ...form, contactNumber: e.target.value })} placeholder="09171234567" />
-          </Field>
-          {/* Daily rate: kept until the panel decides (see PROJECT_STATE known issues). */}
-          <Field label="Daily rate (₱)" htmlFor="casual-rate">
-            <Input id="casual-rate" type="number" min={100} step={10} value={form.dailyRate} onChange={(e) => setForm({ ...form, dailyRate: parseFloat(e.target.value) || DEFAULT_RATE })} />
-          </Field>
-        </div>
+        <Field label="Mobile number" htmlFor="casual-phone" required>
+          <Input id="casual-phone" type="tel" value={form.contactNumber} onChange={(e) => setForm({ ...form, contactNumber: e.target.value })} placeholder="09171234567" />
+        </Field>
         <Field label="Emergency contact" htmlFor="casual-emergency" hint="Name, relationship and number" error={error}>
           <Input id="casual-emergency" value={form.emergencyContact} onChange={(e) => setForm({ ...form, emergencyContact: e.target.value })} placeholder="Ana Santos (wife), 09181234567" />
         </Field>
