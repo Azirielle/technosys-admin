@@ -1,4 +1,4 @@
-// EmployeeFileDrawer: one person's 201 file in a side panel — documents and warnings, with edit and reminder actions.
+// EmployeeFileDrawer: one person's 201 file in a side panel — documents, warnings and mobile sign-in (PIN, phone).
 'use client'
 
 import { useEffect, useState } from 'react'
@@ -7,9 +7,10 @@ import { formatDay } from '@/lib/format'
 import { Button, Drawer, Tabs } from '@/components/ui'
 import { DocumentChecklist } from './DocumentChecklist'
 import { WarningList } from './WarningList'
+import { SignInPanel } from './SignInPanel'
 import { EMPLOYMENT_STATUS, LEVELS, fileStatus, labelOf, type DocKey, type EmployeeFile } from './requirements'
 
-type View = 'documents' | 'warnings'
+type View = 'documents' | 'warnings' | 'signin'
 
 export function EmployeeFileDrawer({
   employee,
@@ -20,6 +21,8 @@ export function EmployeeFileDrawer({
   onRemind,
   onEditDetails,
   onAddWarning,
+  hasPhoneRequest,
+  onSignInChanged,
 }: {
   employee: EmployeeFile | null
   savingKey: DocKey | null
@@ -29,9 +32,12 @@ export function EmployeeFileDrawer({
   onRemind: () => void
   onEditDetails: () => void
   onAddWarning: () => void
+  /** Waiting for HR to approve a new phone: open on the Sign-in tab */
+  hasPhoneRequest: boolean
+  onSignInChanged: () => void
 }) {
   const [view, setView] = useState<View>('documents')
-  useEffect(() => setView('documents'), [employee?.id])
+  useEffect(() => setView(hasPhoneRequest ? 'signin' : 'documents'), [employee?.id]) // eslint-disable-line react-hooks/exhaustive-deps
   if (!employee) return null
 
   const s = fileStatus(employee)
@@ -65,12 +71,15 @@ export function EmployeeFileDrawer({
           items={[
             { value: 'documents', label: 'Documents', count: s.done },
             { value: 'warnings', label: 'Warnings', count: employee.warnings.length },
+            { value: 'signin', label: hasPhoneRequest ? 'Sign-in (new phone)' : 'Sign-in' },
           ]}
         />
         {view === 'documents' ? (
           <DocumentChecklist employee={employee} savingKey={savingKey} onToggle={onToggleDocument} />
-        ) : (
+        ) : view === 'warnings' ? (
           <WarningList warnings={employee.warnings} onAdd={onAddWarning} />
+        ) : (
+          <SignInPanel key={employee.id} employee={employee} onChanged={onSignInChanged} />
         )}
       </div>
     </Drawer>

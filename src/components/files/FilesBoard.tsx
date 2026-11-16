@@ -12,11 +12,13 @@ import { WarningModal } from './WarningModal'
 import { EmployeeDetailsModal, type DetailsForm } from './EmployeeDetailsModal'
 import { addWarning, exportFilesCsv, loadEmployeeFiles, requestMissingDocuments, saveEmployeeDetails, setDocumentReceived } from './filesActions'
 import { fileStatus, type DocKey, type EmployeeFile } from './requirements'
+import { loadPendingPhoneRequests } from './signInActions'
 
-type Filter = 'all' | 'incomplete' | 'warnings' | 'complete'
+type Filter = 'all' | 'incomplete' | 'warnings' | 'complete' | 'phone'
 const PER_PAGE = 10
 
-function matches(emp: EmployeeFile, filter: Filter) {
+function matches(emp: EmployeeFile, filter: Filter, phoneRequests: Set<string>) {
+  if (filter === 'phone') return phoneRequests.has(emp.id)
   const s = fileStatus(emp)
   if (filter === 'incomplete') return !s.complete
   if (filter === 'complete') return s.complete
@@ -29,7 +31,10 @@ export function FilesBoard() {
   const toast = useToast()
   const [employees, setEmployees] = useState<EmployeeFile[]>([])
   const [loading, setLoading] = useState(true)
-  const [filter, setFilter] = useState<Filter>('all')
+  const [phoneRequests, setPhoneRequests] = useState<Set<string>>(new Set())
+  const [chosenFilter, setFilter] = useState<Filter>('all')
+  // Once the last phone request is handled its tab disappears, so fall back to everyone.
+  const filter: Filter = chosenFilter === 'phone' && phoneRequests.size === 0 ? 'all' : chosenFilter
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
   const [openId, setOpenId] = useState<string | null>(null)
@@ -45,7 +50,9 @@ export function FilesBoard() {
 
   const load = useCallback(async () => {
     try {
-      setEmployees(await loadEmployeeFiles(supabase))
+      const [files, requests] = await Promise.all([loadEmployeeFiles(supabase), loadPendingPhoneRequests(supabase)])
+      setEmployees(files)
+      setPhoneRequests(requests)
     } catch (err) {
       toast.error(`Couldn't load 201 files: ${(err as Error).message}`)
     } finally {
@@ -60,18 +67,18 @@ export function FilesBoard() {
   const open = employees.find((e) => e.id === openId) ?? null
   const counts = useMemo(
     () => ({
-      incomplete: employees.filter((e) => matches(e, 'incomplete')).length,
-      warnings: employees.filter((e) => matches(e, 'warnings')).length,
-      complete: employees.filter((e) => matches(e, 'complete')).length,
+      incomplete: employees.filter((e) => matches(e, 'incomplete', phoneRequests)).length,
+      warnings: employees.filter((e) => matches(e, 'warnings', phoneRequests)).length,
+      complete: employees.filter((e) => matches(e, 'complete', phoneRequests)).length,
     }),
-    [employees],
+    [employees, phoneRequests],
   )
   const shown = useMemo(() => {
     const q = search.trim().toLowerCase()
-    const list = employees.filter((e) => matches(e, filter) && (!q || e.full_name.toLowerCase().includes(q)))
+    const list = employees.filter((e) => matches(e, filter, phoneRequests) && (!q || e.full_name.toLowerCase().includes(q)))
     // When chasing missing documents, show the emptiest files first.
     return filter === 'incomplete' ? [...list].sort((a, b) => fileStatus(a).done - fileStatus(b).done) : list
-  }, [employees, filter, search])
+  }, [employees, filter, search, phoneRequests])
 
   async function run(task: () => Promise<void>, done: string, failed: string) {
     try {
@@ -124,7 +131,7 @@ export function FilesBoard() {
     <Page wide>
       <PageHeader
         title="201 files"
-        subtitle="Each technician's and helper's documents and warnings. Mark a document once HR has the copy."
+        subtitle="Each technician's and helper's documents, warnings and mobile sign-in (PIN and phone). Mark a document once HR has the copy."
         actions={<Button icon={Download} onClick={() => exportFilesCsv(employees)} disabled={loading || employees.length === 0}>Export CSV</Button>}
       />
 
@@ -148,6 +155,7 @@ export function FilesBoard() {
             { value: 'incomplete', label: 'Missing documents', count: counts.incomplete },
             { value: 'warnings', label: 'With warnings', count: counts.warnings },
             { value: 'complete', label: 'Complete', count: counts.complete },
+            ...(phoneRequests.size ? [{ value: 'phone' as const, label: 'New phone requests', count: phoneRequests.size }] : []),
           ]}
         />
         <Input icon={Search} className="w-full sm:w-64" placeholder="Search name" aria-label="Search staff" value={search} onChange={(e) => { setSearch(e.target.value); setPage(1) }} />
@@ -172,6 +180,8 @@ export function FilesBoard() {
           setDetailsOpen(true)
         }}
         onAddWarning={() => setWarningOpen(true)}
+        hasPhoneRequest={!!open && phoneRequests.has(open.id)}
+        onSignInChanged={load}
       />
       <WarningModal employee={warningOpen ? open : null} saving={savingWarning} onClose={() => setWarningOpen(false)} onSave={saveWarning} />
       <EmployeeDetailsModal employee={detailsOpen ? open : null} saving={savingDetails} error={detailsError} onClose={() => setDetailsOpen(false)} onSave={saveDetails} />

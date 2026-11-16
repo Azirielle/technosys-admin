@@ -423,6 +423,13 @@ entrypoint = "./functions/send-sms/index.ts"
 # For example, if you want to serve static HTML pages in your function:
 # static_files = [ "./functions/send-sms/*.html" ]
 
+[functions.pin-login]
+enabled = true
+# Logged-out callers: the function checks the PIN and registered phone itself.
+verify_jwt = false
+import_map = "./functions/pin-login/deno.json"
+entrypoint = "./functions/pin-login/index.ts"
+
 [functions.notify_admins]
 enabled = true
 verify_jwt = false
