@@ -100,10 +100,10 @@ export function SignInPanel({ employee, onChanged }: { employee: EmployeeFile; o
             )}
           </div>
         ) : (
-          <p className="mt-2 text-caption text-ink-3">No phone yet. The first phone they sign in on becomes their phone.</p>
+          <p className="mt-2 text-caption text-ink-3">No phone yet. They pick their work phone in the app's first-time setup.</p>
         )}
         {confirmReset && (
-          <p className="mt-2 text-caption text-ink-3">Their current phone stops working. The next phone they sign in on is registered instead.</p>
+          <p className="mt-2 text-caption text-ink-3">Their current phone stops working. The next phone they sign in on asks them to make it their work phone.</p>
         )}
       </section>
 

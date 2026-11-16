@@ -10,6 +10,7 @@ const navItems: NavItem[] = [
   { title: 'Tickets', href: '/hr/tickets', iconName: 'MessageSquare' },
   { title: 'DTR & Attendance', href: '/hr/audit', iconName: 'FileSpreadsheet' },
   { title: '201 Files', href: '/hr/files', iconName: 'FolderOpen' },
+  { title: 'Work Phones', href: '/hr/phones', iconName: 'Smartphone' },
   { title: 'Policies & Handbooks', href: '/hr/policies', iconName: 'ScrollText' },
   { title: 'Announcements', href: '/hr/announcements', iconName: 'Megaphone' },
 ]

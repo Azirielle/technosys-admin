@@ -21,6 +21,7 @@ import {
   ShieldCheck,
   ShieldAlert,
   Users,
+  Smartphone,
   PanelLeftClose,
   PanelLeft,
   LucideIcon,
@@ -63,6 +64,7 @@ const ICON_MAP: Record<string, LucideIcon> = {
   ShieldCheck,
   ShieldAlert,
   Users,
+  Smartphone,
 }
 
 const ROLE_DEFAULTS: Record<
