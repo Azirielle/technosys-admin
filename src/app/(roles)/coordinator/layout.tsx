@@ -8,6 +8,7 @@ const navItems: NavItem[] = [
   { title: 'Overview', href: '/coordinator', iconName: 'Home' },
   { title: 'Scheduling', href: '/coordinator/dispatch', iconName: 'Calendar' },
   { title: 'Jobs (new)', href: '/coordinator/jobs', iconName: 'Briefcase' },
+  { title: 'Today (new)', href: '/coordinator/today', iconName: 'ClipboardCheck' },
   { title: 'Live Map', href: '/coordinator/tracking', iconName: 'MapPin' },
   { title: 'Inventory', href: '/coordinator/inventory', iconName: 'Box' },
   { title: 'Announcements', href: '/coordinator/announcements', iconName: 'Megaphone' },

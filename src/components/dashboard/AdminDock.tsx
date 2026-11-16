@@ -23,6 +23,7 @@ import {
   Users,
   Smartphone,
   Briefcase,
+  ClipboardCheck,
   PanelLeftClose,
   PanelLeft,
   LucideIcon,
@@ -67,6 +68,7 @@ const ICON_MAP: Record<string, LucideIcon> = {
   Users,
   Smartphone,
   Briefcase,
+  ClipboardCheck,
 }
 
 const ROLE_DEFAULTS: Record<
