@@ -1,0 +1,140 @@
+// JobFormDrawer: create or change a job. Where (site, pin, circle) → when (dates, times) → how they report
+// (site or office) → who (lead, crew, driver + vehicle). The database's save checks run as people are picked;
+// red rows block saving. Changing a saved job needs a reason, which the crew sees in their push.
+'use client'
+
+import { useEffect, useMemo, useState } from 'react'
+import { Save } from 'lucide-react'
+import { createClient } from '@/lib/supabase/client'
+import { saveJob } from '@/app/actions/jobs'
+import { Button, Drawer, Field, Input, Select, Textarea, useToast } from '@/components/ui'
+import { JobSiteFields, type SiteValue } from './JobSiteFields'
+import { JobCrewFields, type CrewValue } from './JobCrewFields'
+import { JobChecksList } from './JobChecksList'
+import { runSaveChecks } from './jobsData'
+import { REPORT_TO, WORK_TYPES, manilaToday, type Job, type JobInput, type Office, type Person, type SaveCheck, type TempWorker, type Vehicle } from './jobTypes'
+
+type Props = { open: boolean; job: Job | null; people: Person[]; temps: TempWorker[]; vehicles: Vehicle[]; offices: Office[]; onClose: () => void; onSaved: () => void }
+
+function fromJob(job: Job | null, hq: Office | undefined): JobInput {
+  const m = (role: string) => job?.members.filter((x) => x.role === role && x.person_id).map((x) => x.person_id!) ?? []
+  const driver = job?.members.find((x) => x.role === 'driver')
+  return {
+    client_name: job?.client_name ?? '', address: job?.address ?? '', project_name: job?.project_name ?? '', notes: job?.notes ?? '',
+    site_lat: job?.site_lat ?? hq?.latitude ?? 14.3439, site_lon: job?.site_lon ?? hq?.longitude ?? 121.0617, site_radius_m: job?.site_radius_m ?? 150,
+    start_date: job?.start_date ?? manilaToday(), end_date: job?.end_date ?? manilaToday(),
+    start_time: job?.start_time.slice(0, 5) ?? '08:00', end_time: job?.end_time.slice(0, 5) ?? '17:00',
+    work_type: job?.work_type ?? 'on_site', report_to: job?.report_to ?? 'site', hq_office_id: job?.hq_office_id ?? hq?.id ?? null,
+    lead_id: m('lead')[0] ?? '', crew_ids: m('crew'), helper_ids: m('helper'),
+    driver_id: driver?.person_id ?? null, vehicle_id: driver?.vehicle_id ?? null,
+    temp_worker_ids: job?.members.filter((x) => x.temp_worker_id).map((x) => x.temp_worker_id!) ?? [],
+    change_reason: '',
+  }
+}
+
+export function JobFormDrawer({ open, job, people, temps, vehicles, offices, onClose, onSaved }: Props) {
+  const supabase = useMemo(() => createClient(), [])
+  const toast = useToast()
+  const [form, setForm] = useState<JobInput>(() => fromJob(job, offices[0]))
+  const [pinned, setPinned] = useState(!!job)
+  const [checks, setChecks] = useState<SaveCheck[] | null>(null)
+  const [checking, setChecking] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  // A fresh form each time the drawer opens for a job (or a new one)
+  const [openedFor, setOpenedFor] = useState<string | null | undefined>(undefined)
+  const key = open ? job?.id ?? 'new' : undefined
+  if (key !== openedFor) { setOpenedFor(key); setForm(fromJob(job, offices[0])); setPinned(!!job); setChecks(null); setError(null) }
+
+  const set = (patch: Partial<JobInput>) => { setForm((f) => ({ ...f, ...patch })); setError(null) }
+  const personIds = [form.lead_id, ...form.crew_ids, ...form.helper_ids, form.driver_id].filter(Boolean) as string[]
+
+  // Save checks, half a second after the last change to the people, dates, times or vehicle
+  const checkKey = JSON.stringify([personIds, form.start_date, form.end_date, form.start_time, form.end_time, form.vehicle_id])
+  useEffect(() => {
+    if (!open || personIds.length === 0) { setChecks(null); return }
+    setChecking(true)
+    const t = setTimeout(() => {
+      runSaveChecks(supabase, { personIds, startDate: form.start_date, endDate: form.end_date, startTime: form.start_time, endTime: form.end_time, vehicleId: form.vehicle_id, excludeJobId: job?.id })
+        .then(setChecks).catch(() => setChecks(null)).finally(() => setChecking(false))
+    }, 500)
+    return () => clearTimeout(t)
+  }, [checkKey, open]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const extra = [
+    ...(form.report_to === 'hq' && !form.driver_id ? ['Who drives? This job reports to the office first.'] : []),
+  ]
+  const blocked = (checks ?? []).some((c) => c.blocking)
+
+  async function submit() {
+    if (!pinned) return setError('Place the pin on the map.')
+    setSaving(true)
+    const res = await saveJob(form, job?.id)
+    setSaving(false)
+    if (!res.ok) return setError(res.error)
+    const total = personIds.length
+    toast.success(res.notReached.length ? `Saved. ${res.notReached.join(', ')} didn't get the push: call them.` : `Saved. ${total} ${total === 1 ? 'person' : 'people'} notified.`)
+    onSaved()
+  }
+
+  const site: SiteValue = form
+  const crew: CrewValue = form
+
+  return (
+    <Drawer isOpen={open} onClose={onClose} width="xl" title={job ? `Change: ${job.client_name}` : 'New job'}
+      subtitle="The crew gets a push when you save."
+      footer={
+        <>
+          {/* Shown here, beside Save, so it's seen even when the form is scrolled */}
+          {error && <p role="alert" className="mr-auto max-w-md text-small text-danger">{error}</p>}
+          <Button variant="ghost" onClick={onClose}>Cancel</Button>
+          <Button variant="primary" icon={Save} loading={saving} disabled={blocked || checking} onClick={submit}>{job ? 'Save changes' : 'Save job'}</Button>
+        </>
+      }>
+      <div className="flex flex-col gap-section">
+        <section className="flex flex-col gap-stack">
+          <h3 className="text-small font-medium text-ink">Where</h3>
+          <JobSiteFields value={site} pinned={pinned} onChange={(p) => { set(p); if (p.site_lat !== undefined) setPinned(true) }} />
+        </section>
+
+        <section className="flex flex-col gap-stack">
+          <h3 className="text-small font-medium text-ink">When</h3>
+          <div className="grid grid-cols-2 gap-stack sm:grid-cols-4">
+            <Field label="First day" htmlFor="job-start-date" required><Input id="job-start-date" type="date" value={form.start_date} onChange={(e) => set({ start_date: e.target.value, end_date: form.end_date < e.target.value ? e.target.value : form.end_date })} /></Field>
+            <Field label="Last day" htmlFor="job-end-date" required><Input id="job-end-date" type="date" min={form.start_date} value={form.end_date} onChange={(e) => set({ end_date: e.target.value })} /></Field>
+            <Field label="Start" htmlFor="job-start-time" required><Input id="job-start-time" type="time" value={form.start_time} onChange={(e) => set({ start_time: e.target.value })} /></Field>
+            <Field label="End" htmlFor="job-end-time" required><Input id="job-end-time" type="time" value={form.end_time} onChange={(e) => set({ end_time: e.target.value })} /></Field>
+          </div>
+          <p className="text-caption text-ink-3">Time-in opens 1 hour before the start. Late after 15 minutes. Same hours every day of the job.</p>
+        </section>
+
+        <section className="flex flex-col gap-stack">
+          <h3 className="text-small font-medium text-ink">How they report</h3>
+          <div className="grid grid-cols-1 gap-stack sm:grid-cols-2">
+            <Field label="Kind of work" htmlFor="job-type"><Select id="job-type" value={form.work_type} onChange={(e) => set({ work_type: e.target.value as JobInput['work_type'] })} options={WORK_TYPES} /></Field>
+            <Field label="Report to" htmlFor="job-report" hint={REPORT_TO.find((r) => r.value === form.report_to)?.hint}>
+              <Select id="job-report" value={form.report_to} onChange={(e) => set({ report_to: e.target.value as JobInput['report_to'] })} options={REPORT_TO} />
+            </Field>
+          </div>
+          {form.report_to === 'hq' && offices.length > 1 && (
+            <Field label="Office" htmlFor="job-office"><Select id="job-office" value={form.hq_office_id ?? ''} onChange={(e) => set({ hq_office_id: e.target.value })} options={offices.map((o) => ({ value: o.id, label: o.name }))} /></Field>
+          )}
+        </section>
+
+        <section className="flex flex-col gap-stack">
+          <h3 className="text-small font-medium text-ink">Who</h3>
+          <JobCrewFields value={crew} onChange={set} people={people} temps={temps} vehicles={vehicles} needsDriver={form.report_to === 'hq'} />
+          <JobChecksList checks={checks} checking={checking} extra={extra} />
+        </section>
+
+        <Field label="Notes for the crew (optional)" htmlFor="job-notes"><Textarea id="job-notes" rows={2} value={form.notes} onChange={(e) => set({ notes: e.target.value })} placeholder="Bring the ladder. Gate pass at the guard house." /></Field>
+        {job && (
+          <Field label="Why is it changing?" htmlFor="job-reason" required hint="The crew sees this in their push and in the app.">
+            <Input id="job-reason" value={form.change_reason} onChange={(e) => set({ change_reason: e.target.value })} placeholder="Client moved the visit to Thursday" />
+          </Field>
+        )}
+      </div>
+    </Drawer>
+  )
+}
