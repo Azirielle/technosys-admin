@@ -90,7 +90,9 @@ export function SearchSelect({
           value={open ? query : selected?.label ?? ''}
           placeholder={selected && open ? selected.label : placeholder}
           onChange={(e) => {
-            setQuery(e.target.value)
+            // Typing over a chosen name starts a new search, not "<name><letters>"
+            const v = e.target.value
+            setQuery(!open && selected && v.startsWith(selected.label) ? v.slice(selected.label.length) : v)
             setActive(0)
             setOpen(true)
           }}

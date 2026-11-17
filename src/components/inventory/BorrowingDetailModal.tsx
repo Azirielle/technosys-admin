@@ -1,10 +1,10 @@
-// BorrowingDetailModal: one borrowing in full — tool, person, dates, condition, fee and notes.
+// BorrowingDetailModal: one borrowing in full — tool, person, dates, condition and notes.
 'use client'
 
 import { Wrench } from 'lucide-react'
 import { formatDay, formatTime } from '@/lib/format'
 import { Badge, Button, Modal } from '@/components/ui'
-import { BORROW_STATUS, CONDITIONS, daysOut, isOverdue, peso, type Borrowing } from './types'
+import { BORROW_STATUS, CONDITIONS, daysOut, isOverdue, type Borrowing } from './types'
 
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -58,7 +58,6 @@ export function BorrowingDetailModal({
         <Row label="Handed over">{when(borrowing.handed_over_at)}</Row>
         <Row label="Returned">{borrowing.returned_at ? when(borrowing.returned_at) : `Not yet (${daysOut(borrowing)} days)`}</Row>
         {condition && <Row label="Condition">{condition.label}</Row>}
-        {borrowing.damage_fee > 0 && <Row label="Charge">{peso(borrowing.damage_fee)}</Row>}
       </dl>
       {(borrowing.notes || borrowing.condition_notes) && (
         <div className="mt-3 flex flex-col gap-2 rounded-control bg-surface-soft p-3 text-small">

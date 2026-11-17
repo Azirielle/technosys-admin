@@ -33,6 +33,8 @@ export function InventoryBoard() {
   const toast = useToast()
   const [tools, setTools] = useState<Tool[]>([])
   const [borrowings, setBorrowings] = useState<Borrowing[]>([])
+  // Open "Tool problem" reports from the phone, by person and tool name → what's wrong
+  const [reports, setReports] = useState<Map<string, string>>(new Map())
   const [people, setPeople] = useState<Person[]>([])
   const [loading, setLoading] = useState(true)
   const [tab, setTab] = useState<Tab>('tools')
@@ -63,18 +65,22 @@ export function InventoryBoard() {
   }
 
   const load = useCallback(async () => {
-    const [toolsRes, borrowRes, staff] = await Promise.all([
+    const [toolsRes, borrowRes, staff, reportRes] = await Promise.all([
       supabase.from('tools').select('*').order('name'),
       supabase
         .from('tool_borrowings')
-        .select('*, profiles!technician_id(full_name, role, avatar_url), tool_catalog:tools!tool_id(name, category, image_url, serial_number, unit_cost)')
+        .select('*, profiles!technician_id(full_name, role, avatar_url), tool_catalog:tools!tool_id(name, category, image_url, serial_number)')
         .order('handed_over_at', { ascending: false }),
       getTechnicians(),
+      supabase.from('tickets').select('employee_id, title, description').eq('category', 'Equipment / Tools').neq('status', 'resolved'),
     ])
     if (toolsRes.error || borrowRes.error) toast.error("Couldn't load the inventory. Refresh the page.")
     setTools((toolsRes.data ?? []) as Tool[])
     setBorrowings((borrowRes.data ?? []) as unknown as Borrowing[])
     setPeople((staff ?? []) as Person[])
+    // shortcut: matched by the ticket title "Tool problem: <name>" (the phone's report has no borrowing id)
+    setReports(new Map((reportRes.data ?? []).map((r) => [`${r.employee_id}|${r.title.replace(/^Tool problem: /, '')}`,
+      r.description.split('\n').find((l: string) => l.startsWith('Problem: '))?.slice(9) ?? 'Problem reported'])))
     setLoading(false)
   }, [supabase, toast])
 
@@ -174,6 +180,7 @@ export function InventoryBoard() {
             emptyText={q ? 'Try another search.' : BORROW_EMPTY[borrowFilter]}
             onOpen={setViewing}
             onReturn={setReturning}
+            reports={reports}
           />
         )}
         {rows > PER_PAGE && (

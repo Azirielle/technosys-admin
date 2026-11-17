@@ -8,7 +8,6 @@ export type Tool = {
   image_url: string | null
   category: string
   serial_number: string | null
-  unit_cost: number
   is_serialized: boolean
   status: 'active' | 'maintenance' | 'retired'
   total_stock: number
@@ -26,10 +25,9 @@ export type Borrowing = {
   status: 'checked_out' | 'returned' | 'damaged' | 'lost'
   condition_on_return: 'good' | 'minor_wear' | 'damaged' | 'lost' | null
   condition_notes: string | null
-  damage_fee: number
   notes: string | null
   profiles?: { full_name: string; role: string; avatar_url: string | null }
-  tool_catalog?: { name: string; category: string; image_url: string | null; serial_number: string | null; unit_cost: number }
+  tool_catalog?: { name: string; category: string; image_url: string | null; serial_number: string | null }
 }
 
 export type Person = { id: string; full_name: string; role: string; avatar_url: string | null }
@@ -42,7 +40,7 @@ export const LOW_STOCK = 2
 export const OVERDUE_DAYS = 3
 
 export const TOOL_STATUS: Record<Tool['status'], { label: string; tone: Tone }> = {
-  active: { label: 'In use', tone: 'success' },
+  active: { label: 'In service', tone: 'success' }, // usable (vs being repaired / retired), not "lent out"
   maintenance: { label: 'Being repaired', tone: 'warning' },
   retired: { label: 'Retired', tone: 'neutral' },
 }
@@ -77,6 +75,3 @@ export function newAssetTag() {
   return `TC-EQP-${Math.floor(1000 + Math.random() * 9000)}`
 }
 
-export function peso(n: number) {
-  return `₱${(n || 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-}

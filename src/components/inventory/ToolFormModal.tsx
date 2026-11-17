@@ -93,9 +93,6 @@ export function ToolFormModal({
           <Field label="In warehouse now" htmlFor="tool-available" required hint="Not counting ones lent out">
             <Input id="tool-available" name="available_stock" type="number" min={0} required defaultValue={tool?.available_stock ?? 1} />
           </Field>
-          <Field label="Cost per unit (₱)" htmlFor="tool-cost" hint="Used to work out damage fees">
-            <Input id="tool-cost" name="unit_cost" type="number" min={0} step="0.01" defaultValue={tool?.unit_cost ?? 0} />
-          </Field>
           <Field label="Photo" htmlFor="tool-photo" hint={tool?.image_url ? 'Choose a file to replace the current photo.' : 'Optional'}>
             <Input id="tool-photo" name="image" type="file" accept="image/*" className="file:mr-3 file:rounded-pill file:border-0 file:bg-surface file:px-3 file:py-1 file:text-caption file:text-ink" />
           </Field>

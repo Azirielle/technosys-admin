@@ -1,4 +1,5 @@
 // BorrowingsTable: who has which tool, since when, and whether it's overdue. "Check in" takes it back.
+// A tool the borrower reported a problem with (from the phone) shows "Problem reported" with what's wrong.
 'use client'
 
 import { Undo2, Wrench } from 'lucide-react'
@@ -24,12 +25,14 @@ export function BorrowingsTable({
   emptyText,
   onOpen,
   onReturn,
+  reports,
 }: {
   borrowings: Borrowing[]
   loading: boolean
   emptyText: string
   onOpen: (b: Borrowing) => void
   onReturn: (b: Borrowing) => void
+  reports: Map<string, string>
 }) {
   if (!loading && borrowings.length === 0) {
     return <EmptyState icon={Wrench} title="Nothing here" description={emptyText} />
@@ -77,6 +80,9 @@ export function BorrowingsTable({
                   <span className="flex flex-wrap items-center gap-1.5">
                     {isOverdue(b) ? <Badge tone="danger" dot>Overdue</Badge> : <Badge tone={status.tone} dot>{status.label}</Badge>}
                     {condition && b.status === 'returned' && condition.value !== 'good' && <Badge>{condition.label}</Badge>}
+                    {b.status === 'checked_out' && reports.has(`${b.technician_id}|${b.tool_catalog?.name}`) && (
+                      <Badge tone="warning" title={reports.get(`${b.technician_id}|${b.tool_catalog?.name}`)}>Problem reported: {reports.get(`${b.technician_id}|${b.tool_catalog?.name}`)}</Badge>
+                    )}
                   </span>
                 </TableCell>
                 <TableCell align="right">

@@ -36,7 +36,6 @@ export async function createOrUpdateInventoryItem(formData: FormData) {
     const description = formData.get("description")?.toString().trim() || ""
     const category = formData.get("category")?.toString().trim() || "General Tools"
     const serial_number = formData.get("serial_number")?.toString().trim() || null
-    const unit_cost = Number(formData.get("unit_cost")) || 0
     const is_serialized = formData.get("is_serialized") === "true"
     const item_status = formData.get("status")?.toString() || "active"
     const total_stock = Number(formData.get("total_stock"))
@@ -111,7 +110,6 @@ export async function createOrUpdateInventoryItem(formData: FormData) {
           description,
           category,
           serial_number,
-          unit_cost,
           is_serialized,
           status: item_status,
           total_stock,
@@ -149,7 +147,6 @@ export async function createOrUpdateInventoryItem(formData: FormData) {
           description,
           category,
           serial_number,
-          unit_cost,
           is_serialized,
           status: item_status,
           total_stock,
@@ -345,7 +342,6 @@ export async function returnTool(
   status: 'returned' | 'lost' | 'damaged',
   conditionOnReturn: 'good' | 'minor_wear' | 'damaged' | 'lost' = 'good',
   conditionNotes?: string,
-  damageFee: number = 0,
   receivedBy?: string
 ) {
   try {
@@ -375,7 +371,6 @@ export async function returnTool(
         status,
         condition_on_return: conditionOnReturn,
         condition_notes: conditionNotes?.trim() || null,
-        damage_fee: damageFee || 0,
         received_by: receivedBy || null,
         notes: conditionNotes?.trim() || assign.notes
       })
@@ -420,7 +415,7 @@ export async function returnTool(
     await logActivity({
       category: 'inventory',
       action: status === 'returned' ? 'restocked' : status,
-      description: `Processed return for ${handoverQty}x "${tool.name}" from ${techName} with condition [${conditionOnReturn.toUpperCase()}] and status ${status.toUpperCase()}${damageFee > 0 ? ` (Damage Fee: ₱${damageFee})` : ''}${conditionNotes ? ` (Notes: ${conditionNotes})` : ''}`
+      description: `Processed return for ${handoverQty}x "${tool.name}" from ${techName} with condition [${conditionOnReturn.toUpperCase()}] and status ${status.toUpperCase()}${conditionNotes ? ` (Notes: ${conditionNotes})` : ''}`
     })
 
     revalidatePath('/coordinator/inventory')
