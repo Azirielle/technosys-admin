@@ -16,9 +16,9 @@ const EVENT_LABEL: Record<string, string> = {
   arrived: 'Arrived at the site', done: 'Marked done', acting_lead: 'Acting lead named', finished: 'Job finished',
 }
 
-type Props = { job: Job | null; vehicles: Vehicle[]; onClose: () => void; onEdit: (job: Job) => void; onChanged: () => void }
+type Props = { job: Job | null; vehicles: Vehicle[]; readOnly?: boolean; onClose: () => void; onEdit: (job: Job) => void; onChanged: () => void }
 
-export function JobDetailDrawer({ job, vehicles, onClose, onEdit, onChanged }: Props) {
+export function JobDetailDrawer({ job, vehicles, readOnly = false, onClose, onEdit, onChanged }: Props) {
   const supabase = useMemo(() => createClient(), [])
   const toast = useToast()
   const [events, setEvents] = useState<JobEvent[] | null>(null)
@@ -49,7 +49,7 @@ export function JobDetailDrawer({ job, vehicles, onClose, onEdit, onChanged }: P
   return (
     <Drawer isOpen onClose={onClose} title={job.client_name} subtitle={job.project_name ?? undefined}
       headerExtra={<Badge tone={status.tone} dot>{status.label}</Badge>}
-      footer={open ? (cancelling ? (
+      footer={open && !readOnly ? (cancelling ? (
         <>
           <Button variant="ghost" onClick={() => setCancelling(false)} disabled={busy}>Keep the job</Button>
           <Button variant="danger" loading={busy} onClick={confirmCancel}>Cancel job</Button>

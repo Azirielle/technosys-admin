@@ -1,10 +1,10 @@
 // Work v2 for HR's DTR (app/actions/audit.ts): this cut-off's work days and jobs, shaped like the old
 // attendance_logs and schedules rows the DTR already reads. Hours come from the database (from the start time
 // to the end time + approved overtime, minus lunch), so the DTR matches the phone and the Today board.
-// WORK_V2 stays false until the switch-over (PROJECT_STATE.md §8), the same as the mobile app's switch.
+// WORK_V2 is on since the switch-over on 2026-11-17 (PROJECT_STATE.md §8), the same as the mobile app's switch.
 import { supabaseAdmin } from '@/lib/supabase/admin'
 
-export const WORK_V2 = false
+export const WORK_V2 = true
 
 export type V2Log = {
   id: string; technician_id: string; app_time_in: string; app_time_out: string | null; total_hours: number | null

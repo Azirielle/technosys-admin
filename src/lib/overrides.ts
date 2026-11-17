@@ -40,10 +40,10 @@ export const SYSTEM_MODULES: SystemModule[] = [
   },
   {
     id: 'coordinator_dispatch',
-    name: 'Dispatch & Scheduling',
+    name: 'Jobs',
     department: 'Field Operations',
-    description: 'Create dispatches, geocode addresses, and assign technician teams.',
-    href: '/coordinator/dispatch',
+    description: "Schedule jobs, pick the crew and vehicle, and see each job's history.",
+    href: '/coordinator/jobs',
     iconName: 'Calendar',
     defaultRoles: ['coordinator'],
   },

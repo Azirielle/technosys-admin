@@ -1,5 +1,5 @@
 // JobsBoard: the Coordinator's Jobs page (Work v2). Tabs: Today and upcoming / Earlier / Cancelled / Vehicles.
-// "New job" opens the form; a row opens the job (history, change, cancel).
+// "New job" opens the form; a row opens the job (history, change, cancel). readOnly = HR with borrowed access: look only.
 'use client'
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
@@ -11,11 +11,12 @@ import { JobFormDrawer } from './JobFormDrawer'
 import { JobDetailDrawer } from './JobDetailDrawer'
 import { VehiclesPanel } from './VehiclesPanel'
 import { loadFormOptions, loadJobs } from './jobsData'
+import { usePageCommand } from '@/components/commands/pageCommands'
 import { manilaToday, type Job, type Office, type Person, type TempWorker, type Vehicle } from './jobTypes'
 
 type View = 'upcoming' | 'earlier' | 'cancelled' | 'vehicles'
 
-export function JobsBoard() {
+export function JobsBoard({ readOnly = false }: { readOnly?: boolean }) {
   const supabase = useMemo(() => createClient(), [])
   const toast = useToast()
   const [jobs, setJobs] = useState<Job[]>([])
@@ -38,6 +39,12 @@ export function JobsBoard() {
   }, [supabase, toast])
   useEffect(() => { load() }, [load])
 
+  // Quick actions and search: "new job" or "open job X"
+  usePageCommand(readOnly ? ['open'] : ['new', 'open'], (command, id) => {
+    if (command === 'new') return setForm({ open: true, job: null })
+    if (id) { setView('upcoming'); setOpenId(id) }
+  })
+
   const today = manilaToday()
   const groups = useMemo(() => ({
     upcoming: jobs.filter((j) => j.status !== 'cancelled' && j.end_date >= today),
@@ -52,7 +59,7 @@ export function JobsBoard() {
   return (
     <Page wide>
       <PageHeader title="Jobs" subtitle="Schedule a job, pick the crew, and they get it on their phones. Saving checks leave, other jobs and vehicles first."
-        actions={<Button variant="primary" icon={Plus} onClick={() => setForm({ open: true, job: null })} disabled={loading}>New job</Button>} />
+        actions={readOnly ? undefined : <Button variant="primary" icon={Plus} onClick={() => setForm({ open: true, job: null })} disabled={loading}>New job</Button>} />
 
       <StatRow>
         <StatTile loading={loading} icon={CalendarClock} label="Today" value={todays.length} hint={todays.length ? 'Jobs running today' : 'No jobs today'} />
@@ -79,7 +86,7 @@ export function JobsBoard() {
         </TableContainer>
       )}
 
-      <JobDetailDrawer job={form.open ? null : opened} vehicles={opts.vehicles} onClose={() => setOpenId(null)}
+      <JobDetailDrawer job={form.open ? null : opened} vehicles={opts.vehicles} readOnly={readOnly} onClose={() => setOpenId(null)}
         onEdit={(job) => setForm({ open: true, job })} onChanged={() => { setOpenId(null); load() }} />
       <JobFormDrawer open={form.open} job={form.job} people={opts.people} temps={opts.temps} vehicles={opts.vehicles} offices={opts.offices}
         onClose={() => setForm({ open: false, job: null })} onSaved={() => { setForm({ open: false, job: null }); load() }} />

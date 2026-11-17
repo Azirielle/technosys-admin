@@ -4,6 +4,8 @@ import { supabaseAdmin } from "@/lib/supabase/admin"
 import { createClient } from "@/lib/supabase/server"
 import { revalidatePath } from "next/cache"
 import { logActivity } from "./activity"
+import { WORK_V2 } from "@/lib/dtrWorkV2"
+import { correctWorkDay } from "@/lib/correctWorkDay"
 
 export interface CorrectPunchInput {
   timeLogId?: string | null
@@ -85,6 +87,9 @@ export async function correctTimeLogPunch(
     if (outDate.getTime() <= inDate.getTime()) {
       return { success: false, error: "Clock-out timestamp must be chronologically after clock-in timestamp." }
     }
+
+    // Work v2: the database corrects the work day and counts late and hours by the same rules as the phone
+    if (WORK_V2) return await correctWorkDay(input, inDate, outDate, trimmedReason)
 
     // 2. DOLE Net Hours calculation (deduct 1h unpaid meal break if shift > 5 hours)
     const grossHours = (outDate.getTime() - inDate.getTime()) / (1000 * 60 * 60)

@@ -1,6 +1,6 @@
-// Scheduling page (Coordinator; HR only with temporary access from the CEO).
-import { SchedulingBoard } from '@/components/dashboard/scheduling/SchedulingBoard'
+// The old Scheduling page moved to Jobs (Work v2). Old links and bookmarks land there.
+import { redirect } from 'next/navigation'
 
 export default function SchedulingPage() {
-  return <SchedulingBoard />
+  redirect('/coordinator/jobs')
 }

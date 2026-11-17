@@ -1,6 +1,6 @@
-import SchedulingPage from '@/app/(roles)/coordinator/dispatch/page'
+// Jobs for HR, opened only when the CEO gives HR temporary access. HR can look; the Coordinator schedules.
+import { JobsBoard } from '@/components/jobs/JobsBoard'
 
-// Opened only when the CEO gives HR temporary access to Scheduling.
 export default function HRDispatchPage() {
-  return <SchedulingPage />
+  return <JobsBoard readOnly />
 }

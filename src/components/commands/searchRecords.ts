@@ -83,23 +83,32 @@ async function searchHr(db: Client, q: string): Promise<RecordResult[]> {
 
 async function searchCoordinator(db: Client, q: string): Promise<RecordResult[]> {
   const people = await findPeople(db, q)
-  const byLead = people.length ? `technician_id.in.(${people.map((p) => p.id).join(',')})` : null
-  const since = new Date(Date.now() - 14 * 86400000).toISOString()
+  const since = new Date(Date.now() - 14 * 86400000).toISOString().slice(0, 10)
 
-  const [tools, jobs] = await Promise.all([
+  const [tools, jobs, memberJobs] = await Promise.all([
     db.from('tools').select('id, name, available_stock, total_stock').ilike('name', `%${q}%`).order('name').limit(LIMIT),
-    db.from('schedules').select('id, client_name, project_name, location, start_time, status, profiles!technician_id(full_name)')
-      .or([`client_name.ilike.%${q}%`, `location.ilike.%${q}%`, `project_name.ilike.%${q}%`, byLead].filter(Boolean).join(','))
-      .gte('start_time', since).neq('status', 'cancelled').order('start_time').limit(LIMIT + 2),
+    db.from('jobs').select('id, client_name, project_name, address, start_date')
+      .or([`client_name.ilike.%${q}%`, `address.ilike.%${q}%`, `project_name.ilike.%${q}%`].join(','))
+      .gte('end_date', since).neq('status', 'cancelled').order('start_date').limit(LIMIT + 2),
+    // Jobs of the people whose names match
+    people.length
+      ? db.from('job_members').select('jobs!inner(id, client_name, project_name, address, start_date, end_date, status)')
+          .in('person_id', people.map((p) => p.id)).is('removed_at', null).gte('jobs.end_date', since).neq('jobs.status', 'cancelled').limit(LIMIT)
+      : Promise.resolve({ data: [] as { jobs: unknown }[] }),
   ])
 
+  type Job = { id: string; client_name: string; project_name: string | null; address: string; start_date: string }
+  const found = new Map<string, Job>()
+  for (const j of (jobs.data ?? []) as Job[]) found.set(j.id, j)
+  for (const m of memberJobs.data ?? []) { const j = m.jobs as Job; if (j) found.set(j.id, j) }
+
   return [
-    ...(jobs.data ?? []).map((j) => ({
+    ...[...found.values()].slice(0, LIMIT + 2).map((j) => ({
       id: `job-${j.id}`,
       title: j.project_name || j.client_name,
-      hint: `Job ${shortDate(j.start_time)} · ${(j.profiles as { full_name?: string } | null)?.full_name ?? 'no lead yet'} · ${j.location}`,
+      hint: `Job ${shortDate(j.start_date)} · ${j.address}`,
       icon: Briefcase,
-      target: { path: '/coordinator/dispatch', command: 'open' as const, id: j.id, date: j.start_time },
+      target: { path: '/coordinator/jobs', command: 'open' as const, id: j.id, date: j.start_date },
     })),
     ...(tools.data ?? []).map((t) => ({
       id: `tool-${t.id}`,

@@ -41,13 +41,12 @@ export function useCrewLocations() {
     if (busy.current) return
     busy.current = true
     const now = Date.now()
-    const dayStart = new Date()
-    dayStart.setHours(0, 0, 0, 0)
+    const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Manila' }).format(new Date())
     const [loc, shifts] = await Promise.all([
       supabase.from('live_locations').select('*, profiles!technician_id(full_name, contact_number, role)'),
-      supabase.from('attendance_logs').select('technician_id, app_time_in').is('app_time_out', null).gte('created_at', dayStart.toISOString()),
+      supabase.from('work_days').select('person_id, time_in').is('time_out', null).eq('work_date', today),
     ])
-    const open = new Map((shifts.data ?? []).map((s) => [s.technician_id, s.app_time_in as string | null]))
+    const open = new Map((shifts.data ?? []).map((s) => [s.person_id, s.time_in as string | null]))
     const list: CrewLocation[] = (loc.data ?? []).map((row) => {
       const r = row as typeof row & { profiles: { full_name: string; contact_number: string | null; role: string } | null }
       const minutesAgo = (now - new Date(r.updated_at as string).getTime()) / 60000
@@ -79,7 +78,7 @@ export function useCrewLocations() {
     const channel = supabase
       .channel('admin-live-map')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'live_locations' }, () => load())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'attendance_logs' }, () => load())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'work_days' }, () => load())
       .subscribe()
     const timer = setInterval(load, REFRESH_MS)
     return () => {

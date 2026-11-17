@@ -40,11 +40,7 @@ export async function getOverview(): Promise<Overview> {
       .select('id, full_name, has_sss_id, has_philhealth_id, has_pagibig_id, has_nbi_clearance, has_resume, has_medical_clearance')
       .in('role', ['technician', 'helper'])
       .eq('lifecycle_status', 'active'),
-    supabase
-      .from('attendance_logs')
-      .select('id, technician_id, app_time_in, app_time_out, is_mocked, is_suspicious, geofence_status')
-      .gte('app_time_in', today.start)
-      .lte('app_time_in', today.end),
+    supabase.from('work_days').select('id, person_id, time_in, time_out, is_mocked, in_check').eq('work_date', today.ymd),
     supabase
       .from('leaves')
       .select('id, technician_id, leave_type')
@@ -64,10 +60,10 @@ export async function getOverview(): Promise<Overview> {
       .eq('is_archived', false)
       .order('created_at', { ascending: true }),
     supabase
-      .from('schedules')
-      .select('id, client_name, location, start_time, status, technician_id, schedule_crew(technician_id, status)')
-      .gte('start_time', today.start)
-      .lte('start_time', today.end)
+      .from('jobs')
+      .select('id, client_name, address, start_time, status, job_members(person_id, role, is_acting_lead, removed_at)')
+      .lte('start_date', today.ymd)
+      .gte('end_date', today.ymd)
       .neq('status', 'cancelled')
       .order('start_time', { ascending: true }),
     supabase
@@ -87,14 +83,18 @@ export async function getOverview(): Promise<Overview> {
   const nameOf = new Map(people.map((p) => [p.id, p.full_name]))
   const name = (id: string | null) => (id && nameOf.get(id)) || 'Former employee'
 
-  const openLogs = (logs.data || []).filter((l) => !l.app_time_out)
-  const flagged = (l: { is_mocked: boolean | null; is_suspicious: boolean | null; geofence_status: string | null }) =>
-    !!l.is_mocked || !!l.is_suspicious || l.geofence_status === 'outside'
+  const openLogs = (logs.data || []).filter((l) => !l.time_out)
+  // Flagged = fake GPS or a selfie time-in (outside the place)
+  const flagged = (l: { is_mocked: boolean | null; in_check: string | null }) => !!l.is_mocked || l.in_check === 'selfie'
+  type Member = { person_id: string | null; role: string; is_acting_lead: boolean; removed_at: string | null }
+  const membersOf = (j: { job_members: unknown }) => ((j.job_members as Member[] | null) || []).filter((m) => !m.removed_at)
+  const leadOf = (j: { job_members: unknown }) =>
+    membersOf(j).find((m) => m.is_acting_lead)?.person_id ?? membersOf(j).find((m) => m.role === 'lead')?.person_id ?? null
 
   return {
     date: today.ymd,
     fieldStaff: people.length,
-    timedIn: openLogs.map((l) => ({ id: l.id, name: name(l.technician_id), since: l.app_time_in as string, flagged: flagged(l) })),
+    timedIn: openLogs.map((l) => ({ id: l.id, name: name(l.person_id), since: l.time_in as string, flagged: flagged(l) })),
     onLeaveToday: (leavesToday.data || []).map((l) => ({ id: l.id, name: name(l.technician_id), type: l.leave_type })),
     flaggedPunchesToday: (logs.data || []).filter(flagged).length,
     pendingLeaves: (pendingLeaves.data || []).map((l) => ({
@@ -117,12 +117,12 @@ export async function getOverview(): Promise<Overview> {
     jobsToday: (jobs.data || []).map((j) => ({
       id: j.id,
       client: j.client_name,
-      location: j.location || '',
-      start: j.start_time,
+      location: j.address || '',
+      start: new Date(`${today.ymd}T${j.start_time.slice(0, 8)}+08:00`).toISOString(),
       status: j.status || 'scheduled',
-      lead: j.technician_id ? name(j.technician_id) : 'No lead yet',
-      hasLead: !!j.technician_id,
-      crew: ((j.schedule_crew as { status: string | null }[] | null) || []).filter((c) => c.status === 'active').length,
+      lead: leadOf(j) ? name(leadOf(j)) : 'No lead yet',
+      hasLead: !!leadOf(j),
+      crew: membersOf(j).filter((m) => m.person_id !== leadOf(j)).length,
     })),
     toolsOut: (borrowings.data || []).map((b) => ({
       id: b.id,
