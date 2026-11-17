@@ -35,7 +35,7 @@ export async function loadJobs(supabase: Client, since = new Date(Date.now() - 4
 
 export async function loadFormOptions(supabase: Client): Promise<{ people: Person[]; temps: TempWorker[]; vehicles: Vehicle[]; offices: Office[] }> {
   const [people, temps, vehicles, offices] = await Promise.all([
-    supabase.from('profiles').select('id, full_name, role, technician_level').in('role', ['technician', 'helper'])
+    supabase.from('profiles').select('id, full_name, role, technician_level, contact_number').in('role', ['technician', 'helper'])
       .in('lifecycle_status', ['active', 'on_leave']).order('full_name'),
     supabase.from('casual_helpers').select('id, full_name, contact_number').eq('status', 'active').order('full_name'),
     supabase.from('vehicles').select('id, name, plate, home_office_id, status').order('name'),

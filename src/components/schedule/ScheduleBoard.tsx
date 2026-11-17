@@ -1,12 +1,12 @@
-// ScheduleBoard: the Coordinator's Scheduling page (Work v2). Day = one column per person through the day;
+// ScheduleBoard: the Coordinator's Scheduling page (Work v2), laid out like the FieldCamp "Resource" view. Day = one column per person through the day;
 // Week = one row per person; List = all jobs as a table; Vehicles; Temporary workers. Beside the board: the
-// month and the day's agenda. Jobs, people and empty slots open side drawers. readOnly = HR with borrowed access.
+// month, the day's agenda and "Needs you". Day and Week fill the screen height: only the board scrolls, not the page.
+// Jobs, people and empty slots open side drawers. readOnly = HR with borrowed access.
 'use client'
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { ChevronLeft, ChevronRight, Plus, Search } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
-import { Button, IconButton, Input, Page, PageHeader, Tabs, useToast } from '@/components/ui'
+import { Page, Tabs, cx, useToast } from '@/components/ui'
 import { usePageCommand } from '@/components/commands/pageCommands'
 import { JobDetailDrawer } from '@/components/jobs/JobDetailDrawer'
 import { JobFormDrawer } from '@/components/jobs/JobFormDrawer'
@@ -17,6 +17,9 @@ import { DayBoard } from './DayBoard'
 import { WeekBoard } from './WeekBoard'
 import { MiniCalendar } from './MiniCalendar'
 import { DayAgenda } from './DayAgenda'
+import { NeedsYou } from './NeedsYou'
+import { DayJobsPanel } from './DayJobsPanel'
+import { ScheduleToolbar, type View } from './ScheduleToolbar'
 import { PersonDrawer } from './PersonDrawer'
 import { ScheduleStats } from './ScheduleStats'
 import { JobsList } from './JobsList'
@@ -24,7 +27,6 @@ import { TempWorkersPanel } from './TempWorkersPanel'
 import { loadLeaveAndDays, loadTempWorkers, watchSchedule, type DayLog, type LeaveDay, type TempWorkerItem } from './scheduleData'
 import { addDays, isFree, longDate, manilaNowMinutes, weekLabel, weekStart, type Sched } from './scheduleMath'
 
-type View = 'day' | 'week' | 'list' | 'vehicles' | 'temps'
 type Who = 'all' | 'technician' | 'helper' | 'free'
 
 export function ScheduleBoard({ readOnly = false }: { readOnly?: boolean }) {
@@ -95,52 +97,42 @@ export function ScheduleBoard({ readOnly = false }: { readOnly?: boolean }) {
   const onBoard = view === 'day' || view === 'week'
 
   return (
-    <Page wide>
-      <PageHeader title="Scheduling" subtitle="Who is free, who is where, and what needs you. Click an empty slot to schedule someone; click a job or a name to open it."
-        actions={!readOnly && <Button variant="primary" icon={Plus} onClick={() => setForm({ open: true, job: null })} disabled={loading}>New job</Button>} />
-
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <Tabs label="View" value={view} onChange={setView} items={[
-          { value: 'day', label: 'Day' }, { value: 'week', label: 'Week' }, { value: 'list', label: 'List' },
-          { value: 'vehicles', label: 'Vehicles', count: opts.vehicles.length }, { value: 'temps', label: 'Temporary workers', count: tempList.filter((t) => t.status === 'active').length },
-        ]} />
+    <Page wide className={onBoard ? 'lg:h-full' : undefined}>
+      <div className="flex flex-col gap-3">
+        <ScheduleToolbar view={view} onView={setView} vehicles={opts.vehicles.length} temps={tempList.filter((t) => t.status === 'active').length}
+          dateLabel={onBoard ? (view === 'week' ? weekLabel(weekStart(date)) : `${longDate(date)}${date === today ? ' · today' : ''}`) : null}
+          onStep={step} onToday={() => { setDate(today); setFreeOn(null) }} search={search} onSearch={setSearch}
+          canAdd={!readOnly && !loading} onNew={() => setForm({ open: true, job: null })} />
         {onBoard && (
-          <div className="flex items-center gap-2">
-            <IconButton icon={ChevronLeft} label={view === 'week' ? 'Previous week' : 'Previous day'} variant="secondary" onClick={() => step(-1)} />
-            <Button variant="secondary" onClick={() => { setDate(today); setFreeOn(null) }}>Today</Button>
-            <IconButton icon={ChevronRight} label={view === 'week' ? 'Next week' : 'Next day'} variant="secondary" onClick={() => step(1)} />
-            <span className="min-w-48 text-heading font-semibold text-ink">{view === 'week' ? weekLabel(weekStart(date)) : `${longDate(date)}${date === today ? ' · today' : ''}`}</span>
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-2 border-y border-line py-2">
+            <span className="flex items-center gap-2">
+              <span className="text-micro font-semibold tracking-wide text-ink-3 uppercase">Filters</span>
+              <Tabs label="Show" size="sm" value={who} onChange={setWho} items={[
+                { value: 'all', label: 'Everyone' }, { value: 'technician', label: 'Technicians' }, { value: 'helper', label: 'Helpers' }, { value: 'free', label: 'Free' },
+              ]} />
+            </span>
+            <ScheduleStats S={S} date={date} today={today} now={now} />
           </div>
         )}
       </div>
 
-      {onBoard && (
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <ScheduleStats S={S} date={date} today={today} now={now} />
-          <div className="flex flex-wrap items-center gap-2">
-            <Input icon={Search} className="w-full sm:w-52" placeholder="Find a person" aria-label="Find a person" value={search} onChange={(e) => setSearch(e.target.value)} />
-            <Tabs label="Show" value={who} onChange={setWho} items={[
-              { value: 'all', label: 'Everyone' }, { value: 'technician', label: 'Technicians' }, { value: 'helper', label: 'Helpers' }, { value: 'free', label: 'Free' },
-            ]} />
-          </div>
-        </div>
-      )}
-
       {onBoard ? (
-        // The Week board needs the full width; the month and agenda sit beside the Day board
-        <div className={view === 'day' ? 'grid items-start gap-section xl:grid-cols-[minmax(0,1fr)_280px]' : 'grid'}>
-          <div className="overflow-hidden rounded-card bg-surface shadow-card">
-            <div className="max-h-[min(76vh,820px)] overflow-auto">
+        // One white workspace like the reference: the board (with the jobs table under it on Day) and the side
+        // panel. On wide screens it fills the rest of the screen and only the board scrolls inside.
+        <div className={cx('grid overflow-hidden rounded-card bg-surface shadow-card lg:min-h-[380px] lg:flex-1 lg:grid-rows-[minmax(0,1fr)]', view === 'day' && 'lg:grid-cols-[minmax(0,1fr)_260px]')}>
+          <div className="flex min-h-0 min-w-0 flex-col">
+            <div className="max-h-[75vh] min-h-0 flex-1 overflow-auto lg:max-h-none">
               {loading ? <p className="p-8 text-center text-small text-ink-2">Loading the schedule…</p> : view === 'day'
                 ? <DayBoard S={S} people={shown} date={date} today={today} now={now} onOpenJob={(j) => setOpenId(j.id)} onOpenPerson={setPerson} onNew={(p, t) => newJob(p, date, t)} />
                 : <WeekBoard S={S} people={shown} monday={weekStart(date)} date={date} today={today} now={now} freeOn={freeOn}
                     onToggleFree={(d) => setFreeOn(freeOn === d ? null : d)} onOpenJob={(j) => setOpenId(j.id)} onOpenPerson={setPerson} onNew={(p, d) => newJob(p, d)} />}
             </div>
+            {view === 'day' && !loading && <DayJobsPanel S={S} date={date} today={today} now={now} onOpenJob={(j) => setOpenId(j.id)} />}
           </div>
-          {view === 'day' && <aside className="flex flex-col gap-section xl:sticky xl:top-4">
-            <div className="rounded-card bg-surface p-card-sm shadow-card">
-              <MiniCalendar value={date} today={today} busyDays={busyDays} onPick={(d) => { setDate(d); setFreeOn(null) }} />
-            </div>
+          {/* The side panel keeps room for its scrollbar, so opening or closing a part never squeezes the calendar */}
+          {view === 'day' && <aside className="flex flex-col gap-3 border-t border-line p-4 [scrollbar-gutter:stable] [scrollbar-width:thin] lg:min-h-0 lg:overflow-y-auto lg:border-l lg:border-t-0 lg:pr-2">
+            <MiniCalendar value={date} today={today} busyDays={busyDays} onPick={(d) => { setDate(d); setFreeOn(null) }} />
+            <NeedsYou S={S} date={date} today={today} now={now} readOnly={readOnly} onOpenJob={(j) => setOpenId(j.id)} onEditJob={(job) => setForm({ open: true, job })} />
             <DayAgenda S={S} date={date} today={today} now={now} onOpenJob={(j) => setOpenId(j.id)} />
           </aside>}
         </div>

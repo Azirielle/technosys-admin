@@ -1,4 +1,5 @@
-// MiniCalendar: the month beside the board. A dot marks days with jobs; click a day to show it on the board.
+// MiniCalendar: the month beside the board, with the days of the months around it in grey (like the reference).
+// A dot marks days with jobs; click a day to show it on the board.
 'use client'
 
 import { useState } from 'react'
@@ -18,7 +19,8 @@ export function MiniCalendar({ value, today, busyDays, onPick }: Props) {
   const y = base.getUTCFullYear(), m = base.getUTCMonth()
   const first = new Date(Date.UTC(y, m, 1)).getUTCDay()
   const days = new Date(Date.UTC(y, m + 1, 0)).getUTCDate()
-  const ymd = (d: number) => `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`
+  // Whole weeks: start on the Sunday before the 1st, end on the Saturday after the last day
+  const cells = Array.from({ length: Math.ceil((first + days) / 7) * 7 }, (_, i) => new Date(Date.UTC(y, m, i - first + 1)).toISOString().slice(0, 10))
   const title = base.toLocaleDateString('en-GB', { month: 'long', year: 'numeric', timeZone: 'UTC' })
 
   return (
@@ -32,14 +34,13 @@ export function MiniCalendar({ value, today, busyDays, onPick }: Props) {
       </div>
       <div className="grid grid-cols-7 gap-0.5 text-center text-caption">
         {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d, i) => <span key={i} className="py-1 text-micro text-ink-3">{d}</span>)}
-        {Array.from({ length: first }, (_, i) => <span key={`b${i}`} />)}
-        {Array.from({ length: days }, (_, i) => {
-          const d = ymd(i + 1), picked = d === value
+        {cells.map((d) => {
+          const picked = d === value, inMonth = Number(d.slice(5, 7)) === m + 1
           return (
             <button key={d} type="button" onClick={() => onPick(d)} aria-label={d} aria-pressed={picked}
               className={cx('relative aspect-square rounded-pill tabular-nums hover:bg-surface-hover',
-                picked ? 'bg-action text-on-action hover:bg-action' : d === today ? 'font-bold text-info' : 'text-ink')}>
-              {i + 1}
+                picked ? 'bg-action font-semibold text-on-action hover:bg-action' : d === today ? 'font-bold text-info' : inMonth ? 'text-ink' : 'text-ink-3')}>
+              {Number(d.slice(8))}
               {busyDays.has(d) && <span className="absolute bottom-0.5 left-1/2 size-1 -translate-x-1/2 rounded-pill bg-current opacity-50" />}
             </button>
           )

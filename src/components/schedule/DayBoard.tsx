@@ -1,17 +1,20 @@
-// DayBoard: one day, one column per person, hours down the side (6 AM–7 PM). Each name shows the day's booked
-// hours and live status from the phone; an "All day" row holds leave and multi-day jobs. Click a job, a name
-// or an empty slot (→ new job at that time). Red outline = at risk, yellow = check.
+// DayBoard: one day, one column per person, hours down the side (6 AM–7 PM, wider when a job starts earlier or
+// ends later). The names row and the "All day" row (leave, multi-day jobs) stay on top while the hours scroll;
+// on open it scrolls to the current time (today) or the first job. Click a job, a name or an empty slot.
 'use client'
 
-import type { CSSProperties } from 'react'
-import { cx, initialsOf } from '@/components/ui'
+import { useEffect, useRef, useState, type CSSProperties } from 'react'
+import { cx } from '@/components/ui'
 import type { Job, Person } from '@/components/jobs/jobTypes'
-import { DAY_END, DAY_START, atRisk, checksOf, hoursOf, jobsOf, leaveOf, mins, personStatus, roleOn, shortClock, type Sched } from './scheduleMath'
-import { JOB_TONE, STATUS_PILL } from './scheduleStyles'
+import { boardHours, jobsOf, jobsOn, leaveOf, mins, shortClock, type Sched } from './scheduleMath'
+import { clashesOf } from './scheduleStatus'
+import { PersonHeader } from './PersonHeader'
+import { DayJobCard } from './DayJobCard'
 
-const SLOT = 26 // px per half hour
+const SLOT = 27 // px per half hour
 const HEAD = 100 // px, the names row
-const HOURS = DAY_END - DAY_START
+const COL = 112 // px, narrowest a person's column gets
+const BOX = 56 // px, height of a job box (a little over an hour), whatever the job's length
 
 type Props = {
   S: Sched; people: Person[]; date: string; today: string; now: number
@@ -19,43 +22,50 @@ type Props = {
 }
 
 export function DayBoard({ S, people, date, today, now, onOpenJob, onOpenPerson, onNew }: Props) {
+  const root = useRef<HTMLDivElement>(null)
+  const [hover, setHover] = useState<string | null>(null)
+  const { start, end } = boardHours(S, date)
+  const hours = end - start
+  const y = (m: number) => ((m - start * 60) / 30) * SLOT
+
+  // Scroll the hours (not the page) to an hour before now, or to the first job of the day
+  const firstJob = jobsOn(S, date)[0]?.start_time
+  useEffect(() => {
+    const box = root.current?.parentElement
+    if (!box) return
+    // Today: from the first job's start if "now" still fits on screen, else an hour before now
+    const shownMins = ((box.clientHeight - HEAD - 40) / SLOT) * 30
+    const from = firstJob ? mins(firstJob) - 30 : start * 60
+    const target = date === today ? Math.max(Math.min(from, now - 60), now + 30 - shownMins) : from
+    box.scrollTop = Math.max(0, y(target))
+    // Only when the day changes, not on every live reload
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [date, !!firstJob])
+
   if (!people.length) return <p className="p-8 text-center text-small text-ink-2">No one matches. Clear the search or the filter.</p>
-  const grid: CSSProperties = { gridTemplateColumns: `60px repeat(${people.length}, minmax(140px, 1fr))` }
+  // Columns share the width; below 112 px each, the board scrolls sideways (names and hours stay in place)
+  const grid: CSSProperties = { gridTemplateColumns: `56px repeat(${people.length}, minmax(${COL}px, 1fr))`, minWidth: 56 + people.length * COL }
 
   function slotClick(e: React.MouseEvent<HTMLDivElement>, p: Person) {
     if (e.target !== e.currentTarget) return
-    const y = e.clientY - e.currentTarget.getBoundingClientRect().top
-    const m = DAY_START * 60 + Math.floor(y / SLOT) * 30
+    const m = start * 60 + Math.floor((e.clientY - e.currentTarget.getBoundingClientRect().top) / SLOT) * 30
     onNew(p, `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`)
   }
 
   return (
-    <div className="grid min-w-max" style={grid}>
-      {/* Names */}
+    <div ref={root} className="grid w-full" style={grid}>
       <div className="sticky left-0 top-0 z-30 border-b border-r border-line bg-surface" style={{ height: HEAD }} />
-      {people.map((p) => {
-        const st = personStatus(S, p.id, date, today, now), hrs = hoursOf(S, p.id, date)
-        return (
-          <button key={p.id} type="button" onClick={() => onOpenPerson(p)} title={p.full_name}
-            className="sticky top-0 z-20 flex flex-col items-center gap-0.5 border-b border-l border-line bg-surface px-1.5 pt-2 text-center hover:bg-surface-hover" style={{ height: HEAD }}>
-            <span className="grid size-8 place-items-center rounded-pill bg-action text-micro font-semibold text-on-action">{initialsOf(p.full_name)}</span>
-            <span className="max-w-[128px] truncate text-caption font-semibold text-ink">{p.full_name}</span>
-            <span className="text-micro text-ink-3">{p.role === 'helper' ? 'Helper' : p.technician_level === 'senior' ? 'Senior tech' : 'Technician'} · {hrs ? `${hrs.toFixed(1)} h` : 'free'}</span>
-            <span className="h-[3px] w-16 overflow-hidden rounded-pill bg-line-strong"><span className="block h-full bg-ink" style={{ width: `${Math.min(100, (hrs / 8) * 100)}%` }} /></span>
-            <span className={cx('mt-0.5 rounded-pill px-2 text-micro font-semibold', STATUS_PILL[st.tone])}>{st.label}</span>
-          </button>
-        )
-      })}
+      {people.map((p) => <PersonHeader key={p.id} S={S} person={p} date={date} today={today} now={now} height={HEAD} onOpen={onOpenPerson} />)}
 
       {/* All day: leave and multi-day jobs */}
-      <div className="sticky left-0 z-30 border-b border-r border-line-strong bg-surface-soft px-2 py-2 text-micro text-ink-2" style={{ top: HEAD }}>All day</div>
+      <div className="sticky left-0 z-30 flex items-center border-b border-r border-line bg-surface px-1.5 text-caption font-medium text-ink-2" style={{ top: HEAD }}>All day</div>
       {people.map((p) => {
         const l = leaveOf(S, p.id, date), multi = jobsOf(S, p.id, date).filter((j) => j.end_date > j.start_date)
         return (
-          <div key={p.id} className="sticky z-20 flex min-h-[34px] flex-col gap-1 border-b border-l border-line border-b-line-strong bg-surface-soft p-1" style={{ top: HEAD }}>
-            {l && <span className={cx('truncate rounded-chip px-1.5 py-0.5 text-micro', l.pending ? 'bg-warning-soft text-warning' : 'bg-surface text-ink-2 ring-1 ring-inset ring-line-strong')}>{cap(l.type)} leave{l.pending ? ' · waiting for HR' : ''}</span>}
+          <div key={p.id} className="sticky z-20 flex min-h-[44px] flex-col justify-center gap-1 border-b border-l border-line bg-surface p-1" style={{ top: HEAD }}>
+            {l && <span className={cx('truncate rounded-chip border-l-[3px] px-1.5 py-1 text-micro font-medium', l.pending ? 'border-l-warning bg-warning-soft text-warning' : 'border-l-ink-3 bg-surface-soft text-ink-2')}>{l.type} leave{l.pending ? ' · waiting for HR' : ''}</span>}
             {multi.map((j) => (
-              <button key={j.id} type="button" onClick={() => onOpenJob(j)} className="truncate rounded-chip bg-surface px-1.5 py-0.5 text-left text-micro text-ink ring-1 ring-inset ring-line-strong hover:bg-surface-hover">
+              <button key={j.id} type="button" onClick={() => onOpenJob(j)} className="truncate rounded-chip border-l-[3px] border-l-info bg-info-soft px-1.5 py-1 text-left text-micro font-medium text-ink hover:brightness-95">
                 Day {daysBetween(j.start_date, date) + 1} of {daysBetween(j.start_date, j.end_date) + 1} · {j.client_name}
               </button>
             ))}
@@ -64,37 +74,29 @@ export function DayBoard({ S, people, date, today, now, onOpenJob, onOpenPerson,
       })}
 
       {/* Hours down the side */}
-      {Array.from({ length: HOURS }, (_, i) => (
-        <div key={i} className="sticky left-0 z-10 border-b border-r border-line bg-surface pr-2 pt-0.5 text-right font-mono text-micro text-ink-2" style={{ gridColumn: 1, gridRow: i + 3, height: SLOT * 2 }}>
-          {shortClock(`${DAY_START + i}:00`)}
+      {Array.from({ length: hours }, (_, i) => (
+        <div key={i} className="sticky left-0 z-10 border-r border-line bg-surface pr-2 pt-1 text-right text-small tabular-nums text-ink-2" style={{ gridColumn: 1, gridRow: i + 3, height: SLOT * 2 }}>
+          {shortClock(`${start + i}:00`)}m
         </div>
       ))}
 
       {/* One column per person */}
       {people.map((p, ci) => {
         const leave = leaveOf(S, p.id, date), away = !!leave && !leave.pending
+        const js = jobsOf(S, p.id, date), clash = clashesOf(S, p.id, date), lanes = laneOf(js, (j) => mins(j.start_time) + (BOX / SLOT) * 30)
+        const width = Math.max(0, ...lanes.values()) + 1
         return (
           <div key={p.id} onClick={(e) => slotClick(e, p)} title="Click an empty slot to schedule a job"
             className={cx('relative cursor-copy border-l border-line', away && 'bg-surface-soft/60')}
-            style={{ gridColumn: ci + 2, gridRow: `3 / span ${HOURS}`, height: SLOT * HOURS * 2, ...LINES }}>
-            {jobsOf(S, p.id, date).map((j) => {
-              const a = Math.max(mins(j.start_time), DAY_START * 60), b = Math.min(mins(j.end_time), DAY_END * 60)
-              const risk = atRisk(S, j, date, today, now).includes(p.full_name), check = checksOf(S, j, date).length > 0
-              return (
-                <button key={j.id} type="button" onClick={() => onOpenJob(j)}
-                  className={cx('absolute inset-x-1 z-[1] flex flex-col gap-px overflow-hidden rounded-chip px-2 py-1 text-left text-caption leading-tight', JOB_TONE[j.status],
-                    risk ? 'ring-2 ring-inset ring-danger' : check ? 'ring-2 ring-inset ring-warning' : '')}
-                  style={{ top: ((a - DAY_START * 60) / 30) * SLOT + 2, height: Math.max(SLOT, ((b - a) / 30) * SLOT) - 4 }}>
-                  <b className="truncate font-semibold text-ink">{j.client_name}</b>
-                  <span className="font-mono text-[10.5px] text-ink-2">{shortClock(j.start_time)}–{shortClock(j.end_time)}</span>
-                  {roleOn(j, p.id) === 'lead' && <span className="text-[10px] font-bold text-ink-2">Lead</span>}
-                  {roleOn(j, p.id) === 'driver' && <span className="text-[10px] font-bold text-ink-2">Driver</span>}
-                  {mins(j.start_time) < DAY_START * 60 && <span className="text-[10px] text-ink-2">starts {shortClock(j.start_time)}</span>}
-                </button>
-              )
-            })}
-            {date === today && now > DAY_START * 60 && now < DAY_END * 60 && (
-              <div className="pointer-events-none absolute inset-x-0 z-[2] h-0.5 bg-danger" style={{ top: ((now - DAY_START * 60) / 30) * SLOT }} />
+            style={{ gridColumn: ci + 2, gridRow: `3 / span ${hours}`, height: SLOT * hours * 2, ...LINES }}>
+            {js.map((j) => (
+              <DayJobCard key={j.id} S={S} job={j} personId={p.id} personName={p.full_name} date={date} today={today} now={now}
+                top={y(mins(j.start_time))} height={BOX + 4}
+                lane={lanes.get(j.id) ?? 0} lanes={width} clashWith={clash.get(j.id)}
+                highlighted={hover === j.id && j.members.length > 1} onHover={setHover} onOpen={onOpenJob} />
+            ))}
+            {date === today && now > start * 60 && now < end * 60 && (
+              <div className="pointer-events-none absolute inset-x-0 z-[2] h-0.5 bg-danger" style={{ top: y(now) }} />
             )}
           </div>
         )
@@ -103,11 +105,22 @@ export function DayBoard({ S, people, date, today, now, onOpenJob, onOpenPerson,
   )
 }
 
+/** Side-by-side lanes for boxes that would cover each other (jobs close together or a clash). Jobs come sorted by start. */
+function laneOf(js: Job[], boxEnd: (j: Job) => number): Map<string, number> {
+  const ends: number[] = [], out = new Map<string, number>()
+  for (const j of js) {
+    let lane = ends.findIndex((e) => e <= mins(j.start_time))
+    if (lane < 0) lane = ends.length
+    ends[lane] = boxEnd(j)
+    out.set(j.id, lane)
+  }
+  return out
+}
+
 // Hour and half-hour lines behind the slots
 const LINES: CSSProperties = {
   backgroundImage: 'linear-gradient(var(--tc-line) 1px, transparent 1px), linear-gradient(color-mix(in srgb, var(--tc-line) 55%, transparent) 1px, transparent 1px)',
   backgroundSize: `100% ${SLOT * 2}px, 100% ${SLOT}px`,
   backgroundPosition: `0 0, 0 ${SLOT}px`,
 }
-const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
 const daysBetween = (a: string, b: string) => Math.round((Date.parse(`${b}T00:00:00Z`) - Date.parse(`${a}T00:00:00Z`)) / 86400000)

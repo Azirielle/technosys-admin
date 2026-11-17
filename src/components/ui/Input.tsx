@@ -1,6 +1,6 @@
 // Input and Textarea: soft grey text boxes. Wrap them in <Field> to add a label.
 import type { LucideIcon } from 'lucide-react'
-import type { InputHTMLAttributes, TextareaHTMLAttributes } from 'react'
+import type { InputHTMLAttributes, Ref, TextareaHTMLAttributes } from 'react'
 import { cx } from './cx'
 import { FIELD_CLASSES } from './Field'
 
@@ -9,6 +9,8 @@ interface InputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'size'>
   icon?: LucideIcon
   size?: 'sm' | 'md'
   invalid?: boolean
+  /** To focus the box from code (e.g. a keyboard shortcut). */
+  ref?: Ref<HTMLInputElement>
 }
 
 export function Input({ icon: Icon, size = 'md', invalid, className, ...rest }: InputProps) {

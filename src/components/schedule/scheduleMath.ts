@@ -7,7 +7,7 @@ import type { DayLog, LeaveDay } from './scheduleData'
 export type Sched = { jobs: Job[]; leaves: LeaveDay[]; days: DayLog[]; people: Person[] }
 export type Tone = 'neutral' | 'info' | 'success' | 'warning' | 'danger'
 
-/** The board shows 6:00 AM to 7:00 PM; jobs outside are cut at the edge. */
+/** The board shows at least 6:00 AM to 7:00 PM, and stretches to fit a job that starts earlier or ends later. */
 export const DAY_START = 6
 export const DAY_END = 19
 
@@ -31,6 +31,8 @@ export const weekLabel = (monday: string) => {
 export const mins = (t: string) => { const [h, m] = t.split(':').map(Number); return h * 60 + m }
 /** "8:30a", "1p" */
 export const shortClock = (t: string) => { const [h, m] = t.split(':').map(Number); return `${((h + 11) % 12) + 1}${m ? ':' + String(m).padStart(2, '0') : ''}${h < 12 ? 'a' : 'p'}` }
+/** "8:30 AM", "4 PM" (for cards and labels people read) */
+export const clock12 = (t: string) => { const [h, m] = t.split(':').map(Number); return `${((h + 11) % 12) + 1}${m ? ':' + String(m).padStart(2, '0') : ''} ${h < 12 ? 'AM' : 'PM'}` }
 /** "HH:MM" in Manila from an ISO moment */
 export const manilaClock = (iso: string) => new Date(new Date(iso).getTime() + 8 * 3600000).toISOString().slice(11, 16)
 /** Minutes after midnight right now, in Manila */
@@ -47,12 +49,17 @@ export const isFree = (S: Sched, personId: string, date: string) => !jobsOf(S, p
 export const dayLogOf = (S: Sched, personId: string, date: string) => S.days.find((d) => d.person_id === personId && d.work_date === date)
 export const roleOn = (j: Job, personId: string) => j.members.find((m) => m.person_id === personId)?.role
 
-/** Booked hours that day (inside the board's hours) */
+/** Booked hours that day: start to end of each job (the DTR's lunch rule isn't applied here). */
 export function hoursOf(S: Sched, personId: string, date: string) {
-  return jobsOf(S, personId, date).reduce((h, j) => {
-    const a = Math.max(mins(j.start_time), DAY_START * 60), b = Math.min(mins(j.end_time), DAY_END * 60)
-    return h + Math.max(0, b - a) / 60
-  }, 0)
+  return jobsOf(S, personId, date).reduce((h, j) => h + Math.max(0, mins(j.end_time) - mins(j.start_time)) / 60, 0)
+}
+
+/** First and last hour the Day board shows: 6 AM–7 PM, wider if a job that day starts earlier or ends later. */
+export function boardHours(S: Sched, date: string): { start: number; end: number } {
+  const js = jobsOn(S, date)
+  const first = Math.min(DAY_START * 60, ...js.map((j) => mins(j.start_time)))
+  const last = Math.max(DAY_END * 60, ...js.map((j) => mins(j.end_time)))
+  return { start: Math.floor(first / 60), end: Math.min(24, Math.ceil(last / 60)) }
 }
 
 /** Names of the people on this job who should have timed in by now and haven't (today only). */
@@ -71,21 +78,4 @@ export function checksOf(S: Sched, j: Job, date: string): string[] {
     if (m.role === 'lead' && S.people.find((p) => p.id === m.person_id)?.role === 'helper') out.push(`${m.name} is a helper. Helpers can't be lead.`)
   }
   return out
-}
-
-/** One person's status for the column header: from their work day today, or a plain summary on other days. */
-export function personStatus(S: Sched, personId: string, date: string, today: string, now: number): { label: string; tone: Tone } {
-  const log = dayLogOf(S, personId, date), js = jobsOf(S, personId, date)
-  if (log) {
-    const tin = shortClock(manilaClock(log.time_in))
-    if (log.time_out) return { label: `In ${tin} · out ${shortClock(manilaClock(log.time_out))}`, tone: 'neutral' }
-    return log.late_minutes > 0 ? { label: `Late ${log.late_minutes} min`, tone: 'warning' } : { label: `In ${tin}`, tone: 'success' }
-  }
-  if (onLeave(S, personId, date)) return { label: 'On leave', tone: 'warning' }
-  if (!js.length) return { label: 'Free', tone: 'info' }
-  if (date < today) return { label: 'No time-in', tone: 'danger' }
-  if (date > today) return { label: `${js.length} job${js.length > 1 ? 's' : ''}`, tone: 'neutral' }
-  const first = Math.min(...js.map((j) => mins(j.start_time)))
-  if (now >= first + 15) return { label: 'Not in · late', tone: 'danger' }
-  return { label: now >= first - 60 ? 'Due now' : 'Not in yet', tone: 'neutral' }
 }
