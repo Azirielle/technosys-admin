@@ -17,6 +17,7 @@ const KIND: Record<string, { label: string; what: string }> = {
   told_later: { label: 'Time-out told later', what: 'The time-out you reported' },
   coordinator_time_out: { label: 'Timed out by the office', what: 'Your time-out set by the office' },
   driver_away: { label: 'Driver away from HQ', what: 'Your time-out away from the office' },
+  early_time_out: { label: 'Timed out early', what: 'Your early time-out' },
 }
 const when = (iso: string) => new Date(iso).toLocaleString('en-PH', { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', timeZone: 'Asia/Manila' })
 

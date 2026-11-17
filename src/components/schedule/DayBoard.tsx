@@ -18,7 +18,7 @@ const BOX = 56 // px, height of a job box (a little over an hour), whatever the 
 
 type Props = {
   S: Sched; people: Person[]; date: string; today: string; now: number
-  onOpenJob: (job: Job) => void; onOpenPerson: (p: Person) => void; onNew: (p: Person, time: string) => void
+  onOpenJob: (job: Job) => void; onOpenPerson: (p: Person) => void; onNew?: (p: Person, time: string) => void // none = read-only
 }
 
 export function DayBoard({ S, people, date, today, now, onOpenJob, onOpenPerson, onNew }: Props) {
@@ -47,7 +47,7 @@ export function DayBoard({ S, people, date, today, now, onOpenJob, onOpenPerson,
   const grid: CSSProperties = { gridTemplateColumns: `56px repeat(${people.length}, minmax(${COL}px, 1fr))`, minWidth: 56 + people.length * COL }
 
   function slotClick(e: React.MouseEvent<HTMLDivElement>, p: Person) {
-    if (e.target !== e.currentTarget) return
+    if (!onNew || e.target !== e.currentTarget) return
     const m = start * 60 + Math.floor((e.clientY - e.currentTarget.getBoundingClientRect().top) / SLOT) * 30
     onNew(p, `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`)
   }
@@ -86,8 +86,8 @@ export function DayBoard({ S, people, date, today, now, onOpenJob, onOpenPerson,
         const js = jobsOf(S, p.id, date), clash = clashesOf(S, p.id, date), lanes = laneOf(js, (j) => mins(j.start_time) + (BOX / SLOT) * 30)
         const width = Math.max(0, ...lanes.values()) + 1
         return (
-          <div key={p.id} onClick={(e) => slotClick(e, p)} title="Click an empty slot to schedule a job"
-            className={cx('relative cursor-copy border-l border-line', away && 'bg-surface-soft/60')}
+          <div key={p.id} onClick={(e) => slotClick(e, p)} title={onNew ? 'Click an empty slot to schedule a job' : undefined}
+            className={cx('relative border-l border-line', onNew && 'cursor-copy', away && 'bg-surface-soft/60')}
             style={{ gridColumn: ci + 2, gridRow: `3 / span ${hours}`, height: SLOT * hours * 2, ...LINES }}>
             {js.map((j) => (
               <DayJobCard key={j.id} S={S} job={j} personId={p.id} personName={p.full_name} date={date} today={today} now={now}

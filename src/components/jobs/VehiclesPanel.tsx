@@ -16,7 +16,7 @@ const STATUS = [
 
 type Draft = { name: string; plate: string; home_office_id: string; status: Vehicle['status'] }
 
-export function VehiclesPanel({ vehicles, offices, onChanged }: { vehicles: Vehicle[]; offices: Office[]; onChanged: () => void }) {
+export function VehiclesPanel({ vehicles, offices, readOnly = false, onChanged }: { vehicles: Vehicle[]; offices: Office[]; readOnly?: boolean; onChanged: () => void }) {
   const toast = useToast()
   const [editing, setEditing] = useState<Vehicle | 'new' | null>(null)
   const [draft, setDraft] = useState<Draft>({ name: '', plate: '', home_office_id: offices[0]?.id ?? '', status: 'active' })
@@ -42,7 +42,7 @@ export function VehiclesPanel({ vehicles, offices, onChanged }: { vehicles: Vehi
 
   return (
     <div className="flex flex-col gap-stack">
-      <div className="flex justify-end"><Button icon={Plus} onClick={() => open('new')}>Add vehicle</Button></div>
+      {!readOnly && <div className="flex justify-end"><Button icon={Plus} onClick={() => open('new')}>Add vehicle</Button></div>}
       <TableContainer>
         {vehicles.length === 0 ? (
           <EmptyState icon={Truck} title="No vehicles yet" description="Add the company vehicles so drivers can be assigned one." />
@@ -51,7 +51,7 @@ export function VehiclesPanel({ vehicles, offices, onChanged }: { vehicles: Vehi
             <TableHead><tr><TableHeaderCell>Vehicle</TableHeaderCell><TableHeaderCell>Plate</TableHeaderCell><TableHeaderCell>Returned to</TableHeaderCell><TableHeaderCell>Status</TableHeaderCell></tr></TableHead>
             <TableBody>
               {vehicles.map((v) => (
-                <TableRow key={v.id} onClick={() => open(v)}>
+                <TableRow key={v.id} onClick={readOnly ? undefined : () => open(v)}>
                   <TableCell className="font-medium">{v.name}</TableCell>
                   <TableCell mono>{v.plate}</TableCell>
                   <TableCell className="text-ink-2">{officeName(v.home_office_id)}</TableCell>

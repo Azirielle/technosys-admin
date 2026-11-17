@@ -20,8 +20,11 @@ export function attendanceOf(S: Sched, personId: string, date: string, today: st
   const log = dayLogOf(S, personId, date), js = jobsOf(S, personId, date)
   if (log) {
     const tin = clock12(manilaClock(log.time_in))
-    if (log.time_out) return { label: `Timed out ${clock12(manilaClock(log.time_out))}`, tone: 'neutral', detail: `Timed in ${tin}` }
-    if (log.late_minutes > 0) return { label: `Timed in ${tin}`, tone: 'warning', detail: `${log.late_minutes} min late` }
+    // needs_review: a selfie or other time-in/out HR or the Coordinator still has to check
+    const check = log.status === 'needs_review' ? 'to check' : null
+    if (log.time_out) return { label: `Timed out ${clock12(manilaClock(log.time_out))}`, tone: check ? 'warning' : 'neutral', detail: check ?? `Timed in ${tin}` }
+    const late = log.late_minutes > 0 ? `${log.late_minutes} min late` : null
+    if (late || check) return { label: `Timed in ${tin}`, tone: 'warning', detail: [late, check].filter(Boolean).join(' · ') }
     return { label: `Timed in ${tin}`, tone: 'success' }
   }
   if (onLeave(S, personId, date) || date > today) return null

@@ -123,9 +123,9 @@ export function ScheduleBoard({ readOnly = false }: { readOnly?: boolean }) {
           <div className="flex min-h-0 min-w-0 flex-col">
             <div className="max-h-[75vh] min-h-0 flex-1 overflow-auto lg:max-h-none">
               {loading ? <p className="p-8 text-center text-small text-ink-2">Loading the schedule…</p> : view === 'day'
-                ? <DayBoard S={S} people={shown} date={date} today={today} now={now} onOpenJob={(j) => setOpenId(j.id)} onOpenPerson={setPerson} onNew={(p, t) => newJob(p, date, t)} />
+                ? <DayBoard S={S} people={shown} date={date} today={today} now={now} onOpenJob={(j) => setOpenId(j.id)} onOpenPerson={setPerson} onNew={readOnly ? undefined : (p, t) => newJob(p, date, t)} />
                 : <WeekBoard S={S} people={shown} monday={weekStart(date)} date={date} today={today} now={now} freeOn={freeOn}
-                    onToggleFree={(d) => setFreeOn(freeOn === d ? null : d)} onOpenJob={(j) => setOpenId(j.id)} onOpenPerson={setPerson} onNew={(p, d) => newJob(p, d)} />}
+                    onToggleFree={(d) => setFreeOn(freeOn === d ? null : d)} onOpenJob={(j) => setOpenId(j.id)} onOpenPerson={setPerson} onNew={readOnly ? undefined : (p, d) => newJob(p, d)} />}
             </div>
             {view === 'day' && !loading && <DayJobsPanel S={S} date={date} today={today} now={now} onOpenJob={(j) => setOpenId(j.id)} />}
           </div>
@@ -139,7 +139,7 @@ export function ScheduleBoard({ readOnly = false }: { readOnly?: boolean }) {
       ) : view === 'list' ? (
         <JobsList jobs={jobs} loading={loading} onOpen={(j) => setOpenId(j.id)} />
       ) : view === 'vehicles' ? (
-        <VehiclesPanel vehicles={opts.vehicles} offices={opts.offices} onChanged={load} />
+        <VehiclesPanel vehicles={opts.vehicles} offices={opts.offices} readOnly={readOnly} onChanged={load} />
       ) : (
         <TempWorkersPanel workers={tempList} readOnly={readOnly} onChanged={load} />
       )}

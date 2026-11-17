@@ -11,7 +11,7 @@ import { JOB_TONE } from './scheduleStyles'
 
 type Props = {
   S: Sched; people: Person[]; monday: string; date: string; today: string; now: number; freeOn: string | null
-  onToggleFree: (d: string) => void; onOpenJob: (job: Job) => void; onOpenPerson: (p: Person) => void; onNew: (p: Person, day: string) => void
+  onToggleFree: (d: string) => void; onOpenJob: (job: Job) => void; onOpenPerson: (p: Person) => void; onNew?: (p: Person, day: string) => void // none = read-only
 }
 
 export function WeekBoard({ S, people, monday, date, today, now, freeOn, onToggleFree, onOpenJob, onOpenPerson, onNew }: Props) {
@@ -43,9 +43,9 @@ export function WeekBoard({ S, people, monday, date, today, now, freeOn, onToggl
           const js = jobsOf(S, p.id, d), starts = js.filter((j) => j.start_date === d || d === monday)
           if (js.length && !starts.length) continue // drawn by a job that started on an earlier day of this week
           const span = Math.max(1, ...starts.map((j) => daysBetween(d, j.end_date < days[6] ? j.end_date : days[6]) + 1))
-          const l = leaveOf(S, p.id, d), empty = !js.length && !(l && !l.pending)
+          const l = leaveOf(S, p.id, d), empty = !!onNew && !js.length && !(l && !l.pending)
           cells.push(
-            <div key={d} onClick={empty ? () => onNew(p, d) : undefined} style={{ gridColumn: `span ${span}` }}
+            <div key={d} onClick={empty ? () => onNew!(p, d) : undefined} style={{ gridColumn: `span ${span}` }}
               className={cx('relative flex min-h-10 flex-col gap-1 border-b border-l border-line p-1', d === today && 'bg-info-soft/40',
                 freeOn && d !== freeOn && 'opacity-40', empty && 'group cursor-pointer hover:bg-surface-hover')}>
               {l && <span className={cx('truncate rounded-chip px-1.5 py-0.5 text-caption', l.pending ? 'bg-warning-soft text-warning' : 'bg-surface-soft text-ink-2 ring-1 ring-inset ring-line-strong')}>{l.type} leave{l.pending ? ' · waiting for HR' : ''}</span>}
