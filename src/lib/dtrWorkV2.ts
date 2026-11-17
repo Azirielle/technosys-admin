@@ -33,7 +33,7 @@ export async function loadWorkV2(profileIds: string[], startDate: string, endDat
     // "pending_close" is how the DTR shows "HR to check"
     status: d.status === 'needs_review' || d.status === 'no_time_out' ? 'pending_close' : d.time_out ? 'closed' : 'active',
     is_manual_entry: d.out_check === 'by_coordinator' || d.out_check === 'told_later',
-    is_mocked: d.is_mocked, gps_accuracy: d.in_accuracy_m, is_suspicious: d.in_check === 'selfie',
+    is_mocked: d.is_mocked, gps_accuracy: d.in_accuracy_m, is_suspicious: d.in_check === 'selfie' && d.status === 'needs_review', // only until the Coordinator or HR checks it
   }))
 
   // One row per person per day of each job inside the cut-off

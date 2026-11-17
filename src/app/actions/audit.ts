@@ -434,7 +434,10 @@ export async function getDtrRecords(
           }
 
           // Overtime & Night Diff:
-          const dayNdHours = calculateNightDiffHours(inDate, outDate);
+          // Work v2: night hours only inside the counted window (start time → end time + approved overtime), like the hours
+          const ndIn = v2 && sched ? new Date(Math.max(inDate.getTime(), new Date(sched.start_time).getTime())) : inDate;
+          const ndOut = v2 && sched?.end_time ? new Date(Math.min(outDate.getTime(), new Date(sched.end_time).getTime() + approvedOtOn(dateStr) * 3600000)) : outDate;
+          const dayNdHours = calculateNightDiffHours(ndIn, ndOut);
           nightDiffHours += dayNdHours;
 
           let dayRegOt = 0;

@@ -90,9 +90,9 @@ export function DtrBoard() {
   const openEmployee = records.find((r) => r.id === openId) ?? null
 
   async function correctionSaved() {
+    await load() // recounting takes a few seconds; the pop-up stays open (Save spinning) until the DTR shows the change
     setCorrecting(null)
     toast.success('Correction saved')
-    await load() // the open DTR updates because it reads from the reloaded records
   }
 
   return (

@@ -20,7 +20,8 @@ export function CorrectionModal({
   employee: EmployeeAuditSummary | null
   day: DailyAuditRecord | null
   onClose: () => void
-  onSaved: () => void
+  /** Resolves once the DTR shows the change; Save keeps spinning until then */
+  onSaved: () => Promise<void>
 }) {
   const [timeIn, setTimeIn] = useState('08:00')
   const [timeOut, setTimeOut] = useState('17:00')
@@ -61,7 +62,7 @@ export function CorrectionModal({
         reason: reason.trim(),
       })
       if (!res.success) setError(res.error || "Couldn't save the correction.")
-      else onSaved()
+      else await onSaved()
     } catch (err) {
       setError((err as Error).message || "Couldn't save the correction.")
     } finally {

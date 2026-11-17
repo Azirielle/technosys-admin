@@ -29,7 +29,7 @@ export function DayStatus({ day }: { day: DailyAuditRecord }) {
         <Badge tone="danger" icon={MapPinOff} title="The phone reported a fake-GPS app during this punch">Fake GPS</Badge>
       )}
       {day.isSuspicious && (
-        <Badge tone="warning" icon={ShieldAlert} title="Rooted phone or phone clock far from server time">Check punch</Badge>
+        <Badge tone="warning" icon={ShieldAlert} title="Timed in outside the site with a selfie; not checked yet">Check punch</Badge>
       )}
       {day.hasLeaveCollision && (
         <Badge tone="warning" icon={Briefcase} title="Timed in on a day of approved leave">Worked on leave</Badge>

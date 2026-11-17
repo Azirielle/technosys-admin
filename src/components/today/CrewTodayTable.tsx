@@ -8,7 +8,8 @@ import { clock } from '@/components/jobs/jobTypes'
 import { STATE_LABEL, type Row } from './todayStatus'
 
 const hhmm = (iso: string) => new Date(iso).toLocaleTimeString('en-PH', { hour: 'numeric', minute: '2-digit', timeZone: 'Asia/Manila' })
-const ROLE: Record<string, string> = { lead: 'Lead', crew: 'Crew', driver: 'Driver', helper: 'Helper', office: 'Office duty' }
+const dayAndTime = (iso: string) => new Date(iso).toLocaleString('en-PH', { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', timeZone: 'Asia/Manila' })
+const ROLE: Record<string, string> = { lead: 'Lead', crew: 'Crew', driver: 'Driver', helper: 'Helper', office: 'Office duty', earlier: 'Earlier day' }
 
 export function CrewTodayTable({ rows, onTimeOut }: { rows: Row[]; onTimeOut: (row: Row) => void }) {
   if (rows.length === 0) return <EmptyState icon={Users} title="Nobody is scheduled today" description="Jobs you schedule for today show their crew here." />
@@ -29,7 +30,7 @@ export function CrewTodayTable({ rows, onTimeOut }: { rows: Row[]; onTimeOut: (r
           const s = STATE_LABEL[r.state]
           const d = r.day
           return (
-            <TableRow key={`${r.person_id}-${r.job?.id ?? 'office'}`}>
+            <TableRow key={`${r.person_id}-${r.job?.id ?? d?.id ?? 'office'}`}>
               <TableCell>
                 <span className="flex items-center gap-2.5 whitespace-nowrap">
                   <Avatar name={r.name} size="sm" />
@@ -51,7 +52,7 @@ export function CrewTodayTable({ rows, onTimeOut }: { rows: Row[]; onTimeOut: (r
               <TableCell className="whitespace-nowrap text-ink-2">
                 {d ? (
                   <>
-                    <span className="block">{hhmm(d.time_in)}{d.late_minutes > 0 && <span className="text-warning"> · {d.late_minutes} min late</span>}</span>
+                    <span className="block">{r.role === 'earlier' ? dayAndTime(d.time_in) : hhmm(d.time_in)}{d.late_minutes > 0 && <span className="text-warning"> · {d.late_minutes} min late</span>}</span>
                     {d.in_check === 'selfie' && <span className="block text-caption text-warning">Outside, selfie: {d.in_reason}</span>}
                     {d.in_check === 'queued' && <span className="block text-caption text-ink-3">Sent later (no signal)</span>}
                   </>

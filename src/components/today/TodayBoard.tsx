@@ -61,7 +61,7 @@ export function TodayBoard() {
           {data && (
             <CrewTodayTable
               rows={[
-                ...earlierOpen.map((d) => ({ person_id: d.person_id, name: d.name, role: 'office', is_acting_lead: false, level: null, job: null, day: d, state: 'no_time_out' as const })),
+                ...earlierOpen.map((d) => ({ person_id: d.person_id, name: d.name, role: 'earlier', is_acting_lead: false, level: null, job: null, day: d, state: 'no_time_out' as const })),
                 ...rows,
               ]}
               onTimeOut={(r) => setTimingOut(r.day)} />
