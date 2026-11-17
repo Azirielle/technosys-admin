@@ -59,6 +59,8 @@ export async function addWarning(supabase: Client, emp: EmployeeFile, level: str
   })
   if (error) throw error
   log('Recorded a warning', `${subject.trim()} (${emp.full_name})`)
+  // The written notice reaches them too (it's in the app's Inbox; a push only if their phone allows it)
+  await notifyEmployee(emp.id, 'A written warning from HR', subject.trim(), 'warning').catch(() => {})
 }
 
 /** Returns an error sentence, or null when saved. */
