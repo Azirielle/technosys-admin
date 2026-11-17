@@ -56,7 +56,7 @@ export function JobFormDrawer({ open, job, prefill, people, temps, vehicles, off
   // Save checks, half a second after the last change to the people, dates, times or vehicle
   const checkKey = JSON.stringify([personIds, form.start_date, form.end_date, form.start_time, form.end_time, form.vehicle_id])
   useEffect(() => {
-    if (!open || personIds.length === 0) { setChecks(null); return }
+    if (!open || personIds.length === 0) { setChecks(null); setChecking(false); return }
     setChecking(true)
     const t = setTimeout(() => {
       runSaveChecks(supabase, { personIds, startDate: form.start_date, endDate: form.end_date, startTime: form.start_time, endTime: form.end_time, vehicleId: form.vehicle_id, excludeJobId: job?.id })
@@ -85,13 +85,17 @@ export function JobFormDrawer({ open, job, prefill, people, temps, vehicles, off
   const missing = (n: number): string | null => {
     if (n === 1) return !form.client_name.trim() ? 'Enter the client.' : !form.address.trim() ? 'Enter the address.' : !pinned ? 'Place the pin on the map.' : null
     if (n === 2) return !(form.start_date && form.end_date && form.start_time && form.end_time) ? 'Enter the days and times.' : form.end_time <= form.start_time ? 'The end time must be after the start.' : null
-    if (n === 3) return !form.lead_id ? 'Pick the lead.' : checking ? 'Checking the crew…' : blocked ? 'Fix the red rows first.' : null
+    if (n === 3) return !form.lead_id ? 'Pick the lead.' : blocked ? 'Fix the red rows first.' : null
     return null
   }
   const STEPS = ['Where', 'When', 'Who', 'Check & save']
   const next = () => { const m = missing(step); if (m) return setError(m); setError(null); setStep(step + 1) }
-  // A step can be opened when every step before it is ready
-  const goTo = (n: number) => { if (n < step || [1, 2, 3].slice(0, n - 1).every((i) => !missing(i))) { setError(null); setStep(n) } }
+  // A step can be opened when every step before it is ready; otherwise say what's missing
+  const goTo = (n: number) => {
+    const m = n < step ? null : [1, 2, 3].slice(0, n - 1).map(missing).find(Boolean) ?? null
+    setError(m)
+    if (!m) setStep(n)
+  }
   const name = (id: string | null) => people.find((x) => x.id === id)?.full_name
 
   const site: SiteValue = form
@@ -107,7 +111,7 @@ export function JobFormDrawer({ open, job, prefill, people, temps, vehicles, off
           <Button variant="ghost" onClick={onClose}>Cancel</Button>
           {step > 1 && <Button variant="secondary" icon={ArrowLeft} onClick={() => { setError(null); setStep(step - 1) }}>Back</Button>}
           {step < STEPS.length
-            ? <Button variant="primary" icon={ArrowRight} onClick={next}>Next</Button>
+            ? <Button variant="primary" icon={ArrowRight} onClick={next} disabled={step === 3 && checking}>Next</Button>
             : <Button variant="primary" icon={Save} loading={saving} disabled={blocked || checking} onClick={submit}>{job ? 'Save changes' : 'Save job'}</Button>}
         </>
       }>

@@ -1,11 +1,13 @@
 // JobSiteFields: the "where" part of the job form: client, address search, the pin on the map and the
-// time-in circle the crew must be inside. Uses the admin's address search (/api/geocode) and pin map.
+// time-in circle the crew must be inside. Uses the admin's address search (/api/geocode) and pin map. Pasting
+// coordinates (e.g. from Google Maps) into the Address box moves the pin there instead.
 'use client'
 
 import { useState } from 'react'
 import dynamic from 'next/dynamic'
 import { MapPin, Search } from 'lucide-react'
 import { Field, Input, Skeleton } from '@/components/ui'
+import { parseCoords } from './coords'
 
 const GeofenceMap = dynamic(() => import('@/components/dashboard/GeofenceMap'), {
   ssr: false,
@@ -41,9 +43,11 @@ export function JobSiteFields({ value, onChange, pinned }: { value: SiteValue; o
         </Field>
       </div>
 
-      <Field label="Address" htmlFor="job-address" required hint="Pick a suggestion, then drag the pin if it landed in the wrong spot.">
+      <Field label="Address" htmlFor="job-address" required hint="Can't find it? Type the full address, search a nearby landmark or barangay to move the map, then click the exact spot. You can also paste coordinates from Google Maps (e.g. 14.3439, 121.0617).">
         <div className="relative">
-          <Input id="job-address" icon={Search} value={value.address} onChange={(e) => search(e.target.value)} placeholder="Search an address or building" autoComplete="off" />
+          <Input id="job-address" icon={Search} value={value.address} onChange={(e) => search(e.target.value)}
+            // Pasted coordinates (e.g. from Google Maps) move the pin; only on paste, so typing is never affected
+            onPaste={(e) => { const c = parseCoords(e.clipboardData.getData('text')); if (c) { e.preventDefault(); setFound([]); onChange({ site_lat: c[0], site_lon: c[1] }) } }} placeholder="Search an address or building" autoComplete="off" />
           {found.length > 0 && (
             <ul className="absolute top-full right-0 left-0 z-30 mt-1 max-h-52 overflow-y-auto rounded-control bg-surface p-1 shadow-raised">
               {found.map((r, i) => (
