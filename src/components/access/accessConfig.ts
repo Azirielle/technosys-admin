@@ -16,7 +16,7 @@ const PAGE_NAMES: Record<string, string> = {
   hr_tickets: 'Tickets and leave',
   hr_files: '201 files',
   hr_dtr: 'DTR and attendance',
-  coordinator_dispatch: 'Jobs',
+  coordinator_dispatch: 'Scheduling',
   coordinator_tracking: 'Live map',
   coordinator_inventory: 'Inventory',
 }

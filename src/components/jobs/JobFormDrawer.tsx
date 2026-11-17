@@ -14,9 +14,9 @@ import { JobChecksList } from './JobChecksList'
 import { runSaveChecks } from './jobsData'
 import { REPORT_TO, WORK_TYPES, manilaToday, type Job, type JobInput, type Office, type Person, type SaveCheck, type TempWorker, type Vehicle } from './jobTypes'
 
-type Props = { open: boolean; job: Job | null; people: Person[]; temps: TempWorker[]; vehicles: Vehicle[]; offices: Office[]; onClose: () => void; onSaved: () => void }
+type Props = { open: boolean; job: Job | null; prefill?: Partial<JobInput>; people: Person[]; temps: TempWorker[]; vehicles: Vehicle[]; offices: Office[]; onClose: () => void; onSaved: () => void }
 
-function fromJob(job: Job | null, hq: Office | undefined): JobInput {
+function fromJob(job: Job | null, hq: Office | undefined, prefill: Partial<JobInput> = {}): JobInput {
   const m = (role: string) => job?.members.filter((x) => x.role === role && x.person_id).map((x) => x.person_id!) ?? []
   const driver = job?.members.find((x) => x.role === 'driver')
   return {
@@ -29,13 +29,15 @@ function fromJob(job: Job | null, hq: Office | undefined): JobInput {
     driver_id: driver?.person_id ?? null, vehicle_id: driver?.vehicle_id ?? null,
     temp_worker_ids: job?.members.filter((x) => x.temp_worker_id).map((x) => x.temp_worker_id!) ?? [],
     change_reason: '',
+    // A new job started from the Scheduling board: the person, day and time already picked
+    ...(job ? {} : prefill),
   }
 }
 
-export function JobFormDrawer({ open, job, people, temps, vehicles, offices, onClose, onSaved }: Props) {
+export function JobFormDrawer({ open, job, prefill, people, temps, vehicles, offices, onClose, onSaved }: Props) {
   const supabase = useMemo(() => createClient(), [])
   const toast = useToast()
-  const [form, setForm] = useState<JobInput>(() => fromJob(job, offices[0]))
+  const [form, setForm] = useState<JobInput>(() => fromJob(job, offices[0], prefill))
   const [pinned, setPinned] = useState(!!job)
   const [checks, setChecks] = useState<SaveCheck[] | null>(null)
   const [checking, setChecking] = useState(false)
@@ -44,8 +46,8 @@ export function JobFormDrawer({ open, job, people, temps, vehicles, offices, onC
 
   // A fresh form each time the drawer opens for a job (or a new one)
   const [openedFor, setOpenedFor] = useState<string | null | undefined>(undefined)
-  const key = open ? job?.id ?? 'new' : undefined
-  if (key !== openedFor) { setOpenedFor(key); setForm(fromJob(job, offices[0])); setPinned(!!job); setChecks(null); setError(null) }
+  const key = open ? job?.id ?? `new-${JSON.stringify(prefill ?? {})}` : undefined
+  if (key !== openedFor) { setOpenedFor(key); setForm(fromJob(job, offices[0], prefill)); setPinned(!!job); setChecks(null); setError(null) }
 
   const set = (patch: Partial<JobInput>) => { setForm((f) => ({ ...f, ...patch })); setError(null) }
   const personIds = [form.lead_id, ...form.crew_ids, ...form.helper_ids, form.driver_id].filter(Boolean) as string[]

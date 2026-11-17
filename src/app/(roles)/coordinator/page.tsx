@@ -23,7 +23,7 @@ export default async function CoordinatorOverviewPage() {
       </StatRow>
 
       <div className="grid grid-cols-1 gap-section lg:grid-cols-2">
-        <ListCard title="Today's jobs" count={o.jobsToday.length} href="/coordinator/jobs" linkLabel="Jobs" empty="No jobs scheduled for today.">
+        <ListCard title="Today's jobs" count={o.jobsToday.length} href="/coordinator/jobs" linkLabel="Scheduling" empty="No jobs scheduled for today.">
           {o.jobsToday.map((j) => (
             <ListRow
               key={j.id}

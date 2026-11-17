@@ -7,7 +7,7 @@ import { NavItem } from '@/components/dashboard/AdminDock'
 const navItems: NavItem[] = [
   { title: 'Overview', href: '/coordinator', iconName: 'Home' },
   { title: 'Today', href: '/coordinator/today', iconName: 'ClipboardCheck' },
-  { title: 'Jobs', href: '/coordinator/jobs', iconName: 'Briefcase' },
+  { title: 'Scheduling', href: '/coordinator/jobs', iconName: 'Calendar' },
   { title: 'Live Map', href: '/coordinator/tracking', iconName: 'MapPin' },
   { title: 'Inventory', href: '/coordinator/inventory', iconName: 'Box' },
   { title: 'Announcements', href: '/coordinator/announcements', iconName: 'Megaphone' },

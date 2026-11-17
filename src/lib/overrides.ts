@@ -40,9 +40,9 @@ export const SYSTEM_MODULES: SystemModule[] = [
   },
   {
     id: 'coordinator_dispatch',
-    name: 'Jobs',
+    name: 'Scheduling',
     department: 'Field Operations',
-    description: "Schedule jobs, pick the crew and vehicle, and see each job's history.",
+    description: 'Day and week boards: who is free, who is where, and scheduling jobs with crew and vehicle.',
     href: '/coordinator/jobs',
     iconName: 'Calendar',
     defaultRoles: ['coordinator'],

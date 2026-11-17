@@ -5,8 +5,8 @@ import type { Job, JobMember, Office, Person, SaveCheck, TempWorker, Vehicle } f
 
 type Client = ReturnType<typeof createClient>
 
-export async function loadJobs(supabase: Client): Promise<Job[]> {
-  const since = new Date(Date.now() - 45 * 86400000).toISOString().slice(0, 10)
+/** Jobs that end on or after `since` (default: 45 days ago), with their people. */
+export async function loadJobs(supabase: Client, since = new Date(Date.now() - 45 * 86400000).toISOString().slice(0, 10)): Promise<Job[]> {
   const { data, error } = await supabase
     .from('jobs')
     .select(`id, client_name, address, project_name, notes, site_lat, site_lon, site_radius_m, start_date, end_date,
