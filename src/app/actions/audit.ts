@@ -4,6 +4,7 @@ import { supabaseAdmin } from "@/lib/supabase/admin"
 import { createClient } from "@/lib/supabase/server"
 import { verifyRoleAccess, UserRole } from "@/lib/permissions"
 import { getBranchFilter } from "@/lib/branch-filter"
+import { WORK_V2, loadWorkV2 } from "@/lib/dtrWorkV2"
 
 export interface DailyAuditRecord {
   date: string; // 'YYYY-MM-DD'
@@ -241,10 +242,14 @@ export async function getDtrRecords(
       .lte('schedules.start_time', utcEnd)
       .neq('schedules.status', 'cancelled');
     if (crewErr) throw crewErr;
-    const allJobs: DtrJob[] = [
+    let allJobs: DtrJob[] = [
       ...((schedules || []) as DtrJob[]),
       ...(crewRows || []).map((r) => ({ ...(r.schedules as unknown as DtrJob), technician_id: r.technician_id })),
     ];
+    // Work v2 (after the switch-over): work days and jobs from the new tables, hours from the database
+    const v2 = WORK_V2 ? await loadWorkV2(profileIds, startDate, endDate) : null;
+    if (v2) allJobs = v2.jobs as unknown as DtrJob[];
+    const dtrLogs = v2 ? v2.logs : (timeLogs || []);
 
     // 4c. Approved overtime (hours past 8 count as overtime only up to these).
     const { data: otRequests, error: otErr } = await supabaseAdmin
@@ -297,7 +302,7 @@ export async function getDtrRecords(
 
     // 8. Aggregate metrics per employee
     const aggregatedSummaries: EmployeeAuditSummary[] = profiles.map(profile => {
-      const empLogs = (timeLogs || []).filter(l => l.technician_id === profile.id);
+      const empLogs = dtrLogs.filter(l => l.technician_id === profile.id);
       const empScheds = allJobs
         .filter((s, i, all) => s.technician_id === profile.id && all.findIndex((o) => o.id === s.id && o.technician_id === s.technician_id) === i)
         .sort((a, b) => a.start_time.localeCompare(b.start_time));
@@ -404,7 +409,8 @@ export async function getDtrRecords(
 
           // Compute gross & net hours (deduct 1h unpaid meal break if shift > 5h)
           const grossHours = Math.max(0, (outDate.getTime() - inDate.getTime()) / (1000 * 60 * 60));
-          const netHours = grossHours > 5 ? Math.max(0, grossHours - 1) : grossHours;
+          // Work v2: the database already counted from the start time, to the end time + approved overtime
+          const netHours = v2 && log.total_hours != null ? Number(log.total_hours) : grossHours > 5 ? Math.max(0, grossHours - 1) : grossHours;
           totalHours += netHours;
 
           // Late Calculation:
