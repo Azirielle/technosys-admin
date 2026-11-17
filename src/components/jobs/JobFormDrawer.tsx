@@ -1,18 +1,18 @@
-// JobFormDrawer: create or change a job. Where (site, pin, circle) → when (dates, times) → how they report
-// (site or office) → who (lead, crew, driver + vehicle). The database's save checks run as people are picked;
-// red rows block saving. Changing a saved job needs a reason, which the crew sees in their push.
+// JobFormDrawer: create or change a job in four steps with Back / Next: 1 Where (site, pin, circle) → 2 When (dates,
+// times, how they report) → 3 Who (lead, crew, driver + vehicle; the database's save checks run as people are picked,
+// red rows block) → 4 Check & save (summary, notes, reason when changing). Next checks that step's answers first.
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { Save } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Save } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { saveJob } from '@/app/actions/jobs'
-import { Button, Drawer, Field, Input, Select, Textarea, useToast } from '@/components/ui'
+import { Button, Drawer, Field, Input, Select, Steps, Textarea, useToast } from '@/components/ui'
 import { JobSiteFields, type SiteValue } from './JobSiteFields'
 import { JobCrewFields, type CrewValue } from './JobCrewFields'
 import { JobChecksList } from './JobChecksList'
 import { runSaveChecks } from './jobsData'
-import { REPORT_TO, WORK_TYPES, manilaToday, type Job, type JobInput, type Office, type Person, type SaveCheck, type TempWorker, type Vehicle } from './jobTypes'
+import { REPORT_TO, WORK_TYPES, clock, dateRange, manilaToday, type Job, type JobInput, type Office, type Person, type SaveCheck, type TempWorker, type Vehicle } from './jobTypes'
 
 type Props = { open: boolean; job: Job | null; prefill?: Partial<JobInput>; people: Person[]; temps: TempWorker[]; vehicles: Vehicle[]; offices: Office[]; onClose: () => void; onSaved: () => void }
 
@@ -43,11 +43,12 @@ export function JobFormDrawer({ open, job, prefill, people, temps, vehicles, off
   const [checking, setChecking] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [step, setStep] = useState(1)
 
   // A fresh form each time the drawer opens for a job (or a new one)
   const [openedFor, setOpenedFor] = useState<string | null | undefined>(undefined)
   const key = open ? job?.id ?? `new-${JSON.stringify(prefill ?? {})}` : undefined
-  if (key !== openedFor) { setOpenedFor(key); setForm(fromJob(job, offices[0], prefill)); setPinned(!!job); setChecks(null); setError(null) }
+  if (key !== openedFor) { setOpenedFor(key); setForm(fromJob(job, offices[0], prefill)); setPinned(!!job); setChecks(null); setError(null); setStep(1) }
 
   const set = (patch: Partial<JobInput>) => { setForm((f) => ({ ...f, ...patch })); setError(null) }
   const personIds = [form.lead_id, ...form.crew_ids, ...form.helper_ids, form.driver_id].filter(Boolean) as string[]
@@ -80,6 +81,19 @@ export function JobFormDrawer({ open, job, prefill, people, temps, vehicles, off
     onSaved()
   }
 
+  // What each step still needs before Next (null = ready)
+  const missing = (n: number): string | null => {
+    if (n === 1) return !form.client_name.trim() ? 'Enter the client.' : !form.address.trim() ? 'Enter the address.' : !pinned ? 'Place the pin on the map.' : null
+    if (n === 2) return !(form.start_date && form.end_date && form.start_time && form.end_time) ? 'Enter the days and times.' : form.end_time <= form.start_time ? 'The end time must be after the start.' : null
+    if (n === 3) return !form.lead_id ? 'Pick the lead.' : checking ? 'Checking the crew…' : blocked ? 'Fix the red rows first.' : null
+    return null
+  }
+  const STEPS = ['Where', 'When', 'Who', 'Check & save']
+  const next = () => { const m = missing(step); if (m) return setError(m); setError(null); setStep(step + 1) }
+  // A step can be opened when every step before it is ready
+  const goTo = (n: number) => { if (n < step || [1, 2, 3].slice(0, n - 1).every((i) => !missing(i))) { setError(null); setStep(n) } }
+  const name = (id: string | null) => people.find((x) => x.id === id)?.full_name
+
   const site: SiteValue = form
   const crew: CrewValue = form
 
@@ -91,16 +105,22 @@ export function JobFormDrawer({ open, job, prefill, people, temps, vehicles, off
           {/* Shown here, beside Save, so it's seen even when the form is scrolled */}
           {error && <p role="alert" className="mr-auto max-w-md text-small text-danger">{error}</p>}
           <Button variant="ghost" onClick={onClose}>Cancel</Button>
-          <Button variant="primary" icon={Save} loading={saving} disabled={blocked || checking} onClick={submit}>{job ? 'Save changes' : 'Save job'}</Button>
+          {step > 1 && <Button variant="secondary" icon={ArrowLeft} onClick={() => { setError(null); setStep(step - 1) }}>Back</Button>}
+          {step < STEPS.length
+            ? <Button variant="primary" icon={ArrowRight} onClick={next}>Next</Button>
+            : <Button variant="primary" icon={Save} loading={saving} disabled={blocked || checking} onClick={submit}>{job ? 'Save changes' : 'Save job'}</Button>}
         </>
       }>
       <div className="flex flex-col gap-section">
-        <section className="flex flex-col gap-stack">
+        <div className="sticky top-0 z-10 -mx-1 -mt-1 bg-surface px-1 pb-3 pt-1">
+          <Steps steps={STEPS} current={step} onSelect={goTo} />
+        </div>
+        {step === 1 && <section className="flex flex-col gap-stack">
           <h3 className="text-small font-medium text-ink">Where</h3>
           <JobSiteFields value={site} pinned={pinned} onChange={(p) => { set(p); if (p.site_lat !== undefined) setPinned(true) }} />
-        </section>
+        </section>}
 
-        <section className="flex flex-col gap-stack">
+        {step === 2 && <section className="flex flex-col gap-stack">
           <h3 className="text-small font-medium text-ink">When</h3>
           <div className="grid grid-cols-2 gap-stack sm:grid-cols-4">
             <Field label="First day" htmlFor="job-start-date" required><Input id="job-start-date" type="date" value={form.start_date} onChange={(e) => set({ start_date: e.target.value, end_date: form.end_date < e.target.value ? e.target.value : form.end_date })} /></Field>
@@ -109,10 +129,7 @@ export function JobFormDrawer({ open, job, prefill, people, temps, vehicles, off
             <Field label="End" htmlFor="job-end-time" required><Input id="job-end-time" type="time" value={form.end_time} onChange={(e) => set({ end_time: e.target.value })} /></Field>
           </div>
           <p className="text-caption text-ink-3">Time-in opens 1 hour before the start. Late after 15 minutes. Same hours every day of the job.</p>
-        </section>
-
-        <section className="flex flex-col gap-stack">
-          <h3 className="text-small font-medium text-ink">How they report</h3>
+          <h3 className="mt-2 text-small font-medium text-ink">How they report</h3>
           <div className="grid grid-cols-1 gap-stack sm:grid-cols-2">
             <Field label="Kind of work" htmlFor="job-type"><Select id="job-type" value={form.work_type} onChange={(e) => set({ work_type: e.target.value as JobInput['work_type'] })} options={WORK_TYPES} /></Field>
             <Field label="Report to" htmlFor="job-report" hint={REPORT_TO.find((r) => r.value === form.report_to)?.hint}>
@@ -122,20 +139,31 @@ export function JobFormDrawer({ open, job, prefill, people, temps, vehicles, off
           {form.report_to === 'hq' && offices.length > 1 && (
             <Field label="Office" htmlFor="job-office"><Select id="job-office" value={form.hq_office_id ?? ''} onChange={(e) => set({ hq_office_id: e.target.value })} options={offices.map((o) => ({ value: o.id, label: o.name }))} /></Field>
           )}
-        </section>
+        </section>}
 
-        <section className="flex flex-col gap-stack">
+        {step === 3 && <section className="flex flex-col gap-stack">
           <h3 className="text-small font-medium text-ink">Who</h3>
           <JobCrewFields value={crew} onChange={set} people={people} temps={temps} vehicles={vehicles} needsDriver={form.report_to === 'hq'} />
           <JobChecksList checks={checks} checking={checking} extra={extra} />
-        </section>
+        </section>}
 
+        {step === 4 && <section className="flex flex-col gap-stack">
+          <h3 className="text-small font-medium text-ink">Check & save</h3>
+          <dl className="grid grid-cols-[8rem_1fr] gap-x-4 gap-y-2 rounded-card bg-surface-soft p-card-sm text-small">
+            <dt className="text-ink-3">Where</dt><dd className="text-ink">{form.client_name} · {form.address}</dd>
+            <dt className="text-ink-3">When</dt><dd className="text-ink">{dateRange(form.start_date, form.end_date)}, {clock(form.start_time)} – {clock(form.end_time)}</dd>
+            <dt className="text-ink-3">Report to</dt><dd className="text-ink">{REPORT_TO.find((r) => r.value === form.report_to)?.label}</dd>
+            <dt className="text-ink-3">Lead</dt><dd className="text-ink">{name(form.lead_id) ?? '—'}</dd>
+            <dt className="text-ink-3">Others</dt><dd className="text-ink">{[...form.crew_ids, ...form.helper_ids].map(name).filter(Boolean).join(', ') || 'None'}{form.driver_id ? ` · Driver: ${name(form.driver_id)}` : ''}{form.temp_worker_ids.length ? ` · ${form.temp_worker_ids.length} temporary` : ''}</dd>
+          </dl>
+          <JobChecksList checks={checks} checking={checking} extra={extra} />
         <Field label="Notes for the crew (optional)" htmlFor="job-notes"><Textarea id="job-notes" rows={2} value={form.notes} onChange={(e) => set({ notes: e.target.value })} placeholder="Bring the ladder. Gate pass at the guard house." /></Field>
         {job && (
           <Field label="Why is it changing?" htmlFor="job-reason" required hint="The crew sees this in their push and in the app.">
             <Input id="job-reason" value={form.change_reason} onChange={(e) => set({ change_reason: e.target.value })} placeholder="Client moved the visit to Thursday" />
           </Field>
         )}
+        </section>}
       </div>
     </Drawer>
   )

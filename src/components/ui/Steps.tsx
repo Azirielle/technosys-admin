@@ -1,15 +1,16 @@
-// Steps: numbered progress for a form in several parts (1 Job, 2 Time, 3 Team, 4 Review). Click a step to go back to it.
+// Steps: numbered progress for a form in several parts (1 Job, 2 Time, 3 Team, 4 Review). Click a step to go to it.
+// `done` ticks parts filled in any order (one long form); without it, steps before `current` count as done.
 'use client'
 
 import { Check } from 'lucide-react'
 import { cx } from './cx'
 
-export function Steps({ steps, current, onSelect }: { steps: string[]; current: number; onSelect?: (step: number) => void }) {
+export function Steps({ steps, current, done: doneList, onSelect }: { steps: string[]; current: number; done?: boolean[]; onSelect?: (step: number) => void }) {
   return (
     <ol className="flex items-center gap-2" aria-label="Progress">
       {steps.map((label, i) => {
         const n = i + 1
-        const done = n < current
+        const done = doneList ? doneList[i] : n < current
         const here = n === current
         return (
           <li key={label} className="flex flex-1 items-center gap-2">
