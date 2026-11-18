@@ -5,11 +5,14 @@ import React from 'react'
 export interface FormattedPolicyDocumentProps {
   content: string
   className?: string
+  /** AI chat answers: keep "Status: …" lines (only policy documents carry a stale one to hide). */
+  keepStatusLines?: boolean
 }
 
 export default function FormattedPolicyDocument({
   content,
   className = '',
+  keepStatusLines = false,
 }: FormattedPolicyDocumentProps) {
   if (!content) {
     return <p className="text-xs text-ink-3 italic">No document text available.</p>
@@ -52,7 +55,7 @@ export default function FormattedPolicyDocument({
   // Filter out redundant static status lines that conflict with dynamic app metadata
   const lines = content
     .split('\n')
-    .filter((line) => !/^\s*\*{0,2}status\*{0,2}\s*:\s*.+$/i.test(line.trim()))
+    .filter((line) => keepStatusLines || !/^\s*\*{0,2}status\*{0,2}\s*:\s*.+$/i.test(line.trim()))
 
   return (
     <div
