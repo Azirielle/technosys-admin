@@ -4,6 +4,7 @@
 import { Bot, FileText, Lock, ZoomIn } from 'lucide-react'
 import { formatTime } from '@/lib/format'
 import { Avatar, cx } from '@/components/ui'
+import FormattedPolicyDocument from '@/components/policies/FormattedPolicyDocument'
 import { isImage, type TicketMessage } from './types'
 
 const WHO: Record<string, string> = { admin: 'HR', ai: 'AI assistant', technician: 'Employee' }
@@ -56,7 +57,12 @@ export function ChatMessage({
         )}
       >
         <p className={cx('mb-0.5 text-micro font-medium', fromHr ? 'opacity-70' : 'text-ink-3')}>{who}</p>
-        <p className="whitespace-pre-wrap">{message.content}</p>
+        {fromAi ? (
+          // The AI writes Markdown and adds a code that opens the phone's ticket form; show it formatted, without the code.
+          <FormattedPolicyDocument content={message.content.replace('[ACTION:OPEN_TICKET_FORM]', '').trim()} className="text-small" />
+        ) : (
+          <p className="whitespace-pre-wrap">{message.content}</p>
+        )}
 
         {message.attachment_url &&
           (isImage(message.attachment_url, message.attachment_type) ? (
