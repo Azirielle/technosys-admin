@@ -84,7 +84,7 @@ export default {
     if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
     try {
-      const { query, attachment, history } = await req.json();
+      const { query, history } = await req.json();
       if (!query) return new Response("Missing query", { status: 400, headers: corsHeaders });
 
       const supabase = createClient(Deno.env.get("SUPABASE_URL") ?? "", Deno.env.get("SUPABASE_ANON_KEY") ?? "", {
@@ -125,9 +125,7 @@ export default {
               if (messages.length === 1 && role === "assistant") continue; // start with the technician, not the greeting
               messages.push({ role, content: m.content });
             }
-            // shortcut: the answer models read text only; a photo is mentioned, not seen (needs a vision model to change)
-            const photo = attachment?.base64 ? "\n\n(The technician attached a photo. You can't see photos: ask them to describe it, or to file a ticket so HR can look at it.)" : "";
-            messages.push({ role: "user", content: `Question: ${query}${photo}` });
+            messages.push({ role: "user", content: `Question: ${query}` });
 
             // 3. Write the answer: Groq, else Cloudflare; never half an answer followed by a false "flagged" note
             send({ type: "progress", message: "Formulating the best answer..." });
