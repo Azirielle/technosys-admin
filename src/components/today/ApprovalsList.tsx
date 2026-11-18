@@ -18,6 +18,7 @@ const KIND: Record<string, { label: string; what: string }> = {
   coordinator_time_out: { label: 'Timed out by the office', what: 'Your time-out set by the office' },
   driver_away: { label: 'Driver away from HQ', what: 'Your time-out away from the office' },
   early_time_out: { label: 'Timed out early', what: 'Your early time-out' },
+  offline_time_in: { label: 'Time-in sent later, place not confirmed', what: 'Your time-in saved with no signal' },
 }
 const when = (iso: string) => new Date(iso).toLocaleString('en-PH', { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', timeZone: 'Asia/Manila' })
 
