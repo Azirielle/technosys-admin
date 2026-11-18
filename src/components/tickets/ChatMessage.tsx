@@ -1,13 +1,14 @@
 // ChatMessage and TypingBubble: one message in a ticket conversation (employee, AI, HR or system note).
 'use client'
 
-import { Bot, FileText, Lock, ZoomIn } from 'lucide-react'
+import { FileText, Lock, ZoomIn } from 'lucide-react'
 import { formatTime } from '@/lib/format'
 import { Avatar, cx } from '@/components/ui'
 import FormattedPolicyDocument from '@/components/policies/FormattedPolicyDocument'
 import { isImage, type TicketMessage } from './types'
+import { TechyAvatar } from './TechyAvatar'
 
-const WHO: Record<string, string> = { admin: 'HR', ai: 'AI assistant', technician: 'Employee' }
+const WHO: Record<string, string> = { admin: 'HR', ai: 'Techy · AI assistant', technician: 'Employee' }
 
 export function ChatMessage({
   message,
@@ -41,19 +42,14 @@ export function ChatMessage({
     )
   }
 
+  // The company's side (HR and Techy, the AI assistant) is on the right; the employee is on the left
   return (
-    <div className={cx('flex items-end gap-2', fromHr && 'flex-row-reverse')}>
-      {fromAi ? (
-        <span className="flex size-7 shrink-0 items-center justify-center rounded-pill bg-info-soft text-info">
-          <Bot className="size-4" aria-hidden />
-        </span>
-      ) : (
-        !fromHr && <Avatar name={employeeName} size="xs" className="size-7" />
-      )}
+    <div className={cx('flex items-end gap-2', (fromHr || fromAi) && 'flex-row-reverse')}>
+      {fromAi ? <TechyAvatar /> : !fromHr && <Avatar name={employeeName} size="xs" className="size-7" />}
       <div
         className={cx(
           'max-w-[78%] rounded-card px-4 py-3 text-small',
-          fromHr ? 'rounded-br-chip bg-action text-on-action' : 'rounded-bl-chip bg-surface-soft text-ink',
+          fromHr ? 'rounded-br-chip bg-action text-on-action' : fromAi ? 'rounded-br-chip bg-info-soft text-ink' : 'rounded-bl-chip bg-surface-soft text-ink',
         )}
       >
         <p className={cx('mb-0.5 text-micro font-medium', fromHr ? 'opacity-70' : 'text-ink-3')}>{who}</p>
