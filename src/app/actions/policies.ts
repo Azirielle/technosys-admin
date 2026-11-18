@@ -7,6 +7,7 @@ import { logActivity } from "./activity"
 import { sendPushToUser } from "@/lib/push"
 import crypto from 'crypto'
 import { verifyRoleAccess } from "@/lib/permissions"
+import { addPolicyToLibrary, removePolicyFromLibrary } from "@/lib/policyLibrary"
 
 /** The signed-in person, if they are HR or the CEO (the only roles that manage policies). */
 async function policyStaff() {
@@ -548,18 +549,25 @@ export async function publishPolicy(
 
     if (pubErr) throw pubErr
 
+    // The AI assistant answers from this version from now on. A failure doesn't undo the publish; it's noted in the log.
+    let aiNote = ''
+    try { await addPolicyToLibrary(supabaseAdmin, published) } catch (e) {
+      console.error("AI library update failed:", (e as Error).message)
+      aiNote = ' The AI assistant could not learn this version: run scripts/sync-policies-rag.ts.'
+    }
+
     // Step C: If material change, dispatch notification alerts to workforce
     if (options.isMaterialChange) {
       await logActivity(
         'policy_publish_material',
         'compliance',
-        `Published Material Policy Update "${published.title}" (${cleanVersion}). Mandatory workforce re-signature required.`
+        `Published Material Policy Update "${published.title}" (${cleanVersion}). Mandatory workforce re-signature required.${aiNote}`
       )
     } else {
       await logActivity(
         'policy_publish',
         'compliance',
-        `Published Policy "${published.title}" (${cleanVersion}).`
+        `Published Policy "${published.title}" (${cleanVersion}).${aiNote}`
       )
     }
 
@@ -595,10 +603,17 @@ export async function archivePolicy(policyId: string) {
 
     if (error) throw error
 
+    // The AI assistant stops answering from an archived policy.
+    let aiNote = ''
+    try { await removePolicyFromLibrary(supabaseAdmin, data.id) } catch (e) {
+      console.error("AI library update failed:", (e as Error).message)
+      aiNote = ' The AI assistant could still quote it: run scripts/sync-policies-rag.ts.'
+    }
+
     await logActivity(
       'policy_archive',
       'compliance',
-      `Archived policy document "${data.title}" (${data.version})`
+      `Archived policy document "${data.title}" (${data.version})${aiNote}`
     )
 
     revalidatePath('/hr/policies')

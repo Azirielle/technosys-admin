@@ -1,16 +1,11 @@
-// sync-policies-rag: rebuilds the AI assistant's policy library (document_chunks) from the active policies.
-// Run after publishing a new policy version:  npx tsx scripts/sync-policies-rag.ts
+// sync-policies-rag: rebuilds the AI assistant's whole policy library (document_chunks) from the active policies.
+// Publishing or archiving in the admin already updates it; run this only to repair it:  npx tsx scripts/sync-policies-rag.ts
 // Needs NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in .env.local (search data comes from embed-text / Cloudflare).
 import { createClient } from "@supabase/supabase-js";
-import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
-import { embedTexts } from "./embedText";
+import { embedTexts } from "./embedText"; // first: loads .env.local
+import { addPolicyToLibrary, libraryId } from "../src/lib/policyLibrary";
 
 const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
-
-/** A new version's id is "<original id>_rev_<…>". The library keeps one entry per policy, under the original id. */
-function libraryId(policyId: string) {
-  return `policy_${policyId.replace(/_rev_.*$/, "")}`;
-}
 
 async function main() {
   const { data: policies, error } = await supabase
@@ -32,32 +27,8 @@ async function main() {
     console.log(`Removed old passages: ${id}`);
   }
 
-  const splitter = new RecursiveCharacterTextSplitter({ chunkSize: 600, chunkOverlap: 80 });
-
   for (const policy of policies) {
-    const docId = libraryId(policy.id);
-    const chunks = await splitter.createDocuments(
-      [policy.content_markdown],
-      [{ policy_id: policy.id, title: policy.title, category: policy.category, version: policy.version, target_audience: policy.target_audience }],
-    );
-
-    const contents = chunks.map((c) => `TechnoCycle Official Policy: ${policy.title} (${policy.category})
-${c.pageContent}`);
-    const vectors: number[][] = [];
-    for (let i = 0; i < contents.length; i += 50) vectors.push(...(await embedTexts(contents.slice(i, i + 50))));
-    const rows = contents.map((content, i) => ({
-      document_id: docId,
-      content,
-      metadata: { ...chunks[i].metadata, chunk_index: i, total_chunks: chunks.length },
-      embedding: vectors[i],
-    }));
-
-    // Replace this policy's passages only after every new one is ready.
-    const { error: delErr } = await supabase.from("document_chunks").delete().eq("document_id", docId);
-    if (delErr) throw delErr;
-    const { error: insErr } = await supabase.from("document_chunks").insert(rows);
-    if (insErr) throw insErr;
-    console.log(`${policy.title} ${policy.version}: ${rows.length} passages`);
+    console.log(`${policy.title} ${policy.version}: ${await addPolicyToLibrary(supabase, policy)} passages`);
   }
 
   // Quick check that the search still finds something.
