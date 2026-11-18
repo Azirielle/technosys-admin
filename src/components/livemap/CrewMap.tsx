@@ -46,7 +46,10 @@ function markerIcon(c: CrewLocation, selected: boolean) {
   const initials = c.name.split(/\s+/).map((p) => p[0]).slice(0, 2).join('').toUpperCase()
   const html = renderToStaticMarkup(
     <div className="flex flex-col items-center">
-      <div className={cx('flex size-10 items-center justify-center rounded-pill text-small font-semibold shadow-raised ring-2', DOT[c.status], selected ? 'ring-action scale-110' : 'ring-surface')}>{initials}</div>
+      <div className={cx('flex size-10 items-center justify-center overflow-hidden rounded-pill text-small font-semibold shadow-raised ring-2', DOT[c.status], selected ? 'ring-action scale-110' : 'ring-surface')}>
+        {/* eslint-disable-next-line @next/next/no-img-element -- a marker is plain HTML; the photo is from Supabase storage */}
+        {c.avatar ? <img src={c.avatar} alt="" className="size-full object-cover" /> : initials}
+      </div>
       <div className="mt-1 rounded-pill bg-surface px-2 py-0.5 text-micro font-medium whitespace-nowrap text-ink shadow-card">{c.name.split(' ')[0]}</div>
     </div>,
   )

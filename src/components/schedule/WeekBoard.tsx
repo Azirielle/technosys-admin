@@ -4,7 +4,7 @@
 'use client'
 
 import type { CSSProperties } from 'react'
-import { cx, initialsOf } from '@/components/ui'
+import { Avatar, cx, initialsOf } from '@/components/ui'
 import type { Job, Person } from '@/components/jobs/jobTypes'
 import { addDays, atRisk, checksOf, dayNumber, isFree, jobsOf, leaveOf, roleOn, clock12, weekdayShort, type Sched } from './scheduleMath'
 import { JOB_TONE } from './scheduleStyles'
@@ -68,7 +68,8 @@ export function WeekBoard({ S, people, monday, date, today, now, freeOn, onToggl
         return [
           <button key={`${p.id}-name`} type="button" onClick={() => onOpenPerson(p)} title={p.full_name}
             className="sticky left-0 z-10 flex min-h-10 items-center gap-2 border-b border-line bg-surface px-2.5 text-left hover:bg-surface-hover">
-            <span className="grid size-6 shrink-0 place-items-center rounded-pill bg-surface-soft text-[10px] font-semibold text-ink">{initialsOf(p.full_name)}</span>
+            {p.avatar_url ? <Avatar name={p.full_name} src={p.avatar_url} size="xs" />
+              : <span className="grid size-6 shrink-0 place-items-center rounded-pill bg-surface-soft text-[10px] font-semibold text-ink">{initialsOf(p.full_name)}</span>}
             <span className="min-w-0 truncate text-small font-medium text-ink">{p.full_name}</span>
             <span className="ml-auto shrink-0 text-micro text-ink-3">{booked}/7</span>
           </button>,

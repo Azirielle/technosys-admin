@@ -22,7 +22,7 @@ export function JobSiteFields({ value, onChange, pinned }: { value: SiteValue; o
 
   async function search(q: string) {
     onChange({ address: q })
-    if (q.trim().length < 3) return setFound([])
+    if (q.trim().length < 3 || parseCoords(q)) return setFound([]) // coordinates aren't searched: Enter pins them
     try {
       const res = await fetch(`/api/geocode?q=${encodeURIComponent(q)}`)
       const data = await res.json()
@@ -43,11 +43,14 @@ export function JobSiteFields({ value, onChange, pinned }: { value: SiteValue; o
         </Field>
       </div>
 
-      <Field label="Address" htmlFor="job-address" required hint="Can't find it? Type the full address, search a nearby landmark or barangay to move the map, then click the exact spot. You can also paste coordinates from Google Maps (e.g. 14.3439, 121.0617).">
+      <Field label="Address" htmlFor="job-address" required hint="Can't find it? Type the full address, search a nearby landmark or barangay to move the map, then click the exact spot. Or paste coordinates (14.3439, 121.0617 · 14.334444° N, 121.029167° E · 14°20′04″N 121°01′45″E) and the pin moves; typed ones move it when you press Enter.">
         <div className="relative">
           <Input id="job-address" icon={Search} value={value.address} onChange={(e) => search(e.target.value)}
             // Pasted coordinates (e.g. from Google Maps) move the pin; only on paste, so typing is never affected
-            onPaste={(e) => { const c = parseCoords(e.clipboardData.getData('text')); if (c) { e.preventDefault(); setFound([]); onChange({ site_lat: c[0], site_lon: c[1] }) } }} placeholder="Search an address or building" autoComplete="off" />
+            onPaste={(e) => { const c = parseCoords(e.clipboardData.getData('text')); if (c) { e.preventDefault(); setFound([]); onChange({ site_lat: c[0], site_lon: c[1] }) } }}
+            // Enter on typed coordinates moves the pin (and never submits the form)
+            onKeyDown={(e) => { const c = e.key === 'Enter' && parseCoords(value.address); if (c) { e.preventDefault(); setFound([]); onChange({ site_lat: c[0], site_lon: c[1] }) } }}
+            placeholder="Search an address or building" autoComplete="off" />
           {found.length > 0 && (
             <ul className="absolute top-full right-0 left-0 z-30 mt-1 max-h-52 overflow-y-auto rounded-control bg-surface p-1 shadow-raised">
               {found.map((r, i) => (

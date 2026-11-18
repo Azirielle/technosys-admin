@@ -40,7 +40,7 @@ export type Job = {
 
 export type Vehicle = { id: string; name: string; plate: string; home_office_id: string; status: 'active' | 'in_repair' | 'retired' }
 export type Office = { id: string; name: string; latitude: number; longitude: number; radius_meters: number }
-export type Person = { id: string; full_name: string; role: 'technician' | 'helper'; technician_level: string | null; contact_number?: string | null }
+export type Person = { id: string; full_name: string; role: 'technician' | 'helper'; technician_level: string | null; contact_number?: string | null; avatar_url?: string | null }
 export type TempWorker = { id: string; full_name: string; contact_number: string | null }
 
 export type SaveCheck = { person_id: string | null; vehicle_id: string | null; kind: string; blocking: boolean; detail: string }

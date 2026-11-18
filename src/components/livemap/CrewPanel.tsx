@@ -81,7 +81,7 @@ export function CrewPanel({
                     aria-pressed={selected}
                     className={cx('flex w-full cursor-pointer items-center gap-3 rounded-control p-2.5 text-left transition-colors', selected ? 'bg-surface-soft' : 'hover:bg-surface-hover')}
                   >
-                    <Avatar name={c.name} size="sm" />
+                    <Avatar name={c.name} src={c.avatar} size="sm" />
                     <span className="min-w-0 flex-1">
                       <span className="flex items-center justify-between gap-2">
                         <span className="truncate text-small font-medium text-ink">{c.name}</span>

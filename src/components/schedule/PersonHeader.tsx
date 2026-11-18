@@ -4,7 +4,7 @@
 'use client'
 
 import { ChevronRight } from 'lucide-react'
-import { cx, initialsOf } from '@/components/ui'
+import { Avatar, cx, initialsOf } from '@/components/ui'
 import type { Person } from '@/components/jobs/jobTypes'
 import { hoursOf, type Sched } from './scheduleMath'
 import { attendanceOf, availabilityOf } from './scheduleStatus'
@@ -20,7 +20,8 @@ export function PersonHeader({ S, person: p, date, today, now, height, onOpen }:
   return (
     <button type="button" onClick={() => onOpen(p)} title={`${p.full_name} · ${role}${avail.detail ? ` · ${avail.detail}` : ''}: open their week`}
       className="group sticky top-0 z-20 flex flex-col items-center gap-1 border-b border-l border-line bg-surface px-2.5 pt-2.5 text-center hover:bg-surface-hover" style={{ height }}>
-      <span className="grid size-8 shrink-0 place-items-center rounded-pill bg-action text-micro font-semibold text-on-action">{initialsOf(p.full_name)}</span>
+      {p.avatar_url ? <Avatar name={p.full_name} src={p.avatar_url} size="sm" />
+        : <span className="grid size-8 shrink-0 place-items-center rounded-pill bg-action text-micro font-semibold text-on-action">{initialsOf(p.full_name)}</span>}
       <span className="flex max-w-full items-center gap-0.5 text-caption font-semibold text-ink">
         <span className="truncate">{p.full_name}</span>
         <ChevronRight className="size-3 shrink-0 text-ink-3 group-hover:text-ink" aria-hidden />

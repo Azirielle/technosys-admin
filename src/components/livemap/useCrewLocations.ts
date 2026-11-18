@@ -12,6 +12,7 @@ export interface CrewLocation {
   name: string
   role: string
   phone?: string
+  avatar?: string
   lat: number
   lon: number
   /** When the phone last sent its position. */
@@ -46,12 +47,12 @@ export function useCrewLocations() {
       const now = Date.now()
       const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Manila' }).format(new Date())
       const [loc, shifts] = await Promise.all([
-        supabase.from('live_locations').select('*, profiles!technician_id(full_name, contact_number, role)'),
+        supabase.from('live_locations').select('*, profiles!technician_id(full_name, contact_number, role, avatar_url)'),
         supabase.from('work_days').select('person_id, time_in').is('time_out', null).eq('work_date', today),
       ])
       const open = new Map((shifts.data ?? []).map((s) => [s.person_id, s.time_in as string | null]))
       const list: CrewLocation[] = (loc.data ?? []).map((row) => {
-        const r = row as typeof row & { profiles: { full_name: string; contact_number: string | null; role: string } | null }
+        const r = row as typeof row & { profiles: { full_name: string; contact_number: string | null; role: string; avatar_url: string | null } | null }
         const minutesAgo = (now - new Date(r.updated_at as string).getTime()) / 60000
         const onShift = open.has(r.technician_id)
         // On duty = an open shift today and a "working" position from the last 30 minutes.
@@ -61,6 +62,7 @@ export function useCrewLocations() {
           name: r.profiles?.full_name || 'Field staff',
           role: r.profiles?.role || 'technician',
           phone: r.profiles?.contact_number || undefined,
+        avatar: r.profiles?.avatar_url || undefined,
           lat: Number(r.latitude),
           lon: Number(r.longitude),
           updatedAt: r.updated_at as string,
