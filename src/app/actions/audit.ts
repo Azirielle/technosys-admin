@@ -187,7 +187,7 @@ export async function getDtrRecords(
     // 2. Fetch Profiles (technicians and helpers)
     let profileQuery = supabaseAdmin
       .from('profiles')
-      .select('id, full_name, role, technician_level, employment_status, branch_id')
+      .select('id, full_name, role, technician_level, employment_status, branch_id, hire_date')
       .in('role', roleFilter === 'all' ? ['technician', 'helper'] : [roleFilter])
       .order('full_name');
 
@@ -329,6 +329,8 @@ export async function getDtrRecords(
         const isSunday = dayDate.getDay() === 0;
         const holiday = holidayMap.get(dateStr);
         const isHoliday = !!holiday;
+        // Days before someone was hired are never absences
+        const counts = dateStr < todayStr && !(profile.hire_date && dateStr < profile.hire_date);
 
         // Matching Schedule on this date (in Manila time)
         const sched = empScheds.find(s => {
@@ -531,7 +533,7 @@ export async function getDtrRecords(
             correctionDetails,
           });
 
-        } else if (sched && dateStr < todayStr) {
+        } else if (sched && counts) {
           // Employee had a job but did not time in
           absences += 1;
           dailyBreakdown.push({
@@ -615,7 +617,7 @@ export async function getDtrRecords(
             correctionDetails,
           });
 
-        } else if (dateStr < todayStr) {
+        } else if (counts) {
           // A Monday–Saturday workday that has passed, with no time-in, no leave and no holiday.
           absences += 1;
           dailyBreakdown.push({
@@ -664,7 +666,7 @@ export async function getDtrRecords(
             isSunday: false,
             isHoliday: false,
             status: 'off_duty',
-            notes: dateStr === todayStr ? 'No time-in yet today' : 'Upcoming day',
+            notes: dateStr === todayStr ? 'No time-in yet today' : dateStr < todayStr ? 'Before hire date' : 'Upcoming day',
             isManualEntry: false,
             isCorrected,
             correctionDetails,

@@ -61,9 +61,12 @@ export const CONDITIONS = [
 
 export type Condition = (typeof CONDITIONS)[number]['value']
 
+// Calendar days in Manila (lent Mon 7:30 AM → Thu = 3 days), the same count the overview shows
+const manilaDay = (d: Date) => Date.parse(d.toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' }))
+
 export function daysOut(b: Borrowing) {
   const end = b.returned_at ? new Date(b.returned_at) : new Date()
-  return Math.floor((end.getTime() - new Date(b.handed_over_at).getTime()) / 86400000)
+  return Math.round((manilaDay(end) - manilaDay(new Date(b.handed_over_at))) / 86400000)
 }
 
 export function isOverdue(b: Borrowing) {
