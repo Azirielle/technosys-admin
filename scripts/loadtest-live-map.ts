@@ -1,6 +1,6 @@
 // loadtest-live-map: pretends N technicians are timed in and sending their position, like the phone does
-// (lib/liveLocation.ts: upsert live_locations + a broadcast). Each signs in as itself, so the access rules run too.
-// Creates temporary accounts "Load test 01…" and deletes them at the end (also on Ctrl+C).
+// (lib/liveLocation.ts: upsert live_locations). Each signs in as itself, so the access rules run too.
+// Creates temporary accounts "Load test 01…" and deletes them at the end (also on Ctrl+C, and leftovers of a killed run at the start).
 //   npx tsx scripts/loadtest-live-map.ts [people=30] [every seconds=60] [minutes=3]
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import dotenv from "dotenv";
@@ -33,6 +33,9 @@ async function signIn(n: number): Promise<{ id: string; db: SupabaseClient }> {
 
 async function main() {
   console.log(`${people} people, a position every ${everySec} s, for ${minutes} min.`);
+  const { data: old } = await admin.auth.admin.listUsers({ perPage: 1000 });
+  ids.push(...(old?.users ?? []).filter((u) => u.email?.startsWith("loadtest-")).map((u) => u.id));
+  if (ids.length) await cleanup(); // a killed run left these behind
   const phones = [];
   for (let n = 1; n <= people; n++) phones.push(await signIn(n));
 
@@ -43,7 +46,6 @@ async function main() {
     const lat = 14.34 + (Math.random() - 0.5) * 0.2, lon = 121.0 + (Math.random() - 0.5) * 0.2; // around Las Piñas
     const { error } = await db.from("live_locations").upsert({ technician_id: id, latitude: lat, longitude: lon, status: "working", updated_at: new Date().toISOString() });
     if (error) { failed++; console.warn(error.message); return; }
-    await db.channel("fleet-tracking").send({ type: "broadcast", event: "location_update", payload: { technician_id: id, latitude: lat, longitude: lon, status: "working", action: "heartbeat" } });
     times.push(Date.now() - t0);
   };
 

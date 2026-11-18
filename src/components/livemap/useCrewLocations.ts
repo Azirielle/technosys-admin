@@ -36,39 +36,43 @@ export function useCrewLocations() {
   const [crew, setCrew] = useState<CrewLocation[]>([])
   const [loading, setLoading] = useState(true)
   const busy = useRef(false)
+  const again = useRef(false) // a change arrived while loading: load once more so the newest position shows
 
   const load = useCallback(async () => {
-    if (busy.current) return
+    if (busy.current) { again.current = true; return }
     busy.current = true
-    const now = Date.now()
-    const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Manila' }).format(new Date())
-    const [loc, shifts] = await Promise.all([
-      supabase.from('live_locations').select('*, profiles!technician_id(full_name, contact_number, role)'),
-      supabase.from('work_days').select('person_id, time_in').is('time_out', null).eq('work_date', today),
-    ])
-    const open = new Map((shifts.data ?? []).map((s) => [s.person_id, s.time_in as string | null]))
-    const list: CrewLocation[] = (loc.data ?? []).map((row) => {
-      const r = row as typeof row & { profiles: { full_name: string; contact_number: string | null; role: string } | null }
-      const minutesAgo = (now - new Date(r.updated_at as string).getTime()) / 60000
-      const onShift = open.has(r.technician_id)
-      // On duty = an open shift today and a "working" position from the last 30 minutes.
-      const status: CrewStatus = onShift && r.status === 'working' ? (minutesAgo < FRESH_MINUTES ? 'on_duty' : 'no_signal') : 'off_duty'
-      return {
-        id: r.technician_id,
-        name: r.profiles?.full_name || 'Field staff',
-        role: r.profiles?.role || 'technician',
-        phone: r.profiles?.contact_number || undefined,
-        lat: Number(r.latitude),
-        lon: Number(r.longitude),
-        updatedAt: r.updated_at as string,
-        status,
-        timeIn: open.get(r.technician_id) ?? null,
-      }
-    })
-    const order: Record<CrewStatus, number> = { on_duty: 0, no_signal: 1, off_duty: 2 }
-    list.sort((a, b) => order[a.status] - order[b.status] || a.name.localeCompare(b.name))
-    setCrew(list)
-    setLoading(false)
+    do {
+      again.current = false
+      const now = Date.now()
+      const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Manila' }).format(new Date())
+      const [loc, shifts] = await Promise.all([
+        supabase.from('live_locations').select('*, profiles!technician_id(full_name, contact_number, role)'),
+        supabase.from('work_days').select('person_id, time_in').is('time_out', null).eq('work_date', today),
+      ])
+      const open = new Map((shifts.data ?? []).map((s) => [s.person_id, s.time_in as string | null]))
+      const list: CrewLocation[] = (loc.data ?? []).map((row) => {
+        const r = row as typeof row & { profiles: { full_name: string; contact_number: string | null; role: string } | null }
+        const minutesAgo = (now - new Date(r.updated_at as string).getTime()) / 60000
+        const onShift = open.has(r.technician_id)
+        // On duty = an open shift today and a "working" position from the last 30 minutes.
+        const status: CrewStatus = onShift && r.status === 'working' ? (minutesAgo < FRESH_MINUTES ? 'on_duty' : 'no_signal') : 'off_duty'
+        return {
+          id: r.technician_id,
+          name: r.profiles?.full_name || 'Field staff',
+          role: r.profiles?.role || 'technician',
+          phone: r.profiles?.contact_number || undefined,
+          lat: Number(r.latitude),
+          lon: Number(r.longitude),
+          updatedAt: r.updated_at as string,
+          status,
+          timeIn: open.get(r.technician_id) ?? null,
+        }
+      })
+      const order: Record<CrewStatus, number> = { on_duty: 0, no_signal: 1, off_duty: 2 }
+      list.sort((a, b) => order[a.status] - order[b.status] || a.name.localeCompare(b.name))
+      setCrew(list)
+      setLoading(false)
+    } while (again.current)
     busy.current = false
   }, [supabase])
 
