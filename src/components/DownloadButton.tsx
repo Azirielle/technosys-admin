@@ -1,3 +1,4 @@
+// DownloadButton: downloads the technician app (the version marked active in app_versions). Used by /download and /technician.
 "use client"
 
 import { useState } from "react"

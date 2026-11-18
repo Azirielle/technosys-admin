@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 import { getActiveAppVersion } from "@/app/actions/app-distribution"
-import DownloadButton from "./DownloadButton"
+import DownloadButton from "@/components/DownloadButton"
 import { Smartphone, ShieldAlert, CheckCircle2, Settings } from "lucide-react"
 
 export default async function TechnicianPortalPage() {

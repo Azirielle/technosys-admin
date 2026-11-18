@@ -1,4 +1,6 @@
-import { Download, Smartphone, Info } from "lucide-react"
+import Image from "next/image"
+import { Smartphone, Info } from "lucide-react"
+import DownloadButton from "@/components/DownloadButton"
 
 export default function AppDownloadPage() {
   return (
@@ -10,7 +12,7 @@ export default function AppDownloadPage() {
           </div>
           <div className="relative z-10 flex flex-col items-center">
             <div className="w-20 h-20 bg-white rounded-2xl flex items-center justify-center shadow-lg mb-4">
-              <span className="text-3xl font-black text-blue-700 tracking-tighter">HR</span>
+              <Image src="/technocycle-logo-light.png" alt="Technocycle" width={56} height={56} className="h-14 w-auto" />
             </div>
             <h1 className="text-2xl font-black text-white tracking-tight">TechnoSys Technician App</h1>
             <p className="text-blue-100 mt-2 text-sm font-medium">Clock in, manage tickets, and track your location.</p>
@@ -23,13 +25,8 @@ export default function AppDownloadPage() {
             <p className="text-xs text-blue-700">Currently, the mobile app is only available for Android devices.</p>
           </div>
 
-          <a 
-            href="https://example.com/app-release.apk" // TODO: Replace with actual Supabase Storage URL later
-            className="w-full flex items-center justify-center gap-3 bg-blue-600 hover:bg-blue-700 text-white font-bold text-lg py-4 rounded-2xl shadow-md transition-all active:scale-[0.98]"
-          >
-            <Download className="w-6 h-6" />
-            Download APK File
-          </a>
+          {/* Downloads the version marked active in app_versions (it was a placeholder link before) */}
+          <DownloadButton />
 
           <div className="border-t border-zinc-100 pt-6">
             <h3 className="text-sm font-bold text-zinc-800 flex items-center gap-2 mb-3">
@@ -37,7 +34,7 @@ export default function AppDownloadPage() {
               Installation Instructions
             </h3>
             <ol className="text-sm text-zinc-600 space-y-3 list-decimal pl-4">
-              <li>Tap the <strong>Download APK File</strong> button above.</li>
+              <li>Tap the <strong>Download App</strong> button above.</li>
               <li>Wait for the download to finish, then tap on the downloaded file.</li>
               <li>If prompted, go to your phone settings and allow <strong>"Install unknown apps"</strong> from your browser.</li>
               <li>Tap <strong>Install</strong> and open the app to log in.</li>
