@@ -39,7 +39,6 @@ export async function createOrUpdateInventoryItem(formData: FormData) {
     const is_serialized = formData.get("is_serialized") === "true"
     const item_status = formData.get("status")?.toString() || "active"
     const total_stock = Number(formData.get("total_stock"))
-    const available_stock = Number(formData.get("available_stock"))
     const image_url = formData.get("image_url")?.toString() || null
     const imageFile = formData.get("image") as File | null
 
@@ -47,13 +46,20 @@ export async function createOrUpdateInventoryItem(formData: FormData) {
       return { error: "Tool Name is required." }
     }
 
-    if (isNaN(total_stock) || isNaN(available_stock) || total_stock < 0 || available_stock < 0) {
-      return { error: "Quantities must be non-negative numbers." }
+    if (!Number.isInteger(total_stock) || total_stock < 0) {
+      return { error: "Total owned must be a whole number, 0 or more." }
     }
 
-    if (available_stock > total_stock) {
-      return { error: "Available quantity cannot exceed total quantity in inventory." }
+    // In the warehouse = total owned minus what's lent out now (never typed in, so it can't drift)
+    let lentOut = 0
+    if (id) {
+      const { data: out, error: outErr } = await supabaseAdmin
+        .from('tool_borrowings').select('quantity').eq('tool_id', id).eq('status', 'checked_out')
+      if (outErr) throw outErr
+      lentOut = (out ?? []).reduce((sum, b) => sum + (b.quantity ?? 1), 0)
+      if (total_stock < lentOut) return { error: `Lent out right now: ${lentOut}. The total can't be less than that.` }
     }
+    const available_stock = total_stock - lentOut
 
     let dbError
     let finalImageUrl = image_url
@@ -346,63 +352,18 @@ export async function returnTool(
 ) {
   try {
     if (!(await canUseInventory(true))) return { error: NOT_ALLOWED }
-    // Fetch active assignment record
-    const { data: assign, error: assignErr } = await supabaseAdmin
-      .from('tool_borrowings')
-      .select('*, tool:tools!tool_id(name, total_stock, available_stock)')
-      .eq('id', assignmentId)
-      .single()
-
-    if (assignErr || !assign) {
-      return { error: "Handover assignment record not found." }
-    }
-
-    if (assign.status !== 'checked_out') {
-      return { error: "This tool assignment has already been processed/returned." }
-    }
-
-    const handoverQty = assign.quantity || 1
-
-    // Update assignment status and condition audit details
-    const { error: updateAssignErr } = await supabaseAdmin
-      .from('tool_borrowings')
-      .update({
-        returned_at: new Date().toISOString(),
-        status,
-        condition_on_return: conditionOnReturn,
-        condition_notes: conditionNotes?.trim() || null,
-        received_by: receivedBy || null,
-        notes: conditionNotes?.trim() || assign.notes
-      })
-      .eq('id', assignmentId)
-
-    if (updateAssignErr) throw updateAssignErr
-
-    const tool = assign.tool
-    if (!tool) throw new Error('Tool not found in inventory catalog.')
-    let nextAvailable = tool.available_stock ?? 0
-    let nextTotal = tool.total_stock ?? 0
-
-    if (status === 'returned') {
-      // Returned in usable condition -> put back in warehouse stock
-      nextAvailable = nextAvailable + handoverQty
-    } else {
-      // Lost or damaged beyond repair:
-      // It does not return to available stock, and it permanently decreases total inventory assets
-      nextTotal = Math.max(0, nextTotal - handoverQty)
-    }
-
-    // Update quantities in catalog
-    const { error: updateToolErr } = await supabaseAdmin
-      .from('tools')
-      .update({
-        total_stock: nextTotal,
-        available_stock: nextAvailable,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', assign.tool_id as string)
-
-    if (updateToolErr) throw updateToolErr
+    // One step in the database: locks the borrowing, refuses a second check-in, saves it and the stock together
+    const { data, error } = await supabaseAdmin.rpc('check_in_tool', {
+      p_borrowing_id: assignmentId, p_status: status, p_condition: conditionOnReturn,
+      p_notes: conditionNotes, p_received_by: receivedBy,
+    })
+    if (error) throw error
+    const res = data as { status: string; tool_name?: string; technician_id?: string; quantity?: number }
+    if (res.status === 'not_found') return { error: "Handover assignment record not found." }
+    if (res.status === 'already_checked_in') return { error: "This tool assignment has already been processed/returned." }
+    const tool = { name: res.tool_name }
+    const handoverQty = res.quantity ?? 1
+    const assign = { technician_id: res.technician_id }
 
     // Fetch technician name
     const { data: tech } = await supabaseAdmin

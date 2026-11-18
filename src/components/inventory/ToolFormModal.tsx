@@ -34,10 +34,6 @@ export function ToolFormModal({
   function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     const data = new FormData(e.currentTarget)
-    if (Number(data.get('available_stock')) > Number(data.get('total_stock'))) {
-      setError("'In warehouse' can't be more than the total.")
-      return
-    }
     setError(null)
     startSaving(async () => {
       const res = await createOrUpdateInventoryItem(data)
@@ -87,11 +83,8 @@ export function ToolFormModal({
               options={Object.entries(TOOL_STATUS).map(([value, s]) => ({ value, label: s.label }))}
             />
           </Field>
-          <Field label="Total owned" htmlFor="tool-total" required>
+          <Field label="Total owned" htmlFor="tool-total" required hint="In the warehouse is worked out: total minus what's lent out.">
             <Input id="tool-total" name="total_stock" type="number" min={0} required defaultValue={tool?.total_stock ?? 1} />
-          </Field>
-          <Field label="In warehouse now" htmlFor="tool-available" required hint="Not counting ones lent out">
-            <Input id="tool-available" name="available_stock" type="number" min={0} required defaultValue={tool?.available_stock ?? 1} />
           </Field>
           <Field label="Photo" htmlFor="tool-photo" hint={tool?.image_url ? 'Choose a file to replace the current photo.' : 'Optional'}>
             <Input id="tool-photo" name="image" type="file" accept="image/*" className="file:mr-3 file:rounded-pill file:border-0 file:bg-surface file:px-3 file:py-1 file:text-caption file:text-ink" />

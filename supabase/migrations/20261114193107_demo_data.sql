@@ -317,11 +317,12 @@ from (values
 ) b(n, tool_name, username, status, out_day, back_day, cond, cond_notes, fee, notes)
 join public.tools t on t.name = b.tool_name;
 
--- Available stock = total minus what is out now and what was lost.
+-- Available stock = total minus what is out now (the same rule the app keeps: a lost or damaged tool has
+-- already left the total, see 20261118205911_inventory_check_in_in_one_step).
 update public.tools t
 set available_stock = greatest(0, t.total_stock - coalesce((
       select sum(b.quantity) from public.tool_borrowings b
-      where b.tool_id = t.id and b.status in ('checked_out', 'lost')), 0))
+      where b.tool_id = t.id and b.status = 'checked_out'), 0))
 where true;
 
 -- 9. Announcements (no push) ----------------------------------------------------------------------------

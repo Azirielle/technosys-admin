@@ -2170,6 +2170,10 @@ export type Database = {
         Args: { p_approve: boolean; p_request_id: string }
         Returns: undefined
       }
+      check_in_tool: {
+        Args: { p_borrowing_id: string; p_condition: string; p_notes?: string; p_received_by?: string; p_status: string }
+        Returns: Json
+      }
       decide_review: {
         Args: { p_approve: boolean; p_note?: string; p_review_id: string }
         Returns: Json
