@@ -1,78 +1,30 @@
+// chat-support: the technicians' AI assistant. It searches the company policies (Cloudflare), then writes the answer
+// with Groq, or Cloudflare when Groq is busy. Neither provider trains on or keeps our messages (Gemini's free tier did).
+// Streams to the phone as Server-Sent Events: progress → ready → text … → done (same format the app already reads).
 import "@supabase/functions-js/edge-runtime.d.ts";
-import { GoogleGenerativeAI } from "npm:@google/generative-ai";
+import { createClient } from "npm:@supabase/supabase-js";
+import { CF_BASE, cfHeaders, embed } from "../_shared/cloudflare.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, cache-control, x-requested-with",
 };
 
-export default {
-  async fetch(req: Request) {
-    // Handle CORS preflight
-    if (req.method === "OPTIONS") {
-      return new Response("ok", { headers: corsHeaders });
-    }
+// Tried in order. The Groq secret was saved as "GROQ API KEY" (with spaces); the other spelling is accepted too.
+const WRITERS = [
+  { name: "Groq", url: "https://api.groq.com/openai/v1/chat/completions", model: "openai/gpt-oss-120b",
+    headers: () => ({ Authorization: `Bearer ${Deno.env.get("GROQ API KEY") ?? Deno.env.get("GROQ_API_KEY") ?? ""}`, "Content-Type": "application/json" }),
+    extra: { reasoning_effort: "low" } },
+  { name: "Cloudflare", url: `${CF_BASE}/v1/chat/completions`, model: "@cf/meta/llama-3.3-70b-instruct-fp8-fast", headers: cfHeaders, extra: {} },
+];
+const BUSY = "The assistant is busy right now. Please try again in a minute, or file a ticket so HR can help you. [ACTION:OPEN_TICKET_FORM]";
+const CUT_OFF = "\n\n_(The answer was cut off. Please ask again.)_";
+const NO_SEARCH = "The policy library could not be searched just now. Do not guess company rules: say you couldn't check the policies right now and suggest filing a ticket.";
+const NO_MATCH = "No matching passage was found in the company policies or manuals.";
 
-    try {
-      const { query, attachment, history } = await req.json();
-      
-      if (!query) {
-        return new Response("Missing query", { status: 400, headers: corsHeaders });
-      }
-
-      const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
-      const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
-      const geminiApiKey = Deno.env.get("GEMINI_API_KEY") ?? "";
-      
-      // In Deno Edge Functions, we instantiate a lightweight Supabase client
-      const { createClient } = await import("npm:@supabase/supabase-js");
-      const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-        global: { headers: { Authorization: req.headers.get("Authorization") ?? "" } }
-      });
-
-      // Only signed-in employees may use the assistant (each AI request costs money).
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        return new Response(JSON.stringify({ error: "Please sign in again." }), { status: 401, headers: corsHeaders });
-      }
-
-      const genAI = new GoogleGenerativeAI(geminiApiKey);
-
-      // Create a ReadableStream to stream Server-Sent Events (SSE)
-      const stream = new ReadableStream({
-        async start(controller) {
-          const sendProgress = (msg: string) => {
-            controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify({ type: "progress", message: msg })}\n\n`));
-          };
-
-          try {
-            let contextText = "No relevant documents found. Rely on your general knowledge but mention you couldn't find it in the manual.";
-
-            // STEP 1 & 2: Embed Query & Retrieve Documents (Safe Fallback)
-            try {
-              sendProgress("Understanding your question...");
-              const embeddingModel = genAI.getGenerativeModel({ model: "gemini-embedding-2" });
-              const embedResult = await embeddingModel.embedContent({
-                  content: { role: "user", parts: [{ text: query }]},
-                  outputDimensionality: 768
-              });
-              const queryEmbedding = embedResult.embedding.values;
-
-              sendProgress("Searching technical manuals...");
-              const { data: documents, error } = await supabase.rpc("match_documents", { query_embedding: queryEmbedding, match_threshold: 0.2, match_count: 3 });
-              if (error) { 
-                console.error("RAG RPC Error:", error); 
-              } else if (documents && documents.length > 0) {
-                contextText = documents.map((doc: any) => `[Source: ${doc.document_id}]\n${doc.content}`).join("\n\n");
-                sendProgress("Reading retrieved documents...");
-              }
-            } catch (ragErr) {
-              console.warn("RAG retrieval skipped, using fallback knowledge:", ragErr);
-            }
-
-            const systemPrompt = `
+const systemPrompt = (contextText: string) => `
 You are the official TechnoSys Field Support & Operations AI Assistant. 
-You communicate natively in Filipino (Tagalog/Taglish) and English. Always match the language and tone of the technician.
+You communicate natively in Filipino (Tagalog/Taglish) and English. Reply in the language of the technician's latest message: English question, English answer; Tagalog or Taglish question, Tagalog or Taglish answer.
 You are professional, concise, respectful, and direct.
 
 STRICT OPERATIONAL DOMAIN & SCOPE GUARDRAILS:
@@ -105,105 +57,105 @@ CONTEXT:
 ${contextText}
 `;
 
-            // STEP 3: Sanitize and Build Turn History
-            const userParts: any[] = [{ text: `Question: ${query}` }];
-            if (attachment && attachment.base64) {
-                userParts.push({
-                    inlineData: {
-                        data: attachment.base64,
-                        mimeType: attachment.mimeType || "image/jpeg"
-                    }
-                });
-            }
+type Msg = { role: "system" | "user" | "assistant"; content: string };
 
-            let geminiContents: any[] = [];
-            if (history && Array.isArray(history)) {
-                // Ensure strictly alternating roles (user -> model -> user)
-                // Gemini API rejects conversations starting with 'model'
-                for (const msg of history) {
-                    if (!msg.content || typeof msg.content !== "string") continue;
-                    const currentRole = msg.role === "user" ? "user" : "model";
-                    
-                    if (geminiContents.length === 0 && currentRole === "model") {
-                        // Skip initial assistant greetings so turn 0 is always user
-                        continue;
-                    }
-                    
-                    if (geminiContents.length > 0 && geminiContents[geminiContents.length - 1].role === currentRole) {
-                        geminiContents[geminiContents.length - 1].parts[0].text += "\n\n" + msg.content;
-                    } else {
-                        geminiContents.push({
-                            role: currentRole,
-                            parts: [{ text: msg.content }]
-                        });
-                    }
-                }
-            }
-
-            if (geminiContents.length > 0 && geminiContents[geminiContents.length - 1].role === "user") {
-                geminiContents[geminiContents.length - 1].parts.push(...userParts);
-            } else {
-                geminiContents.push({ role: "user", parts: userParts });
-            }
-
-            // STEP 4: Generate Answer with Failover (gemini-flash-latest -> gemini-flash-lite-latest)
-            sendProgress("Formulating the best answer...");
-            
-            let resultStream: any = null;
-            try {
-                const primaryModel = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
-                resultStream = await primaryModel.generateContentStream({
-                    contents: geminiContents,
-                    systemInstruction: { role: "system", parts: [{ text: systemPrompt }] }
-                });
-            } catch (primaryErr: any) {
-                console.warn("Primary model gemini-flash-latest failed, failing over to gemini-flash-lite-latest:", primaryErr.message);
-                try {
-                    const fallbackModel = genAI.getGenerativeModel({ model: "gemini-flash-lite-latest" });
-                    resultStream = await fallbackModel.generateContentStream({
-                        contents: geminiContents,
-                        systemInstruction: { role: "system", parts: [{ text: systemPrompt }] }
-                    });
-                } catch (fallbackErr: any) {
-                    console.error("Both primary and fallback models failed:", fallbackErr.message);
-                    throw fallbackErr;
-                }
-            }
-
-            // Signal that we are transitioning from Progress mode to Text Streaming mode
-            controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify({ type: "ready" })}\n\n`));
-
-            for await (const chunk of resultStream.stream) {
-                const chunkText = chunk.text();
-                controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify({ type: "text", text: chunkText })}\n\n`));
-            }
-
-            controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify({ type: "done" })}\n\n`));
-            controller.close();
-
-          } catch (err: any) {
-            console.error("Generation Error:", err);
-            const fallbackNotice = "I am currently unable to generate a response due to temporary service load. I have flagged this ticket for Admin review so our team can assist you directly.";
-            
-            controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify({ type: "ready" })}\n\n`));
-            controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify({ type: "text", text: fallbackNotice })}\n\n`));
-            controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify({ type: "done" })}\n\n`));
-            controller.close();
-          }
-        }
-      });
-
-      return new Response(stream, {
-        headers: {
-          ...corsHeaders,
-          "Content-Type": "text/event-stream",
-          "Cache-Control": "no-cache",
-          "Connection": "keep-alive"
-        }
-      });
-
-    } catch (e: any) {
-      return new Response(JSON.stringify({ error: "The AI service is temporarily unavailable. Please try again later." }), { status: 500, headers: corsHeaders });
+/** Reads an OpenAI-style streamed reply and calls onText for each piece. Returns false if nothing was written. */
+async function streamReply(res: Response, onText: (t: string) => void): Promise<boolean> {
+  const reader = res.body!.getReader(), decoder = new TextDecoder();
+  let buffer = "", wrote = false;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) return wrote;
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split("\n");
+    buffer = lines.pop() ?? "";
+    for (const line of lines) {
+      if (!line.startsWith("data:")) continue;
+      const data = line.slice(5).trim();
+      if (data === "[DONE]") return wrote;
+      const piece = JSON.parse(data).choices?.[0]?.delta?.content; // reasoning pieces (gpt-oss) are skipped
+      if (piece) { onText(piece); wrote = true; }
     }
   }
+}
+
+export default {
+  async fetch(req: Request) {
+    if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+
+    try {
+      const { query, attachment, history } = await req.json();
+      if (!query) return new Response("Missing query", { status: 400, headers: corsHeaders });
+
+      const supabase = createClient(Deno.env.get("SUPABASE_URL") ?? "", Deno.env.get("SUPABASE_ANON_KEY") ?? "", {
+        global: { headers: { Authorization: req.headers.get("Authorization") ?? "" } },
+      });
+      // Only signed-in employees may use the assistant.
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return new Response(JSON.stringify({ error: "Please sign in again." }), { status: 401, headers: corsHeaders });
+
+      const stream = new ReadableStream({
+        async start(controller) {
+          const send = (obj: unknown) => controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify(obj)}\n\n`));
+          let ready = false;
+          const text = (t: string) => { if (!ready) { send({ type: "ready" }); ready = true; } send({ type: "text", text: t }); };
+          try {
+            // 1. Search the policies for the question
+            send({ type: "progress", message: "Understanding your question..." });
+            let contextText = NO_MATCH;
+            try {
+              const [queryEmbedding] = await embed([String(query)]);
+              send({ type: "progress", message: "Searching company policies..." });
+              const { data: documents, error } = await supabase.rpc("match_documents", { query_embedding: queryEmbedding, match_threshold: 0.2, match_count: 3 });
+              if (error) throw error;
+              if (documents?.length) {
+                contextText = documents.map((d: { document_id: string; content: string }) => `[Source: ${d.document_id}]\n${d.content}`).join("\n\n");
+                send({ type: "progress", message: "Reading the matching policies..." });
+              }
+            } catch (searchErr) {
+              console.warn("Policy search failed:", (searchErr as Error).message);
+              contextText = NO_SEARCH;
+            }
+
+            // 2. The conversation: instructions, the last few messages, then the question
+            const messages: Msg[] = [{ role: "system", content: systemPrompt(contextText) }];
+            for (const m of Array.isArray(history) ? history : []) {
+              if (typeof m?.content !== "string" || !m.content) continue;
+              const role = m.role === "user" ? "user" : "assistant";
+              if (messages.length === 1 && role === "assistant") continue; // start with the technician, not the greeting
+              messages.push({ role, content: m.content });
+            }
+            // shortcut: the answer models read text only; a photo is mentioned, not seen (needs a vision model to change)
+            const photo = attachment?.base64 ? "\n\n(The technician attached a photo. You can't see photos: ask them to describe it, or to file a ticket so HR can look at it.)" : "";
+            messages.push({ role: "user", content: `Question: ${query}${photo}` });
+
+            // 3. Write the answer: Groq, else Cloudflare; never half an answer followed by a false "flagged" note
+            send({ type: "progress", message: "Formulating the best answer..." });
+            let answered = false;
+            for (const w of WRITERS) {
+              try {
+                const res = await fetch(w.url, { method: "POST", headers: w.headers(), body: JSON.stringify({ model: w.model, messages, stream: true, ...w.extra }) });
+                if (!res.ok) { console.warn(`${w.name} refused: ${res.status} ${(await res.text()).slice(0, 200)}`); continue; }
+                answered = await streamReply(res, text);
+                if (answered) break;
+              } catch (writeErr) {
+                console.warn(`${w.name} failed:`, (writeErr as Error).message);
+                if (ready) { text(CUT_OFF); answered = true; break; } // already showing part of an answer: don't start a second one
+              }
+            }
+            if (!answered) text(BUSY);
+          } catch (err) {
+            console.error("chat-support error:", err);
+            text(BUSY);
+          }
+          send({ type: "done" });
+          controller.close();
+        },
+      });
+
+      return new Response(stream, { headers: { ...corsHeaders, "Content-Type": "text/event-stream", "Cache-Control": "no-cache", "Connection": "keep-alive" } });
+    } catch {
+      return new Response(JSON.stringify({ error: "The AI service is temporarily unavailable. Please try again later." }), { status: 500, headers: corsHeaders });
+    }
+  },
 };

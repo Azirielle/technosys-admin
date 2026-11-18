@@ -1,40 +1,11 @@
 // sync-policies-rag: rebuilds the AI assistant's policy library (document_chunks) from the active policies.
 // Run after publishing a new policy version:  npx tsx scripts/sync-policies-rag.ts
-// Needs NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY and GEMINI_API_KEY in .env.local.
+// Needs NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in .env.local (search data comes from embed-text / Cloudflare).
 import { createClient } from "@supabase/supabase-js";
-import { GoogleGenerativeAI } from "@google/generative-ai";
 import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
-import dotenv from "dotenv";
-import path from "path";
+import { embedTexts } from "./embedText";
 
-dotenv.config({ path: path.join(process.cwd(), ".env.local") });
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-const geminiApiKey = process.env.GEMINI_API_KEY!;
-
-if (!supabaseUrl || !supabaseServiceKey || !geminiApiKey) {
-  console.error("Missing required environment variables in .env.local");
-  process.exit(1);
-}
-
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
-const genAI = new GoogleGenerativeAI(geminiApiKey);
-
-// 768 dimensions, matching the match_documents search.
-const embeddingModel = genAI.getGenerativeModel({ model: "gemini-embedding-2" });
-
-async function getEmbedding(text: string): Promise<number[]> {
-  try {
-    const res = await embeddingModel.embedContent({ content: { role: "user", parts: [{ text }] }, outputDimensionality: 768 } as any);
-    return res.embedding.values;
-  } catch (err: any) {
-    console.warn("Retrying with text-embedding-004...", err.message || err);
-    const fallback = genAI.getGenerativeModel({ model: "text-embedding-004" });
-    const res = await fallback.embedContent({ content: { role: "user", parts: [{ text }] }, outputDimensionality: 768 } as any);
-    return res.embedding.values;
-  }
-}
+const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
 
 /** A new version's id is "<original id>_rev_<…>". The library keeps one entry per policy, under the original id. */
 function libraryId(policyId: string) {
@@ -70,17 +41,16 @@ async function main() {
       [{ policy_id: policy.id, title: policy.title, category: policy.category, version: policy.version, target_audience: policy.target_audience }],
     );
 
-    const rows = [];
-    for (let i = 0; i < chunks.length; i++) {
-      const content = `TechnoCycle Official Policy: ${policy.title} (${policy.category})\n${chunks[i].pageContent}`;
-      rows.push({
-        document_id: docId,
-        content,
-        metadata: { ...chunks[i].metadata, chunk_index: i, total_chunks: chunks.length },
-        embedding: await getEmbedding(content),
-      });
-      await new Promise((r) => setTimeout(r, 400)); // stay under the API rate limit
-    }
+    const contents = chunks.map((c) => `TechnoCycle Official Policy: ${policy.title} (${policy.category})
+${c.pageContent}`);
+    const vectors: number[][] = [];
+    for (let i = 0; i < contents.length; i += 50) vectors.push(...(await embedTexts(contents.slice(i, i + 50))));
+    const rows = contents.map((content, i) => ({
+      document_id: docId,
+      content,
+      metadata: { ...chunks[i].metadata, chunk_index: i, total_chunks: chunks.length },
+      embedding: vectors[i],
+    }));
 
     // Replace this policy's passages only after every new one is ready.
     const { error: delErr } = await supabase.from("document_chunks").delete().eq("document_id", docId);
@@ -92,7 +62,7 @@ async function main() {
 
   // Quick check that the search still finds something.
   const { data: matches, error: rpcErr } = await supabase.rpc("match_documents", {
-    query_embedding: await getEmbedding("Do I need a medical certificate for sick leave?"),
+    query_embedding: (await embedTexts(["Do I need a medical certificate for sick leave?"]))[0],
     match_threshold: 0.25,
     match_count: 2,
   });

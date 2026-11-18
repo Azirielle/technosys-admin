@@ -2,26 +2,18 @@ import { createClient } from "@supabase/supabase-js";
 import fs from "fs";
 import path from "path";
 const pdfParse = require("pdf-parse");
-import { GoogleGenerativeAI } from "@google/generative-ai";
 import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
-import dotenv from "dotenv";
-
-dotenv.config({ path: ".env.local" });
+import { embedTexts } from "./embedText";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!; 
-const geminiApiKey = process.env.GEMINI_API_KEY!;
 
-if (!supabaseUrl || !supabaseServiceKey || !geminiApiKey) {
+if (!supabaseUrl || !supabaseServiceKey) {
   console.error("Missing required environment variables.");
   process.exit(1);
 }
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
-const genAI = new GoogleGenerativeAI(geminiApiKey);
-
-// Using the correct model name for Gemini
-const embeddingModel = genAI.getGenerativeModel({ model: "gemini-embedding-2" });
 
 async function processDocument(filePath: string) {
   const fileName = path.basename(filePath);
@@ -53,15 +45,8 @@ async function processDocument(filePath: string) {
     const batch = chunks.slice(i, i + batchSize);
     console.log(`Processing batch ${i / batchSize + 1} of ${Math.ceil(chunks.length / batchSize)}...`);
 
-    // 4. Generate embeddings using Gemini
-    const embeddings = [];
-    for (const chunk of batch) {
-      const result = await embeddingModel.embedContent({
-          content: { role: "user", parts: [{ text: chunk.pageContent }]},
-          outputDimensionality: 768 // Forcing exactly 768 dimensions!
-      });
-      embeddings.push(result.embedding.values);
-    }
+    // 4. Search data from embed-text (Cloudflare)
+    const embeddings = await embedTexts(batch.map((c) => c.pageContent));
 
     // 5. Prepare rows for Supabase
     const rows = batch.map((chunk, index) => ({
