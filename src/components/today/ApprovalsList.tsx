@@ -55,7 +55,7 @@ export function ApprovalsList({ reviews, overtime, onChanged }: { reviews: Revie
       {overtime.map((o) => (
         <Card key={o.id} className="flex flex-wrap items-center gap-3">
           <div className="min-w-0 flex-1">
-            <p className="text-small font-medium text-ink">{o.name} asks for {o.requested_hours} h overtime</p>
+            <p className="text-small font-medium text-ink">{o.name} asks for overtime{o.requested_hours >= 8 ? ' (counts until they time out)' : ` (${o.requested_hours} h)`}</p>
             <p className="text-caption text-ink-2">{o.reason}</p>
           </div>
           <Button size="sm" variant="ghost" icon={X} disabled={busy === o.id} onClick={() => ot(o, false)}>Decline</Button>

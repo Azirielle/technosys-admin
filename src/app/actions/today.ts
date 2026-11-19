@@ -46,7 +46,7 @@ export async function decideOvertime(requestId: string, approve: boolean, person
   const { data, error } = await supabase.rpc('decide_overtime', { p_request_id: requestId, p_approve: approve })
   const status = (data as { status?: string } | null)?.status
   if (error || status !== 'saved') return { ok: false, error: say(status ?? '') }
-  if (personId) await sendPushToUser(personId, approve ? 'Overtime approved' : 'Overtime not approved', `${hours} h ${approve ? 'approved' : 'not approved'} for today.`, { kind: 'overtime' })
+  if (personId) await sendPushToUser(personId, approve ? 'Overtime approved' : 'Overtime not approved', hours >= 8 ? `Your overtime today was ${approve ? 'approved: it counts until you time out' : 'not approved'}.` : `${hours} h ${approve ? 'approved' : 'not approved'} for today.`, { kind: 'overtime' })
   await logActivity('overtime_decided', 'attendance', `${approve ? 'Approved' : 'Declined'} ${hours} h overtime`)
   revalidatePath('/coordinator/today')
   return { ok: true }
