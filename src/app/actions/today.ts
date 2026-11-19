@@ -7,6 +7,7 @@ import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { verifyRoleAccess } from '@/lib/permissions'
 import { sendPushToUser } from '@/lib/push'
+import { sendSmsToUser } from '@/lib/sms'
 import { logActivity } from './activity'
 
 type Res = { ok: true } | { ok: false; error: string }
@@ -71,6 +72,7 @@ export async function setActingLead(jobId: string, personId: string, clientName:
   const status = (data as { status?: string } | null)?.status
   if (error || status !== 'saved') return { ok: false, error: say(status ?? '') }
   await sendPushToUser(personId, 'You are the acting lead', `The lead is absent today at ${clientName}. You lead the crew.`, { kind: 'acting_lead', jobId })
+  await sendSmsToUser(personId, `You are the acting lead at ${clientName} today. The lead is absent.`, 'ACTING_LEAD')
   await logActivity('acting_lead', 'jobs', `Acting lead named for ${clientName}`)
   revalidatePath('/coordinator/today')
   return { ok: true }

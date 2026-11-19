@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/server'
 import { supabaseAdmin } from '@/lib/supabase/admin'
 import { verifyRoleAccess } from '@/lib/permissions'
 import { sendPushToUser } from '@/lib/push'
+import { sendSmsToUser } from '@/lib/sms'
 
 export type AnnouncementAudience = 'all' | 'field_staff' | 'office_staff'
 export type AnnouncementStatus = 'draft' | 'scheduled' | 'published'
@@ -107,6 +108,12 @@ export async function saveAnnouncement(input: {
       .eq('lifecycle_status', 'active')
       .in('role', rolesFor(input.audience))
     await Promise.all((recipients || []).map((r) => sendPushToUser(r.id, title, content.slice(0, 150), { type: 'announcement' })))
+  }
+  // Urgent ones also go by SMS (office closed, typhoon…); normal and important stay push-only to save credits
+  if (input.status === 'published' && input.priority === 'urgent' && !wasPublished) {
+    const { data: recipients } = await supabaseAdmin
+      .from('profiles').select('id').eq('lifecycle_status', 'active').in('role', rolesFor(input.audience))
+    await Promise.all((recipients || []).map((r) => sendSmsToUser(r.id, `URGENT: ${title}. ${content}`.slice(0, 300), 'ANNOUNCEMENT')))
   }
 
   revalidatePath('/', 'layout')

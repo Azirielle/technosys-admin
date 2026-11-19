@@ -2,6 +2,7 @@
 // The database functions check that the caller is HR or the CEO (set_login_pin, decide_phone_change…).
 import { createClient } from '@/lib/supabase/client'
 import { logAdminActivity } from '@/lib/auditLogger'
+import { notifyPhoneDecision, notifyPinChanged } from '@/app/actions/notifications'
 
 type Client = ReturnType<typeof createClient>
 
@@ -41,6 +42,7 @@ export async function setPin(supabase: Client, profileId: string, name: string, 
   const { error } = await supabase.rpc('set_login_pin', { p_profile_id: profileId, p_pin: pin })
   if (error) return error.message
   log('Set mobile PIN', name)
+  notifyPinChanged(profileId).catch(() => {}) // SMS notice only, never the PIN
   return null
 }
 
@@ -48,6 +50,7 @@ export async function decidePhoneRequest(supabase: Client, requestId: string, ap
   const { error } = await supabase.rpc('decide_phone_change', { p_request_id: requestId, p_approve: approve })
   if (error) throw error
   log(approve ? 'Approved new phone' : 'Declined new phone', name)
+  notifyPhoneDecision(requestId).catch(() => {})
 }
 
 export async function resetPhone(supabase: Client, profileId: string, name: string) {

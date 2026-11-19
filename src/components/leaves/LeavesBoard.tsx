@@ -26,6 +26,7 @@ import {
   useToast,
   SkeletonTableRows,
 } from '@/components/ui'
+import { notifyLeaveDecision } from '@/app/actions/notifications'
 import { LeaveReviewModal } from './LeaveReviewModal'
 import { LeaveDeclineModal } from './LeaveDeclineModal'
 import { applicantName, type LeaveFilter, type LeaveRecord } from './types'
@@ -97,6 +98,7 @@ export function LeavesBoard() {
       toast.error(`Couldn't save the decision: ${error.message}`)
       return
     }
+    notifyLeaveDecision(leave.id).catch(() => {}) // push + SMS; a failed message doesn't undo the decision
     toast.success(`${applicantName(leave)}'s leave ${status === 'approved' ? 'approved' : 'declined'}`)
     setDeclining(false)
     setSelected(null)

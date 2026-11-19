@@ -7,6 +7,7 @@ import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { verifyRoleAccess } from '@/lib/permissions'
 import { sendPushToUser } from '@/lib/push'
+import { sendSmsToUser } from '@/lib/sms'
 import { logActivity } from './activity'
 import { clock, dateRange, type JobInput } from '@/components/jobs/jobTypes'
 import type { Json } from '@/lib/supabase/database.types'
@@ -30,11 +31,14 @@ function problemsIn(i: JobInput): string | null {
 async function notify(people: { id: string; name: string }[], title: string, body: string, jobId: string) {
   const notReached: string[] = []
   let notified = 0
+  // Where and when matter even with no mobile data; all texts go out together so Save doesn't wait for each one
+  const texts = people.map((p) => sendSmsToUser(p.id, `${title}. ${body} Open the app for details.`, 'JOB'))
   for (const p of people) {
     const res = await sendPushToUser(p.id, title, body, { jobId, kind: 'job' })
     if (res.success) notified++
     else notReached.push(p.name)
   }
+  await Promise.all(texts)
   return { notified, notReached }
 }
 
