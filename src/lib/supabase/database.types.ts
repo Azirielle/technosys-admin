@@ -2174,6 +2174,8 @@ export type Database = {
         Args: { p_borrowing_id: string; p_condition: string; p_notes?: string; p_received_by?: string; p_status: string }
         Returns: Json
       }
+      my_pin_is_own: { Args: never; Returns: boolean }
+      set_my_pin: { Args: { p_current?: string; p_new: string }; Returns: Json }
       decide_review: {
         Args: { p_approve: boolean; p_note?: string; p_review_id: string }
         Returns: Json
