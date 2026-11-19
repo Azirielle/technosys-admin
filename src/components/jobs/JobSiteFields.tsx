@@ -5,8 +5,8 @@
 
 import { useState } from 'react'
 import dynamic from 'next/dynamic'
-import { MapPin, Search } from 'lucide-react'
-import { Field, Input, Skeleton } from '@/components/ui'
+import { MapPin, Maximize2, Search } from 'lucide-react'
+import { Button, Field, IconButton, Input, Modal, Skeleton } from '@/components/ui'
 import { parseCoords } from './coords'
 
 const GeofenceMap = dynamic(() => import('@/components/dashboard/GeofenceMap'), {
@@ -19,6 +19,11 @@ type Found = { place_id?: string | number; display_name: string; lat: string; lo
 
 export function JobSiteFields({ value, onChange, pinned }: { value: SiteValue; onChange: (patch: Partial<SiteValue>) => void; pinned: boolean }) {
   const [found, setFound] = useState<Found[]>([])
+  const [big, setBig] = useState(false) // the large map window
+  const map = (
+    <GeofenceMap lat={value.site_lat} lon={value.site_lon} radius={value.site_radius_m}
+      onPositionChange={([lat, lon]) => onChange({ site_lat: lat, site_lon: lon })} />
+  )
 
   async function search(q: string) {
     onChange({ address: q })
@@ -70,9 +75,15 @@ export function JobSiteFields({ value, onChange, pinned }: { value: SiteValue; o
 
       <div className="flex flex-col gap-2">
         <div className="relative h-56 overflow-hidden rounded-control">
-          <GeofenceMap lat={value.site_lat} lon={value.site_lon} radius={value.site_radius_m}
-            onPositionChange={([lat, lon]) => onChange({ site_lat: lat, site_lon: lon })} />
+          {!big && map}
+          <IconButton icon={Maximize2} label="Bigger map" variant="secondary" size="sm"
+            onClick={() => setBig(true)} className="absolute top-2 right-2 z-10 shadow-raised" />
         </div>
+        <Modal isOpen={big} onClose={() => setBig(false)} title="Place the pin" maxWidth="5xl" contentHeight="h-[90vh]"
+          subtitle="Click the exact spot or drag the pin. The circle is where the crew can time in."
+          footer={<Button variant="primary" onClick={() => setBig(false)}>Done</Button>}>
+          <div className="relative h-full min-h-80 overflow-hidden rounded-control">{map}</div>
+        </Modal>
         {!pinned && <p className="text-caption text-warning">Search the address or click the map to place the pin.</p>}
         <label className="flex items-center gap-3 text-small text-ink-2" htmlFor="job-radius">
           <span className="shrink-0">Time-in circle</span>

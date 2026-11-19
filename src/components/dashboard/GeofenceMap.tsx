@@ -68,11 +68,10 @@ interface GeofenceMapProps {
 function MapResizer() {
   const map = useMap();
   useEffect(() => {
-    // Invalidate size after modal render to fix grey map issue
-    const timer = setTimeout(() => {
-      map.invalidateSize();
-    }, 250);
-    return () => clearTimeout(timer);
+    // Re-measure whenever the box changes size (a side panel sliding open, full screen), or the tiles fill only part of it
+    const observer = new ResizeObserver(() => map.invalidateSize());
+    observer.observe(map.getContainer());
+    return () => observer.disconnect();
   }, [map]);
   return null;
 }
