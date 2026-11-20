@@ -5,6 +5,7 @@
 import { useEffect, useRef } from 'react'
 import { ChevronLeft, ChevronRight, Plus, Search, Zap } from 'lucide-react'
 import { Button, IconButton, Input, Tabs } from '@/components/ui'
+import { HelpButton } from '@/components/help/HelpButton'
 
 export type View = 'day' | 'week' | 'list' | 'vehicles' | 'temps'
 
@@ -28,7 +29,7 @@ export function ScheduleToolbar({ view, onView, vehicles, temps, dateLabel, onSt
 
   return (
     <div className="flex flex-wrap items-center gap-3">
-      <h1 className="pr-2 text-heading font-semibold text-ink">Scheduling</h1>
+      <span className="flex items-center gap-1 pr-2"><h1 className="text-heading font-semibold text-ink">Scheduling</h1><HelpButton /></span>
       {dateLabel && (
         <div className="flex items-center gap-1.5">
           <IconButton icon={ChevronLeft} label={`Previous ${unit}`} variant="ghost" size="sm" onClick={() => onStep(-1)} />

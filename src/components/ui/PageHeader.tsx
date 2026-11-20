@@ -1,7 +1,8 @@
-// Page and PageHeader: the same padding, width and title row on every admin page.
+// Page and PageHeader: the same padding, width and title row on every admin page. The title gets a "?" (HelpButton).
 import type { LucideIcon } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { cx } from './cx'
+import { HelpButton } from '@/components/help/HelpButton'
 
 /** Scrollable page frame. Wrap every page's content in this. */
 export function Page({ wide = false, className, children }: { wide?: boolean; className?: string; children: ReactNode }) {
@@ -39,6 +40,7 @@ export function PageHeader({ title, subtitle, eyebrow, icon: Icon, badge, action
           {eyebrow && <p className="mb-1 text-caption font-medium text-ink-3">{eyebrow}</p>}
           <div className="flex flex-wrap items-center gap-2.5">
             <h1 className="text-title font-semibold text-ink">{title}</h1>
+            <HelpButton />
             {badge}
           </div>
           {subtitle && <p className="mt-1 max-w-3xl text-small text-ink-2">{subtitle}</p>}

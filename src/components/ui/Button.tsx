@@ -8,9 +8,11 @@ import { cx } from './cx'
 export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'approve' | 'decline'
 export type ButtonSize = 'sm' | 'md' | 'lg'
 
+// Every state shows: hover (colour), pressed (shrinks a little), keyboard focus (ring), disabled (faded), loading (spinner)
 const BASE =
   'inline-flex items-center justify-center gap-inline rounded-pill font-medium whitespace-nowrap select-none ' +
-  'transition-colors duration-150 cursor-pointer disabled:cursor-not-allowed disabled:opacity-45 ' +
+  'transition-[color,background-color,box-shadow,transform,opacity] duration-150 cursor-pointer active:scale-[0.97] ' +
+  'disabled:cursor-not-allowed disabled:opacity-45 disabled:active:scale-100 motion-reduce:active:scale-100 ' +
   'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus'
 
 const VARIANTS: Record<ButtonVariant, string> = {

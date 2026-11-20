@@ -1,6 +1,7 @@
 // CrewPanel: the floating list beside the map — who's on duty, search, and tap a name to fly to them.
 'use client'
 
+import { HelpButton } from '@/components/help/HelpButton'
 import { useState } from 'react'
 import { ChevronDown, ChevronUp, MapPin, Phone, RefreshCw, Search } from 'lucide-react'
 import { formatAgo, formatTime } from '@/lib/format'
@@ -31,7 +32,7 @@ export function CrewPanel({
     <section aria-label="Field crew" className="absolute top-4 left-4 z-[400] flex max-h-[calc(100%-2rem)] w-[340px] max-w-[calc(100%-2rem)] flex-col overflow-hidden rounded-card bg-surface shadow-raised">
       <header className="flex items-center justify-between gap-2 px-4 py-3">
         <div>
-          <h1 className="text-heading font-semibold text-ink">Live map</h1>
+          <span className="flex items-center gap-1"><h1 className="text-heading font-semibold text-ink">Live map</h1><HelpButton /></span>
           <p className="text-caption text-ink-2">{onDuty} on duty now</p>
         </div>
         <div className="flex gap-1">
