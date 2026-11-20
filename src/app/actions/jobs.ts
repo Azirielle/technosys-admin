@@ -169,7 +169,7 @@ export async function saveJob(input: JobInput, jobId?: string): Promise<Result> 
   const where = input.report_to === 'hq' ? 'Report to the office first.' : 'Go straight to the site.'
   const newPeople = added.filter((a) => a.person_id).map((a) => ({ id: a.person_id!, name: nameOf(a.person_id!) }))
   const stayed = personIds.filter((p) => !newPeople.some((n) => n.id === p)).map((p) => ({ id: p, name: nameOf(p) }))
-  const a = await notify(newPeople, `${input.is_vip ? 'VIP job' : 'New job'}: ${row.client_name}`, `${when}. ${where}`, id!)
+  const a = await notify(newPeople, `${input.is_vip ? 'Urgent job' : 'New job'}: ${row.client_name}`, `${when}. ${where}`, id!)
   const b = moved ? await notify(stayed, `Job moved: ${row.client_name}`, `Now ${when}. ${input.change_reason.trim()}`, id!) : { notified: 0, notReached: [] as string[] }
   const goneIds = removed.map((r) => r.person_id).filter(Boolean) as string[]
   if (goneIds.length) await notify(goneIds.map((p) => ({ id: p, name: '' })), `Removed from: ${row.client_name}`, input.change_reason.trim() || 'The Coordinator changed the crew.', id!)

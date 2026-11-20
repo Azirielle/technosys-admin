@@ -1,9 +1,9 @@
 // ScheduleToolbar: the one row above the Scheduling board, laid out like the reference: the title, the day
-// (‹ Today › and the date) on the left; the views, "Find a person" (press / to jump there) and New job on the right.
+// (‹ Today › and the date) on the left; the views, "Find a person" (press / to jump there), VIP squeeze-in and New job on the right.
 'use client'
 
 import { useEffect, useRef } from 'react'
-import { ChevronLeft, ChevronRight, Plus, Search } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Plus, Search, Zap } from 'lucide-react'
 import { Button, IconButton, Input, Tabs } from '@/components/ui'
 
 export type View = 'day' | 'week' | 'list' | 'vehicles' | 'temps'
@@ -11,10 +11,10 @@ export type View = 'day' | 'week' | 'list' | 'vehicles' | 'temps'
 type Props = {
   view: View; onView: (v: View) => void; vehicles: number; temps: number
   dateLabel: string | null; onStep: (n: number) => void; onToday: () => void
-  search: string; onSearch: (s: string) => void; canAdd: boolean; onNew: () => void
+  search: string; onSearch: (s: string) => void; canAdd: boolean; onNew: () => void; onVip: () => void
 }
 
-export function ScheduleToolbar({ view, onView, vehicles, temps, dateLabel, onStep, onToday, search, onSearch, canAdd, onNew }: Props) {
+export function ScheduleToolbar({ view, onView, vehicles, temps, dateLabel, onStep, onToday, search, onSearch, canAdd, onNew, onVip }: Props) {
   const find = useRef<HTMLInputElement>(null)
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -43,6 +43,7 @@ export function ScheduleToolbar({ view, onView, vehicles, temps, dateLabel, onSt
           { value: 'vehicles', label: 'Vehicles', count: vehicles }, { value: 'temps', label: 'Helpers', count: temps },
         ]} />
         {dateLabel && <Input ref={find} icon={Search} size="sm" className="w-full sm:w-48" placeholder="Find a person  ( / )" aria-label="Find a person" value={search} onChange={(e) => onSearch(e.target.value)} />}
+        {canAdd && <Button variant="secondary" size="sm" icon={Zap} className="text-warning" onClick={onVip}>VIP squeeze-in</Button>}
         {canAdd && <Button variant="primary" size="sm" icon={Plus} onClick={onNew}>New job</Button>}
       </div>
     </div>

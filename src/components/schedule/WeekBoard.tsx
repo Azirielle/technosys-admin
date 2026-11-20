@@ -7,7 +7,7 @@ import type { CSSProperties } from 'react'
 import { Avatar, cx, initialsOf } from '@/components/ui'
 import type { Job, Person } from '@/components/jobs/jobTypes'
 import { addDays, atRisk, checksOf, dayNumber, isFree, jobsOf, leaveOf, roleOn, clock12, weekdayShort, type Sched } from './scheduleMath'
-import { JOB_TONE } from './scheduleStyles'
+import { JOB_TONE, VIP_TONE } from './scheduleStyles'
 import { VipTag } from '@/components/jobs/VipTag'
 
 type Props = {
@@ -54,7 +54,7 @@ export function WeekBoard({ S, people, monday, date, today, now, freeOn, onToggl
                 const risk = atRisk(S, j, d, today, now).includes(p.full_name), check = checksOf(S, j, d).length > 0
                 return (
                   <button key={j.id} type="button" onClick={() => onOpenJob(j)} title={`${j.client_name} · ${clock12(j.start_time)} – ${clock12(j.end_time)}`}
-                    className={cx('flex min-w-0 items-baseline gap-1.5 rounded-chip px-2 py-1 text-left text-caption', JOB_TONE[j.status],
+                    className={cx('flex min-w-0 items-baseline gap-1.5 rounded-chip px-2 py-1 text-left text-caption', JOB_TONE[j.status], j.is_vip && j.status !== 'cancelled' && VIP_TONE,
                       risk ? 'ring-2 ring-inset ring-danger' : check ? 'ring-2 ring-inset ring-warning' : '')}>
                     {roleOn(j, p.id) === 'lead' && <span className="shrink-0 rounded px-1 text-[10px] font-bold text-ink-2 ring-1 ring-inset ring-line-strong">L</span>}
                     {j.is_vip && <VipTag />}<b className="min-w-0 truncate font-semibold text-ink">{j.client_name}</b>

@@ -10,6 +10,9 @@ export const JOB_TONE: Record<JobStatus, string> = {
   cancelled: 'bg-surface-soft border-l-[3px] border-l-ink-3 opacity-60',
 }
 
+/** A VIP squeeze-in stands out on the boards: yellow edge and fill */
+export const VIP_TONE = 'border-l-warning bg-warning-soft hover:bg-warning-soft'
+
 export const STATUS_PILL: Record<Tone, string> = {
   neutral: 'bg-surface-soft text-ink-2',
   info: 'bg-info-soft text-info',

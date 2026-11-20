@@ -109,7 +109,7 @@ export function JobFormDrawer({ open, job, prefill, people, temps, vehicles, off
   const crew: CrewValue = form
 
   return (
-    <Drawer isOpen={open} onClose={onClose} width="xl" title={job ? `Change: ${job.client_name}` : 'New job'}
+    <Drawer isOpen={open} onClose={onClose} width="xl" title={job ? `Change: ${job.client_name}` : form.is_vip ? 'VIP squeeze-in' : 'New job'}
       subtitle="The crew gets a push when you save."
       footer={
         <>

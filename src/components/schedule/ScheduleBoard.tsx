@@ -93,6 +93,12 @@ export function ScheduleBoard({ readOnly = false }: { readOnly?: boolean }) {
     setPerson(null)
     setForm({ open: true, job: null, prefill: { start_date: day, end_date: day, start_time: start, end_time: end, ...who } })
   }
+  // VIP squeeze-in: the job form with VIP ticked, on the day shown, from the next half hour (2 hours long)
+  function vipJob() {
+    const m = date === today ? Math.min(Math.ceil(now / 30) * 30, 21 * 60) : 8 * 60
+    const hm = (x: number) => `${String(Math.floor(x / 60)).padStart(2, '0')}:${String(x % 60).padStart(2, '0')}`
+    setForm({ open: true, job: null, prefill: { is_vip: true, start_date: date, end_date: date, start_time: hm(m), end_time: hm(m + 120) } })
+  }
   const step = (n: number) => setDate(addDays(date, view === 'week' ? 7 * n : n))
   const onBoard = view === 'day' || view === 'week'
 
@@ -102,7 +108,7 @@ export function ScheduleBoard({ readOnly = false }: { readOnly?: boolean }) {
         <ScheduleToolbar view={view} onView={setView} vehicles={opts.vehicles.length} temps={tempList.filter((t) => t.status === 'active').length}
           dateLabel={onBoard ? (view === 'week' ? weekLabel(weekStart(date)) : `${longDate(date)}${date === today ? ' · today' : ''}`) : null}
           onStep={step} onToday={() => { setDate(today); setFreeOn(null) }} search={search} onSearch={setSearch}
-          canAdd={!readOnly && !loading} onNew={() => setForm({ open: true, job: null })} />
+          canAdd={!readOnly && !loading} onNew={() => setForm({ open: true, job: null })} onVip={vipJob} />
         {onBoard && (
           <div className="flex flex-wrap items-center gap-x-6 gap-y-2 border-y border-line py-2">
             <span className="flex items-center gap-2">

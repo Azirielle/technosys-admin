@@ -7,7 +7,7 @@
 import { cx } from '@/components/ui'
 import type { Job } from '@/components/jobs/jobTypes'
 import { atRisk, checksOf, clock12, roleOn, type Sched } from './scheduleMath'
-import { JOB_STATUS_WORD, JOB_TONE } from './scheduleStyles'
+import { JOB_STATUS_WORD, JOB_TONE, VIP_TONE } from './scheduleStyles'
 import { VipTag } from '@/components/jobs/VipTag'
 
 type Props = {
@@ -34,7 +34,7 @@ export function DayJobCard({ S, job: j, personId, personName, date, today, now, 
   return (
     <button type="button" onClick={() => onOpen(j)} onMouseEnter={() => onHover(j.id)} onMouseLeave={() => onHover(null)} onFocus={() => onHover(j.id)} onBlur={() => onHover(null)}
       title={tip}
-      className={cx('absolute z-[1] flex flex-col justify-center overflow-hidden rounded-control px-2 py-1 text-left shadow-card', JOB_TONE[j.status],
+      className={cx('absolute z-[1] flex flex-col justify-center overflow-hidden rounded-control px-2 py-1 text-left shadow-card', JOB_TONE[j.status], j.is_vip && j.status !== 'cancelled' && VIP_TONE,
         problem?.danger ? 'ring-2 ring-inset ring-danger' : problem ? 'ring-2 ring-inset ring-warning' : '',
         highlighted && 'shadow-raised outline outline-2 outline-offset-1 outline-info')}
       style={{ top: top + 2, height: height - 4, left: `calc(${(lane / lanes) * 100}% + 4px)`, width: `calc(${100 / lanes}% - 8px)` }}>
