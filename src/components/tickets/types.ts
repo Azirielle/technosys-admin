@@ -75,3 +75,12 @@ export function matchesFilter(ticket: Ticket, filter: TicketFilter) {
   if (filter === 'done') return isFinished(ticket)
   return true
 }
+
+type TicketRow = { title: string | null; handling_mode: string | null; ticket_comments: { sender_role: string | null; is_internal: boolean | null; created_at: string | null }[] }
+/** HR owes the next reply: nobody has answered yet, or the technician wrote last. A Techy chat HR hasn't taken over
+ *  doesn't count: Techy is answering it (technicians often just ask Techy how the app works). */
+export function waitingForHr(t: TicketRow): boolean {
+  if (t.title === 'Support Conversation' && t.handling_mode !== 'ADMIN') return false
+  const last = t.ticket_comments.filter((c) => !c.is_internal).sort((a, b) => (a.created_at ?? '').localeCompare(b.created_at ?? '')).at(-1)
+  return !last || last.sender_role === 'technician'
+}

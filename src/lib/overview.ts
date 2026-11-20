@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { waitingForHr } from '@/components/tickets/types'
 
 /** "Today" for Technocycle is Philippine time (UTC+8), whatever the server's own time zone. */
 function manilaDayBounds(now = new Date()) {
@@ -9,6 +10,7 @@ function manilaDayBounds(now = new Date()) {
 }
 
 const OPEN_TICKET_STATUSES = ['open', 'in_progress']
+
 const REQUIRED_201 = ['has_sss_id', 'has_philhealth_id', 'has_pagibig_id', 'has_nbi_clearance', 'has_resume', 'has_medical_clearance'] as const
 
 export interface Overview {
@@ -19,7 +21,8 @@ export interface Overview {
   flaggedPunchesToday: number
   pendingLeaves: { id: string; name: string; type: string; start: string; end: string; filed: string }[]
   pendingOvertime: number
-  openTickets: { id: string; name: string; title: string; category: string; status: string; filed: string }[]
+  /** waiting: HR owes the next reply (see waitingForHr) */
+  openTickets: { id: string; name: string; title: string; category: string; status: string; filed: string; waiting: boolean }[]
   jobsToday: { id: string; client: string; location: string; start: string; status: string; lead: string; hasLead: boolean; crew: number }[]
   toolsOut: { id: string; tool: string; name: string; qty: number; since: string }[]
   outOfStock: string[]
@@ -55,7 +58,7 @@ export async function getOverview(): Promise<Overview> {
     supabase.from('overtime_requests').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
     supabase
       .from('tickets')
-      .select('id, employee_id, title, category, status, created_at')
+      .select('id, employee_id, title, category, status, created_at, handling_mode, ticket_comments ( sender_role, is_internal, created_at )')
       .in('status', OPEN_TICKET_STATUSES)
       .eq('is_archived', false)
       .order('created_at', { ascending: false }), // newest first (lists); the oldest is the last one
@@ -113,6 +116,7 @@ export async function getOverview(): Promise<Overview> {
       category: t.category || 'General',
       status: t.status || 'open',
       filed: t.created_at as string,
+      waiting: waitingForHr(t),
     })),
     jobsToday: (jobs.data || []).map((j) => ({
       id: j.id,
