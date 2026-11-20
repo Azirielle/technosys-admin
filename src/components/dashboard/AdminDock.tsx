@@ -393,63 +393,34 @@ export function AdminDock({
               )
             })}
 
-            {/* Quick Actions Trigger */}
+          </nav>
+        </div>
+
+        {/* Bottom Section: Quick actions + light/dark icons, then the profile (the menu pin is the icon beside the logo) */}
+        <div className="flex shrink-0 flex-col gap-1.5 pt-3 border-t border-line relative">
+          {/* Quick actions and light/dark: icons side by side (they stack when the menu is collapsed) */}
+          <div className="flex flex-wrap items-center gap-1 px-0.5">
             <button
               id="btn-dock-quick-actions"
               type="button"
               onClick={() => window.dispatchEvent(new CustomEvent('open-quick-actions'))}
-              title="Quick Actions (Ctrl+K)"
-              className="flex items-center justify-between px-2.5 py-2.5 rounded-pill text-ink-2 hover:text-ink hover:bg-surface-soft transition-colors duration-200 cursor-pointer w-full group/qa"
+              title="Quick actions (Ctrl K)"
+              aria-label="Quick actions (Ctrl K)"
+              className="flex size-9 items-center justify-center rounded-pill text-ink-2 hover:text-ink hover:bg-surface-soft transition-colors cursor-pointer"
             >
-              <div className="flex items-center gap-3.5 min-w-0">
-                <div className="w-5 h-5 flex items-center justify-center shrink-0">
-                  <Command className="w-4 h-4" />
-                </div>
-                <span
-                  className={`text-small font-medium whitespace-nowrap ${
- isPinned ? 'opacity-100' : 'opacity-0 group-hover/dock:opacity-100'
- } transition-opacity duration-200 delay-75`}
-                >
-                  Quick actions
-                </span>
-              </div>
-              <span
-                className={`text-micro font-mono px-1.5 py-0.5 rounded-chip bg-surface-soft text-ink-3 ${
- isPinned ? 'opacity-100' : 'opacity-0 group-hover/dock:opacity-100'
- } transition-opacity duration-200 delay-75 shrink-0`}
-              >
-                Ctrl K
-              </span>
+              <Command className="w-4 h-4" />
             </button>
-          </nav>
-        </div>
-
-        {/* Bottom Section: Theme Switcher & Administrator Profile (the menu pin is the icon beside the logo) */}
-        <div className="flex shrink-0 flex-col gap-1.5 pt-3 border-t border-line relative">
-          {/* Theme Switcher Button */}
-          <button
-            id="btn-theme-toggle"
-            type="button"
-            onClick={toggleTheme}
-            title={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-            aria-label={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-            className="flex items-center gap-3.5 px-2.5 py-2 rounded-pill text-ink-2 hover:text-ink hover:bg-surface-soft transition-colors cursor-pointer w-full overflow-hidden"
-          >
-            <div className="w-5 h-5 flex items-center justify-center shrink-0">
-              {isDark ? (
-                <Sun className="w-4 h-4" />
-              ) : (
-                <Moon className="w-4 h-4" />
-              )}
-            </div>
-            <span
-              className={`text-small font-medium whitespace-nowrap ${
- isPinned ? 'opacity-100' : 'opacity-0 group-hover/dock:opacity-100'
- } transition-opacity duration-200 delay-75`}
+            <button
+              id="btn-theme-toggle"
+              type="button"
+              onClick={toggleTheme}
+              title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+              aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+              className="flex size-9 items-center justify-center rounded-pill text-ink-2 hover:text-ink hover:bg-surface-soft transition-colors cursor-pointer"
             >
-              {isDark ? 'Light mode' : 'Dark mode'}
-            </span>
-          </button>
+              {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+            </button>
+          </div>
 
           {/* Profile Avatar & Menu */}
           <button

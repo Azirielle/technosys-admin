@@ -1,5 +1,9 @@
-// Avatar and AvatarStack: a person's photo, or their initials when there's no photo.
-import type { ReactNode } from 'react'
+// Avatar and AvatarStack: a person's photo, or their initials when there's no photo. Without `src`, the photo is
+// looked up by name (lib/profilePhotos), so every list shows the photo set in the app.
+'use client'
+
+import { useEffect, useState, type ReactNode } from 'react'
+import { loadProfilePhotos } from '@/lib/profilePhotos'
 import { cx } from './cx'
 
 const SIZES = {
@@ -31,11 +35,19 @@ export function Avatar({
   size?: AvatarSize
   className?: string
 }) {
+  const [found, setFound] = useState<string | null>(null)
+  useEffect(() => {
+    if (src) return
+    let live = true
+    loadProfilePhotos().then((m) => { if (live) setFound(m.get(name.trim().toLowerCase()) ?? null) })
+    return () => { live = false }
+  }, [src, name])
+  const photo = src || found
   const box = cx('inline-flex shrink-0 items-center justify-center overflow-hidden rounded-pill', SIZES[size], className)
-  if (src) {
+  if (photo) {
     // Profile photos come from Supabase storage; a plain <img> avoids image-domain setup.
     // eslint-disable-next-line @next/next/no-img-element
-    return <img src={src} alt={name} className={cx(box, 'object-cover')} />
+    return <img src={photo} alt={name} className={cx(box, 'object-cover')} />
   }
   return (
     <span className={cx(box, 'bg-surface-soft font-semibold text-ink-2')} aria-label={name} role="img">
