@@ -5,7 +5,7 @@ import { TicketRowSkeleton } from '@/components/loading/PageSkeletons'
 import { Bot, MessageSquare, UserRound } from 'lucide-react'
 import { formatTimeAgo } from '@/lib/hr-status'
 import { Avatar, Badge, EmptyState, cx, SkeletonArea } from '@/components/ui'
-import { employeeName, ticketStatus, type Ticket } from './types'
+import { employeeName, ticketRef, ticketStatus, type Ticket } from './types'
 
 export function TicketList({
   tickets,
@@ -53,7 +53,7 @@ export function TicketList({
                   <Badge tone={status.tone}>{status.label}</Badge>
                 </span>
                 <span className="mt-0.5 flex items-center justify-between gap-2 text-caption text-ink-2">
-                  <span className="truncate">{employeeName(ticket)} · {ticket.category}</span>
+                  <span className="truncate"><span className="font-mono text-ink-3">{ticketRef(ticket)}</span> · {employeeName(ticket)} · {ticket.category}</span>
                   <span className="shrink-0 text-ink-3">{formatTimeAgo(ticket.created_at)}</span>
                 </span>
                 <span className="mt-1.5 inline-flex items-center gap-1 text-micro font-medium text-ink-3">

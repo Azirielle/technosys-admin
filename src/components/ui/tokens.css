@@ -125,16 +125,16 @@
   --text-title: 24px;
   --text-title--line-height: 1.2;
   --text-title--letter-spacing: -0.02em;
-  --text-heading: 17px;
+  --text-heading: 18px;
   --text-heading--line-height: 1.35;
   --text-heading--letter-spacing: -0.015em;
-  --text-body: 14px;
+  --text-body: 15px;
   --text-body--line-height: 1.5;
-  --text-small: 13px;
+  --text-small: 14px;
   --text-small--line-height: 1.45;
-  --text-caption: 12px;
+  --text-caption: 13px;
   --text-caption--line-height: 1.4;
-  --text-micro: 11px;
+  --text-micro: 12px;
   --text-micro--line-height: 1.35;
 
   /* Spacing → p-card, px-page, gap-section … (all on the 4px grid) */

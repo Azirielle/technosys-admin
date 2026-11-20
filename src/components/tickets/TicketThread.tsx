@@ -7,7 +7,7 @@ import { ArrowLeft, Check, MessageSquare, UserRound, X } from 'lucide-react'
 import { Badge, Button, EmptyState, IconButton } from '@/components/ui'
 import { ChatMessage, TypingBubble } from './ChatMessage'
 import { ReplyBox } from './ReplyBox'
-import { employeeName, isFinished, ticketRef, ticketStatus, type PeerTyping, type Ticket, type TicketMessage } from './types'
+import { employeeName, isFinished, ticketStatus, type PeerTyping, type Ticket, type TicketMessage } from './types'
 
 /** The mobile app saves this text when a chat starts with the AI and has no real description. */
 const AI_CHAT_PLACEHOLDER = 'User initiated an AI support chat.'
@@ -71,8 +71,6 @@ export function TicketThread({
           <IconButton icon={ArrowLeft} label="Back to tickets" size="sm" className="md:hidden" onClick={onBack} />
           <div className="min-w-0">
             <p className="flex flex-wrap items-center gap-2 text-caption text-ink-3">
-              <span className="font-mono">{ticketRef(ticket)}</span>
-              <span>·</span>
               <span>{ticket.category}</span>
               <span>·</span>
               <span>from {name}</span>

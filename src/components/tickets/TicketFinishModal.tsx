@@ -1,4 +1,5 @@
 // TicketFinishModal: asks for a short note to the employee before marking a ticket resolved or closed.
+// The placeholder is a suggested note made from the ticket; Tab in the empty box types it in.
 'use client'
 
 import { useEffect, useState } from 'react'
@@ -10,13 +11,13 @@ const COPY = {
   resolved: {
     title: 'Mark this ticket resolved?',
     label: 'Note to the employee',
-    placeholder: 'We corrected your time-in for 12 Nov. It now shows 8:02 AM.',
+    suggest: (t: Ticket) => `Your concern "${t.title}" is fixed. Please check it in the app and reply here if something is still wrong.`,
     button: 'Mark resolved',
   },
   closed: {
     title: 'Close this ticket?',
     label: 'Reason for closing',
-    placeholder: 'Same concern as ticket #3F2A91C0, which is already answered.',
+    suggest: (t: Ticket) => `Closing "${t.title}": there is nothing more HR needs to do. Ask Techy if you need help again.`,
     button: 'Close ticket',
   },
 }
@@ -38,6 +39,7 @@ export function TicketFinishModal({
   useEffect(() => setNote(''), [outcome, ticket?.id])
   if (!ticket || !outcome) return null
   const copy = COPY[outcome]
+  const suggestion = copy.suggest(ticket)
 
   return (
     <Modal
@@ -55,8 +57,9 @@ export function TicketFinishModal({
         </>
       }
     >
-      <Field label={copy.label} htmlFor="ticket-finish-note" hint="The employee sees this in the app.">
-        <Textarea id="ticket-finish-note" rows={3} value={note} onChange={(e) => setNote(e.target.value)} placeholder={copy.placeholder} />
+      <Field label={copy.label} htmlFor="ticket-finish-note" hint="The employee sees this in the app. Press Tab to use the suggestion.">
+        <Textarea id="ticket-finish-note" rows={3} value={note} onChange={(e) => setNote(e.target.value)} placeholder={suggestion}
+          onKeyDown={(e) => { if (e.key === 'Tab' && !e.shiftKey && !note.trim()) { e.preventDefault(); setNote(suggestion) } }} />
       </Field>
     </Modal>
   )
