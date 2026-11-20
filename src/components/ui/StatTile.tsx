@@ -22,6 +22,7 @@ export function StatTile({
   tone = 'neutral',
   icon: Icon,
   href,
+  onClick,
   className,
   loading = false,
 }: {
@@ -36,13 +37,15 @@ export function StatTile({
   tone?: Tone
   icon?: LucideIcon
   href?: string
+  /** Instead of href: show something on this page (e.g. the list behind the number). */
+  onClick?: () => void
   className?: string
 }) {
   const body = (
     <div
       className={cx(
         'h-full rounded-card bg-surface p-card shadow-card transition-shadow',
-        href && 'hover:shadow-raised',
+        (href || onClick) && 'hover:shadow-raised',
         className,
       )}
     >
@@ -69,6 +72,11 @@ export function StatTile({
         </>
       )}
     </div>
+  )
+  if (onClick) return (
+    <button type="button" onClick={onClick} className="block w-full cursor-pointer rounded-card text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus">
+      {body}
+    </button>
   )
   if (!href) return body
   return (

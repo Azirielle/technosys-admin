@@ -1,4 +1,4 @@
-// TempWorkersPanel: the "Temporary workers" tab: helpers hired per job who don't use the app. Search, active /
+// TempWorkersPanel: the "Helpers" tab: helpers hired per job who don't use the app. Search, active /
 // inactive, add, edit, turn on or off. Active ones can be put on a crew in the job form.
 'use client'
 
@@ -38,13 +38,13 @@ export function TempWorkersPanel({ workers, readOnly, onChanged }: { workers: Te
           { value: 'all', label: 'All', count: workers.length },
         ]} />
         <div className="flex flex-wrap gap-2">
-          <Input icon={Search} className="w-full sm:w-64" aria-label="Search temporary workers" placeholder="Search name or number" value={search} onChange={(e) => setSearch(e.target.value)} />
+          <Input icon={Search} className="w-full sm:w-64" aria-label="Search helpers" placeholder="Search name or number" value={search} onChange={(e) => setSearch(e.target.value)} />
           {!readOnly && <Button variant="secondary" icon={Plus} onClick={() => setEditing(null)}>Add worker</Button>}
         </div>
       </div>
       <TableContainer>
         {shown.length === 0 ? (
-          <EmptyState icon={Users} title="No temporary workers here" description="Add helpers you hire per job so you can put them on a crew." />
+          <EmptyState icon={Users} title="No helpers here" description="Add helpers you hire per job so you can put them on a crew." />
         ) : (
           <Table>
             <TableHead><tr>

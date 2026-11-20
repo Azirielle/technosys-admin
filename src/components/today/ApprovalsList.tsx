@@ -58,8 +58,8 @@ export function ApprovalsList({ reviews, overtime, onChanged }: { reviews: Revie
             <p className="text-small font-medium text-ink">{o.name} asks for overtime{o.requested_hours >= 8 ? ' (counts until they time out)' : ` (${o.requested_hours} h)`}</p>
             <p className="text-caption text-ink-2">{o.reason}</p>
           </div>
-          <Button size="sm" variant="ghost" icon={X} disabled={busy === o.id} onClick={() => ot(o, false)}>Decline</Button>
-          <Button size="sm" variant="primary" icon={Check} loading={busy === o.id} onClick={() => ot(o, true)}>Approve</Button>
+          <Button size="sm" variant="decline" icon={X} disabled={busy === o.id} onClick={() => ot(o, false)}>Decline</Button>
+          <Button size="sm" variant="approve" icon={Check} loading={busy === o.id} onClick={() => ot(o, true)}>Approve</Button>
         </Card>
       ))}
       {reviews.map((r) => {
@@ -82,8 +82,8 @@ export function ApprovalsList({ reviews, overtime, onChanged }: { reviews: Revie
             ) : (
               <div className="flex flex-wrap items-center justify-end gap-2">
                 {d.selfie_path && <Button size="sm" variant="ghost" icon={Camera} className="mr-auto" onClick={() => openSelfie(d.selfie_path!)}>View selfie</Button>}
-                <Button size="sm" variant="ghost" icon={X} onClick={() => { setDeclining(r.id); setNote('') }}>Decline</Button>
-                <Button size="sm" variant="primary" icon={Check} loading={busy === r.id} onClick={() => review(r, true)}>Approve</Button>
+                <Button size="sm" variant="decline" icon={X} onClick={() => { setDeclining(r.id); setNote('') }}>Decline</Button>
+                <Button size="sm" variant="approve" icon={Check} loading={busy === r.id} onClick={() => review(r, true)}>Approve</Button>
               </div>
             )}
           </Card>

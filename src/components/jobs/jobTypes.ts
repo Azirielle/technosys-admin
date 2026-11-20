@@ -83,8 +83,8 @@ export const REPORT_TO: { value: ReportTo; label: string; hint: string }[] = [
 ]
 
 export const STATUS: Record<JobStatus, { label: string; tone: Tone }> = {
-  planned: { label: 'Planned', tone: 'info' },
-  ongoing: { label: 'Ongoing', tone: 'warning' },
+  planned: { label: 'Planned', tone: 'neutral' },
+  ongoing: { label: 'In progress', tone: 'info' },
   done: { label: 'Done', tone: 'success' },
   cancelled: { label: 'Cancelled', tone: 'neutral' },
 }

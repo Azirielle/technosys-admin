@@ -32,7 +32,7 @@ export function TempWorkerModal({ isOpen, worker, onClose, onDone }: Props) {
 
   return (
     <Modal isOpen onClose={onClose} icon={UserPlus} maxWidth="md"
-      title={worker ? 'Edit temporary worker' : 'Add a temporary worker'} subtitle="For helpers hired per job who don't use the mobile app."
+      title={worker ? 'Edit helper' : 'Add a helper'} subtitle="For helpers hired per job who don't use the mobile app."
       footer={<>
         <Button variant="ghost" onClick={onClose}>Cancel</Button>
         <Button variant="primary" loading={saving} onClick={save}>{worker ? 'Save changes' : 'Add worker'}</Button>

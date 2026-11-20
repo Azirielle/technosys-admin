@@ -84,12 +84,17 @@ export async function saveJob(input: JobInput, jobId?: string): Promise<Result> 
     id = data.id
   }
 
-  // People: the wanted list vs. who is on the job now
+  // People: the wanted list vs. who is on the job now. One row per person; the driver is whoever has the vehicle.
+  const crew = input.crew_ids.filter((p) => p !== input.lead_id)
+  const helpers = input.helper_ids.filter((p) => p !== input.lead_id && !crew.includes(p))
+  const onCrew = [input.lead_id, ...crew, ...helpers]
+  const car = (p: string) => (p === input.driver_id ? input.vehicle_id : null)
   const wanted: { person_id?: string; temp_worker_id?: string; role: 'lead' | 'crew' | 'driver' | 'helper'; vehicle_id?: string | null }[] = [
-    { person_id: input.lead_id, role: 'lead' },
-    ...input.crew_ids.filter((p) => p !== input.lead_id && p !== input.driver_id).map((p) => ({ person_id: p, role: 'crew' as const })),
-    ...input.helper_ids.filter((p) => p !== input.lead_id && p !== input.driver_id).map((p) => ({ person_id: p, role: 'helper' as const })),
-    ...(input.driver_id ? [{ person_id: input.driver_id, role: 'driver' as const, vehicle_id: input.vehicle_id }] : []),
+    { person_id: input.lead_id, role: 'lead', vehicle_id: car(input.lead_id) },
+    ...crew.map((p) => ({ person_id: p, role: 'crew' as const, vehicle_id: car(p) })),
+    ...helpers.map((p) => ({ person_id: p, role: 'helper' as const, vehicle_id: car(p) })),
+    // Someone who only drives gets a 'driver' row; a lead / crew / helper who drives keeps their row with the vehicle
+    ...(input.driver_id && !onCrew.includes(input.driver_id) ? [{ person_id: input.driver_id, role: 'driver' as const, vehicle_id: input.vehicle_id }] : []),
     ...input.temp_worker_ids.map((t) => ({ temp_worker_id: t, role: 'crew' as const })),
   ]
   const { data: current } = await supabase.from('job_members').select('id, person_id, temp_worker_id, role, vehicle_id').eq('job_id', id).is('removed_at', null)

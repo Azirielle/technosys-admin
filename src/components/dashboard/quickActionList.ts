@@ -55,7 +55,6 @@ const create = (role: AdminRole, slug: string, title: string, hint: string, icon
   keywords,
   path: `/${role}/${slug}`,
   command: 'new',
-  keys: ['N'],
 })
 
 export const QUICK_ACTIONS: Record<AdminRole, QuickAction[]> = {
@@ -80,11 +79,11 @@ export const QUICK_ACTIONS: Record<AdminRole, QuickAction[]> = {
     page('hr', 'A', 'announcements', 'Announcements', 'Posted, scheduled and drafts', Megaphone, ['announcement', 'notice']),
   ],
   coordinator: [
-    create('coordinator', 'dispatch', 'New job', 'Schedule a crew for a job', CalendarPlus, ['job', 'schedule', 'dispatch', 'crew', 'assign']),
+    create('coordinator', 'jobs', 'New job', 'Schedule a crew for a job', CalendarPlus, ['job', 'schedule', 'dispatch', 'crew', 'assign']),
     create('coordinator', 'inventory', 'Add a tool', 'Add a tool to the inventory', PackagePlus, ['tool', 'add', 'inventory', 'equipment']),
     create('coordinator', 'announcements', 'New announcement', 'Write news for field or office staff', Megaphone, ['announcement', 'notice', 'post', 'memo']),
     page('coordinator', 'O', '', 'Service overview', 'Today at a glance', Home, ['overview', 'home', 'dashboard']),
-    page('coordinator', 'S', 'dispatch', 'Scheduling', 'Assign crews to jobs', Calendar, ['schedule', 'dispatch', 'jobs', 'crew']),
+    page('coordinator', 'S', 'jobs', 'Scheduling', 'Assign crews to jobs', Calendar, ['schedule', 'dispatch', 'jobs', 'crew']),
     page('coordinator', 'M', 'tracking', 'Live map', 'Where the crews are now', MapPin, ['map', 'gps', 'tracking', 'location']),
     page('coordinator', 'I', 'inventory', 'Inventory', 'Lend and check in tools', Box, ['inventory', 'tools', 'stock', 'borrow']),
     page('coordinator', 'A', 'announcements', 'Announcements', 'Posted, scheduled and drafts', Megaphone, ['announcement', 'notice']),

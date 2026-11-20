@@ -84,7 +84,7 @@ const ROLE_DEFAULTS: Record<
 > = {
   ceo: {
     rootHref: '/ceo',
-    portalTitle: 'TechnoCycle',
+    portalTitle: 'Technocycle',
     portalSubtitle: 'Executive Portal',
     defaultName: 'Carlos Mendoza',
     defaultTitle: 'Chief Executive Officer',
@@ -92,7 +92,7 @@ const ROLE_DEFAULTS: Record<
   },
   hr: {
     rootHref: '/hr',
-    portalTitle: 'TechnoCycle',
+    portalTitle: 'Technocycle',
     portalSubtitle: 'HR Department',
     defaultName: 'Helena Garcia',
     defaultTitle: 'HR Officer',
@@ -100,7 +100,7 @@ const ROLE_DEFAULTS: Record<
   },
   coordinator: {
     rootHref: '/coordinator',
-    portalTitle: 'TechnoCycle',
+    portalTitle: 'Technocycle',
     portalSubtitle: 'Service Dept',
     defaultName: 'Aileen Bautista',
     defaultTitle: 'Service Coordinator',
@@ -148,13 +148,9 @@ export function AdminDock({
 
   useEffect(() => {
     try {
-      const stored = localStorage.getItem('@technocycle_dock_pinned')
+      const stored = localStorage.getItem('@technocycle_dock_pinned_v2')
       if (stored === 'true') {
         setIsPinned(true)
-      } else if (stored === null && typeof window !== 'undefined' && window.innerWidth >= 1280) {
-        setIsPinned(true)
-        localStorage.setItem('@technocycle_dock_pinned', 'true')
-        window.dispatchEvent(new CustomEvent('dock_pinned_changed', { detail: true }))
       }
     } catch (e) {}
 
@@ -172,7 +168,7 @@ export function AdminDock({
     const next = !isPinned
     setIsPinned(next)
     try {
-      localStorage.setItem('@technocycle_dock_pinned', String(next))
+      localStorage.setItem('@technocycle_dock_pinned_v2', String(next))
     } catch (e) {}
     window.dispatchEvent(new CustomEvent('dock_pinned_changed', { detail: next }))
   }
@@ -298,7 +294,7 @@ export function AdminDock({
               <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 transition-transform duration-250 group-hover/dock:scale-105">
                 <Image
                   src={isDark ? '/technocycle-logo-dark.png' : '/technocycle-logo-light.png'}
-                  alt="TechnoCycle Logo"
+                  alt="Technocycle Logo"
                   width={36}
                   height={36}
                   className="object-contain filter drop-shadow-xs"

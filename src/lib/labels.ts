@@ -11,12 +11,15 @@ export const LEAVE_LABELS: Record<string, string> = {
   unpaid: 'Unpaid leave',
 }
 
+// Same colours everywhere: grey planned, blue in progress, green done, amber waiting on someone, red declined / late
 export const JOB_STATUS: Record<string, { label: string; tone: Tone }> = {
+  planned: { label: 'Planned', tone: 'neutral' },
   scheduled: { label: 'Scheduled', tone: 'neutral' },
-  in_progress: { label: 'In progress', tone: 'warning' },
-  ongoing: { label: 'In progress', tone: 'warning' },
+  in_progress: { label: 'In progress', tone: 'info' },
+  ongoing: { label: 'In progress', tone: 'info' },
+  done: { label: 'Done', tone: 'success' },
   completed: { label: 'Done', tone: 'success' },
-  cancelled: { label: 'Cancelled', tone: 'danger' },
+  cancelled: { label: 'Cancelled', tone: 'neutral' },
 }
 
 export const REQUEST_STATUS: Record<string, { label: string; tone: Tone }> = {

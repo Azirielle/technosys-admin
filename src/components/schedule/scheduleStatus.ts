@@ -65,7 +65,7 @@ export function needsOf(S: Sched, date: string, today: string, now: number): Nee
       const calls: NeedAction[] = late.flatMap((n) => { const ph = phoneOf(n); return ph ? [{ kind: 'call' as const, label: `Call ${first(n)}`, phone: ph }] : [] }).slice(0, 2)
       out.push({
         key: `late-${j.id}`, tone: 'danger',
-        text: `${join(late.map(first))} ${late.length > 1 ? "haven't" : "hasn't"} timed in for ${j.client_name} (started ${clock12(j.start_time)}).`
+        text: `${join(late.map(first))} ${date < today ? "didn't time" : late.length > 1 ? "haven't timed" : "hasn't timed"} in for ${j.client_name} (started ${clock12(j.start_time)}).`
           + (leadMissing ? ` ${first(lead!.name)} is the lead.` : ''),
         actions: [...calls, leadMissing ? { kind: 'today', label: 'Pick acting lead' } : { kind: 'edit', label: 'Replace someone', job: j }],
       })
@@ -82,7 +82,9 @@ export function needsOf(S: Sched, date: string, today: string, now: number): Nee
     out.push({ key: `clash-${p.id}`, tone: 'danger', text: `${first(p.full_name)} is on ${js.length} jobs at the same time: ${join(js.map((j) => `${j.client_name} (${clock12(j.start_time)})`))}.`,
       actions: js.slice(0, 2).map((j) => ({ kind: 'edit' as const, label: `Change ${short(j.client_name)}`, job: j })) })
   }
-  return out.sort((a, b) => Number(b.tone === 'danger') - Number(a.tone === 'danger'))
+  // A past day can't be fixed any more (no acting lead, no call, no crew change): show what happened, without buttons
+  const shown = date < today ? out.map((n) => ({ ...n, actions: [] })) : out
+  return shown.sort((a, b) => Number(b.tone === 'danger') - Number(a.tone === 'danger'))
 }
 
 const minsToClock = (m: number) => `${Math.floor(m / 60)}:${String(m % 60).padStart(2, '0')}`

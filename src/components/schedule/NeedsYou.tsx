@@ -4,8 +4,8 @@
 'use client'
 
 import Link from 'next/link'
-import { Phone } from 'lucide-react'
-import { cx } from '@/components/ui'
+import { Copy, Phone } from 'lucide-react'
+import { cx, useToast } from '@/components/ui'
 import type { Job } from '@/components/jobs/jobTypes'
 import type { Sched } from './scheduleMath'
 import { needsOf, type NeedAction } from './scheduleStatus'
@@ -16,18 +16,28 @@ type Props = { S: Sched; date: string; today: string; now: number; readOnly: boo
 const BTN = 'inline-flex items-center gap-1 rounded-pill bg-surface px-2.5 py-1 text-micro font-semibold text-ink ring-1 ring-inset ring-line-strong hover:bg-surface-hover'
 
 export function NeedsYou({ S, date, today, now, readOnly, onOpenJob, onEditJob }: Props) {
+  const toast = useToast()
   const needs = needsOf(S, date, today, now)
   if (!needs.length) return null
 
   function action(a: NeedAction, i: number) {
-    if (a.kind === 'call') return <a key={i} href={`tel:${a.phone}`} className={BTN}><Phone className="size-3" aria-hidden />{a.label}</a>
+    // Call opens the PC's dialer (if any); the number is shown and can be copied to dial on a phone
+    if (a.kind === 'call') return (
+      <span key={i} className="inline-flex items-center gap-1">
+        <a href={`tel:${a.phone}`} className={BTN}><Phone className="size-3" aria-hidden />{a.label} · {a.phone}</a>
+        <button type="button" className={BTN} aria-label={`Copy ${a.phone}`} title="Copy number"
+          onClick={() => navigator.clipboard.writeText(a.phone).then(() => toast.success('Number copied'), () => toast.error("Couldn't copy"))}>
+          <Copy className="size-3" aria-hidden />
+        </button>
+      </span>
+    )
     if (a.kind === 'today') return readOnly ? null : <Link key={i} href="/coordinator/today" className={BTN}>{a.label}</Link>
     if (readOnly) return <button key={i} type="button" className={BTN} onClick={() => onOpenJob(a.job)}>Open job</button>
     return <button key={i} type="button" className={BTN} onClick={() => (a.kind === 'edit' ? onEditJob(a.job) : onOpenJob(a.job))}>{a.label}</button>
   }
 
   return (
-    <PanelSection title="Needs you" count={needs.length} countTone={needs.some((n) => n.tone === 'danger') ? 'danger' : undefined}>
+    <PanelSection title={date < today ? 'What happened that day' : 'Needs you'} count={needs.length} countTone={needs.some((n) => n.tone === 'danger') ? 'danger' : undefined}>
       {needs.map((n) => (
         <div key={n.key} className={cx('flex flex-col gap-2 rounded-chip px-2.5 py-2 text-caption', n.tone === 'danger' ? 'bg-danger-soft text-danger' : 'bg-warning-soft text-warning')}>
           <p>{n.text}</p>

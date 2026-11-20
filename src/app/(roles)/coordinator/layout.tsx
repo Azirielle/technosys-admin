@@ -17,7 +17,7 @@ export default function CoordinatorLayout({ children }: { children: React.ReactN
   return (
     <AdminRoleLayout
       role="coordinator"
-      portalTitle="TechnoCycle"
+      portalTitle="Technocycle"
       portalSubtitle="Service Dept"
       navItems={navItems}
     >

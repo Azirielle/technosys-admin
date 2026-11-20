@@ -75,8 +75,8 @@ export function LeaveReviewModal({
       footer={
         isPending ? (
           <>
-            <Button variant="ghost" icon={X} onClick={onDecline} disabled={saving}>Decline</Button>
-            <Button variant="primary" icon={Check} onClick={() => onApprove(leave)} loading={saving}>Approve leave</Button>
+            <Button variant="decline" icon={X} onClick={onDecline} disabled={saving}>Decline</Button>
+            <Button variant="approve" icon={Check} onClick={() => onApprove(leave)} loading={saving}>Approve leave</Button>
           </>
         ) : (
           <Button onClick={onClose}>Close</Button>

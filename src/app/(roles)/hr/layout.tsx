@@ -19,7 +19,7 @@ export default function HRLayout({ children }: { children: React.ReactNode }) {
   return (
     <AdminRoleLayout
       role="hr"
-      portalTitle="TechnoCycle"
+      portalTitle="Technocycle"
       portalSubtitle="HR Department"
       navItems={navItems}
     >

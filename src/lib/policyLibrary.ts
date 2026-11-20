@@ -36,7 +36,7 @@ export async function addPolicyToLibrary(db: SupabaseClient, policy: LibraryPoli
     [policy.content_markdown],
     [{ policy_id: policy.id, title: policy.title, category: policy.category, version: policy.version, target_audience: policy.target_audience }],
   )
-  const contents = chunks.map((c) => `TechnoCycle Official Policy: ${policy.title} (${policy.category})\n${c.pageContent}`)
+  const contents = chunks.map((c) => `Technocycle Official Policy: ${policy.title} (${policy.category})\n${c.pageContent}`)
   const vectors: number[][] = []
   for (let i = 0; i < contents.length; i += 50) vectors.push(...(await embedTexts(contents.slice(i, i + 50))))
   const rows = contents.map((content, i) => ({

@@ -88,7 +88,7 @@ export default function GatewayPortal() {
           <div className="mb-8 p-3 rounded-2xl bg-white/8 ring-1 ring-white/10">
             <Image
               src="/technocycle-logo-light.png"
-              alt="TechnoCycle Admin"
+              alt="Technocycle Admin"
               width={64}
               height={64}
               className="rounded-xl"
@@ -101,7 +101,7 @@ export default function GatewayPortal() {
             className="text-4xl md:text-5xl font-bold tracking-[-0.03em] leading-[1.1]"
             style={{ color: 'oklch(0.97 0.005 160)' }}
           >
-            TechnoCycle
+            Technocycle
           </h1>
 
           {/* Divider */}
@@ -291,7 +291,7 @@ export default function GatewayPortal() {
             className="mt-8 text-center text-[0.75rem] leading-relaxed"
             style={{ color: 'oklch(0.64 0 0)' }}
           >
-            By continuing, you agree to TechnoCycle&apos;s{' '}
+            By continuing, you agree to Technocycle&apos;s{' '}
             <button
               type="button"
               onClick={() => handleOpenPolicy('terms_of_service')}
@@ -324,7 +324,7 @@ export default function GatewayPortal() {
           title={
             activePolicyModal === 'terms_of_service'
               ? 'TechnoSys Terms and Conditions of Use'
-              : 'TechnoCycle Employee Data Privacy Notice'
+              : 'Technocycle Employee Data Privacy Notice'
           }
           subtitle="Official Corporate Compliance Document — San Pedro, Laguna, Philippines"
           icon={ShieldCheck}

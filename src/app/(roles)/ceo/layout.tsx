@@ -16,7 +16,7 @@ export default function CEOLayout({ children }: { children: React.ReactNode }) {
   return (
     <AdminRoleLayout
       role="ceo"
-      portalTitle="TechnoCycle"
+      portalTitle="Technocycle"
       portalSubtitle="Executive Portal"
       navItems={navItems}
     >

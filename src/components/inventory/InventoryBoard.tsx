@@ -117,6 +117,7 @@ export function InventoryBoard() {
     return matchFilter && (!q || [b.tool_catalog?.name, b.profiles?.full_name, b.tool_catalog?.serial_number].some((v) => (v || '').toLowerCase().includes(q)))
   })
   const rows = tab === 'tools' ? shownTools.length : shownBorrowings.length
+  const show = (t: Tab, filter?: BorrowFilter) => { setTab(t); if (filter) setBorrowFilter(filter); setSearch(''); setPage(1) }
 
   return (
     <Page wide>
@@ -126,11 +127,12 @@ export function InventoryBoard() {
         actions={<Button variant="primary" icon={Plus} onClick={() => setToolForm({ open: true, tool: null })}>Add tool</Button>}
       />
 
+      {/* Each number opens the list behind it */}
       <StatRow>
-        <StatTile loading={loading} icon={Package} label="Tools owned" value={totals.owned} hint={`${tools.length} kinds of tools`} />
-        <StatTile loading={loading} icon={Box} label="In the warehouse" value={totals.inWarehouse} hint={totals.low ? `${totals.low} running low` : 'Stock looks fine'} tone={totals.low ? 'warning' : 'success'} />
-        <StatTile loading={loading} icon={Wrench} label="Out with crews" value={totals.out} hint={totals.overdue ? `${totals.overdue} overdue` : 'None overdue'} tone={totals.overdue ? 'danger' : 'neutral'} />
-        <StatTile loading={loading} icon={ShieldAlert} label="Damaged or lost" value={totals.problems} hint="Checked in as damaged or lost" tone={totals.problems ? 'warning' : 'neutral'} />
+        <StatTile loading={loading} icon={Package} label="Tools owned" onClick={() => show('tools')} value={totals.owned} hint={`${tools.length} kinds of tools`} />
+        <StatTile loading={loading} icon={Box} label="In the warehouse" onClick={() => show('tools')} value={totals.inWarehouse} hint={totals.low ? `${totals.low} running low` : 'Stock looks fine'} tone={totals.low ? 'warning' : 'success'} />
+        <StatTile loading={loading} icon={Wrench} label="Out with crews" onClick={() => show('borrowed', 'checked_out')} value={totals.out} hint={totals.overdue ? `${totals.overdue} overdue` : 'None overdue'} tone={totals.overdue ? 'danger' : 'neutral'} />
+        <StatTile loading={loading} icon={ShieldAlert} label="Damaged or lost" onClick={() => show('borrowed', 'problems')} value={totals.problems} hint="Checked in as damaged or lost" tone={totals.problems ? 'warning' : 'neutral'} />
       </StatRow>
 
       <div className="flex flex-wrap items-center gap-3">

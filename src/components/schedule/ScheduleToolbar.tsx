@@ -40,7 +40,7 @@ export function ScheduleToolbar({ view, onView, vehicles, temps, dateLabel, onSt
       <div className="ml-auto flex flex-wrap items-center gap-2">
         <Tabs label="View" size="sm" value={view} onChange={onView} items={[
           { value: 'day', label: 'Day' }, { value: 'week', label: 'Week' }, { value: 'list', label: 'List' },
-          { value: 'vehicles', label: 'Vehicles', count: vehicles }, { value: 'temps', label: 'Temporary workers', count: temps },
+          { value: 'vehicles', label: 'Vehicles', count: vehicles }, { value: 'temps', label: 'Helpers', count: temps },
         ]} />
         {dateLabel && <Input ref={find} icon={Search} size="sm" className="w-full sm:w-48" placeholder="Find a person  ( / )" aria-label="Find a person" value={search} onChange={(e) => onSearch(e.target.value)} />}
         {canAdd && <Button variant="primary" size="sm" icon={Plus} onClick={onNew}>New job</Button>}

@@ -18,7 +18,7 @@ type Props = { open: boolean; job: Job | null; prefill?: Partial<JobInput>; peop
 
 function fromJob(job: Job | null, hq: Office | undefined, prefill: Partial<JobInput> = {}): JobInput {
   const m = (role: string) => job?.members.filter((x) => x.role === role && x.person_id).map((x) => x.person_id!) ?? []
-  const driver = job?.members.find((x) => x.role === 'driver')
+  const driver = job?.members.find((x) => x.vehicle_id) ?? job?.members.find((x) => x.role === 'driver') // the driver may also be lead / crew
   return {
     client_name: job?.client_name ?? '', address: job?.address ?? '', project_name: job?.project_name ?? '', notes: job?.notes ?? '',
     site_lat: job?.site_lat ?? hq?.latitude ?? 14.3439, site_lon: job?.site_lon ?? hq?.longitude ?? 121.0617, site_radius_m: job?.site_radius_m ?? 150,
@@ -51,7 +51,7 @@ export function JobFormDrawer({ open, job, prefill, people, temps, vehicles, off
   if (key !== openedFor) { setOpenedFor(key); setForm(fromJob(job, offices[0], prefill)); setPinned(!!job); setChecks(null); setError(null); setStep(1) }
 
   const set = (patch: Partial<JobInput>) => { setForm((f) => ({ ...f, ...patch })); setError(null) }
-  const personIds = [form.lead_id, ...form.crew_ids, ...form.helper_ids, form.driver_id].filter(Boolean) as string[]
+  const personIds = [...new Set([form.lead_id, ...form.crew_ids, ...form.helper_ids, form.driver_id].filter(Boolean) as string[])]
 
   // Save checks, half a second after the last change to the people, dates, times or vehicle
   const checkKey = JSON.stringify([personIds, form.start_date, form.end_date, form.start_time, form.end_time, form.vehicle_id])
@@ -84,15 +84,19 @@ export function JobFormDrawer({ open, job, prefill, people, temps, vehicles, off
   // What each step still needs before Next (null = ready)
   const missing = (n: number): string | null => {
     if (n === 1) return !form.client_name.trim() ? 'Enter the client.' : !form.address.trim() ? 'Enter the address.' : !pinned ? 'Place the pin on the map.' : null
-    if (n === 2) return !(form.start_date && form.end_date && form.start_time && form.end_time) ? 'Enter the days and times.' : form.end_time <= form.start_time ? 'The end time must be after the start.' : null
-    if (n === 3) return !form.lead_id ? 'Pick the lead.' : blocked ? 'Fix the red rows first.' : null
+    if (n === 2) return !(form.start_date && form.end_date && form.start_time && form.end_time) ? 'Enter the days and times.' : form.end_time <= form.start_time ? 'The end time must be after the start.' : form.report_to === 'hq' && !form.hq_office_id ? 'Pick the office they report to.' : null
+    if (n === 3) return !form.lead_id ? 'Pick the lead.' : form.driver_id && !form.vehicle_id ? 'Pick the vehicle for the driver.' : blocked ? 'Fix the red rows first.' : null
     return null
   }
   const STEPS = ['Where', 'When', 'Who', 'Check & save']
+  // On Check & save: everything still missing, each with the step to fix it (shown at once, not only after Save)
+  const toFix = [1, 2, 3].map((n) => ({ n, text: missing(n) })).filter((x): x is { n: number; text: string } => !!x.text)
+  if (job && form.change_reason.trim().length < 5) toFix.push({ n: 4, text: 'Say why the job is changing (the crew sees it), below.' })
   const next = () => { const m = missing(step); if (m) return setError(m); setError(null); setStep(step + 1) }
   // A step can be opened when every step before it is ready; otherwise say what's missing
   const goTo = (n: number) => {
-    const m = n < step ? null : [1, 2, 3].slice(0, n - 1).map(missing).find(Boolean) ?? null
+    // Check & save always opens: it lists everything still missing, each with a "Fix in …" button
+    const m = n < step || n === STEPS.length ? null : [1, 2, 3].slice(0, n - 1).map(missing).find(Boolean) ?? null
     setError(m)
     if (!m) setStep(n)
   }
@@ -112,7 +116,7 @@ export function JobFormDrawer({ open, job, prefill, people, temps, vehicles, off
           {step > 1 && <Button variant="secondary" icon={ArrowLeft} onClick={() => { setError(null); setStep(step - 1) }}>Back</Button>}
           {step < STEPS.length
             ? <Button variant="primary" icon={ArrowRight} onClick={next} disabled={step === 3 && checking}>Next</Button>
-            : <Button variant="primary" icon={Save} loading={saving} disabled={blocked || checking} onClick={submit}>{job ? 'Save changes' : 'Save job'}</Button>}
+            : <Button variant="primary" icon={Save} loading={saving} disabled={blocked || checking || toFix.length > 0} onClick={submit}>{job ? 'Save changes' : 'Save job'}</Button>}
         </>
       }>
       <div className="flex flex-col gap-section">
@@ -153,12 +157,22 @@ export function JobFormDrawer({ open, job, prefill, people, temps, vehicles, off
 
         {step === 4 && <section className="flex flex-col gap-stack">
           <h3 className="text-small font-medium text-ink">Check & save</h3>
+          {toFix.length > 0 && (
+            <ul role="alert" className="flex flex-col gap-1.5 rounded-card bg-danger-soft p-card-sm text-small text-danger">
+              {toFix.map((f) => (
+                <li key={f.text} className="flex items-center justify-between gap-3">
+                  <span>{f.text}</span>
+                  {f.n < 4 && <Button size="sm" variant="secondary" onClick={() => { setError(null); setStep(f.n) }}>Fix in {STEPS[f.n - 1]}</Button>}
+                </li>
+              ))}
+            </ul>
+          )}
           <dl className="grid grid-cols-[8rem_1fr] gap-x-4 gap-y-2 rounded-card bg-surface-soft p-card-sm text-small">
             <dt className="text-ink-3">Where</dt><dd className="text-ink">{form.client_name} · {form.address}</dd>
             <dt className="text-ink-3">When</dt><dd className="text-ink">{dateRange(form.start_date, form.end_date)}, {clock(form.start_time)} – {clock(form.end_time)}</dd>
             <dt className="text-ink-3">Report to</dt><dd className="text-ink">{REPORT_TO.find((r) => r.value === form.report_to)?.label}</dd>
             <dt className="text-ink-3">Lead</dt><dd className="text-ink">{name(form.lead_id) ?? '—'}</dd>
-            <dt className="text-ink-3">Others</dt><dd className="text-ink">{[...form.crew_ids, ...form.helper_ids].map(name).filter(Boolean).join(', ') || 'None'}{form.driver_id ? ` · Driver: ${name(form.driver_id)}` : ''}{form.temp_worker_ids.length ? ` · ${form.temp_worker_ids.length} temporary` : ''}</dd>
+            <dt className="text-ink-3">Others</dt><dd className="text-ink">{[...form.crew_ids, ...form.helper_ids].map(name).filter(Boolean).join(', ') || 'None'}{form.driver_id ? ` · Driver: ${name(form.driver_id)}` : ''}{form.temp_worker_ids.length ? ` · ${form.temp_worker_ids.length} ${form.temp_worker_ids.length === 1 ? 'helper' : 'helpers'}` : ''}</dd>
           </dl>
           <JobChecksList checks={checks} checking={checking} extra={extra} />
         <Field label="Notes for the crew (optional)" htmlFor="job-notes"><Textarea id="job-notes" rows={2} value={form.notes} onChange={(e) => set({ notes: e.target.value })} placeholder="Bring the ladder. Gate pass at the guard house." /></Field>

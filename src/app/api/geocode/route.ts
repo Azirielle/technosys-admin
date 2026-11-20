@@ -28,7 +28,7 @@ export async function GET(request: Request) {
     const nominatimUrl = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=6&countrycodes=ph&addressdetails=1`;
     const res = await fetch(nominatimUrl, {
       headers: {
-        'User-Agent': 'TechnoCycle-Fleet/1.0 (contact@technocycle.ph)',
+        'User-Agent': 'Technocycle-Fleet/1.0 (contact@technocycle.ph)',
         'Accept-Language': 'en'
       },
       next: { revalidate: 3600 }

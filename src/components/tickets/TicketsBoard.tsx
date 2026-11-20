@@ -79,6 +79,8 @@ export function TicketsBoard() {
     setSending(true)
     sendTyping(selected.id, false)
     try {
+      // Replying to a chat Techy still answers = taking it over: Techy stops and the phone shows "HR is answering"
+      if (!internal && selected.handling_mode !== 'ADMIN') await takeOverTicket(supabase, selected)
       const saved = await sendReply(supabase, selected, reply, file, internal)
       if (saved) addMessage(saved)
       setReply('')

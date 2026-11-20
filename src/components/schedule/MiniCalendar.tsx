@@ -37,8 +37,10 @@ export function MiniCalendar({ value, today, busyDays, onPick }: Props) {
         {cells.map((d) => {
           const picked = d === value, inMonth = Number(d.slice(5, 7)) === m + 1
           return (
-            <button key={d} type="button" onClick={() => onPick(d)} aria-label={d} aria-pressed={picked}
+            <button key={d} type="button" onClick={() => onPick(d)} aria-label={d === today ? `${d} (today)` : d} aria-pressed={picked} aria-current={d === today ? 'date' : undefined}
               className={cx('relative aspect-square rounded-pill tabular-nums hover:bg-surface-hover',
+                // Today keeps a ring, so it's still easy to find after you pick another day
+                d === today && 'ring-2 ring-inset ring-info',
                 picked ? 'bg-action font-semibold text-on-action hover:bg-action' : d === today ? 'font-bold text-info' : inMonth ? 'text-ink' : 'text-ink-3')}>
               {Number(d.slice(8))}
               {busyDays.has(d) && <span className="absolute bottom-0.5 left-1/2 size-1 -translate-x-1/2 rounded-pill bg-current opacity-50" />}

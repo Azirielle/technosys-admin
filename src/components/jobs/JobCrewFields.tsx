@@ -1,5 +1,5 @@
 // JobCrewFields: the "who" part of the job form: the lead (a technician), crew and helpers, the driver with
-// a vehicle, and temporary workers (no app). Each person can be picked once.
+// a vehicle, and helpers (hired per job, no app). The driver can also be the lead or on the crew.
 'use client'
 
 import { X } from 'lucide-react'
@@ -28,10 +28,12 @@ function Chips({ ids, nameOf, onRemove }: { ids: string[]; nameOf: (id: string) 
 }
 
 export function JobCrewFields({ value, onChange, people, temps, vehicles, needsDriver }: Props) {
-  const taken = new Set([value.lead_id, ...value.crew_ids, ...value.helper_ids, value.driver_id].filter(Boolean) as string[])
+  const taken = new Set([value.lead_id, ...value.crew_ids, ...value.helper_ids].filter(Boolean) as string[])
   const nameOf = (id: string) => people.find((p) => p.id === id)?.full_name ?? temps.find((t) => t.id === id)?.full_name ?? 'Unknown'
   const free = (filter: (p: Person) => boolean) => people.filter((p) => filter(p) && !taken.has(p.id)).map((p) => ({ value: p.id, label: p.full_name, hint: level(p) }))
   const usable = vehicles.filter((v) => v.status === 'active')
+  // Driver: anyone; someone already on this job (lead / crew) can also drive
+  const drivers = people.map((p) => ({ value: p.id, label: p.full_name, hint: taken.has(p.id) ? 'On this job' : level(p) }))
 
   return (
     <div className="flex flex-col gap-stack">
@@ -41,23 +43,18 @@ export function JobCrewFields({ value, onChange, people, temps, vehicles, needsD
           placeholder="Pick the lead" emptyText="No technician free" />
       </Field>
 
-      <div className="grid grid-cols-1 gap-stack sm:grid-cols-2">
-        <Field label="Crew (technicians)" htmlFor="job-crew">
-          <SearchSelect id="job-crew" value="" onChange={(id) => id && onChange({ crew_ids: [...value.crew_ids, id] })}
-            options={free((p) => p.role === 'technician')} placeholder="Add a technician" emptyText="No one else free" />
-          <Chips ids={value.crew_ids} nameOf={nameOf} onRemove={(id) => onChange({ crew_ids: value.crew_ids.filter((x) => x !== id) })} />
-        </Field>
-        <Field label="Helpers" htmlFor="job-helpers">
-          <SearchSelect id="job-helpers" value="" onChange={(id) => id && onChange({ helper_ids: [...value.helper_ids, id] })}
-            options={free((p) => p.role === 'helper')} placeholder="Add a helper" emptyText="No helper free" />
-          <Chips ids={value.helper_ids} nameOf={nameOf} onRemove={(id) => onChange({ helper_ids: value.helper_ids.filter((x) => x !== id) })} />
-        </Field>
-      </div>
+      <Field label="Crew (technicians)" htmlFor="job-crew">
+        <SearchSelect id="job-crew" value="" onChange={(id) => id && onChange({ crew_ids: [...value.crew_ids, id] })}
+          options={free((p) => p.role === 'technician')} placeholder="Add a technician" emptyText="No one else free" />
+        <Chips ids={value.crew_ids} nameOf={nameOf} onRemove={(id) => onChange({ crew_ids: value.crew_ids.filter((x) => x !== id) })} />
+        {/* App-account helpers saved on older jobs: still shown so they can be taken off */}
+        <Chips ids={value.helper_ids} nameOf={nameOf} onRemove={(id) => onChange({ helper_ids: value.helper_ids.filter((x) => x !== id) })} />
+      </Field>
 
       <div className="grid grid-cols-1 gap-stack sm:grid-cols-2">
         <Field label="Driver" htmlFor="job-driver" hint={needsDriver && !value.driver_id ? 'Who drives? They report to the office first.' : 'Times out only after returning the vehicle.'}>
           <SearchSelect id="job-driver" value={value.driver_id ?? ''} onChange={(id) => onChange({ driver_id: id || null, vehicle_id: id ? value.vehicle_id : null })}
-            options={[...(value.driver_id ? [{ value: value.driver_id, label: nameOf(value.driver_id) }] : []), ...free(() => true)]}
+            options={drivers}
             placeholder="No driver" emptyText="No one free" />
         </Field>
         <Field label="Vehicle" htmlFor="job-vehicle" hint={usable.length ? undefined : 'Add vehicles in the Vehicles tab first.'}>
@@ -67,10 +64,10 @@ export function JobCrewFields({ value, onChange, people, temps, vehicles, needsD
         </Field>
       </div>
 
-      <Field label="Temporary workers (no app)" htmlFor="job-temps">
+      <Field label="Helpers (no app)" htmlFor="job-temps">
         <SearchSelect id="job-temps" value="" onChange={(id) => id && onChange({ temp_worker_ids: [...value.temp_worker_ids, id] })}
           options={temps.filter((t) => !value.temp_worker_ids.includes(t.id)).map((t) => ({ value: t.id, label: t.full_name, hint: t.contact_number ?? undefined }))}
-          placeholder="Add a temporary worker" emptyText="None left" />
+          placeholder="Add a helper" emptyText="None left" />
         <Chips ids={value.temp_worker_ids} nameOf={nameOf} onRemove={(id) => onChange({ temp_worker_ids: value.temp_worker_ids.filter((x) => x !== id) })} />
       </Field>
     </div>

@@ -113,7 +113,7 @@ export default function PublicPolicyView({ policy }: { policy: CompanyPolicy }) 
             </div>
             <div>
               <span className="text-micro font-semibold text-ink ">
-                TechnoCycle Corporation Compliance
+                Technocycle Corporation Compliance
               </span>
               <p className="text-xs text-ink-2 font-medium">
                 Pacita Complex, San Pedro, Laguna, Philippines
@@ -161,7 +161,7 @@ export default function PublicPolicyView({ policy }: { policy: CompanyPolicy }) 
 
         {/* Footer */}
         <div className="mt-8 text-center text-xs text-ink-3 pb-12">
-          © {new Date().getFullYear()} TechnoCycle Corporation. All official rights reserved. Operating under DOLE and NPC regulatory frameworks.
+          © {new Date().getFullYear()} Technocycle Corporation. All official rights reserved. Operating under DOLE and NPC regulatory frameworks.
         </div>
       </div>
     </div>

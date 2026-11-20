@@ -5,7 +5,7 @@ import { Loader2 } from 'lucide-react'
 import type { ButtonHTMLAttributes, ReactNode } from 'react'
 import { cx } from './cx'
 
-export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger'
+export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'approve' | 'decline'
 export type ButtonSize = 'sm' | 'md' | 'lg'
 
 const BASE =
@@ -18,6 +18,9 @@ const VARIANTS: Record<ButtonVariant, string> = {
   secondary: 'bg-surface text-ink ring-1 ring-inset ring-line-strong hover:bg-surface-hover',
   ghost: 'bg-transparent text-ink-2 hover:bg-surface-soft hover:text-ink',
   danger: 'bg-danger-solid text-white hover:opacity-90',
+  // Approve / Decline pairs: green and red at a glance, readable in light and dark
+  approve: 'bg-success-soft text-success ring-1 ring-inset ring-success/40 hover:ring-success',
+  decline: 'bg-danger-soft text-danger ring-1 ring-inset ring-danger/40 hover:ring-danger',
 }
 
 const SIZES: Record<ButtonSize, string> = {

@@ -30,10 +30,8 @@ export function AdminRoleLayout({
 
   useEffect(() => {
     try {
-      const stored = localStorage.getItem('@technocycle_dock_pinned')
+      const stored = localStorage.getItem('@technocycle_dock_pinned_v2')
       if (stored === 'true') {
-        setIsPinned(true)
-      } else if (stored === null && typeof window !== 'undefined' && window.innerWidth >= 1280) {
         setIsPinned(true)
       }
     } catch (e) {}

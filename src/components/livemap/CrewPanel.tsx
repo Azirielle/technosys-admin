@@ -92,7 +92,7 @@ export function CrewPanel({
                       </span>
                     </span>
                     {c.phone && (
-                      <a href={`tel:${c.phone}`} onClick={(e) => e.stopPropagation()} aria-label={`Call ${c.name}`} className="flex size-8 shrink-0 items-center justify-center rounded-pill text-ink-2 hover:bg-surface hover:text-ink">
+                      <a href={`tel:${c.phone}`} onClick={(e) => e.stopPropagation()} aria-label={`Call ${c.name}`} title={`Call ${c.phone}`} className="flex size-8 shrink-0 items-center justify-center rounded-pill text-ink-2 hover:bg-surface hover:text-ink">
                         <Phone className="size-4" aria-hidden />
                       </a>
                     )}
