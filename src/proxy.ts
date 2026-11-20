@@ -45,6 +45,8 @@ export async function proxy(request: NextRequest) {
     pathname.startsWith('/assets') ||
     pathname.startsWith('/icons') ||
     pathname.startsWith('/portfolio') ||
+    // Public on purpose: the Privacy notice and Terms (Google Play links to them) and the app download page
+    ['/privacy', '/terms', '/download'].includes(pathname) ||
     pathname.endsWith('.png') ||
     pathname.endsWith('.jpg') ||
     pathname.endsWith('.jpeg') ||
