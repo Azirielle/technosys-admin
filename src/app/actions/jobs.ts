@@ -42,21 +42,28 @@ async function notify(people: { id: string; name: string }[], title: string, bod
   return { notified, notReached }
 }
 
-/**
- * VIP squeeze-in: takes the VIP job's people off any other job at the same time (the same overlap rule as
- * job_save_checks' "other_job"). Each such job gets a history entry and a vip_note for "Needs you", and each person a
- * push. Returns "Jeff from Cruz Residence" lines for the Coordinator's message.
- */
-async function takeForVip(supabase: Awaited<ReturnType<typeof createClient>>, vipId: string, vipClient: string, personIds: string[], input: JobInput, userId: string): Promise<string[]> {
-  const { data } = await supabase.from('job_members')
-    .select('id, person_id, person:profiles!job_members_person_id_fkey ( full_name ), job:jobs!inner ( id, client_name, status, start_date, end_date, start_time, end_time )')
-    .in('person_id', personIds).is('removed_at', null).neq('job_id', vipId)
-  const clashes = (data ?? []).filter(({ job: j }) => ['planned', 'ongoing'].includes(j.status)
+type Supa = Awaited<ReturnType<typeof createClient>>
+
+/** VIP squeeze-in: the VIP job's people on any other job at the same time (the same overlap rule as job_save_checks' "other_job"). null = couldn't load. */
+async function vipClashes(supabase: Supa, personIds: string[], input: JobInput, vipId?: string) {
+  const { data, error } = await supabase.from('job_members')
+    .select('id, person_id, person:profiles!job_members_person_id_fkey ( full_name ), job:jobs!inner ( id, client_name, status, is_vip, start_date, end_date, start_time, end_time )')
+    .in('person_id', personIds).is('removed_at', null)
+  if (error) return null
+  return (data ?? []).filter(({ job: j }) => j.id !== vipId && ['planned', 'ongoing'].includes(j.status)
     && j.start_date <= input.end_date && j.end_date >= input.start_date
     && j.start_time.slice(0, 5) < input.end_time && j.end_time.slice(0, 5) > input.start_time)
+}
+
+/**
+ * Takes those people off their other jobs. Each such job gets a history entry and a vip_note for "Needs you", and each
+ * person a push. Returns "Jeff from Cruz Residence" lines for the Coordinator's message, or null if the move failed.
+ */
+async function takeForVip(supabase: Supa, clashes: NonNullable<Awaited<ReturnType<typeof vipClashes>>>, vipId: string, vipClient: string, userId: string): Promise<string[] | null> {
   if (!clashes.length) return []
   const now = new Date().toISOString()
-  await supabase.from('job_members').update({ removed_at: now }).in('id', clashes.map((c) => c.id))
+  const { error } = await supabase.from('job_members').update({ removed_at: now }).in('id', clashes.map((c) => c.id))
+  if (error) return null
 
   const out: string[] = []
   for (const jobId of new Set(clashes.map((c) => c.job.id))) {
@@ -91,6 +98,11 @@ export async function saveJob(input: JobInput, jobId?: string): Promise<Result> 
   if (checkErr) return { ok: false, error: "Couldn't check the crew. Try again." }
   const blocking = (checks ?? []).filter((c) => blocks(c, input.is_vip))
   if (blocking.length) return { ok: false, error: blocking.map((c) => c.detail).join(' ') }
+  const clashes = input.is_vip ? await vipClashes(supabase, personIds, input, jobId) : []
+  if (!clashes) return { ok: false, error: "Couldn't check the crew. Try again." }
+  // One VIP client never loses people to another
+  const otherVip = clashes.find((c) => c.job.is_vip)
+  if (otherVip) return { ok: false, error: `${otherVip.person?.full_name ?? 'Someone'} is on another VIP job (${otherVip.job.client_name}). Pick someone else.` }
 
   const row = {
     client_name: input.client_name.trim(), address: input.address.trim(),
@@ -139,7 +151,8 @@ export async function saveJob(input: JobInput, jobId?: string): Promise<Result> 
     if (error) return { ok: false, error: "The job was saved but the crew wasn't. Open it and save again." }
   }
 
-  const takenForVip = input.is_vip ? await takeForVip(supabase, id!, row.client_name, personIds, input, userId) : []
+  const takenForVip = await takeForVip(supabase, clashes, id!, row.client_name, userId)
+  if (!takenForVip) return { ok: false, error: "The VIP job was saved but its people weren't taken off their other jobs. Open it and save again." }
 
   // History and pushes
   const moved = !!before && (before.start_date !== input.start_date || before.end_date !== input.end_date
