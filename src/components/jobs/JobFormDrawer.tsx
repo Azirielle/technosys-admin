@@ -7,12 +7,12 @@ import { useEffect, useMemo, useState } from 'react'
 import { ArrowLeft, ArrowRight, Save } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { saveJob } from '@/app/actions/jobs'
-import { Button, Drawer, Field, Input, Select, Steps, Textarea, useToast } from '@/components/ui'
+import { Button, Checkbox, Drawer, Field, Input, Select, Steps, Textarea, useToast } from '@/components/ui'
 import { JobSiteFields, type SiteValue } from './JobSiteFields'
 import { JobCrewFields, type CrewValue } from './JobCrewFields'
 import { JobChecksList } from './JobChecksList'
 import { runSaveChecks } from './jobsData'
-import { REPORT_TO, WORK_TYPES, clock, dateRange, manilaToday, type Job, type JobInput, type Office, type Person, type SaveCheck, type TempWorker, type Vehicle } from './jobTypes'
+import { REPORT_TO, WORK_TYPES, blocks, clock, dateRange, manilaToday, type Job, type JobInput, type Office, type Person, type SaveCheck, type TempWorker, type Vehicle } from './jobTypes'
 
 type Props = { open: boolean; job: Job | null; prefill?: Partial<JobInput>; people: Person[]; temps: TempWorker[]; vehicles: Vehicle[]; offices: Office[]; onClose: () => void; onSaved: () => void }
 
@@ -28,6 +28,7 @@ function fromJob(job: Job | null, hq: Office | undefined, prefill: Partial<JobIn
     lead_id: m('lead')[0] ?? '', crew_ids: m('crew'), helper_ids: m('helper'),
     driver_id: driver?.person_id ?? null, vehicle_id: driver?.vehicle_id ?? null,
     temp_worker_ids: job?.members.filter((x) => x.temp_worker_id).map((x) => x.temp_worker_id!) ?? [],
+    is_vip: job?.is_vip ?? false,
     change_reason: '',
     // A new job started from the Scheduling board: the person, day and time already picked
     ...(job ? {} : prefill),
@@ -68,7 +69,7 @@ export function JobFormDrawer({ open, job, prefill, people, temps, vehicles, off
   const extra = [
     ...(form.report_to === 'hq' && !form.driver_id ? ['Who drives? This job reports to the office first.'] : []),
   ]
-  const blocked = (checks ?? []).some((c) => c.blocking)
+  const blocked = (checks ?? []).some((c) => blocks(c, form.is_vip))
 
   async function submit() {
     if (!pinned) return setError('Place the pin on the map.')
@@ -77,6 +78,8 @@ export function JobFormDrawer({ open, job, prefill, people, temps, vehicles, off
     setSaving(false)
     if (!res.ok) return setError(res.error)
     const total = personIds.length
+    // VIP: say who was taken from which job, so the Coordinator calls those clients
+    if (res.moved.length) toast.show(`VIP: moved ${res.moved.join('; ')}. Call those clients or replace them (see Needs you).`)
     toast.success(res.notReached.length ? `Saved. ${res.notReached.join(', ')} didn't get the push: call them.` : `Saved. ${total} ${total === 1 ? 'person' : 'people'} notified.`)
     onSaved()
   }
@@ -151,8 +154,10 @@ export function JobFormDrawer({ open, job, prefill, people, temps, vehicles, off
 
         {step === 3 && <section className="flex flex-col gap-stack">
           <h3 className="text-small font-medium text-ink">Who</h3>
+          <Checkbox checked={form.is_vip} onChange={(e) => set({ is_vip: e.target.checked })} label="VIP client (squeeze-in)"
+            hint="May take people already booked at the same time. Saving moves them here; their other job asks you to call that client." />
           <JobCrewFields value={crew} onChange={set} people={people} temps={temps} vehicles={vehicles} needsDriver={form.report_to === 'hq'} />
-          <JobChecksList checks={checks} checking={checking} extra={extra} />
+          <JobChecksList checks={checks} checking={checking} extra={extra} vip={form.is_vip} />
         </section>}
 
         {step === 4 && <section className="flex flex-col gap-stack">
@@ -168,13 +173,13 @@ export function JobFormDrawer({ open, job, prefill, people, temps, vehicles, off
             </ul>
           )}
           <dl className="grid grid-cols-[8rem_1fr] gap-x-4 gap-y-2 rounded-card bg-surface-soft p-card-sm text-small">
-            <dt className="text-ink-3">Where</dt><dd className="text-ink">{form.client_name} · {form.address}</dd>
+            <dt className="text-ink-3">Where</dt><dd className="text-ink">{form.is_vip && <span className="mr-1.5 rounded-pill bg-warning-soft px-2 py-0.5 text-micro font-semibold text-warning">VIP</span>}{form.client_name} · {form.address}</dd>
             <dt className="text-ink-3">When</dt><dd className="text-ink">{dateRange(form.start_date, form.end_date)}, {clock(form.start_time)} – {clock(form.end_time)}</dd>
             <dt className="text-ink-3">Report to</dt><dd className="text-ink">{REPORT_TO.find((r) => r.value === form.report_to)?.label}</dd>
             <dt className="text-ink-3">Lead</dt><dd className="text-ink">{name(form.lead_id) ?? '—'}</dd>
             <dt className="text-ink-3">Others</dt><dd className="text-ink">{[...form.crew_ids, ...form.helper_ids].map(name).filter(Boolean).join(', ') || 'None'}{form.driver_id ? ` · Driver: ${name(form.driver_id)}` : ''}{form.temp_worker_ids.length ? ` · ${form.temp_worker_ids.length} ${form.temp_worker_ids.length === 1 ? 'helper' : 'helpers'}` : ''}</dd>
           </dl>
-          <JobChecksList checks={checks} checking={checking} extra={extra} />
+          <JobChecksList checks={checks} checking={checking} extra={extra} vip={form.is_vip} />
         <Field label="Notes for the crew (optional)" htmlFor="job-notes"><Textarea id="job-notes" rows={2} value={form.notes} onChange={(e) => set({ notes: e.target.value })} placeholder="Bring the ladder. Gate pass at the guard house." /></Field>
         {job && (
           <Field label="Why is it changing?" htmlFor="job-reason" required hint="The crew sees this in their push and in the app.">

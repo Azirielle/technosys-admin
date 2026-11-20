@@ -10,7 +10,7 @@ export async function loadJobs(supabase: Client, since = new Date(Date.now() - 4
   const { data, error } = await supabase
     .from('jobs')
     .select(`id, client_name, address, project_name, notes, site_lat, site_lon, site_radius_m, start_date, end_date,
-      start_time, end_time, work_type, report_to, hq_office_id, status, cancel_reason,
+      start_time, end_time, work_type, report_to, hq_office_id, status, cancel_reason, is_vip, vip_note,
       job_members ( id, role, person_id, temp_worker_id, vehicle_id, is_acting_lead, removed_at,
         person:profiles!job_members_person_id_fkey ( full_name ), temp:casual_helpers ( full_name ) )`)
     .gte('end_date', since)

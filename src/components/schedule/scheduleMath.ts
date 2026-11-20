@@ -68,9 +68,9 @@ export function atRisk(S: Sched, j: Job, date: string, today: string, now: numbe
   return j.members.filter((m) => m.person_id && !dayLogOf(S, m.person_id, date) && !onLeave(S, m.person_id, date)).map((m) => m.name)
 }
 
-/** Things to check on a job that day: leave waiting for HR, a helper as lead. */
+/** Things to check on a job that day: a VIP job took someone from it, leave waiting for HR, a helper as lead. */
 export function checksOf(S: Sched, j: Job, date: string): string[] {
-  const out: string[] = []
+  const out: string[] = j.vip_note ? [j.vip_note] : []
   for (const m of j.members) {
     if (!m.person_id) continue
     const l = leaveOf(S, m.person_id, date)

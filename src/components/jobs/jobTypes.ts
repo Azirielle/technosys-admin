@@ -35,6 +35,10 @@ export type Job = {
   hq_office_id: string | null
   status: JobStatus
   cancel_reason: string | null
+  /** VIP squeeze-in: may take people already booked at the same time */
+  is_vip: boolean
+  /** Set when a VIP job took someone from this job; cleared when the Coordinator saves this job */
+  vip_note: string | null
   members: JobMember[]
 }
 
@@ -44,6 +48,9 @@ export type Person = { id: string; full_name: string; role: 'technician' | 'help
 export type TempWorker = { id: string; full_name: string; contact_number: string | null }
 
 export type SaveCheck = { person_id: string | null; vehicle_id: string | null; kind: string; blocking: boolean; detail: string }
+
+/** Does this check stop saving? On a VIP job, "already on another job" doesn't: saving takes them from that job. */
+export const blocks = (c: SaveCheck, vip: boolean) => c.blocking && !(vip && c.kind === 'other_job')
 
 /** What the job form sends to the server. Times are "HH:MM", dates "YYYY-MM-DD". */
 export type JobInput = {
@@ -67,6 +74,7 @@ export type JobInput = {
   driver_id: string | null
   vehicle_id: string | null
   temp_worker_ids: string[]
+  is_vip: boolean
   /** Required when changing a job that's already saved */
   change_reason: string
 }

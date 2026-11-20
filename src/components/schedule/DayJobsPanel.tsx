@@ -8,6 +8,7 @@ import { ChevronDown } from 'lucide-react'
 import { Badge, cx } from '@/components/ui'
 import { WORK_TYPES, type Job, type JobStatus } from '@/components/jobs/jobTypes'
 import { atRisk, clock12, type Sched } from './scheduleMath'
+import { VipTag } from '@/components/jobs/VipTag'
 
 type Props = { S: Sched; date: string; today: string; now: number; onOpenJob: (job: Job) => void }
 type Show = 'all' | JobStatus
@@ -60,7 +61,7 @@ export function DayJobsPanel({ S, date, today, now, onOpenJob }: Props) {
                 const late = atRisk(S, j, date, today, now)
                 return (
                   <tr key={j.id} className="hover:bg-surface-hover">
-                    <td className="max-w-48 truncate px-3 py-2 font-medium text-ink">{j.client_name}</td>
+                    <td className="max-w-48 truncate px-3 py-2 font-medium text-ink">{j.is_vip && <><VipTag />{' '}</>}{j.client_name}</td>
                     <td className="max-w-64 truncate px-3 py-2 text-ink-2">{j.address}</td>
                     <td className="px-3 py-2 text-ink-2">{WORK_TYPES.find((w) => w.value === j.work_type)?.label ?? j.work_type}</td>
                     <td className="px-3 py-2 text-ink">{lead(j)?.name ?? '—'}</td>

@@ -9,10 +9,10 @@ import { verifyRoleAccess } from '@/lib/permissions'
 import { sendPushToUser } from '@/lib/push'
 import { sendSmsToUser } from '@/lib/sms'
 import { logActivity } from './activity'
-import { clock, dateRange, type JobInput } from '@/components/jobs/jobTypes'
+import { blocks, clock, dateRange, type JobInput } from '@/components/jobs/jobTypes'
 import type { Json } from '@/lib/supabase/database.types'
 
-type Result = { ok: true; jobId: string; notified: number; notReached: string[] } | { ok: false; error: string }
+type Result = { ok: true; jobId: string; notified: number; notReached: string[]; moved: string[] } | { ok: false; error: string }
 
 function problemsIn(i: JobInput): string | null {
   if (!i.client_name.trim()) return 'Enter the client.'
@@ -42,6 +42,36 @@ async function notify(people: { id: string; name: string }[], title: string, bod
   return { notified, notReached }
 }
 
+/**
+ * VIP squeeze-in: takes the VIP job's people off any other job at the same time (the same overlap rule as
+ * job_save_checks' "other_job"). Each such job gets a history entry and a vip_note for "Needs you", and each person a
+ * push. Returns "Jeff from Cruz Residence" lines for the Coordinator's message.
+ */
+async function takeForVip(supabase: Awaited<ReturnType<typeof createClient>>, vipId: string, vipClient: string, personIds: string[], input: JobInput, userId: string): Promise<string[]> {
+  const { data } = await supabase.from('job_members')
+    .select('id, person_id, person:profiles!job_members_person_id_fkey ( full_name ), job:jobs!inner ( id, client_name, status, start_date, end_date, start_time, end_time )')
+    .in('person_id', personIds).is('removed_at', null).neq('job_id', vipId)
+  const clashes = (data ?? []).filter(({ job: j }) => ['planned', 'ongoing'].includes(j.status)
+    && j.start_date <= input.end_date && j.end_date >= input.start_date
+    && j.start_time.slice(0, 5) < input.end_time && j.end_time.slice(0, 5) > input.start_time)
+  if (!clashes.length) return []
+  const now = new Date().toISOString()
+  await supabase.from('job_members').update({ removed_at: now }).in('id', clashes.map((c) => c.id))
+
+  const out: string[] = []
+  for (const jobId of new Set(clashes.map((c) => c.job.id))) {
+    const here = clashes.filter((c) => c.job.id === jobId)
+    const names = here.map((c) => c.person?.full_name ?? 'Someone')
+    const client = here[0].job.client_name
+    const reason = `Moved to VIP job: ${vipClient}`
+    await supabase.from('jobs').update({ vip_note: `${names.join(', ')} moved to VIP job ${vipClient}. Call the client or replace them.`.slice(0, 300) }).eq('id', jobId)
+    await supabase.from('job_events').insert({ job_id: jobId, kind: 'crew_changed', by_id: userId, reason, details: { vip_job_id: vipId, removed: here.length } })
+    await notify(here.map((c) => ({ id: c.person_id!, name: c.person?.full_name ?? '' })), `Removed from: ${client}`, `${reason}.`, jobId)
+    out.push(`${names.join(', ')} from ${client}`)
+  }
+  return out
+}
+
 export async function saveJob(input: JobInput, jobId?: string): Promise<Result> {
   const { authorized, userId } = await verifyRoleAccess('schedules', true)
   if (!authorized || !userId) return { ok: false, error: 'Only the Coordinator can schedule jobs.' }
@@ -59,7 +89,7 @@ export async function saveJob(input: JobInput, jobId?: string): Promise<Result> 
     p_vehicle_id: input.vehicle_id ?? undefined, p_exclude_job_id: jobId ?? undefined,
   })
   if (checkErr) return { ok: false, error: "Couldn't check the crew. Try again." }
-  const blocking = (checks ?? []).filter((c) => c.blocking)
+  const blocking = (checks ?? []).filter((c) => blocks(c, input.is_vip))
   if (blocking.length) return { ok: false, error: blocking.map((c) => c.detail).join(' ') }
 
   const row = {
@@ -68,6 +98,7 @@ export async function saveJob(input: JobInput, jobId?: string): Promise<Result> 
     site_lat: input.site_lat, site_lon: input.site_lon, site_radius_m: Math.round(input.site_radius_m),
     start_date: input.start_date, end_date: input.end_date, start_time: input.start_time, end_time: input.end_time,
     work_type: input.work_type, report_to: input.report_to, hq_office_id: input.report_to === 'hq' ? input.hq_office_id : null,
+    is_vip: input.is_vip, vip_note: null, // saving a job is the Coordinator dealing with it: the VIP note goes
     updated_at: new Date().toISOString(),
   }
 
@@ -108,6 +139,8 @@ export async function saveJob(input: JobInput, jobId?: string): Promise<Result> 
     if (error) return { ok: false, error: "The job was saved but the crew wasn't. Open it and save again." }
   }
 
+  const takenForVip = input.is_vip ? await takeForVip(supabase, id!, row.client_name, personIds, input, userId) : []
+
   // History and pushes
   const moved = !!before && (before.start_date !== input.start_date || before.end_date !== input.end_date
     || before.start_time.slice(0, 5) !== input.start_time || before.end_time.slice(0, 5) !== input.end_time)
@@ -123,14 +156,14 @@ export async function saveJob(input: JobInput, jobId?: string): Promise<Result> 
   const where = input.report_to === 'hq' ? 'Report to the office first.' : 'Go straight to the site.'
   const newPeople = added.filter((a) => a.person_id).map((a) => ({ id: a.person_id!, name: nameOf(a.person_id!) }))
   const stayed = personIds.filter((p) => !newPeople.some((n) => n.id === p)).map((p) => ({ id: p, name: nameOf(p) }))
-  const a = await notify(newPeople, `New job: ${row.client_name}`, `${when}. ${where}`, id!)
+  const a = await notify(newPeople, `${input.is_vip ? 'VIP job' : 'New job'}: ${row.client_name}`, `${when}. ${where}`, id!)
   const b = moved ? await notify(stayed, `Job moved: ${row.client_name}`, `Now ${when}. ${input.change_reason.trim()}`, id!) : { notified: 0, notReached: [] as string[] }
   const goneIds = removed.map((r) => r.person_id).filter(Boolean) as string[]
   if (goneIds.length) await notify(goneIds.map((p) => ({ id: p, name: '' })), `Removed from: ${row.client_name}`, input.change_reason.trim() || 'The Coordinator changed the crew.', id!)
 
   await logActivity('job_saved', 'jobs', `${jobId ? 'Updated' : 'Created'} job "${row.client_name}" (${when})`)
   revalidatePath('/coordinator/jobs')
-  return { ok: true, jobId: id!, notified: a.notified + b.notified, notReached: [...a.notReached, ...b.notReached] }
+  return { ok: true, jobId: id!, notified: a.notified + b.notified, notReached: [...a.notReached, ...b.notReached], moved: takenForVip }
 }
 
 export async function cancelJob(jobId: string, reason: string): Promise<{ ok: boolean; error?: string; notReached?: string[] }> {

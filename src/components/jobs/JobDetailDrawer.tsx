@@ -47,7 +47,7 @@ export function JobDetailDrawer({ job, vehicles, readOnly = false, onClose, onEd
   }
 
   return (
-    <Drawer isOpen onClose={onClose} title={job.client_name} subtitle={job.project_name ?? undefined}
+    <Drawer isOpen onClose={onClose} title={job.is_vip ? `VIP · ${job.client_name}` : job.client_name} subtitle={job.project_name ?? undefined}
       headerExtra={<Badge tone={status.tone} dot>{status.label}</Badge>}
       footer={open && !readOnly ? (cancelling ? (
         <>

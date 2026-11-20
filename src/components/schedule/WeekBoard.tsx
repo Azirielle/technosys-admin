@@ -8,6 +8,7 @@ import { Avatar, cx, initialsOf } from '@/components/ui'
 import type { Job, Person } from '@/components/jobs/jobTypes'
 import { addDays, atRisk, checksOf, dayNumber, isFree, jobsOf, leaveOf, roleOn, clock12, weekdayShort, type Sched } from './scheduleMath'
 import { JOB_TONE } from './scheduleStyles'
+import { VipTag } from '@/components/jobs/VipTag'
 
 type Props = {
   S: Sched; people: Person[]; monday: string; date: string; today: string; now: number; freeOn: string | null
@@ -56,7 +57,7 @@ export function WeekBoard({ S, people, monday, date, today, now, freeOn, onToggl
                     className={cx('flex min-w-0 items-baseline gap-1.5 rounded-chip px-2 py-1 text-left text-caption', JOB_TONE[j.status],
                       risk ? 'ring-2 ring-inset ring-danger' : check ? 'ring-2 ring-inset ring-warning' : '')}>
                     {roleOn(j, p.id) === 'lead' && <span className="shrink-0 rounded px-1 text-[10px] font-bold text-ink-2 ring-1 ring-inset ring-line-strong">L</span>}
-                    <b className="min-w-0 truncate font-semibold text-ink">{j.client_name}</b>
+                    {j.is_vip && <VipTag />}<b className="min-w-0 truncate font-semibold text-ink">{j.client_name}</b>
                     <span className="ml-auto shrink-0 font-mono text-[10.5px] text-ink-2">{clock12(j.start_time)}</span>
                   </button>
                 )
