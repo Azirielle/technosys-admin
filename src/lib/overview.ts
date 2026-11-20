@@ -58,7 +58,7 @@ export async function getOverview(): Promise<Overview> {
       .select('id, employee_id, title, category, status, created_at')
       .in('status', OPEN_TICKET_STATUSES)
       .eq('is_archived', false)
-      .order('created_at', { ascending: true }),
+      .order('created_at', { ascending: false }), // newest first (lists); the oldest is the last one
     supabase
       .from('jobs')
       .select('id, client_name, address, start_time, status, job_members(person_id, role, is_acting_lead, removed_at)')

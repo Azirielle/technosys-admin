@@ -284,7 +284,8 @@ export function AdminDock({
  } bg-surface rounded-modal p-3 flex flex-col justify-between shadow-card hover:shadow-raised group/dock transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] overflow-hidden select-none`}
       >
         {/* Top Brand Section */}
-        <div className="flex flex-col">
+        {/* The page links scroll on a short window, so the profile (Sign out) below always stays on screen */}
+        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto overflow-x-hidden">
           <div className="flex items-center justify-between min-w-0">
             <Link
               href={roleMeta.rootHref}
@@ -423,33 +424,8 @@ export function AdminDock({
           </nav>
         </div>
 
-        {/* Bottom Section: Pin Toggle, Theme Switcher & Administrator Profile */}
-        <div className="flex flex-col gap-1.5 pt-3 border-t border-line relative">
-          {/* Dock Pin / Expand Toggle */}
-          <button
-            id="btn-dock-pin-toggle"
-            type="button"
-            onClick={togglePin}
-            title={isPinned ? 'Collapse Sidebar (Floating Dock)' : 'Pin Sidebar Expanded'}
-            aria-label={isPinned ? 'Collapse Sidebar' : 'Pin Sidebar'}
-            className="flex items-center gap-3.5 px-2.5 py-2 rounded-pill text-ink-2 hover:text-ink hover:bg-surface-soft transition-colors cursor-pointer w-full overflow-hidden"
-          >
-            <div className="w-5 h-5 flex items-center justify-center shrink-0">
-              {isPinned ? (
-                <PanelLeftClose className="w-4 h-4" />
-              ) : (
-                <PanelLeft className="w-4 h-4" />
-              )}
-            </div>
-            <span
-              className={`text-small font-medium whitespace-nowrap ${
- isPinned ? 'opacity-100' : 'opacity-0 group-hover/dock:opacity-100'
- } transition-opacity duration-200 delay-75`}
-            >
-              {isPinned ? 'Collapse menu' : 'Keep menu open'}
-            </span>
-          </button>
-
+        {/* Bottom Section: Theme Switcher & Administrator Profile (the menu pin is the icon beside the logo) */}
+        <div className="flex shrink-0 flex-col gap-1.5 pt-3 border-t border-line relative">
           {/* Theme Switcher Button */}
           <button
             id="btn-theme-toggle"

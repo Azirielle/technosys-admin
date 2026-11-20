@@ -16,7 +16,7 @@ export default async function HrOverviewPage() {
 
       <StatRow>
         <StatTile icon={CalendarClock} label="Leave requests waiting" value={o.pendingLeaves.length} hint={o.pendingOvertime ? `+ ${o.pendingOvertime} overtime request${o.pendingOvertime === 1 ? '' : 's'}` : 'No overtime requests'} tone={o.pendingLeaves.length ? 'warning' : 'success'} href="/hr/leaves" />
-        <StatTile icon={MessageSquare} label="Open tickets" value={o.openTickets.length} hint={o.openTickets[0] ? `Oldest filed ${formatAgo(o.openTickets[0].filed)}` : 'All tickets answered'} tone={o.openTickets.length ? 'warning' : 'success'} href="/hr/tickets" />
+        <StatTile icon={MessageSquare} label="Open tickets" value={o.openTickets.length} hint={o.openTickets.length ? `Oldest filed ${formatAgo(o.openTickets[o.openTickets.length - 1].filed)}` : 'All tickets answered'} tone={o.openTickets.length ? 'warning' : 'success'} href="/hr/tickets" />
         <StatTile icon={ShieldAlert} label="Punches to check today" value={o.flaggedPunchesToday} hint={o.flaggedPunchesToday ? 'Outside geofence, fake GPS or unusual' : 'All punches look normal'} tone={o.flaggedPunchesToday ? 'danger' : 'success'} href="/hr/audit" />
         <StatTile icon={FolderOpen} label="Incomplete 201 files" value={o.incomplete201} hint={`of ${o.fieldStaff} field staff`} tone={o.incomplete201 ? 'warning' : 'success'} href="/hr/files" />
       </StatRow>
