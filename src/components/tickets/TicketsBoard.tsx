@@ -43,20 +43,22 @@ export function TicketsBoard() {
   })
 
   const selected = tickets.find((t) => t.id === selectedId) ?? null
+  const parentIdsWithChildren = useMemo(() => new Set(tickets.map((t) => t.from_ticket_id).filter(Boolean)), [tickets])
+  const visible = useMemo(() => tickets.filter((t) => !parentIdsWithChildren.has(t.id)), [tickets, parentIdsWithChildren])
   const counts = useMemo(
     () => ({
-      needs_attention: tickets.filter(needsAttention).length,
-      in_progress: tickets.filter((t) => matchesFilter(t, 'in_progress')).length,
-      done: tickets.filter((t) => matchesFilter(t, 'done')).length,
+      needs_attention: visible.filter(needsAttention).length,
+      in_progress: visible.filter((t) => matchesFilter(t, 'in_progress')).length,
+      done: visible.filter((t) => matchesFilter(t, 'done')).length,
     }),
-    [tickets],
+    [visible],
   )
   const shown = useMemo(() => {
     const q = search.trim().toLowerCase()
-    return tickets.filter(
+    return visible.filter(
       (t) => matchesFilter(t, filter) && (!q || [t.title, t.category, employeeName(t)].some((s) => s.toLowerCase().includes(q))),
     )
-  }, [tickets, filter, search])
+  }, [visible, filter, search])
 
   function openTicket(id: string) {
     setSelectedId(id)

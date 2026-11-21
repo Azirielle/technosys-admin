@@ -36,6 +36,9 @@ async function currentUserId(supabase: Client) {
 export async function takeOverTicket(supabase: Client, ticket: Ticket) {
   const { error } = await supabase.from('tickets').update({ handling_mode: 'ADMIN', status: 'in_progress' }).eq('id', ticket.id)
   if (error) throw error
+  if (ticket.from_ticket_id) {
+    await supabase.from('tickets').update({ handling_mode: 'ADMIN', status: 'in_progress' }).eq('id', ticket.from_ticket_id)
+  }
   await supabase.from('ticket_comments').insert({
     ticket_id: ticket.id,
     content: 'HR has joined the chat. The AI assistant is now off for this ticket.',
@@ -43,6 +46,9 @@ export async function takeOverTicket(supabase: Client, ticket: Ticket) {
     author_id: await currentUserId(supabase),
   })
   await notifyApp(supabase, ticket.id, ['new_comment', 'ticket_update'])
+  if (ticket.from_ticket_id) {
+    await notifyApp(supabase, ticket.from_ticket_id, ['new_comment', 'ticket_update'])
+  }
 }
 
 /**
@@ -83,7 +89,12 @@ export async function sendReply(
     .select()
     .single()
   if (error) throw error
-  if (!internal) await notifyApp(supabase, ticket.id, ['new_comment'])
+  if (!internal) {
+    await notifyApp(supabase, ticket.id, ['new_comment'])
+    if (ticket.from_ticket_id) {
+      await notifyApp(supabase, ticket.from_ticket_id, ['new_comment'])
+    }
+  }
   return data as TicketMessage
 }
 
@@ -97,6 +108,9 @@ export async function finishTicket(supabase: Client, ticket: Ticket, outcome: 'r
 
   const { error } = await supabase.from('tickets').update({ status: outcome, handling_mode: 'ADMIN' }).eq('id', ticket.id)
   if (error) throw error
+  if (ticket.from_ticket_id) {
+    await supabase.from('tickets').update({ status: outcome, handling_mode: 'ADMIN' }).eq('id', ticket.from_ticket_id)
+  }
 
   const heading = outcome === 'resolved' ? 'Resolved by HR.' : 'Closed by HR.'
   const fallback = outcome === 'resolved' ? 'Your concern has been resolved.' : 'This ticket was closed.'
@@ -107,5 +121,8 @@ export async function finishTicket(supabase: Client, ticket: Ticket, outcome: 'r
     sender_role: 'admin',
   })
   await notifyApp(supabase, ticket.id, ['ticket_update', 'new_comment'])
+  if (ticket.from_ticket_id) {
+    await notifyApp(supabase, ticket.from_ticket_id, ['ticket_update', 'new_comment'])
+  }
   return { status: outcome, alreadyDone: false }
 }

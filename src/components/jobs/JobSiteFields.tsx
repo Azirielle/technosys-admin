@@ -52,9 +52,26 @@ export function JobSiteFields({ value, onChange, pinned }: { value: SiteValue; o
         <div className="relative">
           <Input id="job-address" icon={Search} value={value.address} onChange={(e) => search(e.target.value)}
             // Pasted coordinates (e.g. from Google Maps) move the pin; only on paste, so typing is never affected
-            onPaste={(e) => { const c = parseCoords(e.clipboardData.getData('text')); if (c) { e.preventDefault(); setFound([]); onChange({ site_lat: c[0], site_lon: c[1] }) } }}
+            onPaste={(e) => {
+              const text = e.clipboardData.getData('text')
+              const c = parseCoords(text)
+              if (c) {
+                e.preventDefault()
+                setFound([])
+                onChange({ address: text.trim(), site_lat: c[0], site_lon: c[1] })
+              }
+            }}
             // Enter on typed coordinates moves the pin (and never submits the form)
-            onKeyDown={(e) => { const c = e.key === 'Enter' && parseCoords(value.address); if (c) { e.preventDefault(); setFound([]); onChange({ site_lat: c[0], site_lon: c[1] }) } }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                const c = parseCoords(value.address)
+                if (c) {
+                  e.preventDefault()
+                  setFound([])
+                  onChange({ address: value.address.trim(), site_lat: c[0], site_lon: c[1] })
+                }
+              }
+            }}
             placeholder="Search an address or building" autoComplete="off" />
           {found.length > 0 && (
             <ul className="absolute top-full right-0 left-0 z-30 mt-1 max-h-52 overflow-y-auto rounded-control bg-surface p-1 shadow-raised">

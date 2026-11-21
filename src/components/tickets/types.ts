@@ -13,6 +13,7 @@ export type Ticket = {
   attachment_url?: string | null
   attachment_type?: string | null
   created_at: string
+  from_ticket_id?: string | null
   profiles?: { full_name: string; role?: string }
   assignee?: { full_name: string } | null
 }
