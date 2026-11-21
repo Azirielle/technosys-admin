@@ -5,12 +5,13 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { RotateCcw, Search, Smartphone, SmartphoneNfc, Users } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
-import { Button, Input, Modal, Page, PageHeader, StatRow, StatTile, TableContainer, Tabs, useToast } from '@/components/ui'
+import { Button, Input, Modal, Page, PageHeader, Pagination, StatRow, StatTile, TableContainer, Tabs, useToast } from '@/components/ui'
 import { decidePhoneRequest, resetPhone } from '@/components/files/signInActions'
 import { PhonesTable } from './PhonesTable'
 import { loadWorkPhones, phoneState, type PhoneState, type WorkPhoneRow } from './phonesActions'
 
 type Filter = 'all' | PhoneState
+const PER_PAGE = 8
 
 export function PhonesBoard() {
   const supabase = useMemo(() => createClient(), [])
@@ -19,6 +20,7 @@ export function PhonesBoard() {
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState<Filter>('all')
   const [search, setSearch] = useState('')
+  const [page, setPage] = useState(1)
   const [busyId, setBusyId] = useState<string | null>(null)
   const [resetting, setResetting] = useState<WorkPhoneRow | null>(null)
 
@@ -83,6 +85,8 @@ export function PhonesBoard() {
     await run(row, () => resetPhone(supabase, row.id, row.full_name), `Phone reset. ${first(row)} picks a phone again in the app.`)
   }
 
+  const pageRows = shown.slice((page - 1) * PER_PAGE, page * PER_PAGE)
+
   return (
     <Page wide>
       <PageHeader
@@ -101,7 +105,7 @@ export function PhonesBoard() {
         <Tabs
           label="Show"
           value={filter}
-          onChange={setFilter}
+          onChange={(f) => { setFilter(f); setPage(1) }}
           items={[
             { value: 'all', label: 'Everyone', count: rows.length },
             { value: 'waiting', label: 'Wants a new phone', count: counts.waiting },
@@ -109,11 +113,21 @@ export function PhonesBoard() {
             { value: 'none', label: 'No phone yet', count: counts.none },
           ]}
         />
-        <Input icon={Search} className="w-full sm:w-64" placeholder="Search name or phone" aria-label="Search name or phone" value={search} onChange={(e) => setSearch(e.target.value)} />
+        <Input icon={Search} className="w-full sm:w-64" placeholder="Search name or phone" aria-label="Search name or phone" value={search} onChange={(e) => { setSearch(e.target.value); setPage(1) }} />
       </div>
 
       <TableContainer>
-        <PhonesTable rows={shown} loading={loading} busyId={busyId} onDecide={decide} onReset={setResetting} />
+        <PhonesTable rows={pageRows} loading={loading} busyId={busyId} onDecide={decide} onReset={setResetting} />
+        {shown.length > PER_PAGE && (
+          <Pagination
+            currentPage={page}
+            totalPages={Math.ceil(shown.length / PER_PAGE)}
+            totalItems={shown.length}
+            itemsPerPage={PER_PAGE}
+            onPageChange={setPage}
+            itemNamePlural="phones"
+          />
+        )}
       </TableContainer>
 
       <Modal

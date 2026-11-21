@@ -7,8 +7,8 @@ import { HelpButton } from '@/components/help/HelpButton'
 /** Scrollable page frame. Wrap every page's content in this. */
 export function Page({ wide = false, className, children }: { wide?: boolean; className?: string; children: ReactNode }) {
   return (
-    <div className="h-full overflow-y-auto">
-      <div className={cx('mx-auto flex flex-col gap-section px-page py-page-y', wide ? 'max-w-[1440px]' : 'max-w-6xl', className)}>
+    <div className="h-full min-h-0 flex-1 flex flex-col overflow-y-auto">
+      <div className={cx('mx-auto flex h-full min-h-0 w-full flex-1 flex-col gap-section px-page py-page-y', wide ? 'max-w-[1440px]' : 'max-w-6xl', className)}>
         {children}
       </div>
     </div>

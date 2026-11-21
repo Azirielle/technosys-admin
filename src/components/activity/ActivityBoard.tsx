@@ -28,7 +28,7 @@ import {
 } from '@/components/ui'
 import { GROUPS, areaLabel, roleName } from './activityLabels'
 
-const PER_PAGE = 15
+const PER_PAGE = 8
 const LOAD = 300
 
 function when(iso: string) {

@@ -6,7 +6,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { AlertTriangle, CheckCircle2, Clock, ShieldCheck } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
-import { Page, PageHeader, StatRow, StatTile, TableContainer, Tabs, useToast } from '@/components/ui'
+import { Page, PageHeader, Pagination, StatRow, StatTile, TableContainer, Tabs, useToast } from '@/components/ui'
 import { CrewTodayTable } from './CrewTodayTable'
 import { ApprovalsList } from './ApprovalsList'
 import { ActingLeadPrompt } from './ActingLeadPrompt'
@@ -15,12 +15,14 @@ import { loadToday, watchToday, type TodayData, type WorkDay } from './todayData
 import { buildRows, jobsNeedingActingLead } from './todayStatus'
 
 type View = 'crew' | 'approvals'
+const PER_PAGE = 8
 
 export function TodayBoard() {
   const supabase = useMemo(() => createClient(), [])
   const toast = useToast()
   const [data, setData] = useState<TodayData | null>(null)
   const [view, setView] = useState<View>('crew')
+  const [page, setPage] = useState(1)
   const [timingOut, setTimingOut] = useState<WorkDay | null>(null)
   const [, tick] = useState(0)
 
@@ -30,13 +32,20 @@ export function TodayBoard() {
   useEffect(() => { load(); return watchToday(supabase, load) }, [load, supabase])
   useEffect(() => { const t = setInterval(() => tick((n) => n + 1), 60000); return () => clearInterval(t) }, [])
 
-  const rows = data ? buildRows(data.jobs, data.days, data.onLeave, data.today) : []
+  const rows = useMemo(() => (data ? buildRows(data.jobs, data.days, data.onLeave, data.today) : []), [data])
   // Earlier days still open show on the crew list as "no time-out" too
-  const earlierOpen = (data?.days ?? []).filter((d) => d.work_date !== data?.today && !d.time_out)
-  const leadless = data ? jobsNeedingActingLead(data.jobs, rows) : []
+  const earlierOpen = useMemo(() => (data?.days ?? []).filter((d) => d.work_date !== data?.today && !d.time_out), [data])
+  const leadless = useMemo(() => (data ? jobsNeedingActingLead(data.jobs, rows) : []), [data, rows])
   const count = (s: string[]) => rows.filter((r) => s.includes(r.state)).length
   const toApprove = (data?.reviews.length ?? 0) + (data?.overtime.length ?? 0)
   const loading = !data
+
+  const allCrewRows = useMemo(() => [
+    ...earlierOpen.map((d) => ({ person_id: d.person_id, name: d.name, role: 'earlier', is_acting_lead: false, level: null, job: null, day: d, state: 'no_time_out' as const })),
+    ...rows,
+  ], [earlierOpen, rows])
+
+  const pageCrewRows = allCrewRows.slice((page - 1) * PER_PAGE, page * PER_PAGE)
 
   return (
     <Page wide>
@@ -51,20 +60,30 @@ export function TodayBoard() {
 
       {data && leadless.map((job) => <ActingLeadPrompt key={job.id} job={job} rows={rows} onDone={load} />)}
 
-      <Tabs label="Show" value={view} onChange={setView} items={[
-        { value: 'crew', label: 'Crew today', count: rows.length + earlierOpen.length },
+      <Tabs label="Show" value={view} onChange={(v) => { setView(v); setPage(1) }} items={[
+        { value: 'crew', label: 'Crew today', count: allCrewRows.length },
         { value: 'approvals', label: 'To approve', count: toApprove },
       ]} />
 
       {view === 'crew' ? (
         <TableContainer>
           {data && (
-            <CrewTodayTable
-              rows={[
-                ...earlierOpen.map((d) => ({ person_id: d.person_id, name: d.name, role: 'earlier', is_acting_lead: false, level: null, job: null, day: d, state: 'no_time_out' as const })),
-                ...rows,
-              ]}
-              onTimeOut={(r) => setTimingOut(r.day)} />
+            <>
+              <CrewTodayTable
+                rows={pageCrewRows}
+                onTimeOut={(r) => setTimingOut(r.day)}
+              />
+              {allCrewRows.length > PER_PAGE && (
+                <Pagination
+                  currentPage={page}
+                  totalPages={Math.ceil(allCrewRows.length / PER_PAGE)}
+                  totalItems={allCrewRows.length}
+                  itemsPerPage={PER_PAGE}
+                  onPageChange={setPage}
+                  itemNamePlural="crew members"
+                />
+              )}
+            </>
           )}
         </TableContainer>
       ) : data && (

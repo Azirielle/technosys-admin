@@ -26,7 +26,7 @@ import { CorrectionModal } from './CorrectionModal'
 import { CorrectionHistoryModal, type HistoryTarget } from './CorrectionHistoryModal'
 
 type RoleFilter = 'all' | 'technician' | 'helper'
-const PER_PAGE = 10
+const PER_PAGE = 8
 
 function round1(n: number) {
   return Math.round(n * 10) / 10

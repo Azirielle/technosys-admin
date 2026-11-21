@@ -15,7 +15,7 @@ import { fileStatus, type DocKey, type EmployeeFile } from './requirements'
 import { loadPendingPhoneRequests } from './signInActions'
 
 type Filter = 'all' | 'incomplete' | 'warnings' | 'complete' | 'phone'
-const PER_PAGE = 10
+const PER_PAGE = 8
 
 function matches(emp: EmployeeFile, filter: Filter, phoneRequests: Set<string>) {
   if (filter === 'phone') return phoneRequests.has(emp.id)

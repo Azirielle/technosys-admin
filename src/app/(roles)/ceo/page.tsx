@@ -30,13 +30,13 @@ export default async function CeoOverviewPage() {
 
       <div className="grid grid-cols-1 gap-section lg:grid-cols-2">
         <ListCard title="Working now" count={o.timedIn.length} empty="No one has timed in yet today.">
-          {o.timedIn.map((p) => (
+          {o.timedIn.slice(0, 3).map((p) => (
             <ListRow key={p.id} leading={<Avatar name={p.name} />} primary={p.name} right={`Since ${formatTime(p.since)}`} badge={p.flagged ? <Badge tone="warning">Check punch</Badge> : <Badge tone="success">In geofence</Badge>} />
           ))}
         </ListCard>
 
         <ListCard title="Today's jobs" count={o.jobsToday.length} empty="No jobs scheduled for today.">
-          {o.jobsToday.map((j) => (
+          {o.jobsToday.slice(0, 3).map((j) => (
             <ListRow
               key={j.id}
               primary={j.client}
@@ -55,11 +55,11 @@ export default async function CeoOverviewPage() {
             ...o.openTickets.map((t) => (
               <ListRow key={`t-${t.id}`} primary={t.name} secondary={t.title} right={formatAgo(t.filed)} badge={<Badge>{t.category}</Badge>} />
             )),
-          ].slice(0, 6)}
+          ].slice(0, 3)}
         </ListCard>
 
         <ListCard title="Recent activity" href="/ceo/activities" linkLabel="All activity" empty="No activity recorded yet.">
-          {o.recentActivity.map((a) => (
+          {o.recentActivity.slice(0, 3).map((a) => (
             <ListRow key={a.id} primary={a.text} secondary={a.who} right={formatAgo(a.at)} />
           ))}
         </ListCard>

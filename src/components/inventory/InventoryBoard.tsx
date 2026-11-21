@@ -18,7 +18,7 @@ import { CATEGORIES, LOW_STOCK, isOverdue, type Borrowing, type Person, type Too
 
 type Tab = 'tools' | 'borrowed'
 type BorrowFilter = 'checked_out' | 'overdue' | 'returned' | 'problems' | 'all'
-const PER_PAGE = 10
+const PER_PAGE = 8
 
 const BORROW_EMPTY: Record<BorrowFilter, string> = {
   checked_out: 'No tools are out with crews right now.',

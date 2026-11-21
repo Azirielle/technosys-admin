@@ -24,25 +24,25 @@ export default async function HrOverviewPage() {
 
       <div className="grid grid-cols-1 gap-section lg:grid-cols-2">
         <ListCard title="Leave requests waiting" count={o.pendingLeaves.length} href="/hr/leaves" linkLabel="Review" empty="No leave requests to review.">
-          {o.pendingLeaves.slice(0, 6).map((l) => (
+          {o.pendingLeaves.slice(0, 3).map((l) => (
             <ListRow key={l.id} leading={<Avatar name={l.name} />} primary={l.name} secondary={`${LEAVE_LABELS[l.type] || l.type} · ${formatDayRange(l.start, l.end)}`} right={formatAgo(l.filed)} />
           ))}
         </ListCard>
 
         <ListCard title="Open tickets" count={o.openTickets.length} href="/hr/tickets" linkLabel="Answer" empty="No open tickets.">
-          {o.openTickets.slice(0, 6).map((t) => (
+          {o.openTickets.slice(0, 3).map((t) => (
             <ListRow key={t.id} primary={t.title} secondary={t.name} right={formatAgo(t.filed)} badge={<Badge tone={t.status === 'in_progress' ? 'warning' : 'neutral'}>{t.status === 'in_progress' ? 'In progress' : 'New'}</Badge>} />
           ))}
         </ListCard>
 
         <ListCard title="Timed in now" count={o.timedIn.length} href="/hr/audit" linkLabel="Open DTR" empty="No one has timed in yet today.">
-          {o.timedIn.map((p) => (
+          {o.timedIn.slice(0, 3).map((p) => (
             <ListRow key={p.id} leading={<Avatar name={p.name} />} primary={p.name} right={`Since ${formatTime(p.since)}`} badge={p.flagged ? <Badge tone="warning">Check punch</Badge> : undefined} />
           ))}
         </ListCard>
 
         <ListCard title="On leave today" count={o.onLeaveToday.length} empty="Everyone is available today.">
-          {o.onLeaveToday.map((l) => (
+          {o.onLeaveToday.slice(0, 3).map((l) => (
             <ListRow key={l.id} leading={<Avatar name={l.name} />} primary={l.name} right={LEAVE_LABELS[l.type] || l.type} />
           ))}
         </ListCard>

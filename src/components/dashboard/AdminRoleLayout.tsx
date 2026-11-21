@@ -47,7 +47,7 @@ export function AdminRoleLayout({
   }, [])
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-bg p-4 md:p-5 gap-4 transition-colors duration-250 relative">
+    <div className="flex h-dvh w-screen overflow-hidden bg-bg p-4 md:p-5 gap-4 transition-colors duration-250 relative">
       {/* 1. Reserved spacer for floating capsule dock (smoothly accommodates pinned vs collapsed dock) */}
       <div
         className={`${
@@ -68,7 +68,7 @@ export function AdminRoleLayout({
 
       {/* 3. Main Executive Porcelain Shell Container */}
       <div className="flex-1 h-full min-w-0 overflow-hidden flex flex-col">
-        <main className="flex-1 flex flex-col h-full overflow-hidden">
+        <main className="flex-1 flex flex-col h-full min-h-0 overflow-hidden">
           {children}
         </main>
       </div>

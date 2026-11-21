@@ -31,7 +31,7 @@ import { LeaveReviewModal } from './LeaveReviewModal'
 import { LeaveDeclineModal } from './LeaveDeclineModal'
 import { applicantName, type LeaveFilter, type LeaveRecord } from './types'
 
-const PER_PAGE = 10
+const PER_PAGE = 8
 
 const EMPTY_TEXT: Record<LeaveFilter, string> = {
   pending: 'Every leave request has a decision.',

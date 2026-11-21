@@ -24,7 +24,7 @@ export default async function CoordinatorOverviewPage() {
 
       <div className="grid grid-cols-1 gap-section lg:grid-cols-2">
         <ListCard title="Today's jobs" count={o.jobsToday.length} href="/coordinator/jobs" linkLabel="Scheduling" empty="No jobs scheduled for today.">
-          {o.jobsToday.map((j) => (
+          {o.jobsToday.slice(0, 3).map((j) => (
             <ListRow
               key={j.id}
               primary={j.client}
@@ -36,19 +36,19 @@ export default async function CoordinatorOverviewPage() {
         </ListCard>
 
         <ListCard title="Timed in now" count={o.timedIn.length} href="/coordinator/tracking" linkLabel="Live map" empty="No one has timed in yet today.">
-          {o.timedIn.map((p) => (
+          {o.timedIn.slice(0, 3).map((p) => (
             <ListRow key={p.id} leading={<Avatar name={p.name} />} primary={p.name} right={`Since ${formatTime(p.since)}`} />
           ))}
         </ListCard>
 
         <ListCard title="Tools out with crews" count={o.toolsOut.length} href="/coordinator/inventory" linkLabel="Inventory" empty="All tools are in the warehouse.">
-          {o.toolsOut.slice(0, 6).map((t) => (
+          {o.toolsOut.slice(0, 3).map((t) => (
             <ListRow key={t.id} primary={`${t.qty > 1 ? `${t.qty} × ` : ''}${t.tool}`} secondary={t.name} right={formatAgo(t.since)} />
           ))}
         </ListCard>
 
         <ListCard title="Out of stock" count={o.outOfStock.length} href="/coordinator/inventory" linkLabel="Inventory" empty="Every tool has stock available.">
-          {o.outOfStock.map((name) => (
+          {o.outOfStock.slice(0, 3).map((name) => (
             <ListRow key={name} primary={name} badge={<Badge tone="danger">0 available</Badge>} />
           ))}
         </ListCard>

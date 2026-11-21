@@ -7,13 +7,14 @@ import { Plus, Search } from 'lucide-react'
 import { getAudienceCounts, listAnnouncements } from '@/app/actions/announcements'
 import { logAdminActivity } from '@/lib/auditLogger'
 import type { RoleKey } from '@/lib/overrides'
-import { Button, Input, Page, PageHeader, Select, TableContainer, Tabs, useToast } from '@/components/ui'
+import { Button, Input, Page, PageHeader, Pagination, Select, TableContainer, Tabs, useToast } from '@/components/ui'
 import { AnnouncementList } from './AnnouncementList'
 import { AnnouncementForm } from './AnnouncementForm'
 import { AnnouncementDetailModal } from './AnnouncementDetailModal'
 import { PRIORITIES, type Announcement, type AnnouncementAudience, type AnnouncementStatus } from './types'
 
 type Filter = 'all' | AnnouncementStatus
+const PER_PAGE = 8
 
 export function AnnouncementsBoard({ currentRole, adminName, adminRoleLabel }: { currentRole: RoleKey | 'ceo'; adminName: string; adminRoleLabel: string }) {
   const toast = useToast()
@@ -23,6 +24,7 @@ export function AnnouncementsBoard({ currentRole, adminName, adminRoleLabel }: {
   const [filter, setFilter] = useState<Filter>('all')
   const [priority, setPriority] = useState('')
   const [search, setSearch] = useState('')
+  const [page, setPage] = useState(1)
   const [viewing, setViewing] = useState<Announcement | null>(null)
   const [form, setForm] = useState<{ open: boolean; item: Announcement | null }>({ open: false, item: null })
 
@@ -73,7 +75,7 @@ export function AnnouncementsBoard({ currentRole, adminName, adminRoleLabel }: {
         <Tabs
           label="Status"
           value={filter}
-          onChange={setFilter}
+          onChange={(f) => { setFilter(f); setPage(1) }}
           items={[
             { value: 'all', label: 'All', count: items.length },
             { value: 'published', label: 'Published', count: tally.published },
@@ -81,17 +83,27 @@ export function AnnouncementsBoard({ currentRole, adminName, adminRoleLabel }: {
             { value: 'draft', label: 'Drafts', count: tally.draft },
           ]}
         />
-        <Select aria-label="Priority" className="w-44" placeholder="Any priority" value={priority} onChange={(e) => setPriority(e.target.value)} options={PRIORITIES} />
-        <Input icon={Search} className="ml-auto w-full sm:w-64" aria-label="Search announcements" placeholder="Search announcements" value={search} onChange={(e) => setSearch(e.target.value)} />
+        <Select aria-label="Priority" className="w-44" placeholder="Any priority" value={priority} onChange={(e) => { setPriority(e.target.value); setPage(1) }} options={PRIORITIES} />
+        <Input icon={Search} className="ml-auto w-full sm:w-64" aria-label="Search announcements" placeholder="Search announcements" value={search} onChange={(e) => { setSearch(e.target.value); setPage(1) }} />
       </div>
 
       <TableContainer>
         <AnnouncementList
-          items={shown}
+          items={shown.slice((page - 1) * PER_PAGE, page * PER_PAGE)}
           loading={loading}
           emptyText={q || priority ? 'Try another search or priority.' : 'Write one with New announcement.'}
           onOpen={setViewing}
         />
+        {shown.length > PER_PAGE && (
+          <Pagination
+            currentPage={page}
+            totalPages={Math.ceil(shown.length / PER_PAGE)}
+            totalItems={shown.length}
+            itemsPerPage={PER_PAGE}
+            onPageChange={setPage}
+            itemNamePlural="announcements"
+          />
+        )}
       </TableContainer>
 
       <AnnouncementDetailModal
