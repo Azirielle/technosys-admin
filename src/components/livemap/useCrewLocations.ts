@@ -20,6 +20,8 @@ export interface CrewLocation {
   status: CrewStatus
   /** Time-in of today's open shift, if any. */
   timeIn: string | null
+  /** Client of today's job (planned or ongoing), if any. */
+  jobName: string | null
 }
 
 export const STATUS: Record<CrewStatus, { label: string; tone: Tone }> = {
@@ -46,10 +48,14 @@ export function useCrewLocations() {
       again.current = false
       const now = Date.now()
       const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Manila' }).format(new Date())
-      const [loc, shifts] = await Promise.all([
+      const [loc, shifts, jobs] = await Promise.all([
         supabase.from('live_locations').select('*, profiles!technician_id(full_name, contact_number, role, avatar_url)'),
         supabase.from('work_days').select('person_id, time_in').is('time_out', null).eq('work_date', today),
+        // One query for everyone's job today (not one per person).
+        supabase.from('job_members').select('person_id, job:jobs!inner(client_name, project_name)')
+          .is('removed_at', null).in('job.status', ['planned', 'ongoing']).lte('job.start_date', today).gte('job.end_date', today),
       ])
+      const jobOf = new Map((jobs.data ?? []).map((j) => [j.person_id, j.job?.project_name || j.job?.client_name || null]))
       const open = new Map((shifts.data ?? []).map((s) => [s.person_id, s.time_in as string | null]))
       const list: CrewLocation[] = (loc.data ?? []).map((row) => {
         const r = row as typeof row & { profiles: { full_name: string; contact_number: string | null; role: string; avatar_url: string | null } | null }
@@ -68,6 +74,7 @@ export function useCrewLocations() {
           updatedAt: r.updated_at as string,
           status,
           timeIn: open.get(r.technician_id) ?? null,
+          jobName: jobOf.get(r.technician_id) ?? null,
         }
       })
       const order: Record<CrewStatus, number> = { on_duty: 0, no_signal: 1, off_duty: 2 }

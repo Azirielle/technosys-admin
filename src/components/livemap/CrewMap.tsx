@@ -1,7 +1,7 @@
 // CrewMap: the Leaflet map with one marker per field worker. Fits everyone in view; flies to the one you pick.
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import L from 'leaflet'
 import { MapContainer, Marker, Popup, TileLayer, ZoomControl, useMap } from 'react-leaflet'
@@ -42,6 +42,26 @@ function FlyTo({ target }: { target: CrewLocation | undefined }) {
   return null
 }
 
+// "Barangay, City" per rounded position, kept so reopening a popup doesn't ask again.
+const placeCache = new Map<string, string | null>()
+
+/** Looks the place up only when it mounts, which is when a popup opens. */
+function PlaceName({ lat, lon }: { lat: number; lon: number }) {
+  const key = `${lat.toFixed(3)},${lon.toFixed(3)}`
+  const [place, setPlace] = useState<string | null | undefined>(placeCache.get(key))
+  useEffect(() => {
+    if (placeCache.has(key)) return
+    let live = true
+    fetch(`/api/geocode?lat=${lat.toFixed(3)}&lon=${lon.toFixed(3)}`)
+      .then((r) => r.json())
+      .then((d: { place: string | null }) => { placeCache.set(key, d.place); if (live) setPlace(d.place) })
+      .catch(() => { if (live) setPlace(null) })
+    return () => { live = false }
+  }, [key, lat, lon])
+  if (place === undefined) return <p className="text-caption">Finding place…</p>
+  return place ? <p className="text-caption">{place}</p> : null
+}
+
 function markerIcon(c: CrewLocation, selected: boolean) {
   const initials = c.name.split(/\s+/).map((p) => p[0]).slice(0, 2).join('').toUpperCase()
   const html = renderToStaticMarkup(
@@ -69,6 +89,8 @@ export default function CrewMap({ crew, selectedId }: { crew: CrewLocation[]; se
             <div className="min-w-44 font-sans">
               <p className="text-small font-semibold">{c.name}</p>
               <p className="text-caption">{STATUS[c.status].label}{c.status === 'on_duty' && c.timeIn ? ` · ${timeOnShift(c.timeIn)} on shift` : ''}</p>
+              <PlaceName lat={c.lat} lon={c.lon} />
+              {c.jobName && <p className="text-caption">Job today: {c.jobName}</p>}
               <p className="text-caption">Last GPS {formatAgo(c.updatedAt)}</p>
               {c.phone && <a href={`tel:${c.phone}`} className="mt-1 inline-block text-caption font-medium">Call {c.phone}</a>}
             </div>

@@ -17,6 +17,29 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const q = searchParams.get('q');
 
+  // Reverse lookup: "Barangay, City" for a position (used by the live map popup).
+  if (searchParams.has('lat') && searchParams.has('lon')) {
+    const lat = Number(searchParams.get('lat'));
+    const lon = Number(searchParams.get('lon'));
+    if (!Number.isFinite(lat) || !Number.isFinite(lon) || Math.abs(lat) > 90 || Math.abs(lon) > 180) {
+      return NextResponse.json({ place: null });
+    }
+    try {
+      // 3 decimals (~110 m) so nearby points share one cached answer.
+      const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat.toFixed(3)}&lon=${lon.toFixed(3)}&format=json&zoom=16&addressdetails=1`;
+      const res = await fetch(url, {
+        headers: { 'User-Agent': 'Technocycle-Fleet/1.0 (contact@technocycle.ph)', 'Accept-Language': 'en' },
+        next: { revalidate: 86400 }
+      });
+      if (!res.ok) return NextResponse.json({ place: null });
+      const a = (await res.json()).address ?? {};
+      const parts = [a.suburb || a.village || a.quarter || a.neighbourhood, a.city || a.town || a.municipality, a.state].filter(Boolean);
+      return NextResponse.json({ place: parts.slice(0, 2).join(', ') || null });
+    } catch {
+      return NextResponse.json({ place: null });
+    }
+  }
+
   if (!q || q.trim().length < 2) {
     return NextResponse.json([]);
   }
