@@ -24,6 +24,7 @@ export type Job = {
   /** Old jobs only: the form now asks for the scope instead */
   project_name: string | null
   scope: Scope | null
+  priority: Priority
   notes: string | null
   site_lat: number
   site_lon: number
@@ -59,6 +60,7 @@ export type JobInput = {
   client_name: string
   address: string
   scope: Scope | ''
+  priority: Priority
   notes: string
   site_lat: number
   site_lon: number
@@ -91,6 +93,15 @@ export const SCOPES: { value: Scope; label: string }[] = [
   { value: 'inspection', label: 'Inspection' },
 ]
 export const scopeLabel = (s: Scope | null) => SCOPES.find((x) => x.value === s)?.label ?? null
+
+/** Priority level (prof, 20 Nov). A VIP squeeze-in is Urgent on top of this (components/jobs/PriorityBadge). */
+export type Priority = 'low' | 'medium' | 'high'
+export const PRIORITY: Record<Priority, { label: string; tone: Tone }> = {
+  low: { label: 'Low', tone: 'neutral' },
+  medium: { label: 'Medium', tone: 'info' },
+  high: { label: 'High', tone: 'warning' },
+}
+export const PRIORITIES = (Object.keys(PRIORITY) as Priority[]).map((value) => ({ value, label: PRIORITY[value].label }))
 
 export const WORK_TYPES: { value: WorkType; label: string }[] = [
   { value: 'on_site', label: 'On site (day job)' },

@@ -126,3 +126,9 @@ export async function finishTicket(supabase: Client, ticket: Ticket, outcome: 'r
   }
   return { status: outcome, alreadyDone: false }
 }
+
+/** HR changes a ticket's priority (low / medium / high / urgent). */
+export async function setTicketPriority(supabase: Client, ticket: Ticket, priority: string) {
+  const { error } = await supabase.from('tickets').update({ priority }).eq('id', ticket.id)
+  if (error) throw error
+}

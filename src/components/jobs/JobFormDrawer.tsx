@@ -12,7 +12,7 @@ import { JobSiteFields, type SiteValue } from './JobSiteFields'
 import { JobCrewFields, type CrewValue } from './JobCrewFields'
 import { JobChecksList } from './JobChecksList'
 import { runSaveChecks } from './jobsData'
-import { REPORT_TO, WORK_TYPES, blocks, scopeLabel, clock, dateRange, manilaToday, type Job, type JobInput, type Office, type Person, type SaveCheck, type TempWorker, type Vehicle } from './jobTypes'
+import { PRIORITIES, REPORT_TO, WORK_TYPES, blocks, scopeLabel, clock, dateRange, manilaToday, type Job, type JobInput, type Office, type Person, type SaveCheck, type TempWorker, type Vehicle } from './jobTypes'
 
 type Props = { open: boolean; job: Job | null; prefill?: Partial<JobInput>; people: Person[]; temps: TempWorker[]; vehicles: Vehicle[]; offices: Office[]; onClose: () => void; onSaved: () => void }
 
@@ -20,7 +20,7 @@ function fromJob(job: Job | null, hq: Office | undefined, prefill: Partial<JobIn
   const m = (role: string) => job?.members.filter((x) => x.role === role && x.person_id).map((x) => x.person_id!) ?? []
   const driver = job?.members.find((x) => x.vehicle_id) ?? job?.members.find((x) => x.role === 'driver') // the driver may also be lead / crew
   return {
-    client_name: job?.client_name ?? '', address: job?.address ?? '', scope: job?.scope ?? '', notes: job?.notes ?? '',
+    client_name: job?.client_name ?? '', address: job?.address ?? '', scope: job?.scope ?? '', priority: job?.priority ?? 'medium', notes: job?.notes ?? '',
     site_lat: job?.site_lat ?? hq?.latitude ?? 14.3439, site_lon: job?.site_lon ?? hq?.longitude ?? 121.0617, site_radius_m: job?.site_radius_m ?? 150,
     start_date: job?.start_date ?? manilaToday(), end_date: job?.end_date ?? manilaToday(),
     start_time: job?.start_time.slice(0, 5) ?? '08:00', end_time: job?.end_time.slice(0, 5) ?? '17:00',
@@ -142,6 +142,9 @@ export function JobFormDrawer({ open, job, prefill, people, temps, vehicles, off
           <p className="text-caption text-ink-3">Time-in opens 1 hour before the start. Late from 1 minute after the start. Same hours every day of the job.</p>
           <h3 className="mt-2 text-small font-medium text-ink">How they report</h3>
           <div className="grid grid-cols-1 gap-stack sm:grid-cols-2">
+            <Field label="Priority" htmlFor="job-priority" hint={form.is_vip ? 'A VIP squeeze-in always shows as Urgent.' : undefined}>
+              <Select id="job-priority" value={form.priority} onChange={(e) => set({ priority: e.target.value as JobInput['priority'] })} options={PRIORITIES} />
+            </Field>
             <Field label="Kind of work" htmlFor="job-type"><Select id="job-type" value={form.work_type} onChange={(e) => set({ work_type: e.target.value as JobInput['work_type'] })} options={WORK_TYPES} /></Field>
             <Field label="Report to" htmlFor="job-report" hint={REPORT_TO.find((r) => r.value === form.report_to)?.hint}>
               <Select id="job-report" value={form.report_to} onChange={(e) => set({ report_to: e.target.value as JobInput['report_to'] })} options={REPORT_TO} />

@@ -6,6 +6,7 @@ import { ArrowRight, Briefcase, Building2, MapPin } from 'lucide-react'
 import { AvatarStack, Badge, Button, EmptyState, SkeletonTableRows, Table, TableBody, TableCell, TableHead, TableHeaderCell, TableRow } from '@/components/ui'
 import { STATUS, clock, dateRange, type Job } from './jobTypes'
 import { VipTag } from '@/components/jobs/VipTag'
+import { PriorityBadge } from './PriorityBadge'
 
 export function JobsTable({ jobs, loading, onOpen, empty }: { jobs: Job[]; loading: boolean; onOpen: (job: Job) => void; empty: string }) {
   if (!loading && jobs.length === 0) return <EmptyState icon={Briefcase} title={empty} description="New jobs you schedule show here." />
@@ -17,12 +18,13 @@ export function JobsTable({ jobs, loading, onOpen, empty }: { jobs: Job[]; loadi
           <TableHeaderCell>When</TableHeaderCell>
           <TableHeaderCell>Report to</TableHeaderCell>
           <TableHeaderCell>Crew</TableHeaderCell>
+          <TableHeaderCell>Priority</TableHeaderCell>
           <TableHeaderCell>Status</TableHeaderCell>
           <TableHeaderCell align="right"><span className="sr-only">Open</span></TableHeaderCell>
         </tr>
       </TableHead>
       <TableBody>
-        {loading && <SkeletonTableRows cols={6} />}
+        {loading && <SkeletonTableRows cols={7} />}
         {!loading && jobs.map((job) => {
           const lead = job.members.find((m) => m.role === 'lead')
           const status = STATUS[job.status]
@@ -48,6 +50,7 @@ export function JobsTable({ jobs, loading, onOpen, empty }: { jobs: Job[]; loadi
                   <span className="text-caption text-ink-3">{lead ? `Lead: ${lead.name.split(' ')[0]}` : 'No lead'}</span>
                 </span>
               </TableCell>
+              <TableCell><PriorityBadge job={job} /></TableCell>
               <TableCell><Badge tone={status.tone} dot>{status.label}</Badge></TableCell>
               <TableCell align="right"><Button size="sm" variant="ghost" iconRight={ArrowRight}>Open</Button></TableCell>
             </TableRow>

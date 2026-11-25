@@ -46,6 +46,21 @@ export function ticketStatus(status: string) {
   return STATUS[status] ?? STATUS.open
 }
 
+const PRIORITY: Record<string, { label: string; tone: Tone }> = {
+  urgent: { label: 'Urgent', tone: 'danger' },
+  high: { label: 'High', tone: 'warning' },
+  medium: { label: 'Medium', tone: 'info' },
+  low: { label: 'Low', tone: 'neutral' },
+}
+
+/** Choices HR can set (the technician picks one when filing) */
+export const TICKET_PRIORITIES = ['low', 'medium', 'high', 'urgent'].map((value) => ({ value, label: PRIORITY[value].label }))
+
+export function ticketPriority(priority?: string | null) {
+  const p = (priority ?? 'medium').toLowerCase()
+  return PRIORITY[p] ?? PRIORITY.medium
+}
+
 export function isFinished(ticket: Ticket) {
   return ticket.status === 'resolved' || ticket.status === 'closed'
 }

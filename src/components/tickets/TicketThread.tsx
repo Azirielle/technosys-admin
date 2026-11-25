@@ -4,10 +4,10 @@
 import { ConversationSkeleton } from '@/components/loading/PageSkeletons'
 import { useEffect, useRef } from 'react'
 import { ArrowLeft, Check, MessageSquare, UserRound, X } from 'lucide-react'
-import { Badge, Button, EmptyState, IconButton } from '@/components/ui'
+import { Badge, Button, EmptyState, IconButton, Select } from '@/components/ui'
 import { ChatMessage, TypingBubble } from './ChatMessage'
 import { ReplyBox } from './ReplyBox'
-import { employeeName, isFinished, ticketStatus, type PeerTyping, type Ticket, type TicketMessage } from './types'
+import { TICKET_PRIORITIES, employeeName, isFinished, ticketStatus, type PeerTyping, type Ticket, type TicketMessage } from './types'
 
 /** The mobile app saves this text when a chat starts with the AI and has no real description. */
 const AI_CHAT_PLACEHOLDER = 'User initiated an AI support chat.'
@@ -28,6 +28,7 @@ export function TicketThread({
   onSend,
   onTakeOver,
   onFinish,
+  onPriority,
   onOpenImage,
   onBack,
 }: {
@@ -46,6 +47,7 @@ export function TicketThread({
   onSend: () => void
   onTakeOver: () => void
   onFinish: (outcome: 'resolved' | 'closed') => void
+  onPriority: (priority: string) => void
   onOpenImage: (url: string) => void
   /** Small screens only: back to the ticket list. */
   onBack: () => void
@@ -78,6 +80,9 @@ export function TicketThread({
             <div className="mt-1 flex flex-wrap items-center gap-2">
               <h2 className="truncate text-heading font-semibold text-ink">{ticket.title}</h2>
               <Badge tone={status.tone} dot>{status.label}</Badge>
+              {/* Priority: the technician picks it when filing; HR can change it */}
+              <Select size="sm" aria-label="Priority" className="w-28" value={(ticket.priority ?? 'medium').toLowerCase()} disabled={finished}
+                onChange={(e) => onPriority(e.target.value)} options={TICKET_PRIORITIES} />
             </div>
           </div>
         </div>

@@ -8,7 +8,7 @@ import { IconButton, Input, PageHeader, Tabs, cx, useToast } from '@/components/
 import { TicketList } from './TicketList'
 import { TicketThread } from './TicketThread'
 import { TicketFinishModal } from './TicketFinishModal'
-import { finishTicket, sendReply, takeOverTicket } from './ticketActions'
+import { finishTicket, sendReply, setTicketPriority, takeOverTicket } from './ticketActions'
 import { useTickets } from './useTickets'
 import { employeeName, matchesFilter, needsAttention, type TicketFilter } from './types'
 
@@ -94,6 +94,11 @@ export function TicketsBoard() {
     }
   }
 
+  async function changePriority(priority: string) {
+    if (!selected) return
+    try { await setTicketPriority(supabase, selected, priority); loadTickets() } catch (err) { toast.error(`Couldn't change the priority: ${(err as Error).message}`) }
+  }
+
   async function takeOver() {
     if (!selected) return
     setTakingOver(true)
@@ -167,6 +172,7 @@ export function TicketsBoard() {
             onSend={send}
             onTakeOver={takeOver}
             onFinish={setFinishing}
+            onPriority={changePriority}
             onOpenImage={setLightbox}
             onBack={() => setSelectedId(null)}
           />
