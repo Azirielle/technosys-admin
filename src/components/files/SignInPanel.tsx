@@ -7,7 +7,7 @@ import { KeyRound, Lock, RotateCcw, Smartphone } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { formatDay } from '@/lib/format'
 import { Badge, Button, Field, Input, SkeletonText, useToast } from '@/components/ui'
-import { decidePhoneRequest, loadSignInInfo, resetPhone, setPin, type SignInInfo } from './signInActions'
+import { decidePhoneRequest, loadSignInInfo, resetFace, resetPhone, setPin, type SignInInfo } from './signInActions'
 import type { EmployeeFile } from './requirements'
 
 export function SignInPanel({ employee, onChanged }: { employee: EmployeeFile; onChanged: () => void }) {
@@ -16,7 +16,7 @@ export function SignInPanel({ employee, onChanged }: { employee: EmployeeFile; o
   const [info, setInfo] = useState<SignInInfo | null>(null)
   const [pin, setPinValue] = useState('')
   const [pinError, setPinError] = useState<string | null>(null)
-  const [busy, setBusy] = useState<'pin' | 'approve' | 'decline' | 'reset' | null>(null)
+  const [busy, setBusy] = useState<'pin' | 'approve' | 'decline' | 'reset' | 'face' | null>(null)
   const [confirmReset, setConfirmReset] = useState(false)
 
   const load = useCallback(async () => {
@@ -105,6 +105,9 @@ export function SignInPanel({ employee, onChanged }: { employee: EmployeeFile; o
         {confirmReset && (
           <p className="mt-2 text-caption text-ink-3">Their current phone stops working. The next phone they sign in on asks them to make it their work phone.</p>
         )}
+        {/* Face check (B15): a bad first photo, or a new look. They save their face again at the next time-in. */}
+        <Button size="sm" variant="ghost" icon={RotateCcw} className="mt-2" loading={busy === 'face'} disabled={!!busy}
+          onClick={() => act('face', () => resetFace(supabase, employee.id, employee.full_name), 'Face reset: they save it again at their next time-in')}>Reset face</Button>
       </section>
 
       <section>

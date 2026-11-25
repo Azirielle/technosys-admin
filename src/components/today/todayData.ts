@@ -59,6 +59,12 @@ export async function loadToday(supabase: Client) {
 
 export type TodayData = Awaited<ReturnType<typeof loadToday>>
 
+/** Where the face a person enrolled on their phone is stored (same private bucket as selfies), or null. */
+export async function enrolledFacePath(supabase: Client, personId: string): Promise<string | null> {
+  const { data } = await supabase.from('face_enrollments').select('photo_path').eq('person_id', personId).maybeSingle()
+  return data?.photo_path ?? null
+}
+
 /** A 5-minute link to a time-in selfie (private bucket; office staff may open them). */
 export async function selfieLink(supabase: Client, path: string): Promise<string | null> {
   const { data } = await supabase.storage.from('dtr-selfies').createSignedUrl(path, 300)

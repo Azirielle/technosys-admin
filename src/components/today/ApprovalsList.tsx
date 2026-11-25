@@ -8,7 +8,7 @@ import { createClient } from '@/lib/supabase/client'
 import { decideOvertime, decideReview } from '@/app/actions/today'
 import { formatAgo } from '@/lib/format'
 import { Badge, Button, Card, EmptyState, Input, useToast } from '@/components/ui'
-import { selfieLink, type OvertimeAsk, type Review } from './todayData'
+import { enrolledFacePath, selfieLink, type OvertimeAsk, type Review } from './todayData'
 
 const KIND: Record<string, { label: string; what: string }> = {
   selfie_time_in: { label: 'Time-in outside the site', what: 'Your time-in with a selfie' },
@@ -19,6 +19,7 @@ const KIND: Record<string, { label: string; what: string }> = {
   driver_away: { label: 'Driver away from HQ', what: 'Your time-out away from the office' },
   early_time_out: { label: 'Timed out early', what: 'Your early time-out' },
   offline_time_in: { label: 'Time-in sent later, place not confirmed', what: 'Your time-in saved with no signal' },
+  face_mismatch: { label: 'Face mismatch', what: 'Your time-in selfie' },
 }
 const when = (iso: string) => new Date(iso).toLocaleString('en-PH', { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', timeZone: 'Asia/Manila' })
 
@@ -81,7 +82,10 @@ export function ApprovalsList({ reviews, overtime, onChanged }: { reviews: Revie
               </div>
             ) : (
               <div className="flex flex-wrap items-center justify-end gap-2">
-                {d.selfie_path && <Button size="sm" variant="ghost" icon={Camera} className="mr-auto" onClick={() => openSelfie(d.selfie_path!)}>View selfie</Button>}
+                {d.selfie_path && <Button size="sm" variant="ghost" icon={Camera} className={r.kind === 'face_mismatch' ? undefined : 'mr-auto'} onClick={() => openSelfie(d.selfie_path!)}>View selfie</Button>}
+                {/* Face mismatch: compare the time-in selfie with the face they enrolled */}
+                {r.kind === 'face_mismatch' && <Button size="sm" variant="ghost" icon={Camera} className="mr-auto"
+                  onClick={async () => { const p = await enrolledFacePath(supabase, d.person_id); if (p) openSelfie(p); else toast.error('No enrolled face yet.') }}>Enrolled face</Button>}
                 <Button size="sm" variant="decline" icon={X} onClick={() => { setDeclining(r.id); setNote('') }}>Decline</Button>
                 <Button size="sm" variant="approve" icon={Check} loading={busy === r.id} onClick={() => review(r, true)}>Approve</Button>
               </div>

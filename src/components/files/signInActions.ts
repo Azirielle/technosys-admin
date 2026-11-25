@@ -58,3 +58,10 @@ export async function resetPhone(supabase: Client, profileId: string, name: stri
   if (error) throw error
   log('Reset registered phone', name)
 }
+
+/** Deletes the face they enrolled; their next time-in asks them to save it again (CONSULTATION_FIXES B15). */
+export async function resetFace(supabase: Client, profileId: string, name: string) {
+  const { error } = await supabase.from('face_enrollments').delete().eq('person_id', profileId)
+  if (error) throw error
+  log('Reset enrolled face', name)
+}
