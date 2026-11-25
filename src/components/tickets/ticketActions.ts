@@ -102,7 +102,7 @@ export async function sendReply(
  * Marks the ticket resolved or closed and posts HR's note to the employee.
  * Returns the status it ended with (someone else may have finished it first).
  */
-export async function finishTicket(supabase: Client, ticket: Ticket, outcome: 'resolved' | 'closed', note: string) {
+export async function finishTicket(supabase: Client, ticket: Pick<Ticket, 'id' | 'from_ticket_id'>, outcome: 'resolved' | 'closed', note: string, by = 'HR') {
   const { data: latest } = await supabase.from('tickets').select('status').eq('id', ticket.id).single()
   if (latest?.status === 'resolved' || latest?.status === 'closed') return { status: latest.status, alreadyDone: true }
 
@@ -112,7 +112,7 @@ export async function finishTicket(supabase: Client, ticket: Ticket, outcome: 'r
     await supabase.from('tickets').update({ status: outcome, handling_mode: 'ADMIN' }).eq('id', ticket.from_ticket_id)
   }
 
-  const heading = outcome === 'resolved' ? 'Resolved by HR.' : 'Closed by HR.'
+  const heading = outcome === 'resolved' ? `Resolved by ${by}.` : `Closed by ${by}.`
   const fallback = outcome === 'resolved' ? 'Your concern has been resolved.' : 'This ticket was closed.'
   await supabase.from('ticket_comments').insert({
     ticket_id: ticket.id,

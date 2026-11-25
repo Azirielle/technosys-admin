@@ -25,14 +25,17 @@ export function LendToolModal({
   people,
   onClose,
   onDone,
+  start,
 }: {
   tool: Tool | null
   people: Person[]
+  /** From a tool request: who asked and how many (still editable) */
+  start?: { personId: string; qty: number }
   onClose: () => void
   onDone: () => void
 }) {
-  const [personId, setPersonId] = useState('')
-  const [qty, setQty] = useState('1')
+  const [personId, setPersonId] = useState(start?.personId ?? '')
+  const [qty, setQty] = useState(String(start?.qty ?? 1))
   const [notes, setNotes] = useState('')
   const [tried, setTried] = useState(false)
   const [serverError, setServerError] = useState<string | null>(null)
@@ -42,8 +45,8 @@ export function LendToolModal({
   const [shownId, setShownId] = useState(tool?.id)
   if (shownId !== tool?.id) {
     setShownId(tool?.id)
-    setPersonId('')
-    setQty('1')
+    setPersonId(start?.personId ?? '')
+    setQty(String(start?.qty ?? 1))
     setNotes('')
     setTried(false)
     setServerError(null)

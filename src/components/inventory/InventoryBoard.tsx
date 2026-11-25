@@ -1,6 +1,10 @@
-// InventoryBoard: the Coordinator's Inventory page — tools in the warehouse, and tools lent out to crews.
+// InventoryBoard: the Coordinator's Inventory page — tools in the warehouse, tools lent out to crews, and tool requests
+// from the phone (Requests tab).
 'use client'
 
+import { ToolRequestsTable } from './ToolRequestsTable'
+import { REQUEST_FIELDS, toRequest, type ToolRequest } from './toolRequests'
+import { finishTicket } from '@/components/tickets/ticketActions'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { usePageCommand } from '@/components/commands/pageCommands'
 import { Box, Package, Plus, Search, ShieldAlert, Wrench } from 'lucide-react'
@@ -16,7 +20,7 @@ import { BorrowingDetailModal } from './BorrowingDetailModal'
 import { DeleteToolModal } from './DeleteToolModal'
 import { CATEGORIES, LOW_STOCK, isOverdue, type Borrowing, type Person, type Tool } from './types'
 
-type Tab = 'tools' | 'borrowed'
+type Tab = 'tools' | 'borrowed' | 'requests'
 type BorrowFilter = 'checked_out' | 'overdue' | 'returned' | 'problems' | 'all'
 const PER_PAGE = 8
 
@@ -47,6 +51,8 @@ export function InventoryBoard() {
   const [deleting, setDeleting] = useState<Tool | null>(null)
   const [returning, setReturning] = useState<Borrowing | null>(null)
   const [viewing, setViewing] = useState<Borrowing | null>(null)
+  const [requests, setRequests] = useState<ToolRequest[]>([])
+  const [lendingFor, setLendingFor] = useState<ToolRequest | null>(null) // a request being lent
 
   // Quick actions and the N shortcut: add a tool, or open "Lend" for a tool once the list has loaded.
   const [pendingLend, setPendingLend] = useState<string | null>(null)
@@ -65,7 +71,7 @@ export function InventoryBoard() {
   }
 
   const load = useCallback(async () => {
-    const [toolsRes, borrowRes, staff, reportRes] = await Promise.all([
+    const [toolsRes, borrowRes, staff, reportRes, requestRes] = await Promise.all([
       supabase.from('tools').select('*').order('name'),
       supabase
         .from('tool_borrowings')
@@ -73,11 +79,13 @@ export function InventoryBoard() {
         .order('handed_over_at', { ascending: false }),
       getTechnicians(),
       supabase.from('tickets').select('employee_id, title, description').eq('category', 'Equipment / Tools').neq('status', 'resolved'),
+      supabase.from('tickets').select(REQUEST_FIELDS).eq('category', 'Tool request').in('status', ['open', 'in_progress']).order('created_at'),
     ])
     if (toolsRes.error || borrowRes.error) toast.error("Couldn't load the inventory. Refresh the page.")
     setTools((toolsRes.data ?? []) as Tool[])
     setBorrowings((borrowRes.data ?? []) as unknown as Borrowing[])
     setPeople((staff ?? []) as Person[])
+    setRequests(((requestRes.data ?? []) as unknown as Parameters<typeof toRequest>[0][]).map(toRequest))
     // shortcut: matched by the ticket title "Tool problem: <name>" (the phone's report has no borrowing id)
     setReports(new Map((reportRes.data ?? []).map((r) => [`${r.employee_id}|${r.title.replace(/^Tool problem: /, '')}`,
       r.description.split('\n').find((l: string) => l.startsWith('Problem: '))?.slice(9) ?? 'Problem reported'])))
@@ -87,6 +95,11 @@ export function InventoryBoard() {
   useEffect(() => {
     load()
   }, [load])
+
+  async function declineRequest(r: ToolRequest, reason: string) {
+    try { await finishTicket(supabase, r, 'closed', `Not lent: ${reason.trim()}`, 'the Coordinator'); done('Request declined', () => {}) }
+    catch (err) { toast.error(`Couldn't decline: ${(err as Error).message}`) }
+  }
 
   function done(message: string, close: () => void) {
     close()
@@ -116,7 +129,7 @@ export function InventoryBoard() {
       (borrowFilter === 'overdue' ? isOverdue(b) : borrowFilter === 'problems' ? b.status === 'damaged' || b.status === 'lost' : b.status === borrowFilter)
     return matchFilter && (!q || [b.tool_catalog?.name, b.profiles?.full_name, b.tool_catalog?.serial_number].some((v) => (v || '').toLowerCase().includes(q)))
   })
-  const rows = tab === 'tools' ? shownTools.length : shownBorrowings.length
+  const rows = tab === 'requests' ? 0 : tab === 'tools' ? shownTools.length : shownBorrowings.length // requests: a short list, no pages
   const show = (t: Tab, filter?: BorrowFilter) => { setTab(t); if (filter) setBorrowFilter(filter); setSearch(''); setPage(1) }
 
   return (
@@ -143,9 +156,10 @@ export function InventoryBoard() {
           items={[
             { value: 'tools', label: 'Tools', count: tools.length },
             { value: 'borrowed', label: 'Borrowed', count: totals.out },
+            { value: 'requests', label: 'Requests', count: requests.length },
           ]}
         />
-        {tab === 'tools' ? (
+        {tab === 'requests' ? null : tab === 'tools' ? (
           <Select aria-label="Category" className="w-52" placeholder="All categories" value={category} onChange={(e) => { setCategory(e.target.value); setPage(1) }} options={CATEGORIES.map((c) => ({ value: c, label: c }))} />
         ) : (
           <Select
@@ -166,7 +180,10 @@ export function InventoryBoard() {
       </div>
 
       <TableContainer>
-        {tab === 'tools' ? (
+        {tab === 'requests' ? (
+          <ToolRequestsTable requests={requests} onDecline={declineRequest}
+            onLend={(r) => { const tool = tools.find((x) => x.name === r.tool); if (tool) { setLendingFor(r); setLending(tool) } else toast.error(`"${r.tool}" isn't in the tool list any more.`) }} />
+        ) : tab === 'tools' ? (
           <ToolsTable
             tools={shownTools.slice((page - 1) * PER_PAGE, page * PER_PAGE)}
             loading={loading}
@@ -191,7 +208,13 @@ export function InventoryBoard() {
       </TableContainer>
 
       <ToolFormModal isOpen={toolForm.open} tool={toolForm.tool} onClose={() => setToolForm({ open: false, tool: null })} onSaved={() => done('Tool saved', () => setToolForm({ open: false, tool: null }))} />
-      <LendToolModal tool={lending} people={people} onClose={() => setLending(null)} onDone={() => done('Tool lent', () => setLending(null))} />
+      <LendToolModal tool={lending} people={people} start={lendingFor ? { personId: lendingFor.employee_id, qty: lendingFor.howMany } : undefined}
+        onClose={() => { setLending(null); setLendingFor(null) }}
+        onDone={async () => {
+          // A request: tell the technician in their chat and close it
+          if (lendingFor) await finishTicket(supabase, lendingFor, 'resolved', `Approved: ${lending?.name} is lent to you. It shows under My tools.`, 'the Coordinator').catch(() => null)
+          done('Tool lent', () => { setLending(null); setLendingFor(null) })
+        }} />
       <DeleteToolModal tool={deleting} onClose={() => setDeleting(null)} onDone={() => done('Tool deleted', () => setDeleting(null))} />
       <BorrowingDetailModal borrowing={returning ? null : viewing} onClose={() => setViewing(null)} onReturn={(b) => { setViewing(null); setReturning(b) }} />
       <ReturnToolModal borrowing={returning} onClose={() => setReturning(null)} onDone={() => done('Tool checked in', () => setReturning(null))} />
