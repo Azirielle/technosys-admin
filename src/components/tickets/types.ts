@@ -85,6 +85,19 @@ export function isImage(url?: string | null, type?: string | null) {
   return /\.(png|jpe?g|webp|gif)$/i.test(url.split('?')[0])
 }
 
+/** The kind of concern, from the category the phone saved (DTR, tools, other reports, or a plain Techy chat). */
+export type TicketKind = 'all' | 'dtr' | 'tools' | 'others' | 'chat'
+export const TICKET_KINDS: { value: TicketKind; label: string }[] = [
+  { value: 'all', label: 'All types' }, { value: 'dtr', label: 'DTR' }, { value: 'tools', label: 'Tools' },
+  { value: 'others', label: 'Others (accident, vehicle…)' }, { value: 'chat', label: 'Techy chats' },
+]
+export function kindOf(ticket: Pick<Ticket, 'category' | 'title'>): Exclude<TicketKind, 'all'> {
+  if (ticket.title?.startsWith('Support Conversation')) return 'chat'
+  if (/dtr/i.test(ticket.category)) return 'dtr'
+  if (/equipment|tool/i.test(ticket.category)) return 'tools'
+  return 'others'
+}
+
 export function matchesFilter(ticket: Ticket, filter: TicketFilter) {
   if (filter === 'needs_attention') return needsAttention(ticket)
   if (filter === 'in_progress') return ticket.status === 'in_progress'

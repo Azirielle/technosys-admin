@@ -4,13 +4,13 @@
 import { useMemo, useRef, useState } from 'react'
 import { usePageCommand } from '@/components/commands/pageCommands'
 import { Search, X } from 'lucide-react'
-import { IconButton, Input, PageHeader, Tabs, cx, useToast } from '@/components/ui'
+import { IconButton, Input, PageHeader, Select, Tabs, cx, useToast } from '@/components/ui'
 import { TicketList } from './TicketList'
 import { TicketThread } from './TicketThread'
 import { TicketFinishModal } from './TicketFinishModal'
 import { finishTicket, sendReply, setTicketPriority, takeOverTicket } from './ticketActions'
 import { useTickets } from './useTickets'
-import { employeeName, matchesFilter, needsAttention, type TicketFilter } from './types'
+import { TICKET_KINDS, employeeName, kindOf, matchesFilter, needsAttention, ticketRef, type TicketFilter, type TicketKind } from './types'
 
 const EMPTY_TEXT: Record<TicketFilter, string> = {
   needs_attention: 'Nothing is waiting for HR right now.',
@@ -25,6 +25,7 @@ export function TicketsBoard() {
   const { supabase, tickets, loading, messages, loadingMessages, typing, loadTickets, sendTyping, addMessage } = useTickets(selectedId)
   const [filter, setFilter] = useState<TicketFilter>('needs_attention')
   const [search, setSearch] = useState('')
+  const [kind, setKind] = useState<TicketKind>('all')
   const [reply, setReply] = useState('')
   const [file, setFile] = useState<File | null>(null)
   const [internal, setInternal] = useState(false)
@@ -54,11 +55,13 @@ export function TicketsBoard() {
     [visible],
   )
   const shown = useMemo(() => {
-    const q = search.trim().toLowerCase()
+    // The ticket number works with or without "#" (prof, 20 Nov: searching should find it right away)
+    const q = search.trim().toLowerCase().replace(/^#/, '')
     return visible.filter(
-      (t) => matchesFilter(t, filter) && (!q || [t.title, t.category, employeeName(t)].some((s) => s.toLowerCase().includes(q))),
+      (t) => matchesFilter(t, filter) && (kind === 'all' || kindOf(t) === kind)
+        && (!q || [t.title, t.category, employeeName(t), ticketRef(t)].some((s) => s.toLowerCase().includes(q))),
     )
-  }, [visible, filter, search])
+  }, [visible, filter, search, kind])
 
   function openTicket(id: string) {
     setSelectedId(id)
@@ -145,7 +148,10 @@ export function TicketsBoard() {
             { value: 'all', label: 'All', count: tickets.length },
           ]}
         />
-        <Input icon={Search} className="w-full sm:w-72" placeholder="Search name, subject or type" aria-label="Search tickets" value={search} onChange={(e) => setSearch(e.target.value)} />
+        <div className="flex w-full flex-wrap gap-2 sm:w-auto">
+          <Select aria-label="Type of concern" className="w-full sm:w-56" value={kind} onChange={(e) => setKind(e.target.value as TicketKind)} options={TICKET_KINDS} />
+          <Input icon={Search} className="w-full sm:w-72" placeholder="Search name, subject or ticket #" aria-label="Search tickets" value={search} onChange={(e) => setSearch(e.target.value)} />
+        </div>
       </div>
 
       <div className="flex min-h-0 flex-1 gap-section">
