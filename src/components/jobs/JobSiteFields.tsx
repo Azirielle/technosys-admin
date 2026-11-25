@@ -6,15 +6,16 @@
 import { useState } from 'react'
 import dynamic from 'next/dynamic'
 import { MapPin, Maximize2, Search } from 'lucide-react'
-import { Button, Field, IconButton, Input, Modal, Skeleton } from '@/components/ui'
+import { Button, Field, IconButton, Input, Modal, Select, Skeleton } from '@/components/ui'
 import { parseCoords } from './coords'
+import { SCOPES, type Scope } from './jobTypes'
 
 const GeofenceMap = dynamic(() => import('@/components/dashboard/GeofenceMap'), {
   ssr: false,
   loading: () => <Skeleton className="h-56 w-full rounded-control" />,
 })
 
-export type SiteValue = { client_name: string; project_name: string; address: string; site_lat: number; site_lon: number; site_radius_m: number }
+export type SiteValue = { client_name: string; scope: Scope | ''; address: string; site_lat: number; site_lon: number; site_radius_m: number }
 type Found = { place_id?: string | number; display_name: string; lat: string; lon: string }
 
 export function JobSiteFields({ value, onChange, pinned }: { value: SiteValue; onChange: (patch: Partial<SiteValue>) => void; pinned: boolean }) {
@@ -40,11 +41,11 @@ export function JobSiteFields({ value, onChange, pinned }: { value: SiteValue; o
   return (
     <div className="flex flex-col gap-stack">
       <div className="grid grid-cols-1 gap-stack sm:grid-cols-2">
-        <Field label="Client" htmlFor="job-client" required>
-          <Input id="job-client" value={value.client_name} onChange={(e) => onChange({ client_name: e.target.value })} placeholder="Toyota Sta. Rosa" />
+        <Field label="Client" htmlFor="job-client" required hint="Building / tenant, e.g. Insular / Technocycle">
+          <Input id="job-client" value={value.client_name} onChange={(e) => onChange({ client_name: e.target.value })} placeholder="Insular / Technocycle" />
         </Field>
-        <Field label="Project (optional)" htmlFor="job-project">
-          <Input id="job-project" value={value.project_name} onChange={(e) => onChange({ project_name: e.target.value })} placeholder="Chiller room PM" />
+        <Field label="Scope of work" htmlFor="job-scope" required>
+          <Select id="job-scope" value={value.scope} onChange={(e) => onChange({ scope: e.target.value as Scope })} options={SCOPES} placeholder="Pick one" />
         </Field>
       </div>
 

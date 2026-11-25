@@ -21,7 +21,9 @@ export type Job = {
   id: string
   client_name: string
   address: string
+  /** Old jobs only: the form now asks for the scope instead */
   project_name: string | null
+  scope: Scope | null
   notes: string | null
   site_lat: number
   site_lon: number
@@ -56,7 +58,7 @@ export const blocks = (c: SaveCheck, vip: boolean) => c.blocking && !(vip && c.k
 export type JobInput = {
   client_name: string
   address: string
-  project_name: string
+  scope: Scope | ''
   notes: string
   site_lat: number
   site_lon: number
@@ -78,6 +80,17 @@ export type JobInput = {
   /** Required when changing a job that's already saved */
   change_reason: string
 }
+
+/** Scope of work: what the crew does there (client's list, Nov 2026). Replaces the old free-text "Project". */
+export type Scope = 'repair' | 'cleaning' | 'installation' | 'troubleshooting' | 'inspection'
+export const SCOPES: { value: Scope; label: string }[] = [
+  { value: 'repair', label: 'Repair' },
+  { value: 'cleaning', label: 'Cleaning' },
+  { value: 'installation', label: 'Installation' },
+  { value: 'troubleshooting', label: 'Troubleshooting' },
+  { value: 'inspection', label: 'Inspection' },
+]
+export const scopeLabel = (s: Scope | null) => SCOPES.find((x) => x.value === s)?.label ?? null
 
 export const WORK_TYPES: { value: WorkType; label: string }[] = [
   { value: 'on_site', label: 'On site (day job)' },

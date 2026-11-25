@@ -9,13 +9,14 @@ import { verifyRoleAccess } from '@/lib/permissions'
 import { sendPushToUser } from '@/lib/push'
 import { sendSmsToUser } from '@/lib/sms'
 import { logActivity } from './activity'
-import { blocks, clock, dateRange, type JobInput } from '@/components/jobs/jobTypes'
+import { SCOPES, blocks, clock, dateRange, type JobInput } from '@/components/jobs/jobTypes'
 import type { Json } from '@/lib/supabase/database.types'
 
 type Result = { ok: true; jobId: string; notified: number; notReached: string[]; moved: string[] } | { ok: false; error: string }
 
 function problemsIn(i: JobInput): string | null {
   if (!i.client_name.trim()) return 'Enter the client.'
+  if (!SCOPES.some((s) => s.value === i.scope)) return 'Pick the scope of work.'
   if (!i.address.trim()) return 'Enter the address.'
   if (!Number.isFinite(i.site_lat) || !Number.isFinite(i.site_lon)) return 'Put the pin on the map.'
   if (!i.start_date || !i.end_date) return 'Pick the dates.'
@@ -106,7 +107,7 @@ export async function saveJob(input: JobInput, jobId?: string): Promise<Result> 
 
   const row = {
     client_name: input.client_name.trim(), address: input.address.trim(),
-    project_name: input.project_name.trim() || null, notes: input.notes.trim() || null,
+    scope: input.scope || null, notes: input.notes.trim() || null,
     site_lat: input.site_lat, site_lon: input.site_lon, site_radius_m: Math.round(input.site_radius_m),
     start_date: input.start_date, end_date: input.end_date, start_time: input.start_time, end_time: input.end_time,
     work_type: input.work_type, report_to: input.report_to, hq_office_id: input.report_to === 'hq' ? input.hq_office_id : null,

@@ -9,7 +9,7 @@ import { cancelJob } from '@/app/actions/jobs'
 import { formatAgo } from '@/lib/format'
 import { Avatar, Badge, Button, Drawer, Field, Input, SkeletonText, useToast } from '@/components/ui'
 import { loadJobEvents, type JobEvent } from './jobsData'
-import { ROLE_LABEL, STATUS, clock, dateRange, type Job, type Vehicle } from './jobTypes'
+import { ROLE_LABEL, STATUS, clock, dateRange, scopeLabel, type Job, type Vehicle } from './jobTypes'
 
 const EVENT_LABEL: Record<string, string> = {
   created: 'Job created', moved: 'Moved', cancelled: 'Cancelled', crew_changed: 'Crew changed',
@@ -47,7 +47,7 @@ export function JobDetailDrawer({ job, vehicles, readOnly = false, onClose, onEd
   }
 
   return (
-    <Drawer isOpen onClose={onClose} title={job.is_vip ? `VIP · ${job.client_name}` : job.client_name} subtitle={job.project_name ?? undefined}
+    <Drawer isOpen onClose={onClose} title={job.is_vip ? `VIP · ${job.client_name}` : job.client_name} subtitle={scopeLabel(job.scope) ?? job.project_name ?? undefined}
       headerExtra={<Badge tone={status.tone} dot>{status.label}</Badge>}
       footer={open && !readOnly ? (cancelling ? (
         <>

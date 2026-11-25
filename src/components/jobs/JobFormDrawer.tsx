@@ -12,7 +12,7 @@ import { JobSiteFields, type SiteValue } from './JobSiteFields'
 import { JobCrewFields, type CrewValue } from './JobCrewFields'
 import { JobChecksList } from './JobChecksList'
 import { runSaveChecks } from './jobsData'
-import { REPORT_TO, WORK_TYPES, blocks, clock, dateRange, manilaToday, type Job, type JobInput, type Office, type Person, type SaveCheck, type TempWorker, type Vehicle } from './jobTypes'
+import { REPORT_TO, WORK_TYPES, blocks, scopeLabel, clock, dateRange, manilaToday, type Job, type JobInput, type Office, type Person, type SaveCheck, type TempWorker, type Vehicle } from './jobTypes'
 
 type Props = { open: boolean; job: Job | null; prefill?: Partial<JobInput>; people: Person[]; temps: TempWorker[]; vehicles: Vehicle[]; offices: Office[]; onClose: () => void; onSaved: () => void }
 
@@ -20,7 +20,7 @@ function fromJob(job: Job | null, hq: Office | undefined, prefill: Partial<JobIn
   const m = (role: string) => job?.members.filter((x) => x.role === role && x.person_id).map((x) => x.person_id!) ?? []
   const driver = job?.members.find((x) => x.vehicle_id) ?? job?.members.find((x) => x.role === 'driver') // the driver may also be lead / crew
   return {
-    client_name: job?.client_name ?? '', address: job?.address ?? '', project_name: job?.project_name ?? '', notes: job?.notes ?? '',
+    client_name: job?.client_name ?? '', address: job?.address ?? '', scope: job?.scope ?? '', notes: job?.notes ?? '',
     site_lat: job?.site_lat ?? hq?.latitude ?? 14.3439, site_lon: job?.site_lon ?? hq?.longitude ?? 121.0617, site_radius_m: job?.site_radius_m ?? 150,
     start_date: job?.start_date ?? manilaToday(), end_date: job?.end_date ?? manilaToday(),
     start_time: job?.start_time.slice(0, 5) ?? '08:00', end_time: job?.end_time.slice(0, 5) ?? '17:00',
@@ -86,7 +86,7 @@ export function JobFormDrawer({ open, job, prefill, people, temps, vehicles, off
 
   // What each step still needs before Next (null = ready)
   const missing = (n: number): string | null => {
-    if (n === 1) return !form.client_name.trim() ? 'Enter the client.' : !form.address.trim() ? 'Enter the address.' : !pinned ? 'Place the pin on the map.' : null
+    if (n === 1) return !form.client_name.trim() ? 'Enter the client.' : !form.scope ? 'Pick the scope of work.' : !form.address.trim() ? 'Enter the address.' : !pinned ? 'Place the pin on the map.' : null
     if (n === 2) return !(form.start_date && form.end_date && form.start_time && form.end_time) ? 'Enter the days and times.' : form.end_time <= form.start_time ? 'The end time must be after the start.' : form.report_to === 'hq' && !form.hq_office_id ? 'Pick the office they report to.' : null
     if (n === 3) return !form.lead_id ? 'Pick the lead.' : form.driver_id && !form.vehicle_id ? 'Pick the vehicle for the driver.' : blocked ? 'Fix the red rows first.' : null
     return null
@@ -174,6 +174,7 @@ export function JobFormDrawer({ open, job, prefill, people, temps, vehicles, off
           )}
           <dl className="grid grid-cols-[8rem_1fr] gap-x-4 gap-y-2 rounded-card bg-surface-soft p-card-sm text-small">
             <dt className="text-ink-3">Where</dt><dd className="text-ink">{form.is_vip && <span className="mr-1.5 rounded-pill bg-warning-soft px-2 py-0.5 text-micro font-semibold text-warning">VIP</span>}{form.client_name} · {form.address}</dd>
+            <dt className="text-ink-3">Scope</dt><dd className="text-ink">{scopeLabel(form.scope || null) ?? '—'}</dd>
             <dt className="text-ink-3">When</dt><dd className="text-ink">{dateRange(form.start_date, form.end_date)}, {clock(form.start_time)} – {clock(form.end_time)}</dd>
             <dt className="text-ink-3">Report to</dt><dd className="text-ink">{REPORT_TO.find((r) => r.value === form.report_to)?.label}</dd>
             <dt className="text-ink-3">Lead</dt><dd className="text-ink">{name(form.lead_id) ?? '—'}</dd>

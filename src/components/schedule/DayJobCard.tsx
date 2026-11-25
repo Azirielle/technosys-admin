@@ -5,7 +5,7 @@
 'use client'
 
 import { cx } from '@/components/ui'
-import type { Job } from '@/components/jobs/jobTypes'
+import { scopeLabel, type Job } from '@/components/jobs/jobTypes'
 import { atRisk, checksOf, clock12, roleOn, type Sched } from './scheduleMath'
 import { JOB_STATUS_WORD, JOB_TONE, VIP_TONE } from './scheduleStyles'
 import { VipTag } from '@/components/jobs/VipTag'
@@ -29,7 +29,7 @@ export function DayJobCard({ S, job: j, personId, personName, date, today, now, 
     : late ? { text: 'Not timed in', danger: true }
     : check ? { text: check.includes('lead') ? 'Helper as lead' : 'Leave waiting for HR', danger: false } : null
   const status = JOB_STATUS_WORD[j.status]
-  const tip = [j.client_name, `${clock12(j.start_time)} – ${clock12(j.end_time)}`, j.address, status, problem?.text].filter(Boolean).join(' · ')
+  const tip = [j.client_name, scopeLabel(j.scope), `${clock12(j.start_time)} – ${clock12(j.end_time)}`, j.address, status, problem?.text].filter(Boolean).join(' · ')
 
   return (
     <button type="button" onClick={() => onOpen(j)} onMouseEnter={() => onHover(j.id)} onMouseLeave={() => onHover(null)} onFocus={() => onHover(j.id)} onBlur={() => onHover(null)}
