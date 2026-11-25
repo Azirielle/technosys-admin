@@ -53,7 +53,7 @@ export function TodayBoard() {
 
       <StatRow>
         <StatTile loading={loading} icon={CheckCircle2} label="In" value={count(['in', 'late', 'review', 'done'])} hint={`of ${rows.length} scheduled`} tone="success" />
-        <StatTile loading={loading} icon={Clock} label="Late" value={count(['late'])} hint="More than 15 min after start" tone={count(['late']) ? 'warning' : 'neutral'} />
+        <StatTile loading={loading} icon={Clock} label="Late" value={count(['late'])} hint="Timed in after the start" tone={count(['late']) ? 'warning' : 'neutral'} />
         <StatTile loading={loading} icon={AlertTriangle} label="Missing" value={count(['missing']) + earlierOpen.length} hint="No time-in, or no time-out" tone={count(['missing']) + earlierOpen.length ? 'danger' : 'neutral'} />
         <StatTile loading={loading} icon={ShieldCheck} label="To approve" value={toApprove} hint="Selfies, time-outs, overtime" tone={toApprove ? 'warning' : 'neutral'} />
       </StatRow>

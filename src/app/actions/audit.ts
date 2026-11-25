@@ -152,11 +152,11 @@ function getDatesInRange(startDateStr: string, endDateStr: string): string[] {
 
 // Technocycle's DTR rules (confirmed by Andrew, 15 Nov 2026):
 // - The regular shift starts at 8:00 AM; a job's own start time is used on job days.
-// - 15-minute grace period: late only after 8:15 (or the job time + 15), counted from the start time.
+// - No grace period (client, Nov 2026): 1 minute after the start (8:00 or the job's time) is late, counted from the start time.
 // - Monday to Saturday are workdays; Sunday is the rest day.
 // - Overtime counts only up to the hours HR approved in an overtime request for that day.
 const SHIFT_START = '08:00'
-const GRACE_MINUTES = 15
+const GRACE_MINUTES = 0
 
 type DtrJob = { id: string; technician_id: string | null; client_name: string; location: string; start_time: string; end_time: string | null; status: string | null }
 
@@ -426,7 +426,7 @@ export async function getDtrRecords(
             expectedStartTimeMs = defStart.getTime();
           }
 
-          // Late only past the grace period; the minutes count from the start time.
+          // Late from the first minute after the start; the minutes count from the start time.
           let dayLateMins = 0;
           const minutesAfterStart = Math.floor((inDate.getTime() - expectedStartTimeMs) / (1000 * 60));
           if (minutesAfterStart > GRACE_MINUTES) {

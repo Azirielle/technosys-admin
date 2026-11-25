@@ -139,7 +139,7 @@ export function JobFormDrawer({ open, job, prefill, people, temps, vehicles, off
             <Field label="Start" htmlFor="job-start-time" required><Input id="job-start-time" type="time" value={form.start_time} onChange={(e) => set({ start_time: e.target.value })} /></Field>
             <Field label="End" htmlFor="job-end-time" required><Input id="job-end-time" type="time" value={form.end_time} onChange={(e) => set({ end_time: e.target.value })} /></Field>
           </div>
-          <p className="text-caption text-ink-3">Time-in opens 1 hour before the start. Late after 15 minutes. Same hours every day of the job.</p>
+          <p className="text-caption text-ink-3">Time-in opens 1 hour before the start. Late from 1 minute after the start. Same hours every day of the job.</p>
           <h3 className="mt-2 text-small font-medium text-ink">How they report</h3>
           <div className="grid grid-cols-1 gap-stack sm:grid-cols-2">
             <Field label="Kind of work" htmlFor="job-type"><Select id="job-type" value={form.work_type} onChange={(e) => set({ work_type: e.target.value as JobInput['work_type'] })} options={WORK_TYPES} /></Field>
