@@ -9,6 +9,7 @@ import { Badge, Button, Checkbox, Modal, cx } from '@/components/ui'
 import { Keys } from '@/components/commands/Keys'
 import { applicantName, type LeaveRecord } from './types'
 import { CertificateLink } from './CertificateLink'
+import { LeaveCredits } from './LeaveCredits'
 
 export function LeaveReviewModal({
   leave,
@@ -100,6 +101,8 @@ export function LeaveReviewModal({
         )}
 
         {leave.attachment_url && <CertificateLink attachment={leave.attachment_url} />}
+
+        <LeaveCredits leave={leave} />
 
         <p
           className={cx(

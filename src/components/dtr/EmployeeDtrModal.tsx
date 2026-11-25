@@ -62,7 +62,7 @@ export function EmployeeDtrModal({
           <Summary label="Days worked" value={`${employee.daysWorked} (${employee.totalHours} h)`} />
           <Summary label="Late" value={employee.lateCount ? `${employee.lateCount}× · ${employee.totalLateMinutes} min` : 'None'} />
           <Summary label="Regular OT" value={`${employee.regOtHours} h`} />
-          <Summary label="Sunday/holiday OT" value={`${employee.sunHolidayOtHours} h`} />
+          <Summary label="Sunday · reg. hol. · special hol." value={`${employee.sundayHours} · ${employee.regularHolidayHours} · ${employee.specialHolidayHours} h`} />
           <Summary label="Night diff" value={`${employee.nightDiffHours} h`} />
           <Summary label="Absent / leave" value={`${employee.absences} / ${employee.approvedLeaves} d`} />
         </div>

@@ -58,7 +58,9 @@ export function DtrSummaryTable({
           <TableHeaderCell numeric>Days worked</TableHeaderCell>
           <TableHeaderCell numeric>Late</TableHeaderCell>
           <TableHeaderCell numeric>Regular OT</TableHeaderCell>
-          <TableHeaderCell numeric>Sun/holiday OT</TableHeaderCell>
+          <TableHeaderCell numeric>Sunday</TableHeaderCell>
+          <TableHeaderCell numeric>Regular hol.</TableHeaderCell>
+          <TableHeaderCell numeric>Special hol.</TableHeaderCell>
           <TableHeaderCell numeric>Night diff</TableHeaderCell>
           <TableHeaderCell numeric>Absent</TableHeaderCell>
           <TableHeaderCell numeric>Leave</TableHeaderCell>
@@ -66,7 +68,7 @@ export function DtrSummaryTable({
         </tr>
       </TableHead>
       <TableBody>
-        {loading && <SkeletonTableRows cols={9} />}
+        {loading && <SkeletonTableRows cols={11} />}
         {!loading &&
           records.map((r) => (
             <TableRow key={r.id} onClick={() => onOpen(r)}>
@@ -88,7 +90,9 @@ export function DtrSummaryTable({
                 {r.lateCount > 0 && <span className="ml-1 text-caption text-ink-3">({r.totalLateMinutes} min)</span>}
               </TableCell>
               <TableCell numeric><Num value={r.regOtHours} unit=" h" /></TableCell>
-              <TableCell numeric><Num value={r.sunHolidayOtHours} unit=" h" /></TableCell>
+              <TableCell numeric><Num value={r.sundayHours} unit=" h" /></TableCell>
+              <TableCell numeric><Num value={r.regularHolidayHours} unit=" h" /></TableCell>
+              <TableCell numeric><Num value={r.specialHolidayHours} unit=" h" /></TableCell>
               <TableCell numeric><Num value={r.nightDiffHours} unit=" h" /></TableCell>
               <TableCell numeric><Num value={r.absences} tone="danger" /></TableCell>
               <TableCell numeric><Num value={r.approvedLeaves} unit=" d" /></TableCell>

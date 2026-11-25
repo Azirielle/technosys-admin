@@ -48,9 +48,9 @@ export function ScheduleBoard({ readOnly = false }: { readOnly?: boolean }) {
   const [person, setPerson] = useState<Person | null>(null)
   const [form, setForm] = useState<{ open: boolean; job: Job | null; prefill?: Partial<JobInput> }>({ open: false, job: null })
 
-  // Load the month around the day shown (and its whole week), plus 60 days back for the List tab
+  // Load the month around the day shown (and its whole week), plus about 6 months back for the List tab
   const month = date.slice(0, 7)
-  const from = [addDays(`${month}-01`, -7), weekStart(date), addDays(today, -60)].sort()[0]
+  const from = [addDays(`${month}-01`, -7), weekStart(date), addDays(today, -186)].sort()[0] // ~6 months back: the List tab's month filter
   const to = [addDays(`${month}-01`, 45), addDays(weekStart(date), 6)].sort()[1]
   const load = useCallback(async () => {
     try {

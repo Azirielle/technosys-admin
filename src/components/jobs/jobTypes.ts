@@ -15,6 +15,8 @@ export type JobMember = {
   vehicle_id: string | null
   is_acting_lead: boolean
   name: string
+  /** When their phone first showed them this job (null = not yet) */
+  seen_at: string | null
 }
 
 export type Job = {

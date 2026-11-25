@@ -87,7 +87,13 @@ export function JobDetailDrawer({ job, vehicles, readOnly = false, onClose, onEd
               return (
                 <li key={m.id} className="flex items-center gap-3">
                   <Avatar name={m.name} size="sm" />
-                  <span className="flex-1 text-small text-ink">{m.name}{m.temp_worker_id && <span className="text-ink-3"> · no app</span>}</span>
+                  <span className="flex-1 text-small text-ink">
+                    {m.name}{m.temp_worker_id && <span className="text-ink-3"> · no app</span>}
+                    {/* Has their phone shown them this job? Not seen on an urgent job = call them (prof, 20 Nov) */}
+                    {m.person_id && open && (m.seen_at
+                      ? <span className="block text-caption text-ink-3">Seen on their phone {clock(new Date(m.seen_at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Manila' }))}</span>
+                      : <span className={`block text-caption ${job.is_vip ? 'font-medium text-danger' : 'text-warning'}`}>Not seen on their phone yet: call them</span>)}
+                  </span>
                   {v && <span className="flex items-center gap-1 text-caption text-ink-3"><Truck className="size-3.5" aria-hidden />{v.plate}</span>}
                   <Badge tone={m.role === 'lead' ? 'info' : 'neutral'}>{m.is_acting_lead ? 'Acting lead' : ROLE_LABEL[m.role]}</Badge>
                 </li>

@@ -58,6 +58,10 @@ export interface EmployeeAuditSummary {
   totalLateMinutes: number;
   regOtHours: number;
   sunHolidayOtHours: number;
+  /** Split of sunHolidayOtHours (client, Nov 2026): hours only, no pay rates */
+  sundayHours: number;
+  regularHolidayHours: number;
+  specialHolidayHours: number;
   nightDiffHours: number;
   absences: number;
   approvedLeaves: number;
@@ -265,7 +269,7 @@ export async function getDtrRecords(
     // 5. Batch Fetch Holidays
     const { data: holidays, error: holErr } = await supabaseAdmin
       .from('holidays')
-      .select('id, name, holiday_date, is_active')
+      .select('id, name, holiday_date, is_active, holiday_type')
       .gte('holiday_date', startDate)
       .lte('holiday_date', endDate)
       .eq('is_active', true);
@@ -293,9 +297,9 @@ export async function getDtrRecords(
       .order('created_at', { ascending: false });
 
     // Create lookup maps for fast access
-    const holidayMap = new Map<string, { name: string }>();
+    const holidayMap = new Map<string, { name: string; type: string }>();
     (holidays || []).forEach(h => {
-      holidayMap.set(h.holiday_date, { name: h.name });
+      holidayMap.set(h.holiday_date, { name: h.name, type: h.holiday_type });
     });
 
     const datesList = getDatesInRange(startDate, endDate);
@@ -317,6 +321,9 @@ export async function getDtrRecords(
       let totalLateMinutes = 0;
       let regOtHours = 0;
       let sunHolidayOtHours = 0;
+      let sundayHours = 0;
+      let regularHolidayHours = 0;
+      let specialHolidayHours = 0;
       let nightDiffHours = 0;
       let absences = 0;
       let approvedLeaves = 0;
@@ -450,6 +457,10 @@ export async function getDtrRecords(
             // Entire work is Sunday / Holiday OT
             daySunHolOt = netHours;
             sunHolidayOtHours += daySunHolOt;
+            // A holiday on a Sunday counts as the holiday
+            if (holiday?.type === 'regular') regularHolidayHours += netHours;
+            else if (holiday) specialHolidayHours += netHours;
+            else sundayHours += netHours;
           } else {
             // Regular workday: hours beyond 8 hours count as Reg OT
             if (netHours > 8) {
@@ -486,7 +497,7 @@ export async function getDtrRecords(
             nightDiffHours: parseFloat(dayNdHours.toFixed(1)),
             isSunday,
             isHoliday,
-            holidayName: holiday?.name,
+            holidayName: holiday ? `${holiday.name} (${holiday.type})` : null,
             status,
             isManualEntry: !!log.is_manual_entry,
             isMocked: !!log.is_mocked,
@@ -687,6 +698,9 @@ export async function getDtrRecords(
         totalLateMinutes,
         regOtHours: parseFloat(regOtHours.toFixed(1)),
         sunHolidayOtHours: parseFloat(sunHolidayOtHours.toFixed(1)),
+        sundayHours: parseFloat(sundayHours.toFixed(1)),
+        regularHolidayHours: parseFloat(regularHolidayHours.toFixed(1)),
+        specialHolidayHours: parseFloat(specialHolidayHours.toFixed(1)),
         nightDiffHours: parseFloat(nightDiffHours.toFixed(1)),
         absences,
         approvedLeaves,

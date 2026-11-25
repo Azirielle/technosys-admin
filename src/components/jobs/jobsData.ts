@@ -11,7 +11,7 @@ export async function loadJobs(supabase: Client, since = new Date(Date.now() - 4
     .from('jobs')
     .select(`id, client_name, address, project_name, scope, priority, notes, site_lat, site_lon, site_radius_m, start_date, end_date,
       start_time, end_time, work_type, report_to, hq_office_id, status, cancel_reason, is_vip, vip_note,
-      job_members ( id, role, person_id, temp_worker_id, vehicle_id, is_acting_lead, removed_at,
+      job_members ( id, role, person_id, temp_worker_id, vehicle_id, is_acting_lead, removed_at, seen_at,
         person:profiles!job_members_person_id_fkey ( full_name ), temp:casual_helpers ( full_name ) )`)
     .gte('end_date', since)
     .order('start_date', { ascending: true })
@@ -26,7 +26,7 @@ export async function loadJobs(supabase: Client, since = new Date(Date.now() - 4
         const temp = m.temp as { full_name?: string } | null
         return {
           id: m.id, role: m.role, person_id: m.person_id, temp_worker_id: m.temp_worker_id, vehicle_id: m.vehicle_id,
-          is_acting_lead: m.is_acting_lead, name: person?.full_name ?? temp?.full_name ?? 'Unknown',
+          is_acting_lead: m.is_acting_lead, name: person?.full_name ?? temp?.full_name ?? 'Unknown', seen_at: m.seen_at ?? null,
         } as JobMember
       })
     return { ...(job as unknown as Omit<Job, 'members'>), members }
