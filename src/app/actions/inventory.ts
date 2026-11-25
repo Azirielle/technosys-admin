@@ -172,7 +172,6 @@ export async function createOrUpdateInventoryItem(formData: FormData) {
     })
 
     revalidatePath('/coordinator/inventory')
-    revalidatePath('/hr/inventory')
     return { success: true }
   } catch (err: any) {
     console.error("Failed to create/update inventory item:", err.message)
@@ -210,7 +209,6 @@ export async function deleteInventoryItem(id: string) {
     })
 
     revalidatePath('/coordinator/inventory')
-    revalidatePath('/hr/inventory')
     return { success: true }
   } catch (err: any) {
     console.error("Failed to delete inventory item:", err.message)
@@ -334,7 +332,6 @@ export async function assignTool(technicianId: string, toolId: string, quantity:
     })
 
     revalidatePath('/coordinator/inventory')
-    revalidatePath('/hr/inventory')
     return { success: true }
   } catch (err: any) {
     console.error("Failed to assign tool:", err.message)
@@ -380,7 +377,6 @@ export async function returnTool(
     })
 
     revalidatePath('/coordinator/inventory')
-    revalidatePath('/hr/inventory')
     return { success: true }
   } catch (err: any) {
     console.error("Failed to process tool return:", err.message)

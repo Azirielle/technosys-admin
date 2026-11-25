@@ -11,7 +11,7 @@ export const MODULE_ROLES: Record<string, UserRole[]> = {
   attendance: ['ceo', 'hr', 'coordinator'],
   leaves: ['ceo', 'hr'],
   tickets: ['ceo', 'hr', 'coordinator'],
-  inventory: ['ceo', 'hr', 'coordinator'],
+  inventory: ['ceo', 'coordinator'], // tools are the Coordinator's only (client, Nov 2026)
   settings: ['ceo'],
   broadcaster: ['ceo', 'hr', 'coordinator'],
   warnings: ['ceo', 'hr', 'coordinator'],
@@ -26,7 +26,7 @@ export const WRITE_ROLES: Record<string, UserRole[]> = {
   attendance: ['ceo', 'hr', 'coordinator'], // DTR corrections
   leaves: ['ceo', 'hr'],
   tickets: ['ceo', 'hr', 'coordinator'],
-  inventory: ['ceo', 'hr', 'coordinator'],
+  inventory: ['ceo', 'coordinator'], // tools are the Coordinator's only (client, Nov 2026)
   settings: ['ceo'],
   broadcaster: ['ceo', 'hr', 'coordinator'],
   warnings: ['ceo', 'hr', 'coordinator'],
