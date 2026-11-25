@@ -9,6 +9,7 @@ import { atRisk, checksOf, clock12, jobsOn, type Sched } from './scheduleMath'
 import { DOT } from './scheduleStyles'
 import { PanelSection } from './PanelSection'
 import { VipTag } from '@/components/jobs/VipTag'
+import { WorkTypeBadge } from '@/components/jobs/WorkTypeBadge'
 
 type Props = { S: Sched; date: string; today: string; now: number; onOpenJob: (job: Job) => void }
 
@@ -26,7 +27,11 @@ export function DayAgenda({ S, date, today, now, onOpenJob }: Props) {
           return (
             <button key={j.id} type="button" onClick={() => onOpenJob(j)} className="grid grid-cols-[10px_1fr] gap-x-2 rounded-chip px-1.5 py-1.5 text-left hover:bg-surface-hover">
               <span className={cx('mt-1.5 size-2 rounded-pill', DOT[tone])} />
-              <span className="flex min-w-0 items-center gap-1.5">{j.is_vip && <VipTag />}<span className="truncate text-small font-medium text-ink">{j.client_name}</span></span>
+              <span className="flex min-w-0 items-center gap-1.5">
+                {j.is_vip && <VipTag />}
+                <WorkTypeBadge workType={j.work_type} className="text-[10px] py-0 px-1" />
+                <span className="truncate text-small font-medium text-ink">{j.client_name}</span>
+              </span>
               <span className="col-start-2 flex items-center gap-1 text-caption text-ink-2">
                 <Clock className="size-3 text-ink-3" aria-hidden />{clock12(j.start_time)} · {l?.name.split(' ')[0] ?? 'No lead'}{more > 0 ? ` +${more}` : ''}
               </span>

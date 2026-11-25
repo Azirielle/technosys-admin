@@ -10,6 +10,7 @@ import { formatAgo } from '@/lib/format'
 import { Avatar, Badge, Button, Drawer, Field, Input, SkeletonText, useToast } from '@/components/ui'
 import { loadJobEvents, type JobEvent } from './jobsData'
 import { PriorityBadge } from './PriorityBadge'
+import { WorkTypeBadge } from './WorkTypeBadge'
 import { ROLE_LABEL, STATUS, clock, dateRange, scopeLabel, type Job, type Vehicle } from './jobTypes'
 
 const EVENT_LABEL: Record<string, string> = {
@@ -49,7 +50,7 @@ export function JobDetailDrawer({ job, vehicles, readOnly = false, onClose, onEd
 
   return (
     <Drawer isOpen onClose={onClose} title={job.is_vip ? `VIP · ${job.client_name}` : job.client_name} subtitle={scopeLabel(job.scope) ?? job.project_name ?? undefined}
-      headerExtra={<span className="flex gap-1.5"><PriorityBadge job={job} /><Badge tone={status.tone} dot>{status.label}</Badge></span>}
+      headerExtra={<span className="flex items-center gap-1.5"><WorkTypeBadge workType={job.work_type} /><PriorityBadge job={job} /><Badge tone={status.tone} dot>{status.label}</Badge></span>}
       footer={open && !readOnly ? (cancelling ? (
         <>
           <Button variant="ghost" onClick={() => setCancelling(false)} disabled={busy}>Keep the job</Button>

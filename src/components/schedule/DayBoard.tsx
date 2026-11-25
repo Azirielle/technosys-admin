@@ -29,7 +29,7 @@ export function DayBoard({ S, people, date, today, now, onOpenJob, onOpenPerson,
   const y = (m: number) => ((m - start * 60) / 30) * SLOT
 
   // Scroll the hours (not the page) to an hour before now, or to the first job of the day
-  const firstJob = jobsOn(S, date)[0]?.start_time
+  const firstJob = jobsOn(S, date).find((j) => j.work_type !== 'in_house')?.start_time
   useEffect(() => {
     const box = root.current?.parentElement
     if (!box) return
@@ -60,7 +60,7 @@ export function DayBoard({ S, people, date, today, now, onOpenJob, onOpenPerson,
       {/* All day: leave and multi-day jobs */}
       <div className="sticky left-0 z-30 flex items-center border-b border-r border-line bg-surface px-1.5 text-caption font-medium text-ink-2" style={{ top: HEAD }}>All day</div>
       {people.map((p) => {
-        const l = leaveOf(S, p.id, date), multi = jobsOf(S, p.id, date).filter((j) => j.end_date > j.start_date)
+        const l = leaveOf(S, p.id, date), multi = jobsOf(S, p.id, date).filter((j) => j.end_date > j.start_date && j.work_type !== 'in_house')
         return (
           <div key={p.id} className="sticky z-20 flex min-h-[44px] flex-col justify-center gap-1 border-b border-l border-line bg-surface p-1" style={{ top: HEAD }}>
             {l && <span className={cx('truncate rounded-chip border-l-[3px] px-1.5 py-1 text-micro font-medium', l.pending ? 'border-l-warning bg-warning-soft text-warning' : 'border-l-ink-3 bg-surface-soft text-ink-2')}>{l.type} leave{l.pending ? ' · waiting for HR' : ''}</span>}
@@ -83,7 +83,7 @@ export function DayBoard({ S, people, date, today, now, onOpenJob, onOpenPerson,
       {/* One column per person */}
       {people.map((p, ci) => {
         const leave = leaveOf(S, p.id, date), away = !!leave && !leave.pending
-        const js = jobsOf(S, p.id, date), clash = clashesOf(S, p.id, date), lanes = laneOf(js, (j) => mins(j.start_time) + (BOX / SLOT) * 30)
+        const js = jobsOf(S, p.id, date).filter((j) => j.work_type !== 'in_house'), clash = clashesOf(S, p.id, date), lanes = laneOf(js, (j) => mins(j.start_time) + (BOX / SLOT) * 30)
         const width = Math.max(0, ...lanes.values()) + 1
         return (
           <div key={p.id} onClick={(e) => slotClick(e, p)} title={onNew ? 'Click an empty slot to schedule a job' : undefined}

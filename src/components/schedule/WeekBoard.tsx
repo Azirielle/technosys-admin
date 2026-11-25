@@ -9,6 +9,7 @@ import type { Job, Person } from '@/components/jobs/jobTypes'
 import { addDays, atRisk, checksOf, dayNumber, isFree, jobsOf, leaveOf, roleOn, clock12, weekdayShort, type Sched } from './scheduleMath'
 import { JOB_TONE, VIP_TONE } from './scheduleStyles'
 import { VipTag } from '@/components/jobs/VipTag'
+import { WorkTypeBadge } from '@/components/jobs/WorkTypeBadge'
 
 type Props = {
   S: Sched; people: Person[]; monday: string; date: string; today: string; now: number; freeOn: string | null
@@ -41,7 +42,7 @@ export function WeekBoard({ S, people, monday, date, today, now, freeOn, onToggl
         const booked = days.filter((d) => jobsOf(S, p.id, d).length).length
         const cells = []
         for (const d of days) {
-          const js = jobsOf(S, p.id, d), starts = js.filter((j) => j.start_date === d || d === monday)
+          const js = jobsOf(S, p.id, d).filter((j) => j.work_type !== 'in_house'), starts = js.filter((j) => j.start_date === d || d === monday)
           if (js.length && !starts.length) continue // drawn by a job that started on an earlier day of this week
           const span = Math.max(1, ...starts.map((j) => daysBetween(d, j.end_date < days[6] ? j.end_date : days[6]) + 1))
           const l = leaveOf(S, p.id, d), empty = !!onNew && !js.length && !(l && !l.pending)
@@ -57,7 +58,9 @@ export function WeekBoard({ S, people, monday, date, today, now, freeOn, onToggl
                     className={cx('flex min-w-0 items-baseline gap-1.5 rounded-chip px-2 py-1 text-left text-caption', JOB_TONE[j.status], j.is_vip && j.status !== 'cancelled' && VIP_TONE,
                       risk ? 'ring-2 ring-inset ring-danger' : check ? 'ring-2 ring-inset ring-warning' : '')}>
                     {roleOn(j, p.id) === 'lead' && <span className="shrink-0 rounded px-1 text-[10px] font-bold text-ink-2 ring-1 ring-inset ring-line-strong">L</span>}
-                    {j.is_vip && <VipTag />}<b className="min-w-0 truncate font-semibold text-ink">{j.client_name}</b>
+                    {j.is_vip && <VipTag />}
+                    <WorkTypeBadge workType={j.work_type} className="text-[10px] py-0 px-1" />
+                    <b className="min-w-0 truncate font-semibold text-ink">{j.client_name}</b>
                     <span className="ml-auto shrink-0 font-mono text-[10.5px] text-ink-2">{clock12(j.start_time)}</span>
                   </button>
                 )

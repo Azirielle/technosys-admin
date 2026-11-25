@@ -6,7 +6,7 @@ import { manilaToday } from '@/components/jobs/jobTypes'
 type Client = ReturnType<typeof createClient>
 
 export type TodayJob = {
-  id: string; client_name: string; start_time: string; end_time: string; report_to: 'site' | 'hq'
+  id: string; client_name: string; start_time: string; end_time: string; report_to: 'site' | 'hq'; work_type?: string
   members: { person_id: string; name: string; role: string; is_acting_lead: boolean; level: string | null }[]
 }
 export type WorkDay = {
@@ -22,9 +22,9 @@ const withName = (w: Record<string, unknown>) => ({ ...w, name: (w.person as { f
 
 export async function loadToday(supabase: Client) {
   const today = manilaToday()
-  const [jobs, days, leaves, reviews, overtime] = await Promise.all([
+  const [jobs, days, leaves, reviews, overtime, office] = await Promise.all([
     supabase.from('jobs')
-      .select('id, client_name, start_time, end_time, report_to, job_members ( person_id, role, is_acting_lead, removed_at, person:profiles!job_members_person_id_fkey ( full_name, technician_level ) )')
+      .select('id, client_name, start_time, end_time, report_to, work_type, job_members ( person_id, role, is_acting_lead, removed_at, person:profiles!job_members_person_id_fkey ( full_name, technician_level ) )')
       .in('status', ['planned', 'ongoing']).lte('start_date', today).gte('end_date', today).order('start_time'),
     // Today's days, plus any earlier day still without a time-out
     supabase.from('work_days').select(WD_FIELDS).or(`work_date.eq.${today},time_out.is.null`).order('time_in'),
@@ -32,14 +32,15 @@ export async function loadToday(supabase: Client) {
     supabase.from('reviews').select(`id, kind, note, created_at, work_day:work_days ( ${WD_FIELDS} )`).eq('status', 'pending').order('created_at'),
     supabase.from('overtime_requests').select('id, technician_id, requested_hours, reason, request_date, person:profiles!overtime_requests_technician_id_fkey ( full_name )')
       .eq('status', 'pending').not('work_day_id', 'is', null).order('created_at'),
+    supabase.from('office_check_ins').select('person_id, checked_in_at').eq('work_date', today),
   ])
-  const failed = jobs.error || days.error || leaves.error || reviews.error || overtime.error
+  const failed = jobs.error || days.error || leaves.error || reviews.error || overtime.error || office.error
   if (failed) throw failed
 
   return {
     today,
     jobs: (jobs.data ?? []).map((j) => ({
-      id: j.id, client_name: j.client_name, start_time: j.start_time, end_time: j.end_time, report_to: j.report_to as 'site' | 'hq',
+      id: j.id, client_name: j.client_name, start_time: j.start_time, end_time: j.end_time, report_to: j.report_to as 'site' | 'hq', work_type: j.work_type,
       members: (j.job_members ?? []).filter((m) => !m.removed_at && m.person_id).map((m) => {
         const p = m.person as { full_name?: string; technician_level?: string | null } | null
         return { person_id: m.person_id!, role: m.role, is_acting_lead: m.is_acting_lead, name: p?.full_name ?? 'Unknown', level: p?.technician_level ?? null }
@@ -47,6 +48,7 @@ export async function loadToday(supabase: Client) {
     })) as TodayJob[],
     days: (days.data ?? []).map((d) => withName(d as Record<string, unknown>)),
     onLeave: new Map((leaves.data ?? []).map((l) => [l.technician_id, l.leave_type as string])),
+    officeCheckIns: new Map((office.data ?? []).map((o) => [o.person_id, o.checked_in_at as string])),
     reviews: (reviews.data ?? []).filter((r) => r.work_day).map((r) => ({
       id: r.id, kind: r.kind, note: r.note, created_at: r.created_at, work_day: withName(r.work_day as unknown as Record<string, unknown>),
     })) as Review[],
@@ -75,6 +77,7 @@ export async function selfieLink(supabase: Client, path: string): Promise<string
 export function watchToday(supabase: Client, onChange: () => void): () => void {
   const channel = supabase.channel(`today-${Date.now()}`)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'work_days' }, onChange)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'office_check_ins' }, onChange)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'reviews' }, onChange)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'overtime_requests' }, onChange)
     .subscribe()

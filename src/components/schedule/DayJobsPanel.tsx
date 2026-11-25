@@ -9,6 +9,7 @@ import { Badge, cx } from '@/components/ui'
 import { WORK_TYPES, type Job, type JobStatus } from '@/components/jobs/jobTypes'
 import { atRisk, clock12, type Sched } from './scheduleMath'
 import { VipTag } from '@/components/jobs/VipTag'
+import { WorkTypeBadge } from '@/components/jobs/WorkTypeBadge'
 
 type Props = { S: Sched; date: string; today: string; now: number; onOpenJob: (job: Job) => void }
 type Show = 'all' | JobStatus
@@ -29,7 +30,7 @@ export function DayJobsPanel({ S, date, today, now, onOpenJob }: Props) {
   })
   function toggle(v: boolean) { setOpen(v); try { localStorage.setItem(KEY, v ? '1' : '0') } catch { /* ignore */ } }
 
-  const day = S.jobs.filter((j) => j.start_date <= date && j.end_date >= date)
+  const day = S.jobs.filter((j) => j.start_date <= date && j.end_date >= date && j.work_type !== 'in_house')
   const count = (s: Show) => day.filter((j) => s === 'all' ? j.status !== 'cancelled' : j.status === s).length
   const rows = day.filter((j) => show === 'all' ? j.status !== 'cancelled' : j.status === show)
   const lead = (j: Job) => j.members.find((m) => m.is_acting_lead) ?? j.members.find((m) => m.role === 'lead')
@@ -63,7 +64,7 @@ export function DayJobsPanel({ S, date, today, now, onOpenJob }: Props) {
                   <tr key={j.id} className="hover:bg-surface-hover">
                     <td className="max-w-48 truncate px-3 py-2 font-medium text-ink">{j.is_vip && <><VipTag />{' '}</>}{j.client_name}</td>
                     <td className="max-w-64 truncate px-3 py-2 text-ink-2">{j.address}</td>
-                    <td className="px-3 py-2 text-ink-2">{WORK_TYPES.find((w) => w.value === j.work_type)?.label ?? j.work_type}</td>
+                    <td className="px-3 py-2 text-ink-2"><WorkTypeBadge workType={j.work_type} /></td>
                     <td className="px-3 py-2 text-ink">{lead(j)?.name ?? '—'}</td>
                     <td className="px-3 py-2 tabular-nums text-ink-2">{j.members.length}</td>
                     <td className="whitespace-nowrap px-3 py-2 tabular-nums text-ink-2">{clock12(j.start_time)} – {clock12(j.end_time)}</td>

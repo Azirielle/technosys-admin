@@ -1036,6 +1036,53 @@ export type Database = {
           },
         ]
       }
+      office_check_ins: {
+        Row: {
+          accuracy_m: number | null
+          checked_in_at: string
+          face_check: string | null
+          face_score: number | null
+          id: string
+          lat: number | null
+          lon: number | null
+          person_id: string
+          selfie_path: string | null
+          work_date: string
+        }
+        Insert: {
+          accuracy_m?: number | null
+          checked_in_at?: string
+          face_check?: string | null
+          face_score?: number | null
+          id?: string
+          lat?: number | null
+          lon?: number | null
+          person_id: string
+          selfie_path?: string | null
+          work_date: string
+        }
+        Update: {
+          accuracy_m?: number | null
+          checked_in_at?: string
+          face_check?: string | null
+          face_score?: number | null
+          id?: string
+          lat?: number | null
+          lon?: number | null
+          person_id?: string
+          selfie_path?: string | null
+          work_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "office_check_ins_person_id_fkey"
+            columns: ["person_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       office_locations: {
         Row: {
           created_at: string | null

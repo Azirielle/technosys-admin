@@ -22,7 +22,7 @@ export interface DailyAuditRecord {
   isSunday: boolean;
   isHoliday: boolean;
   holidayName?: string | null;
-  status: 'present' | 'late' | 'overtime' | 'absent' | 'approved_leave' | 'rest_day' | 'holiday' | 'off_duty' | 'unclosed';
+  status: 'present' | 'late' | 'overtime' | 'absent' | 'approved_leave' | 'rest_day' | 'holiday' | 'off_duty' | 'unclosed' | 'in_house';
   leaveType?: string | null;
   /** Leave category under client leave credit rules: sick, vacation, without_credits, or other */
   leaveCategory?: LeaveCreditCategory | null;
@@ -89,4 +89,5 @@ export type DtrJob = {
   start_time: string;
   end_time: string | null;
   status: string | null;
+  work_type?: string | null;
 }

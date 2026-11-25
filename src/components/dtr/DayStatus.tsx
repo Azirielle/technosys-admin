@@ -13,6 +13,7 @@ const STATUS: Record<DailyAuditRecord['status'], { label: string; tone: Tone }> 
   holiday: { label: 'Holiday', tone: 'info' },
   off_duty: { label: 'Not yet', tone: 'neutral' },
   unclosed: { label: 'No time out', tone: 'danger' },
+  in_house: { label: 'In-house', tone: 'neutral' },
 }
 
 export function DayStatus({ day }: { day: DailyAuditRecord }) {

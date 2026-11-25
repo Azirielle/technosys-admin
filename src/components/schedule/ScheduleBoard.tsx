@@ -10,6 +10,7 @@ import { Page, Tabs, cx, useToast } from '@/components/ui'
 import { usePageCommand } from '@/components/commands/pageCommands'
 import { JobDetailDrawer } from '@/components/jobs/JobDetailDrawer'
 import { JobFormDrawer } from '@/components/jobs/JobFormDrawer'
+import { WorkTypeBadge } from '@/components/jobs/WorkTypeBadge'
 import { VehiclesPanel } from '@/components/jobs/VehiclesPanel'
 import { loadFormOptions, loadJobs } from '@/components/jobs/jobsData'
 import { manilaToday, type Job, type JobInput, type Office, type Person, type TempWorker, type Vehicle } from '@/components/jobs/jobTypes'
@@ -24,7 +25,7 @@ import { PersonDrawer } from './PersonDrawer'
 import { ScheduleStats } from './ScheduleStats'
 import { JobsList } from './JobsList'
 import { TempWorkersPanel } from './TempWorkersPanel'
-import { loadLeaveAndDays, loadTempWorkers, watchSchedule, type DayLog, type LeaveDay, type TempWorkerItem } from './scheduleData'
+import { loadLeaveAndDays, loadTempWorkers, watchSchedule, type DayLog, type LeaveDay, type OfficeLog, type TempWorkerItem } from './scheduleData'
 import { addDays, isFree, longDate, manilaNowMinutes, weekLabel, weekStart, type Sched } from './scheduleMath'
 
 type Who = 'all' | 'technician' | 'helper' | 'free'
@@ -41,7 +42,7 @@ export function ScheduleBoard({ readOnly = false }: { readOnly?: boolean }) {
   const [now, setNow] = useState(manilaNowMinutes)
   const [loading, setLoading] = useState(true)
   const [jobs, setJobs] = useState<Job[]>([])
-  const [extra, setExtra] = useState<{ leaves: LeaveDay[]; days: DayLog[] }>({ leaves: [], days: [] })
+  const [extra, setExtra] = useState<{ leaves: LeaveDay[]; days: DayLog[]; officeCheckIns: OfficeLog[] }>({ leaves: [], days: [], officeCheckIns: [] })
   const [opts, setOpts] = useState<{ people: Person[]; temps: TempWorker[]; vehicles: Vehicle[]; offices: Office[] }>({ people: [], temps: [], vehicles: [], offices: [] })
   const [tempList, setTempList] = useState<TempWorkerItem[]>([])
   const [openId, setOpenId] = useState<string | null>(null)
@@ -69,7 +70,7 @@ export function ScheduleBoard({ readOnly = false }: { readOnly?: boolean }) {
 
   const people = useMemo(() => [...opts.people].sort((a, b) =>
     (a.role === b.role ? 0 : a.role === 'technician' ? -1 : 1) || a.full_name.localeCompare(b.full_name)), [opts.people])
-  const S: Sched = useMemo(() => ({ jobs, leaves: extra.leaves, days: extra.days, people }), [jobs, extra, people])
+  const S: Sched = useMemo(() => ({ jobs, leaves: extra.leaves, days: extra.days, people, officeCheckIns: extra.officeCheckIns }), [jobs, extra, people])
   const q = search.trim().toLowerCase()
   const shown = people.filter((p) => (who === 'all' || who === 'free' || p.role === who) && (!q || p.full_name.toLowerCase().includes(q))
     && (who !== 'free' || isFree(S, p.id, date)) && (view !== 'week' || !freeOn || isFree(S, p.id, freeOn)))
@@ -110,14 +111,23 @@ export function ScheduleBoard({ readOnly = false }: { readOnly?: boolean }) {
           onStep={step} onToday={() => { setDate(today); setFreeOn(null) }} search={search} onSearch={setSearch}
           canAdd={!readOnly && !loading} onNew={() => setForm({ open: true, job: null })} onVip={vipJob} />
         {onBoard && (
-          <div className="flex flex-wrap items-center gap-x-6 gap-y-2 border-y border-line py-2">
-            <span className="flex items-center gap-2">
-              <span className="text-micro font-semibold tracking-wide text-ink-3 uppercase">Filters</span>
-              <Tabs label="Show" size="sm" value={who} onChange={setWho} items={[
-                { value: 'all', label: 'Everyone' }, { value: 'technician', label: 'Technicians' }, { value: 'helper', label: 'Helpers' }, { value: 'free', label: 'Free' },
-              ]} />
-            </span>
-            <ScheduleStats S={S} date={date} today={today} now={now} />
+          <div className="flex flex-col gap-2 border-y border-line py-2">
+            <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
+              <span className="flex items-center gap-2">
+                <span className="text-micro font-semibold tracking-wide text-ink-3 uppercase">Filters</span>
+                <Tabs label="Show" size="sm" value={who} onChange={setWho} items={[
+                  { value: 'all', label: 'Everyone' }, { value: 'technician', label: 'Technicians' }, { value: 'helper', label: 'Helpers' }, { value: 'free', label: 'Free' },
+                ]} />
+              </span>
+              <ScheduleStats S={S} date={date} today={today} now={now} />
+            </div>
+            <div className="flex flex-wrap items-center gap-2 text-micro text-ink-3">
+              <span>Kinds of work:</span>
+              <WorkTypeBadge workType="on_site" className="text-[10.5px] py-0 px-1.5" />
+              <WorkTypeBadge workType="in_house" className="text-[10.5px] py-0 px-1.5" />
+              <WorkTypeBadge workType="out_of_town" className="text-[10.5px] py-0 px-1.5" />
+              <WorkTypeBadge workType="office" className="text-[10.5px] py-0 px-1.5" />
+            </div>
           </div>
         )}
       </div>

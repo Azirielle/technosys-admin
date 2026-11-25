@@ -2,9 +2,9 @@
 // live status from their work day, and which jobs are at risk (someone not timed in 15 min after the start)
 // or need a check (leave waiting for HR, a helper as lead). Plain functions; no database calls.
 import type { Job, Person } from '@/components/jobs/jobTypes'
-import type { DayLog, LeaveDay } from './scheduleData'
+import type { DayLog, LeaveDay, OfficeLog } from './scheduleData'
 
-export type Sched = { jobs: Job[]; leaves: LeaveDay[]; days: DayLog[]; people: Person[] }
+export type Sched = { jobs: Job[]; leaves: LeaveDay[]; days: DayLog[]; people: Person[]; officeCheckIns?: OfficeLog[] }
 export type Tone = 'neutral' | 'info' | 'success' | 'warning' | 'danger'
 
 /** The board shows at least 6:00 AM to 7:00 PM, and stretches to fit a job that starts earlier or ends later. */
@@ -49,9 +49,9 @@ export const isFree = (S: Sched, personId: string, date: string) => !jobsOf(S, p
 export const dayLogOf = (S: Sched, personId: string, date: string) => S.days.find((d) => d.person_id === personId && d.work_date === date)
 export const roleOn = (j: Job, personId: string) => j.members.find((m) => m.person_id === personId)?.role
 
-/** Booked hours that day: start to end of each job (the DTR's lunch rule isn't applied here). */
+/** Booked hours that day: start to end of each job (the DTR's lunch rule isn't applied here; in-house has no hours on the board). */
 export function hoursOf(S: Sched, personId: string, date: string) {
-  return jobsOf(S, personId, date).reduce((h, j) => h + Math.max(0, mins(j.end_time) - mins(j.start_time)) / 60, 0)
+  return jobsOf(S, personId, date).filter((j) => j.work_type !== 'in_house').reduce((h, j) => h + Math.max(0, mins(j.end_time) - mins(j.start_time)) / 60, 0)
 }
 
 /** First and last hour the Day board shows: 6 AM–7 PM, wider if a job that day starts earlier or ends later. */
@@ -64,7 +64,7 @@ export function boardHours(S: Sched, date: string): { start: number; end: number
 
 /** Names of the people on this job who should have timed in by now and haven't (today only). */
 export function atRisk(S: Sched, j: Job, date: string, today: string, now: number): string[] {
-  if (date !== today || j.status === 'done' || now < mins(j.start_time) + 15) return []
+  if (date !== today || j.status === 'done' || j.work_type === 'in_house' || now < mins(j.start_time) + 15) return []
   return j.members.filter((m) => m.person_id && !dayLogOf(S, m.person_id, date) && !onLeave(S, m.person_id, date)).map((m) => m.name)
 }
 

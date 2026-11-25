@@ -5,6 +5,7 @@
 import { Clock, Users } from 'lucide-react'
 import { Avatar, Badge, Button, EmptyState, Table, TableBody, TableCell, TableHead, TableHeaderCell, TableRow } from '@/components/ui'
 import { clock } from '@/components/jobs/jobTypes'
+import { WorkTypeBadge } from '@/components/jobs/WorkTypeBadge'
 import { STATE_LABEL, type Row } from './todayStatus'
 
 const hhmm = (iso: string) => new Date(iso).toLocaleTimeString('en-PH', { hour: 'numeric', minute: '2-digit', timeZone: 'Asia/Manila' })
@@ -43,12 +44,23 @@ export function CrewTodayTable({ rows, onTimeOut }: { rows: Row[]; onTimeOut: (r
               <TableCell className="text-ink-2">
                 {r.job ? (
                   <>
-                    <span className="block">{r.job.client_name}</span>
+                    <span className="flex items-center gap-1.5">
+                      <WorkTypeBadge workType={r.job.work_type} className="text-[10px] py-0 px-1" />
+                      <span className="font-medium text-ink">{r.job.client_name}</span>
+                    </span>
                     <span className="block text-caption text-ink-3">{clock(r.job.start_time)} · {r.job.report_to === 'hq' ? 'office first' : 'at the site'}</span>
                   </>
                 ) : <span className="text-ink-3">{d?.place_name ?? '—'}</span>}
               </TableCell>
-              <TableCell><Badge tone={s.tone} dot>{s.label}</Badge></TableCell>
+              <TableCell>
+                <Badge tone={s.tone} dot>
+                  {r.state === 'in_house'
+                    ? `In-house · ${r.job?.client_name ?? 'Client'}`
+                    : r.state === 'at_office' && r.office_check_in_at
+                    ? `At office · ${hhmm(r.office_check_in_at)}`
+                    : s.label}
+                </Badge>
+              </TableCell>
               <TableCell className="whitespace-nowrap text-ink-2">
                 {d ? (
                   <>

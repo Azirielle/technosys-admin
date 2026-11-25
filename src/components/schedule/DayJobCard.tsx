@@ -9,6 +9,7 @@ import { scopeLabel, type Job } from '@/components/jobs/jobTypes'
 import { atRisk, checksOf, clock12, roleOn, type Sched } from './scheduleMath'
 import { JOB_STATUS_WORD, JOB_TONE, VIP_TONE } from './scheduleStyles'
 import { VipTag } from '@/components/jobs/VipTag'
+import { WorkTypeBadge } from '@/components/jobs/WorkTypeBadge'
 
 type Props = {
   S: Sched; job: Job; personId: string; personName: string; date: string; today: string; now: number
@@ -39,7 +40,9 @@ export function DayJobCard({ S, job: j, personId, personName, date, today, now, 
         highlighted && 'shadow-raised outline outline-2 outline-offset-1 outline-info')}
       style={{ top: top + 2, height: height - 4, left: `calc(${(lane / lanes) * 100}% + 4px)`, width: `calc(${100 / lanes}% - 8px)` }}>
       <span className="flex items-start gap-1">
-        {j.is_vip && <VipTag />}<b className="min-w-0 flex-1 truncate text-caption font-semibold text-ink">{j.client_name}</b>
+        {j.is_vip && <VipTag />}
+        <WorkTypeBadge workType={j.work_type} className="text-[10px] py-0 px-1" />
+        <b className="min-w-0 flex-1 truncate text-caption font-semibold text-ink">{j.client_name}</b>
         {(problem || status) && <span className={cx('mt-1 size-1.5 shrink-0 rounded-pill', problem ? (problem.danger ? 'bg-danger' : 'bg-warning') : j.status === 'done' ? 'bg-success' : 'bg-info')} aria-hidden />}
       </span>
       <span className="truncate text-micro tabular-nums text-ink-2">{clock12(j.start_time)} – {clock12(j.end_time)}</span>

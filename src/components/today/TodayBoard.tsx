@@ -32,7 +32,7 @@ export function TodayBoard() {
   useEffect(() => { load(); return watchToday(supabase, load) }, [load, supabase])
   useEffect(() => { const t = setInterval(() => tick((n) => n + 1), 60000); return () => clearInterval(t) }, [])
 
-  const rows = useMemo(() => (data ? buildRows(data.jobs, data.days, data.onLeave, data.today) : []), [data])
+  const rows = useMemo(() => (data ? buildRows(data.jobs, data.days, data.onLeave, data.today, data.officeCheckIns) : []), [data])
   // Earlier days still open show on the crew list as "no time-out" too
   const earlierOpen = useMemo(() => (data?.days ?? []).filter((d) => d.work_date !== data?.today && !d.time_out), [data])
   const leadless = useMemo(() => (data ? jobsNeedingActingLead(data.jobs, rows) : []), [data, rows])

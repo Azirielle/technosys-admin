@@ -7,6 +7,7 @@ import { AvatarStack, Badge, Button, EmptyState, SkeletonTableRows, Table, Table
 import { STATUS, clock, dateRange, type Job } from './jobTypes'
 import { VipTag } from '@/components/jobs/VipTag'
 import { PriorityBadge } from './PriorityBadge'
+import { WorkTypeBadge } from './WorkTypeBadge'
 
 export function JobsTable({ jobs, loading, onOpen, empty }: { jobs: Job[]; loading: boolean; onOpen: (job: Job) => void; empty: string }) {
   if (!loading && jobs.length === 0) return <EmptyState icon={Briefcase} title={empty} description="New jobs you schedule show here." />
@@ -31,7 +32,11 @@ export function JobsTable({ jobs, loading, onOpen, empty }: { jobs: Job[]; loadi
           return (
             <TableRow key={job.id} onClick={() => onOpen(job)}>
               <TableCell>
-                <span className="flex items-center gap-1.5 font-medium">{job.is_vip && <VipTag />}{job.client_name}</span>
+                <span className="flex items-center gap-1.5 font-medium">
+                  {job.is_vip && <VipTag />}
+                  <WorkTypeBadge workType={job.work_type} className="text-[10px] py-0 px-1.5" />
+                  {job.client_name}
+                </span>
                 <span className="block max-w-xs truncate text-caption text-ink-3">{job.address}</span>
               </TableCell>
               <TableCell className="whitespace-nowrap text-ink-2">

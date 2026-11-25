@@ -60,27 +60,11 @@ function baseRecord(
   correctionDetails?: DailyAuditRecord['correctionDetails']
 ): DailyAuditRecord {
   return {
-    date: dateStr,
-    dayOfWeek,
-    timeLogId: null,
-    rawTimeIn: null,
-    rawTimeOut: null,
-    scheduledStart: null,
-    scheduledEnd: null,
-    actualTimeIn: null,
-    actualTimeOut: null,
-    grossHours: 0,
-    hoursWorked: 0,
-    lateMinutes: 0,
-    regOtHours: 0,
-    sunHolidayOtHours: 0,
-    nightDiffHours: 0,
-    isSunday,
-    isHoliday,
-    status: 'off_duty',
-    isManualEntry: false,
-    isCorrected,
-    correctionDetails,
+    date: dateStr, dayOfWeek, timeLogId: null, rawTimeIn: null, rawTimeOut: null,
+    scheduledStart: null, scheduledEnd: null, actualTimeIn: null, actualTimeOut: null,
+    grossHours: 0, hoursWorked: 0, lateMinutes: 0, regOtHours: 0, sunHolidayOtHours: 0,
+    nightDiffHours: 0, isSunday, isHoliday, status: 'off_duty', isManualEntry: false,
+    isCorrected, correctionDetails,
   }
 }
 
@@ -202,6 +186,22 @@ export function evaluateDay(ctx: DayEvaluationContext): DayEvaluationResult {
         leaveType: leave.leave_type,
         leaveCategory: cat,
         notes: note,
+      },
+    }
+  }
+
+  if (sched && sched.work_type === 'in_house' && !isSunday && !isHoliday) {
+    // In-house work: attendance kept at client building, no time-in on app (not absent, not salary deduction)
+    return {
+      ...zeroMetrics,
+      record: {
+        ...rec,
+        scheduledStart,
+        scheduledEnd,
+        scheduleClient: sched.client_name,
+        holidayName: null,
+        status: 'in_house',
+        notes: `In-house at ${sched.client_name} (attendance kept at the building)`,
       },
     }
   }

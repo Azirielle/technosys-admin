@@ -27,7 +27,7 @@ export function Tabs<T extends string>({
   className?: string
 }) {
   return (
-    <div role="tablist" aria-label={label} className={cx('inline-flex max-w-full gap-0.5 overflow-x-auto rounded-pill bg-surface-soft p-1', className)}>
+    <div role="tablist" aria-label={label} className={cx('inline-flex max-w-full shrink-0 gap-0.5 overflow-x-auto rounded-pill bg-surface-soft p-1', className)}>
       {items.map((item) => {
         const active = item.value === value
         return (

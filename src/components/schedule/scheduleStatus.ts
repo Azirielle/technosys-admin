@@ -10,6 +10,10 @@ export type Label = { label: string; tone: Tone; detail?: string }
 export function availabilityOf(S: Sched, personId: string, date: string): Label {
   const l = leaveOf(S, personId, date), js = jobsOf(S, personId, date)
   if (l && !l.pending) return { label: 'On leave', tone: 'warning', detail: `${l.type} leave` }
+  const inHouse = js.find((j) => j.work_type === 'in_house')
+  if (inHouse) return { label: 'In-house', tone: 'neutral', detail: inHouse.client_name }
+  const outOfTown = js.find((j) => j.work_type === 'out_of_town')
+  if (outOfTown) return { label: 'Out of town', tone: 'warning', detail: `${outOfTown.client_name} · until ${outOfTown.end_date}` }
   if (js.length) return { label: 'Assigned', tone: 'neutral', detail: `${js.length} job${js.length > 1 ? 's' : ''}` }
   if (l?.pending) return { label: 'Available', tone: 'warning', detail: 'Leave waiting for HR' }
   return { label: 'Available', tone: 'success' }
@@ -18,6 +22,9 @@ export function availabilityOf(S: Sched, personId: string, date: string): Label 
 /** What their phone says about that day: timed in, late, timed out, or not timed in. null = nothing to show. */
 export function attendanceOf(S: Sched, personId: string, date: string, today: string, now: number): Label | null {
   const log = dayLogOf(S, personId, date), js = jobsOf(S, personId, date)
+  const inHouse = js.find((j) => j.work_type === 'in_house')
+  if (inHouse) return { label: `In-house · ${inHouse.client_name}`, tone: 'neutral' }
+
   if (log) {
     const tin = clock12(manilaClock(log.time_in))
     // needs_review: a selfie or other time-in/out HR or the Coordinator still has to check
@@ -27,6 +34,18 @@ export function attendanceOf(S: Sched, personId: string, date: string, today: st
     if (late || check) return { label: `Timed in ${tin}`, tone: 'warning', detail: [late, check].filter(Boolean).join(' · ') }
     return { label: `Timed in ${tin}`, tone: 'success' }
   }
+
+  const office = S.officeCheckIns?.find((o) => o.person_id === personId && o.work_date === date)
+  if (office) {
+    return { label: `At office · ${clock12(manilaClock(office.checked_in_at))}`, tone: 'info' }
+  }
+
+  const outOfTown = js.find((j) => j.work_type === 'out_of_town')
+  if (outOfTown) {
+    const until = new Date(`${outOfTown.end_date}T00:00:00Z`).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' })
+    return { label: `Out of town · ${outOfTown.client_name} · until ${until}`, tone: 'warning' }
+  }
+
   if (onLeave(S, personId, date) || date > today) return null
   if (!js.length) return date === today ? { label: 'Not timed in', tone: 'neutral' } : null
   if (date < today) return { label: 'No time-in', tone: 'danger' }

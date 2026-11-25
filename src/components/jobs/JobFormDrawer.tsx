@@ -21,7 +21,7 @@ function fromJob(job: Job | null, hq: Office | undefined, prefill: Partial<JobIn
   const driver = job?.members.find((x) => x.vehicle_id) ?? job?.members.find((x) => x.role === 'driver') // the driver may also be lead / crew
   return {
     client_name: job?.client_name ?? '', address: job?.address ?? '', scope: job?.scope ?? '', priority: job?.priority ?? 'medium', notes: job?.notes ?? '',
-    site_lat: job?.site_lat ?? hq?.latitude ?? 14.3439, site_lon: job?.site_lon ?? hq?.longitude ?? 121.0617, site_radius_m: job?.site_radius_m ?? 150,
+    site_lat: job?.site_lat ?? hq?.latitude ?? 14.337862, site_lon: job?.site_lon ?? hq?.longitude ?? 121.060734, site_radius_m: job?.site_radius_m ?? 75,
     start_date: job?.start_date ?? manilaToday(), end_date: job?.end_date ?? manilaToday(),
     start_time: job?.start_time.slice(0, 5) ?? '08:00', end_time: job?.end_time.slice(0, 5) ?? '17:00',
     work_type: job?.work_type ?? 'on_site', report_to: job?.report_to ?? 'site', hq_office_id: job?.hq_office_id ?? hq?.id ?? null,
@@ -145,7 +145,14 @@ export function JobFormDrawer({ open, job, prefill, people, temps, vehicles, off
             <Field label="Priority" htmlFor="job-priority" hint={form.is_vip ? 'A VIP squeeze-in always shows as Urgent.' : undefined}>
               <Select id="job-priority" value={form.priority} onChange={(e) => set({ priority: e.target.value as JobInput['priority'] })} options={PRIORITIES} />
             </Field>
-            <Field label="Kind of work" htmlFor="job-type"><Select id="job-type" value={form.work_type} onChange={(e) => set({ work_type: e.target.value as JobInput['work_type'] })} options={WORK_TYPES} /></Field>
+            <Field label="Kind of work" htmlFor="job-type" hint={form.work_type === 'in_house' ? 'No time-in on the app. They send updates through tickets.' : undefined}>
+              <Select id="job-type" value={form.work_type} onChange={(e) => {
+                const wt = e.target.value as JobInput['work_type']
+                if (wt === 'office') set({ work_type: wt, report_to: 'hq' })
+                else if (wt === 'in_house') set({ work_type: wt, report_to: 'site' })
+                else set({ work_type: wt })
+              }} options={WORK_TYPES} />
+            </Field>
             <Field label="Report to" htmlFor="job-report" hint={REPORT_TO.find((r) => r.value === form.report_to)?.hint}>
               <Select id="job-report" value={form.report_to} onChange={(e) => set({ report_to: e.target.value as JobInput['report_to'] })} options={REPORT_TO} />
             </Field>
