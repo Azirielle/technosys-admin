@@ -47,6 +47,10 @@ export interface PunchEvaluationResult {
   regularHolidayHours: number
   specialHolidayHours: number
   nightDiffHours: number
+  sickLeaveDays: number
+  vacationLeaveDays: number
+  salaryDeductionDays: number
+  otherLeaveDays: number
   absences: number
   approvedLeaves: number
 }
@@ -124,6 +128,10 @@ export function evaluatePunch(params: EvaluatePunchParams): PunchEvaluationResul
       regularHolidayHours: 0,
       specialHolidayHours: 0,
       nightDiffHours: 0,
+      sickLeaveDays: 0,
+      vacationLeaveDays: 0,
+      salaryDeductionDays: 0,
+      otherLeaveDays: 0,
       absences: 0,
       approvedLeaves: 0,
     }
@@ -253,6 +261,10 @@ export function evaluatePunch(params: EvaluatePunchParams): PunchEvaluationResul
     regularHolidayHours,
     specialHolidayHours,
     nightDiffHours: dayNdHours,
+    sickLeaveDays: 0,
+    vacationLeaveDays: 0,
+    salaryDeductionDays: 0,
+    otherLeaveDays: 0,
     absences: 0,
     approvedLeaves: 0,
   }

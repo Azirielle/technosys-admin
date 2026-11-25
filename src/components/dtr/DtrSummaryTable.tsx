@@ -62,13 +62,14 @@ export function DtrSummaryTable({
           <TableHeaderCell numeric>Regular hol.</TableHeaderCell>
           <TableHeaderCell numeric>Special hol.</TableHeaderCell>
           <TableHeaderCell numeric>Night diff</TableHeaderCell>
-          <TableHeaderCell numeric>Absent</TableHeaderCell>
-          <TableHeaderCell numeric>Leave</TableHeaderCell>
+          <TableHeaderCell numeric>Sick leave</TableHeaderCell>
+          <TableHeaderCell numeric>Vacation leave</TableHeaderCell>
+          <TableHeaderCell numeric>Salary deduction</TableHeaderCell>
           <TableHeaderCell align="right"><span className="sr-only">Action</span></TableHeaderCell>
         </tr>
       </TableHead>
       <TableBody>
-        {loading && <SkeletonTableRows cols={11} />}
+        {loading && <SkeletonTableRows cols={12} />}
         {!loading &&
           records.map((r) => (
             <TableRow key={r.id} onClick={() => onOpen(r)}>
@@ -94,8 +95,9 @@ export function DtrSummaryTable({
               <TableCell numeric><Num value={r.regularHolidayHours} unit=" h" /></TableCell>
               <TableCell numeric><Num value={r.specialHolidayHours} unit=" h" /></TableCell>
               <TableCell numeric><Num value={r.nightDiffHours} unit=" h" /></TableCell>
-              <TableCell numeric><Num value={r.absences} tone="danger" /></TableCell>
-              <TableCell numeric><Num value={r.approvedLeaves} unit=" d" /></TableCell>
+              <TableCell numeric><Num value={r.sickLeaveDays} unit=" d" /></TableCell>
+              <TableCell numeric><Num value={r.vacationLeaveDays} unit=" d" /></TableCell>
+              <TableCell numeric><Num value={r.salaryDeductionDays} tone="danger" unit=" d" /></TableCell>
               <TableCell align="right">
                 <Button size="sm" variant="ghost" iconRight={ArrowRight}>Open DTR</Button>
               </TableCell>

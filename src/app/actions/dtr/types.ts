@@ -1,3 +1,5 @@
+export type LeaveCreditCategory = 'sick' | 'vacation' | 'without_credits' | 'other';
+
 export interface DailyAuditRecord {
   date: string; // 'YYYY-MM-DD'
   dayOfWeek: string; // 'Mon', 'Tue', etc.
@@ -22,6 +24,8 @@ export interface DailyAuditRecord {
   holidayName?: string | null;
   status: 'present' | 'late' | 'overtime' | 'absent' | 'approved_leave' | 'rest_day' | 'holiday' | 'off_duty' | 'unclosed';
   leaveType?: string | null;
+  /** Leave category under client leave credit rules: sick, vacation, without_credits, or other */
+  leaveCategory?: LeaveCreditCategory | null;
   notes?: string;
   isManualEntry?: boolean;
   isMocked?: boolean;
@@ -55,6 +59,14 @@ export interface EmployeeAuditSummary {
   regularHolidayHours: number;
   specialHolidayHours: number;
   nightDiffHours: number;
+  /** Days on approved sick leave paid with sick credits */
+  sickLeaveDays: number;
+  /** Days on approved vacation/emergency leave paid with vacation credits */
+  vacationLeaveDays: number;
+  /** Days without credits (exhausted leave credits / unpaid) + unexcused absent days */
+  salaryDeductionDays: number;
+  /** Other approved leave days not using credits (wedding, maternal, paternal) */
+  otherLeaveDays: number;
   absences: number;
   approvedLeaves: number;
   dailyBreakdown: DailyAuditRecord[];

@@ -7,6 +7,7 @@ import { WORK_V2, loadWorkV2 } from "@/lib/dtrWorkV2"
 import type { DtrJob, DtrResult, EmployeeAuditSummary } from "./types"
 import { getDatesInRange, getManilaDateString } from "./timeUtils"
 import { evaluateDay } from "./dayRules"
+import { buildEmployeeLeaveMap, type ApprovedLeaveRow } from "./leaveCredits"
 
 export async function getDtrRecords(
   startDate: string,
@@ -120,13 +121,15 @@ export async function getDtrRecords(
 
     if (holErr) throw holErr;
 
-    // 6. Batch Fetch Approved Leaves
+    // 6. Batch Fetch Approved Leaves from Jan 1 of cut-off's year to cut-off end
+    const cutoffYear = parseInt(startDate.slice(0, 4), 10);
+    const yearStart = `${cutoffYear}-01-01`;
     const { data: leaves, error: leaveErr } = await supabaseAdmin
       .from('leaves')
       .select('id, technician_id, start_date, end_date, leave_type, status')
       .in('technician_id', profileIds)
       .lte('start_date', endDate)
-      .gte('end_date', startDate)
+      .gte('end_date', yearStart)
       .eq('status', 'approved');
 
     if (leaveErr) throw leaveErr;
@@ -157,6 +160,7 @@ export async function getDtrRecords(
       const approvedOtOn = (day: string) =>
         (otRequests || []).filter((o) => o.technician_id === profile.id && o.request_date === day).reduce((sum, o) => sum + Number(o.requested_hours || 0), 0);
       const empLeaves = (leaves || []).filter(lv => lv.technician_id === profile.id);
+      const empLeaveMap = buildEmployeeLeaveMap(empLeaves as ApprovedLeaveRow[], yearStart, endDate);
       const empCorrections = (corrections || []).filter(c => c.technician_id === profile.id);
 
       let daysWorked = 0;
@@ -169,6 +173,10 @@ export async function getDtrRecords(
       let regularHolidayHours = 0;
       let specialHolidayHours = 0;
       let nightDiffHours = 0;
+      let sickLeaveDays = 0;
+      let vacationLeaveDays = 0;
+      let salaryDeductionDays = 0;
+      let otherLeaveDays = 0;
       let absences = 0;
       let approvedLeaves = 0;
 
@@ -186,10 +194,10 @@ export async function getDtrRecords(
           return lDate === dateStr;
         });
 
-        // Matching Approved Leave on this date
-        const leave = empLeaves.find(lv => {
-          return lv.start_date <= dateStr && lv.end_date >= dateStr;
-        });
+        // Matching Approved Leave on this date under leave credit rules
+        const leaveInfo = empLeaveMap.get(dateStr);
+        const leave = leaveInfo ? { leave_type: leaveInfo.leaveType } : undefined;
+        const leaveCategory = leaveInfo?.label;
 
         // Matching DTR correction on this date
         const correction = empCorrections.find(c => c.target_date === dateStr);
@@ -201,6 +209,7 @@ export async function getDtrRecords(
           sched,
           log,
           leave,
+          leaveCategory,
           correction,
           holiday: holidayMap.get(dateStr),
           approvedOtHours: approvedOtOn(dateStr),
@@ -217,6 +226,10 @@ export async function getDtrRecords(
         regularHolidayHours += result.regularHolidayHours;
         specialHolidayHours += result.specialHolidayHours;
         nightDiffHours += result.nightDiffHours;
+        sickLeaveDays += result.sickLeaveDays;
+        vacationLeaveDays += result.vacationLeaveDays;
+        salaryDeductionDays += result.salaryDeductionDays;
+        otherLeaveDays += result.otherLeaveDays;
         absences += result.absences;
         approvedLeaves += result.approvedLeaves;
 
@@ -240,8 +253,12 @@ export async function getDtrRecords(
         regularHolidayHours: parseFloat(regularHolidayHours.toFixed(1)),
         specialHolidayHours: parseFloat(specialHolidayHours.toFixed(1)),
         nightDiffHours: parseFloat(nightDiffHours.toFixed(1)),
-        absences,
-        approvedLeaves,
+        sickLeaveDays,
+        vacationLeaveDays,
+        salaryDeductionDays,
+        otherLeaveDays,
+        absences: salaryDeductionDays,
+        approvedLeaves: sickLeaveDays + vacationLeaveDays + otherLeaveDays,
         dailyBreakdown,
       };
     });

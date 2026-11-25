@@ -9,6 +9,7 @@ export type {
   EmployeeAuditSummary,
   DtrResult,
   DtrJob,
+  LeaveCreditCategory,
 } from './dtr/types'
 
 export async function getDtrRecords(

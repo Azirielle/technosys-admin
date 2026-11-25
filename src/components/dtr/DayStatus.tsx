@@ -18,13 +18,36 @@ const STATUS: Record<DailyAuditRecord['status'], { label: string; tone: Tone }> 
 export function DayStatus({ day }: { day: DailyAuditRecord }) {
   const status = STATUS[day.status]
   let label = status.label
+  let tone = status.tone
+
   if (day.status === 'late' && day.lateMinutes) label = `Late ${day.lateMinutes} min`
-  if (day.status === 'approved_leave' && day.leaveType) label = `On ${day.leaveType} leave`
+  if (day.status === 'approved_leave') {
+    if (day.leaveCategory === 'sick') {
+      label = 'Sick leave'
+      tone = 'info'
+    } else if (day.leaveCategory === 'vacation') {
+      label = 'Vacation leave'
+      tone = 'info'
+    } else if (day.leaveCategory === 'without_credits') {
+      label = 'Salary deduction (no credits)'
+      tone = 'danger'
+    } else if (day.leaveType) {
+      label = `Other leave (${day.leaveType})`
+      tone = 'info'
+    } else {
+      label = 'Other leave'
+      tone = 'info'
+    }
+  }
+  if (day.status === 'absent') {
+    label = 'Salary deduction (absent)'
+    tone = 'danger'
+  }
   if (day.status === 'holiday' && day.holidayName) label = day.holidayName
 
   return (
     <div className="flex flex-wrap items-center gap-1.5">
-      <StatusDot tone={status.tone}>{label}</StatusDot>
+      <StatusDot tone={tone}>{label}</StatusDot>
       {day.isMocked && (
         <Badge tone="danger" icon={MapPinOff} title="The phone reported a fake-GPS app during this punch">Fake GPS</Badge>
       )}

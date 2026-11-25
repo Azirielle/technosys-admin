@@ -16,8 +16,9 @@ const HEADERS = [
   'Regular holiday (h)',
   'Special holiday (h)',
   'Night diff (h)',
-  'Absences',
-  'Leave days',
+  'Sick leave',
+  'Vacation leave',
+  'Salary deduction',
 ]
 
 function round1(n: number) {
@@ -47,8 +48,9 @@ function buildRows(cutoff: Cutoff, records: EmployeeAuditSummary[]): (string | n
       r.regularHolidayHours,
       r.specialHolidayHours,
       r.nightDiffHours,
-      r.absences,
-      r.approvedLeaves,
+      r.sickLeaveDays,
+      r.vacationLeaveDays,
+      r.salaryDeductionDays,
     ]),
     [],
     [
@@ -65,8 +67,9 @@ function buildRows(cutoff: Cutoff, records: EmployeeAuditSummary[]): (string | n
       sum((r) => r.regularHolidayHours),
       sum((r) => r.specialHolidayHours),
       sum((r) => r.nightDiffHours),
-      sum((r) => r.absences),
-      sum((r) => r.approvedLeaves),
+      sum((r) => r.sickLeaveDays),
+      sum((r) => r.vacationLeaveDays),
+      sum((r) => r.salaryDeductionDays),
     ],
   ]
 }

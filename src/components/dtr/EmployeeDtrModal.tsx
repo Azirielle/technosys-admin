@@ -58,13 +58,18 @@ export function EmployeeDtrModal({
       footer={<Button onClick={onClose}>Close</Button>}
     >
       <div className="flex flex-col gap-4">
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-8">
           <Summary label="Days worked" value={`${employee.daysWorked} (${employee.totalHours} h)`} />
           <Summary label="Late" value={employee.lateCount ? `${employee.lateCount}× · ${employee.totalLateMinutes} min` : 'None'} />
           <Summary label="Regular OT" value={`${employee.regOtHours} h`} />
-          <Summary label="Sunday · reg. hol. · special hol." value={`${employee.sundayHours} · ${employee.regularHolidayHours} · ${employee.specialHolidayHours} h`} />
+          <Summary label="Sunday · reg. · spec." value={`${employee.sundayHours} · ${employee.regularHolidayHours} · ${employee.specialHolidayHours} h`} />
           <Summary label="Night diff" value={`${employee.nightDiffHours} h`} />
-          <Summary label="Absent / leave" value={`${employee.absences} / ${employee.approvedLeaves} d`} />
+          <Summary label="Sick leave" value={`${employee.sickLeaveDays} d`} />
+          <Summary label="Vacation leave" value={`${employee.vacationLeaveDays} d`} />
+          <Summary label="Salary deduction" value={`${employee.salaryDeductionDays} d`} />
+          {(employee.otherLeaveDays ?? 0) > 0 && (
+            <Summary label="Other leave" value={`${employee.otherLeaveDays} d`} />
+          )}
         </div>
 
         <TableContainer className="shadow-none ring-1 ring-line">

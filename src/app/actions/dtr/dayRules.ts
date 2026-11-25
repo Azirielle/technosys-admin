@@ -1,4 +1,4 @@
-import type { DailyAuditRecord, DtrJob } from './types'
+import type { DailyAuditRecord, DtrJob, LeaveCreditCategory } from './types'
 import { getManilaDayOfWeek, getManilaTimeString } from './timeUtils'
 import { evaluatePunch, type PunchLogData } from './punchRules'
 
@@ -16,6 +16,7 @@ export interface DayEvaluationContext {
   leave?: {
     leave_type: string
   }
+  leaveCategory?: LeaveCreditCategory | null
   correction?: {
     id: string
     reason: string
@@ -42,6 +43,10 @@ export interface DayEvaluationResult {
   regularHolidayHours: number
   specialHolidayHours: number
   nightDiffHours: number
+  sickLeaveDays: number
+  vacationLeaveDays: number
+  salaryDeductionDays: number
+  otherLeaveDays: number
   absences: number
   approvedLeaves: number
 }
@@ -87,6 +92,7 @@ export function evaluateDay(ctx: DayEvaluationContext): DayEvaluationResult {
     sched,
     log,
     leave,
+    leaveCategory,
     correction,
     holiday,
     approvedOtHours,
@@ -139,6 +145,10 @@ export function evaluateDay(ctx: DayEvaluationContext): DayEvaluationResult {
     regularHolidayHours: 0,
     specialHolidayHours: 0,
     nightDiffHours: 0,
+    sickLeaveDays: 0,
+    vacationLeaveDays: 0,
+    salaryDeductionDays: 0,
+    otherLeaveDays: 0,
     absences: 0,
     approvedLeaves: 0,
   }
@@ -149,9 +159,39 @@ export function evaluateDay(ctx: DayEvaluationContext): DayEvaluationResult {
 
   if (leave && !isSunday && !isHoliday) {
     // A leave only uses up workdays: a Sunday or holiday inside it stays a rest day or holiday.
+    const cat = leaveCategory || 'other'
+    let note = `Official ${leave.leave_type.toUpperCase()} leave`
+    let sickLeaveDays = 0
+    let vacationLeaveDays = 0
+    let salaryDeductionDays = 0
+    let otherLeaveDays = 0
+    let approvedLeaves = 1
+    let absences = 0
+
+    if (cat === 'sick') {
+      sickLeaveDays = 1
+      note = 'Sick leave'
+    } else if (cat === 'vacation') {
+      vacationLeaveDays = 1
+      note = 'Vacation leave'
+    } else if (cat === 'without_credits') {
+      salaryDeductionDays = 1
+      approvedLeaves = 0
+      absences = 1
+      note = 'Salary deduction (no credits)'
+    } else {
+      otherLeaveDays = 1
+      note = leave.leave_type ? `${leave.leave_type} leave` : 'Other leave'
+    }
+
     return {
       ...zeroMetrics,
-      approvedLeaves: 1,
+      sickLeaveDays,
+      vacationLeaveDays,
+      salaryDeductionDays,
+      otherLeaveDays,
+      approvedLeaves,
+      absences,
       record: {
         ...rec,
         scheduledStart,
@@ -160,7 +200,8 @@ export function evaluateDay(ctx: DayEvaluationContext): DayEvaluationResult {
         holidayName: null,
         status: 'approved_leave',
         leaveType: leave.leave_type,
-        notes: `Official ${leave.leave_type.toUpperCase()} leave`,
+        leaveCategory: cat,
+        notes: note,
       },
     }
   }
@@ -170,6 +211,7 @@ export function evaluateDay(ctx: DayEvaluationContext): DayEvaluationResult {
     return {
       ...zeroMetrics,
       absences: 1,
+      salaryDeductionDays: 1,
       record: {
         ...rec,
         scheduledStart,
@@ -177,7 +219,7 @@ export function evaluateDay(ctx: DayEvaluationContext): DayEvaluationResult {
         scheduleClient: sched.client_name,
         holidayName: holiday?.name,
         status: 'absent',
-        notes: `Missed scheduled dispatch at ${sched.client_name}`,
+        notes: 'Salary deduction (absent)',
       },
     }
   }
@@ -211,10 +253,11 @@ export function evaluateDay(ctx: DayEvaluationContext): DayEvaluationResult {
     return {
       ...zeroMetrics,
       absences: 1,
+      salaryDeductionDays: 1,
       record: {
         ...rec,
         status: 'absent',
-        notes: 'No time-in on a workday',
+        notes: 'Salary deduction (absent)',
       },
     }
   }
