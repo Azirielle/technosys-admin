@@ -36,6 +36,7 @@ export type EmployeeFile = {
   full_name: string
   role: string
   employment_status: string | null
+  lifecycle_status: string
   technician_level: string | null
   hire_date: string | null
   contact_number: string | null

@@ -2,7 +2,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Pencil, Send } from 'lucide-react'
+import { Archive, ArchiveRestore, Pencil, Send } from 'lucide-react'
 import { formatDay } from '@/lib/format'
 import { Button, Drawer, Tabs } from '@/components/ui'
 import { DocumentChecklist } from './DocumentChecklist'
@@ -20,6 +20,7 @@ export function EmployeeFileDrawer({
   onToggleDocument,
   onRemind,
   onEditDetails,
+  onArchive,
   onAddWarning,
   hasPhoneRequest,
   onSignInChanged,
@@ -31,6 +32,7 @@ export function EmployeeFileDrawer({
   onToggleDocument: (key: DocKey, received: boolean) => void
   onRemind: () => void
   onEditDetails: () => void
+  onArchive: () => void
   onAddWarning: () => void
   /** Waiting for HR to approve a new phone: open on the Sign-in tab */
   hasPhoneRequest: boolean
@@ -54,7 +56,14 @@ export function EmployeeFileDrawer({
       onClose={onClose}
       title={employee.full_name}
       subtitle={facts.join(' · ')}
-      headerExtra={<Button size="sm" variant="ghost" icon={Pencil} onClick={onEditDetails}>Edit details</Button>}
+      headerExtra={
+        <div className="flex gap-1">
+          <Button size="sm" variant="ghost" icon={Pencil} onClick={onEditDetails}>Edit details</Button>
+          {employee.lifecycle_status === 'archived'
+            ? <Button size="sm" variant="ghost" icon={ArchiveRestore} onClick={onArchive}>Restore</Button>
+            : <Button size="sm" variant="ghost" icon={Archive} onClick={onArchive}>Archive</Button>}
+        </div>
+      }
       footer={
         view === 'documents' && !s.complete ? (
           <Button variant="primary" icon={Send} loading={reminding} onClick={onRemind}>
