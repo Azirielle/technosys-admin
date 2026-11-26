@@ -35,6 +35,7 @@ function ActionRow({ icon: Icon, label, danger, onClick }: { icon: typeof KeyRou
 export function AccountModals({ open, onClose, name, title }: { open: boolean; onClose: () => void; name: string; title: string }) {
   const router = useRouter()
   const [step, setStep] = useState<Step>(null)
+  const [currentPassword, setCurrentPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [passwordError, setPasswordError] = useState<string | null>(null)
@@ -49,6 +50,7 @@ export function AccountModals({ open, onClose, name, title }: { open: boolean; o
     setStep(null)
     setPasswordError(null)
     setPasswordSaved(false)
+    setCurrentPassword('')
     setNewPassword('')
     setConfirmPassword('')
     onClose()
@@ -57,11 +59,13 @@ export function AccountModals({ open, onClose, name, title }: { open: boolean; o
   async function savePassword(e: React.FormEvent) {
     e.preventDefault()
     setPasswordError(null)
+    if (!currentPassword) return setPasswordError('Type your current password.')
     if (newPassword.length < MIN_PASSWORD) return setPasswordError(`Use at least ${MIN_PASSWORD} characters.`)
     if (newPassword !== confirmPassword) return setPasswordError("The two passwords don't match.")
     setSaving(true)
     try {
       const form = new FormData()
+      form.append('current_password', currentPassword)
       form.append('new_password', newPassword)
       form.append('confirm_password', confirmPassword)
       const res = await updateAdminPassword(form)
@@ -109,8 +113,11 @@ export function AccountModals({ open, onClose, name, title }: { open: boolean; o
               Password changed.
             </p>
           )}
+          <Field label="Current password" htmlFor="current-password">
+            <Input id="current-password" type="password" required autoFocus value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} autoComplete="current-password" />
+          </Field>
           <Field label="New password" htmlFor="new-password">
-            <Input id="new-password" type="password" required autoFocus value={newPassword} onChange={(e) => setNewPassword(e.target.value)} autoComplete="new-password" />
+            <Input id="new-password" type="password" required value={newPassword} onChange={(e) => setNewPassword(e.target.value)} autoComplete="new-password" />
           </Field>
           <Field label="Type it again" htmlFor="confirm-password">
             <Input id="confirm-password" type="password" required value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} autoComplete="new-password" />

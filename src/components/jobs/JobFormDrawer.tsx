@@ -123,7 +123,8 @@ export function JobFormDrawer({ open, job, prefill, people, temps, vehicles, off
         </>
       }>
       <div className="flex flex-col gap-section">
-        <div className="sticky top-0 z-10 -mx-1 -mt-1 bg-surface px-1 pb-3 pt-1">
+        {/* -top-5 / pt-5: cover the drawer's 20px top padding too, so fields never show above the steps */}
+        <div className="sticky -top-5 z-10 -mx-1 -mt-5 bg-surface px-1 pb-3 pt-5">
           <Steps steps={STEPS} current={step} onSelect={goTo} />
         </div>
         {step === 1 && <section className="flex flex-col gap-stack">

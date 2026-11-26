@@ -2,9 +2,11 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { supabaseAdmin } from '@/lib/supabase/admin'
+import { createClient as createPlainClient } from '@supabase/supabase-js'
 
 export async function updateAdminPassword(formData: FormData): Promise<{ success: boolean; error?: string }> {
   try {
+    const currentPassword = (formData.get('current_password') as string || '')
     const newPassword = (formData.get('new_password') as string || '').trim()
     const confirmPassword = (formData.get('confirm_password') as string || '').trim()
 
@@ -22,6 +24,15 @@ export async function updateAdminPassword(formData: FormData): Promise<{ success
     if (userErr || !user) {
       return { success: false, error: 'Unauthorized: Session expired or invalid.' }
     }
+
+    // Someone at an unlocked computer mustn't be able to change it: check the current password first, on a
+    // separate client that keeps no session (so it can't replace the signed-in one).
+    if (!currentPassword || !user.email) return { success: false, error: 'Type your current password.' }
+    const checker = createPlainClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, { auth: { persistSession: false, autoRefreshToken: false } })
+    const { error: wrongErr } = await checker.auth.signInWithPassword({ email: user.email, password: currentPassword })
+    if (wrongErr) return { success: false, error: 'Your current password is wrong.' }
+    await checker.auth.signOut({ scope: 'local' })
+    if (currentPassword === newPassword) return { success: false, error: 'Pick a password different from the current one.' }
 
     // Update password in Supabase Auth
     const { error: updateErr } = await supabase.auth.updateUser({
