@@ -50,6 +50,8 @@ export function ToolsTable({
   loading,
   filtered,
   onLend,
+  onOpen,
+  toCheck,
   onEdit,
   onDelete,
 }: {
@@ -58,6 +60,10 @@ export function ToolsTable({
   /** true when search or category is narrowing the list (changes the empty message). */
   filtered: boolean
   onLend: (tool: Tool) => void
+  /** Open the tool's IDs (one per physical tool) */
+  onOpen: (tool: Tool) => void
+  /** Units checked in damaged, waiting for a decision, by tool id */
+  toCheck: Record<string, number>
   onEdit: (tool: Tool) => void
   onDelete: (tool: Tool) => void
 }) {
@@ -94,7 +100,8 @@ export function ToolsTable({
                   <span className="flex items-center gap-3">
                     <ToolPhoto url={tool.image_url} />
                     <span className="min-w-0">
-                      <span className="block font-medium">{tool.name}</span>
+                      <button type="button" className="block text-left font-medium underline-offset-2 hover:underline" onClick={() => onOpen(tool)} title="See each tool's ID">{tool.name}</button>
+                      {toCheck[tool.id] > 0 && <Badge tone="warning">{toCheck[tool.id]} to check</Badge>}
                       {tool.serial_number && <span className="block font-mono text-caption text-ink-3">{tool.serial_number}</span>}
                     </span>
                   </span>

@@ -64,7 +64,7 @@ export function BorrowingsTable({
                     {b.quantity > 1 && <span className="tabular-nums">{b.quantity} × </span>}
                     {b.tool_catalog?.name || 'Tool'}
                   </span>
-                  {b.tool_catalog?.serial_number && <span className="block font-mono text-caption text-ink-3">{b.tool_catalog.serial_number}</span>}
+                  {(b.unit?.tag || b.tool_catalog?.serial_number) && <span className="block font-mono text-caption text-ink-3">{b.unit?.tag || b.tool_catalog?.serial_number}</span>}
                 </TableCell>
                 <TableCell>
                   <span className="flex items-center gap-2 whitespace-nowrap">

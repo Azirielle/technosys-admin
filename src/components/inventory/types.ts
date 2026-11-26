@@ -28,7 +28,14 @@ export type Borrowing = {
   notes: string | null
   profiles?: { full_name: string; role: string; avatar_url: string | null }
   tool_catalog?: { name: string; category: string; image_url: string | null; serial_number: string | null }
+  /** The tool's own ID (tool_units), and how it got to them */
+  unit_id?: string | null
+  unit?: { tag: string } | null
+  delivery?: 'pickup' | 'driver' | null
 }
+
+/** One physical tool with its own ID (e.g. TC-DEW-0003). */
+export type ToolUnit = { id: string; tool_id: string; tag: string; status: 'available' | 'lent' | 'needs_check' | 'lost' | 'retired' }
 
 export type Person = { id: string; full_name: string; role: string; avatar_url: string | null }
 

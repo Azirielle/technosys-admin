@@ -1,24 +1,17 @@
-// LendToolModal: hand a tool to a technician or helper (who, how many, notes).
-// The person is found by typing part of the name; "How many" is checked against the stock as you type.
+// LendToolModal: hand tools to a technician or helper: who, WHICH ones (each tool has its own ID, e.g. TC-DEW-0003),
+// how it gets there (picks up at the office / driver delivers) and notes. From a tool request the borrower is the
+// person who asked (locked) and the number they asked for is ticked first.
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useEffect, useMemo, useState, useTransition } from 'react'
 import { HandHelping } from 'lucide-react'
-import { assignTool } from '@/app/actions/inventory'
-import { Button, Field, Input, Modal, SearchSelect } from '@/components/ui'
+import { createClient } from '@/lib/supabase/client'
+import { lendUnits } from '@/app/actions/toolUnits'
+import { Button, Field, Input, Modal, SearchSelect, Tabs, cx } from '@/components/ui'
 import type { Person, Tool } from './types'
 
 const ROLE: Record<string, string> = { technician: 'Technician', helper: 'Helper' }
-
-/** What's wrong with the amount typed, or null when it can be lent. */
-function quantityProblem(text: string, inStock: number): string | null {
-  if (text.trim() === '') return 'Enter how many.'
-  const n = Number(text)
-  if (!Number.isInteger(n)) return 'Use a whole number.'
-  if (n < 1) return 'Lend at least 1.'
-  if (n > inStock) return inStock === 0 ? 'None left in the warehouse.' : `Only ${inStock} in the warehouse.`
-  return null
-}
+type Unit = { id: string; tag: string }
 
 export function LendToolModal({
   tool,
@@ -29,43 +22,54 @@ export function LendToolModal({
 }: {
   tool: Tool | null
   people: Person[]
-  /** From a tool request: who asked and how many (still editable) */
+  /** From a tool request: who asked (locked) and how many they asked for */
   start?: { personId: string; qty: number }
   onClose: () => void
-  onDone: () => void
+  /** `tags`: the IDs that were lent */
+  onDone: (tags: string[]) => void
 }) {
+  const supabase = useMemo(() => createClient(), [])
   const [personId, setPersonId] = useState(start?.personId ?? '')
-  const [qty, setQty] = useState(String(start?.qty ?? 1))
+  const [units, setUnits] = useState<Unit[] | null>(null)
+  const [picked, setPicked] = useState<string[]>([])
+  const [delivery, setDelivery] = useState<'pickup' | 'driver'>('pickup')
   const [notes, setNotes] = useState('')
   const [tried, setTried] = useState(false)
   const [serverError, setServerError] = useState<string | null>(null)
   const [saving, startSaving] = useTransition()
 
-  // Start fresh for every tool (reset while rendering when a different tool opens).
-  const [shownId, setShownId] = useState(tool?.id)
-  if (shownId !== tool?.id) {
-    setShownId(tool?.id)
+  // Start fresh for every tool: the units in the warehouse, the first ones ticked
+  useEffect(() => {
+    if (!tool) return
     setPersonId(start?.personId ?? '')
-    setQty(String(start?.qty ?? 1))
+    setUnits(null)
+    setDelivery('pickup')
     setNotes('')
     setTried(false)
     setServerError(null)
-  }
+    supabase.from('tool_units').select('id, tag').eq('tool_id', tool.id).eq('status', 'available').order('tag')
+      .then(({ data }) => {
+        const list = (data ?? []) as Unit[]
+        setUnits(list)
+        setPicked(list.slice(0, Math.max(1, start?.qty ?? 1)).map((u) => u.id))
+      })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tool?.id])
 
   if (!tool) return null
-  const inStock = tool.available_stock
-  const qtyError = quantityProblem(qty, inStock)
+  const requester = start ? people.find((p) => p.id === start.personId) : null
   const personError = tried && !personId ? 'Choose who is borrowing it.' : null
+  const pickError = tried && !picked.length ? 'Tick at least one tool ID.' : null
+  const toggle = (id: string) => { setPicked((p) => (p.includes(id) ? p.filter((x) => x !== id) : [...p, id])); setServerError(null) }
 
   function save() {
-    if (!tool) return
     setTried(true)
     setServerError(null)
-    if (!personId || qtyError) return
+    if (!personId || !picked.length) return
     startSaving(async () => {
-      const res = await assignTool(personId, tool.id, Number(qty), notes)
-      if (res?.error) setServerError(res.error)
-      else onDone()
+      const res = await lendUnits(personId, picked, notes, delivery)
+      if (res.error) setServerError(res.error)
+      else onDone(res.tags ?? [])
     })
   }
 
@@ -75,46 +79,53 @@ export function LendToolModal({
       onClose={onClose}
       icon={HandHelping}
       title={`Lend ${tool.name}`}
-      subtitle={inStock === 0 ? 'None left in the warehouse' : `${inStock} in the warehouse`}
+      subtitle={units === null ? 'Loading…' : units.length ? `${units.length} in the warehouse` : 'None left in the warehouse'}
       maxWidth="md"
       footer={
         <>
           <Button variant="ghost" onClick={onClose}>Cancel</Button>
-          <Button variant="primary" loading={saving} disabled={!!qtyError} onClick={save}>Lend tool</Button>
+          <Button variant="primary" loading={saving} disabled={!units?.length} onClick={save}>
+            {picked.length > 1 ? `Lend ${picked.length} tools` : 'Lend tool'}
+          </Button>
         </>
       }
     >
       <div className="flex flex-col gap-stack">
-        <Field label="Borrowed by" htmlFor="lend-person" required error={personError}>
-          <SearchSelect
-            id="lend-person"
-            value={personId}
-            onChange={(id) => {
-              setPersonId(id)
-              setServerError(null)
-            }}
-            options={people.map((p) => ({ value: p.id, label: p.full_name, hint: ROLE[p.role] ?? p.role }))}
-            placeholder="Type a name"
-            emptyText="No technician or helper with that name."
-            invalid={!!personError}
-            autoFocus
-          />
+        <Field label="Borrowed by" htmlFor="lend-person" required error={personError}
+          hint={requester ? 'The person who asked for it in a tool request.' : undefined}>
+          {requester ? (
+            <p id="lend-person" className="rounded-control bg-surface-soft px-3 py-2 text-small text-ink">{requester.full_name} · {ROLE[requester.role] ?? requester.role}</p>
+          ) : (
+            <SearchSelect
+              id="lend-person"
+              value={personId}
+              onChange={(id) => { setPersonId(id); setServerError(null) }}
+              options={people.map((p) => ({ value: p.id, label: p.full_name, hint: ROLE[p.role] ?? p.role }))}
+              placeholder="Type a name"
+              emptyText="No technician or helper with that name."
+              invalid={!!personError}
+              autoFocus
+            />
+          )}
         </Field>
-        <Field label="How many" htmlFor="lend-qty" required error={qtyError} hint={`Up to ${inStock}`}>
-          <Input
-            id="lend-qty"
-            type="number"
-            inputMode="numeric"
-            min={1}
-            max={inStock}
-            step={1}
-            value={qty}
-            invalid={!!qtyError}
-            onChange={(e) => {
-              setQty(e.target.value)
-              setServerError(null)
-            }}
-          />
+        <Field label={`Which ones (${picked.length} picked)`} htmlFor="lend-units" required error={pickError}
+          hint={start && start.qty > 1 ? `They asked for ${start.qty}.` : 'Tick the tool IDs you hand over.'}>
+          <div id="lend-units" role="group" className="flex flex-wrap gap-2">
+            {(units ?? []).map((u) => {
+              const on = picked.includes(u.id)
+              return (
+                <button key={u.id} type="button" aria-pressed={on} onClick={() => toggle(u.id)}
+                  className={cx('rounded-control border px-2.5 py-1 font-mono text-small transition-colors',
+                    on ? 'border-action bg-action text-on-action' : 'border-line bg-surface text-ink hover:bg-surface-soft')}>
+                  {u.tag}
+                </button>
+              )
+            })}
+          </div>
+        </Field>
+        <Field label="How it gets there" htmlFor="lend-delivery">
+          <Tabs label="How it gets there" value={delivery} onChange={setDelivery}
+            items={[{ value: 'pickup', label: 'Picks up at the office' }, { value: 'driver', label: 'Driver delivers' }]} />
         </Field>
         <Field label="Notes" htmlFor="lend-notes" hint="Optional, e.g. the job or site">
           <Input id="lend-notes" value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="For the SM Southmall job" />

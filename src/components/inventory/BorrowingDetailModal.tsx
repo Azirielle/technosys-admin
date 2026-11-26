@@ -38,7 +38,7 @@ export function BorrowingDetailModal({
       onClose={onClose}
       icon={Wrench}
       title={borrowing.tool_catalog?.name || 'Borrowed tool'}
-      subtitle={borrowing.tool_catalog?.serial_number || undefined}
+      subtitle={[borrowing.unit?.tag || borrowing.tool_catalog?.serial_number, borrowing.delivery === 'driver' ? 'Driver delivers' : borrowing.delivery === 'pickup' ? 'Picks up at the office' : null].filter(Boolean).join(' · ') || undefined}
       headerExtra={isOverdue(borrowing) ? <Badge tone="danger" dot>Overdue</Badge> : <Badge tone={status.tone} dot>{status.label}</Badge>}
       maxWidth="md"
       footer={
