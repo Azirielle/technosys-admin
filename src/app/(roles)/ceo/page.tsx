@@ -1,6 +1,7 @@
 // Company overview page: today at a glance, built only from the UI library.
 import { Users, CalendarOff, Inbox, Briefcase } from 'lucide-react'
 import { getOverview } from '@/lib/overview'
+import { OfficeAnnouncements } from '@/components/announcements/OfficeAnnouncements'
 import { Page, PageHeader, StatRow, StatTile, ListCard, ListRow, Badge, Avatar } from '@/components/ui'
 import { formatTime, formatDayRange, formatAgo, formatLongDate } from '@/lib/format'
 import { LEAVE_LABELS, JOB_STATUS } from '@/lib/labels'
@@ -29,6 +30,7 @@ export default async function CeoOverviewPage() {
       </StatRow>
 
       <div className="grid grid-cols-1 gap-section lg:grid-cols-2">
+        <OfficeAnnouncements href="/ceo/announcements" />
         <ListCard title="Working now" count={o.timedIn.length} empty="No one has timed in yet today.">
           {o.timedIn.slice(0, 3).map((p) => (
             <ListRow key={p.id} leading={<Avatar name={p.name} />} primary={p.name} right={`Since ${formatTime(p.since)}`} badge={p.flagged ? <Badge tone="warning">Check punch</Badge> : <Badge tone="success">In geofence</Badge>} />

@@ -2,7 +2,7 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { History, RefreshCw, Search } from 'lucide-react'
+import { ChevronLeft, ChevronRight, History, RefreshCw, Search } from 'lucide-react'
 import { getActivityLogs, type ActivityLog } from '@/app/actions/activity'
 import { formatDay, formatTime } from '@/lib/format'
 import {
@@ -10,6 +10,7 @@ import {
   Badge,
   Button,
   EmptyState,
+  IconButton,
   Input,
   Modal,
   Page,
@@ -29,7 +30,14 @@ import {
 import { GROUPS, areaLabel, roleName } from './activityLabels'
 
 const PER_PAGE = 8
-const LOAD = 300
+const LOAD = 1000 // one month's actions (Supabase returns at most 1000 per request); shortcut: a busier month shows only the newest 1000
+const thisMonth = () => new Date(Date.now() + 8 * 3600000).toISOString().slice(0, 7) // Manila
+const shiftMonth = (month: string, by: number) => {
+  const [y, m] = month.split('-').map(Number)
+  const d = new Date(Date.UTC(y, m - 1 + by, 1))
+  return d.toISOString().slice(0, 7)
+}
+const monthName = (month: string) => new Date(`${month}-01T00:00:00Z`).toLocaleDateString('en-PH', { month: 'long', year: 'numeric', timeZone: 'UTC' })
 
 function when(iso: string) {
   return `${formatDay(iso)}, ${formatTime(iso)}`
@@ -43,14 +51,15 @@ export function ActivityBoard() {
   const [group, setGroup] = useState('all')
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
+  const [month, setMonth] = useState(thisMonth) // C22: one month at a time
   const [open, setOpen] = useState<ActivityLog | null>(null)
 
   const load = useCallback(async () => {
-    const res = await getActivityLogs('all', 1, LOAD)
+    const res = await getActivityLogs('all', 1, LOAD, month)
     if (res.error) toast.error(`Couldn't load activity: ${res.error}`)
     setLogs(res.logs ?? [])
     setLoading(false)
-  }, [toast])
+  }, [toast, month])
 
   useEffect(() => {
     load()
@@ -68,7 +77,7 @@ export function ActivityBoard() {
     <Page wide>
       <PageHeader
         title="Activity history"
-        subtitle={`Everything office staff did in the admin, newest first (last ${LOAD} actions).`}
+        subtitle="Everything office staff did in the admin, newest first, one month at a time."
         actions={
           <Button
             icon={RefreshCw}
@@ -85,6 +94,11 @@ export function ActivityBoard() {
       />
 
       <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-1" role="group" aria-label="Month">
+          <IconButton icon={ChevronLeft} label="Previous month" size="sm" onClick={() => { setMonth((m) => shiftMonth(m, -1)); setPage(1) }} />
+          <span className="min-w-32 text-center text-small font-medium text-ink">{monthName(month)}</span>
+          <IconButton icon={ChevronRight} label="Next month" size="sm" disabled={month >= thisMonth()} onClick={() => { setMonth((m) => shiftMonth(m, 1)); setPage(1) }} />
+        </div>
         <Tabs
           label="Area"
           value={group}

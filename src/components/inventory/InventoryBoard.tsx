@@ -216,7 +216,7 @@ export function InventoryBoard() {
       </TableContainer>
 
       <ToolFormModal isOpen={toolForm.open} tool={toolForm.tool} onClose={() => setToolForm({ open: false, tool: null })} onSaved={() => done('Tool saved', () => setToolForm({ open: false, tool: null }))} />
-      <LendToolModal tool={lending} people={people} start={lendingFor ? { personId: lendingFor.employee_id, qty: lendingFor.howMany } : undefined}
+      <LendToolModal tool={lending} people={people} start={lendingFor ? { personId: lendingFor.employee_id, qty: lendingFor.howMany, delivery: lendingFor.delivery } : undefined}
         onClose={() => { setLending(null); setLendingFor(null) }}
         onDone={async (tags) => {
           // A request: tell the technician in their chat (with the tool IDs) and close it

@@ -31,7 +31,7 @@ export function ToolRequestsTable({ requests, onLend, onDecline }: Props) {
         {requests.map((r) => (
           <TableRow key={r.id}>
             <TableCell><span className="block font-medium">{r.person}</span><span className="text-caption text-ink-3">{formatTimeAgo(r.created_at)}</span></TableCell>
-            <TableCell>{r.howMany} × {r.tool}</TableCell>
+            <TableCell>{r.howMany} × {r.tool}{r.delivery === 'driver' && <span className="block text-caption text-ink-3">Driver delivers</span>}</TableCell>
             <TableCell className="whitespace-nowrap text-ink-2">{r.neededOn ? formatDay(r.neededOn) : '—'}</TableCell>
             <TableCell className="max-w-xs text-ink-2">{r.why ?? '—'}</TableCell>
             <TableCell align="right">

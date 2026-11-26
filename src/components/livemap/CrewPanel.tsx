@@ -74,13 +74,15 @@ export function CrewPanel({
               const status = STATUS[c.status]
               const selected = c.id === selectedId
               const onShift = timeOnShift(c.timeIn)
+              const off = c.status === 'off_duty' // can't be opened: their location is private outside work (C15)
               return (
                 <li key={c.id}>
                   <button
                     type="button"
-                    onClick={() => onSelect(selected ? null : c.id)}
+                    onClick={() => { if (!off) onSelect(selected ? null : c.id) }}
                     aria-pressed={selected}
-                    className={cx('flex w-full cursor-pointer items-center gap-3 rounded-control p-2.5 text-left transition-colors', selected ? 'bg-surface-soft' : 'hover:bg-surface-hover')}
+                    aria-disabled={off || undefined}
+                    className={cx('flex w-full items-center gap-3 rounded-control p-2.5 text-left transition-colors', off ? 'cursor-default opacity-60' : selected ? 'cursor-pointer bg-surface-soft' : 'cursor-pointer hover:bg-surface-hover')}
                   >
                     <Avatar name={c.name} src={c.avatar} size="sm" />
                     <span className="min-w-0 flex-1">
@@ -89,7 +91,7 @@ export function CrewPanel({
                         <Badge tone={status.tone} dot>{status.label}</Badge>
                       </span>
                       <span className="block truncate text-caption text-ink-3">
-                        {c.status === 'on_duty' && onShift ? `${onShift} on shift · in at ${formatTime(c.timeIn!)}` : `Last GPS ${formatAgo(c.updatedAt)}`}
+                        {off ? 'Location hidden while off duty' : c.status === 'on_duty' && onShift ? `${onShift} on shift · in at ${formatTime(c.timeIn!)}` : `Last GPS ${formatAgo(c.updatedAt)}`}
                       </span>
                     </span>
                     {c.phone && (

@@ -31,7 +31,7 @@ export function Textarea({
   className,
   rows = 4,
   ...rest
-}: TextareaHTMLAttributes<HTMLTextAreaElement> & { invalid?: boolean }) {
+}: TextareaHTMLAttributes<HTMLTextAreaElement> & { invalid?: boolean; ref?: Ref<HTMLTextAreaElement> }) {
   return (
     <textarea
       rows={rows}

@@ -1,6 +1,7 @@
 // HR overview page: today at a glance, built only from the UI library.
 import { CalendarClock, MessageSquare, ShieldAlert, FolderOpen } from 'lucide-react'
 import { getOverview } from '@/lib/overview'
+import { OfficeAnnouncements } from '@/components/announcements/OfficeAnnouncements'
 import { Page, PageHeader, StatRow, StatTile, ListCard, ListRow, Badge, Avatar } from '@/components/ui'
 import { formatTime, formatDayRange, formatAgo, formatLongDate } from '@/lib/format'
 import { LEAVE_LABELS } from '@/lib/labels'
@@ -23,6 +24,7 @@ export default async function HrOverviewPage() {
       </StatRow>
 
       <div className="grid grid-cols-1 gap-section lg:grid-cols-2">
+        <OfficeAnnouncements href="/hr/announcements" />
         <ListCard title="Leave requests waiting" count={o.pendingLeaves.length} href="/hr/leaves" linkLabel="Review" empty="No leave requests to review.">
           {o.pendingLeaves.slice(0, 3).map((l) => (
             <ListRow key={l.id} leading={<Avatar name={l.name} />} primary={l.name} secondary={`${LEAVE_LABELS[l.type] || l.type} · ${formatDayRange(l.start, l.end)}`} right={formatAgo(l.filed)} />

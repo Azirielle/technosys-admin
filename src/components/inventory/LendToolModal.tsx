@@ -23,7 +23,7 @@ export function LendToolModal({
   tool: Tool | null
   people: Person[]
   /** From a tool request: who asked (locked) and how many they asked for */
-  start?: { personId: string; qty: number }
+  start?: { personId: string; qty: number; delivery?: 'pickup' | 'driver' }
   onClose: () => void
   /** `tags`: the IDs that were lent */
   onDone: (tags: string[]) => void
@@ -43,7 +43,7 @@ export function LendToolModal({
     if (!tool) return
     setPersonId(start?.personId ?? '')
     setUnits(null)
-    setDelivery('pickup')
+    setDelivery(start?.delivery ?? 'pickup')
     setNotes('')
     setTried(false)
     setServerError(null)

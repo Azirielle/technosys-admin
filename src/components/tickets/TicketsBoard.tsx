@@ -26,6 +26,7 @@ export function TicketsBoard() {
   const [filter, setFilter] = useState<TicketFilter>('needs_attention')
   const [search, setSearch] = useState('')
   const [kind, setKind] = useState<TicketKind>('all')
+  const rank = (t: { priority?: string | null }) => ['urgent', 'high', 'medium', 'low'].indexOf((t.priority ?? 'medium').toLowerCase())
   const [reply, setReply] = useState('')
   const [file, setFile] = useState<File | null>(null)
   const [internal, setInternal] = useState(false)
@@ -60,7 +61,7 @@ export function TicketsBoard() {
     return visible.filter(
       (t) => matchesFilter(t, filter) && (kind === 'all' || kindOf(t) === kind)
         && (!q || [t.title, t.category, employeeName(t), ticketRef(t)].some((s) => s.toLowerCase().includes(q))),
-    )
+    ).sort((a, b) => rank(a) - rank(b)) // C24: urgent and high first; same priority keeps its order (newest first)
   }, [visible, filter, search, kind])
 
   function openTicket(id: string) {

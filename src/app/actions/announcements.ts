@@ -75,6 +75,8 @@ export async function saveAnnouncement(input: {
   const content = input.content.trim()
   if (!title || !content) return { success: false, error: 'Title and message are required.' }
   if (input.status === 'scheduled' && !input.scheduled_for) return { success: false, error: 'Pick a date and time to publish.' }
+  // A minute's slack for the time it takes to click Save (C7: Jan 23, 2025 could be scheduled)
+  if (input.status === 'scheduled' && Date.parse(input.scheduled_for!) < Date.now() - 60000) return { success: false, error: 'Pick a time in the future, or publish it now.' }
 
   const values = {
     title,

@@ -1,6 +1,7 @@
 // Service overview page: today at a glance, built only from the UI library.
 import { Briefcase, MapPin, Wrench, PackageX } from 'lucide-react'
 import { getOverview } from '@/lib/overview'
+import { OfficeAnnouncements } from '@/components/announcements/OfficeAnnouncements'
 import { Page, PageHeader, StatRow, StatTile, ListCard, ListRow, Badge, Avatar } from '@/components/ui'
 import { formatTime, formatAgo, formatLongDate } from '@/lib/format'
 import { JOB_STATUS } from '@/lib/labels'
@@ -23,6 +24,7 @@ export default async function CoordinatorOverviewPage() {
       </StatRow>
 
       <div className="grid grid-cols-1 gap-section lg:grid-cols-2">
+        <OfficeAnnouncements href="/coordinator/announcements" />
         <ListCard title="Today's jobs" count={o.jobsToday.length} href="/coordinator/jobs" linkLabel="Scheduling" empty="No jobs scheduled for today.">
           {o.jobsToday.slice(0, 3).map((j) => (
             <ListRow

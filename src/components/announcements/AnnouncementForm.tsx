@@ -123,7 +123,7 @@ export function AnnouncementForm({
               </div>
               {timing === 'schedule' && (
                 <Field label="Date and time" htmlFor="ann-when" hint="It won't go out by itself yet: open it on the day and publish it.">
-                  <Input id="ann-when" type="datetime-local" value={when} onChange={(e) => setWhen(e.target.value)} />
+                  <Input id="ann-when" type="datetime-local" min={toLocalInput(new Date().toISOString())} value={when} onChange={(e) => setWhen(e.target.value)} />
                 </Field>
               )}
             </fieldset>

@@ -81,9 +81,10 @@ export default function CrewMap({ crew, selectedId }: { crew: CrewLocation[]; se
     <MapContainer center={HQ} zoom={13} zoomControl={false} scrollWheelZoom className="h-full w-full">
       <TileLayer url={TILE_URL} attribution="&copy; OpenStreetMap contributors" className={DARK_TILES} />
       <ZoomControl position="bottomright" />
-      {!selectedId && <FitAll crew={crew} />}
+      {!selectedId && <FitAll crew={crew.filter((c) => c.status !== 'off_duty')} />}
       <FlyTo target={crew.find((c) => c.id === selectedId)} />
-      {crew.map((c) => (
+      {/* Off duty: no pin; their location is private outside work (C15) */}
+      {crew.filter((c) => c.status !== 'off_duty').map((c) => (
         <Marker key={c.id} position={[c.lat, c.lon]} icon={markerIcon(c, c.id === selectedId)}>
           <Popup>
             <div className="min-w-44 font-sans">

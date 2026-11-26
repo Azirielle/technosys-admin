@@ -1,8 +1,8 @@
 // PolicyFormModal: write a new policy draft or edit one (details, summary, text with a preview).
 'use client'
 
-import { useEffect, useState } from 'react'
-import { FilePen } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { Bold, FilePen, Heading, List } from 'lucide-react'
 import { createPolicyDraft, updatePolicyDraft, type CompanyPolicy, type PolicyCategory } from '@/app/actions/policies'
 import { Button, Checkbox, Field, Input, Modal, Select, Tabs, Textarea } from '@/components/ui'
 import FormattedPolicyDocument from './FormattedPolicyDocument'
@@ -18,7 +18,8 @@ type Form = {
   is_mandatory: boolean
 }
 
-const STARTER_TEXT = '## 1. Purpose\nWhy this policy exists.\n\n## 2. Who it covers\n\n## 3. Rules\n- \n'
+// C23: no "##" template any more (it looked machine-made); the buttons above the box add the formatting.
+const STARTER_TEXT = ''
 
 export function PolicyFormModal({
   isOpen,
@@ -34,12 +35,13 @@ export function PolicyFormModal({
 }) {
   const [form, setForm] = useState<Form>({ title: '', category: 'hr_attendance', target_audience: 'all', effective_date: '', summary: '', content_markdown: '', is_mandatory: true })
   const [view, setView] = useState<'write' | 'preview'>('write')
+  const box = useRef<HTMLTextAreaElement>(null)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     if (!isOpen) return
-    setView('write')
+    setView(policy ? 'preview' : 'write') // an existing policy opens as it reads, not as markup
     setError(null)
     setForm({
       title: policy?.title ?? '',
@@ -53,6 +55,27 @@ export function PolicyFormModal({
   }, [isOpen, policy])
 
   if (!isOpen) return null
+  /** Heading / bullet: marks the line the cursor is on; bold: wraps the selected words. */
+  function format(kind: 'heading' | 'bullet' | 'bold') {
+    const el = box.current
+    const text = form.content_markdown
+    const start = el?.selectionStart ?? text.length
+    const end = el?.selectionEnd ?? text.length
+    let next: string
+    let cursor: number
+    if (kind === 'bold') {
+      const words = text.slice(start, end) || 'bold text'
+      next = `${text.slice(0, start)}**${words}**${text.slice(end)}`
+      cursor = start + words.length + 4
+    } else {
+      const mark = kind === 'heading' ? '## ' : '- '
+      const lineStart = text.lastIndexOf('\n', start - 1) + 1
+      next = text.slice(0, lineStart) + mark + text.slice(lineStart)
+      cursor = end + mark.length
+    }
+    set('content_markdown', next)
+    requestAnimationFrame(() => { el?.focus(); el?.setSelectionRange(cursor, cursor) })
+  }
   const set = <K extends keyof Form>(key: K, value: Form[K]) => setForm((f) => ({ ...f, [key]: value }))
 
   async function save() {
@@ -112,13 +135,21 @@ export function PolicyFormModal({
             <Tabs size="sm" label="Policy text view" value={view} onChange={setView} items={[{ value: 'write', label: 'Write' }, { value: 'preview', label: 'Preview' }]} />
           </div>
           {view === 'write' ? (
-            <Textarea aria-label="Policy text" rows={12} className="font-mono text-caption" value={form.content_markdown} onChange={(e) => set('content_markdown', e.target.value)} />
+            <>
+              <div className="flex gap-1" role="toolbar" aria-label="Formatting">
+                <Button size="sm" variant="ghost" icon={Heading} onClick={() => format('heading')}>Heading</Button>
+                <Button size="sm" variant="ghost" icon={List} onClick={() => format('bullet')}>Bullet</Button>
+                <Button size="sm" variant="ghost" icon={Bold} onClick={() => format('bold')}>Bold</Button>
+              </div>
+              <Textarea ref={box} aria-label="Policy text" rows={12} value={form.content_markdown} onChange={(e) => set('content_markdown', e.target.value)}
+                placeholder={'Write the policy in plain sentences.\nPut the cursor on a line and press Heading or Bullet; select words and press Bold.'} />
+            </>
           ) : (
             <div className="min-h-64 rounded-control border border-line p-4">
               <FormattedPolicyDocument content={form.content_markdown} />
             </div>
           )}
-          <p className="text-caption text-ink-3">Use ## for headings, - for bullet points and **bold** for emphasis.</p>
+          <p className="text-caption text-ink-3">Check Preview to see it the way people will read it.</p>
         </div>
       </div>
     </Modal>

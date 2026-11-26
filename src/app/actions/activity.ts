@@ -68,7 +68,8 @@ export async function logActivity(
 }
 
 // Fetch activity logs, mapping schema back to the frontend ActivityLog interface
-export async function getActivityLogs(category?: string, page = 1, pageSize = 50) {
+/** `month` (YYYY-MM, Manila time): only that month's actions. */
+export async function getActivityLogs(category?: string, page = 1, pageSize = 50, month?: string) {
   try {
     const supabase = await createClient()
     
@@ -79,6 +80,11 @@ export async function getActivityLogs(category?: string, page = 1, pageSize = 50
 
     if (category && category !== 'all') {
       query = query.eq('target_category', category)
+    }
+    if (month) {
+      const [y, m] = month.split('-').map(Number)
+      const next = m === 12 ? `${y + 1}-01` : `${y}-${String(m + 1).padStart(2, '0')}`
+      query = query.gte('created_at', `${month}-01T00:00:00+08:00`).lt('created_at', `${next}-01T00:00:00+08:00`)
     }
 
     const from = (page - 1) * pageSize
