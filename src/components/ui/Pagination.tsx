@@ -50,7 +50,7 @@ export default function Pagination({
     "size-8 rounded-pill flex items-center justify-center text-ink-2 hover:bg-surface-soft hover:text-ink transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent focus-visible:outline-2 focus-visible:outline-focus"
 
   return (
-    <div className={cx("flex flex-col items-center justify-between gap-3 border-t border-line px-card py-3 sm:flex-row", className)}>
+    <div className={cx("sticky bottom-0 z-10 w-full mt-auto bg-surface border-t border-line px-card py-2.5 flex flex-col items-center justify-between gap-3 sm:flex-row", className)}>
       <p className="text-caption text-ink-2">
         Showing <span className="font-medium text-ink tabular-nums">{startIndex}</span> to{" "}
         <span className="font-medium text-ink tabular-nums">{endIndex}</span> of{" "}

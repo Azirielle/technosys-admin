@@ -48,7 +48,7 @@ export function JobsList({ jobs, loading, onOpen }: { jobs: Job[]; loading: bool
   const pageJobs = shown.slice((page - 1) * PER_PAGE, page * PER_PAGE)
 
   return (
-    <div className="flex flex-col gap-stack">
+    <div className="flex flex-col gap-stack flex-1 min-h-0">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <Tabs label="Show" value={view} onChange={(v) => { setView(v); setPage(1) }} items={[
           { value: 'upcoming', label: 'Today and upcoming', count: groups.upcoming.length },

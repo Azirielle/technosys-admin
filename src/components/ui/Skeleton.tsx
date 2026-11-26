@@ -46,13 +46,13 @@ export function SkeletonPageHeader({ actions = true }: { actions?: boolean }) {
 /** One StatTile-shaped card. */
 export function SkeletonStatTile() {
   return (
-    <div className="rounded-card bg-surface p-card shadow-card">
+    <div className="rounded-card bg-surface px-3.5 py-2 shadow-card">
       <div className="flex items-center justify-between">
-        <Skeleton className="h-4 w-24" />
-        <Skeleton className="size-8 rounded-pill" />
+        <Skeleton className="h-3 w-16" />
+        <Skeleton className="size-5.5 rounded-pill" />
       </div>
-      <Skeleton className="mt-3 h-8 w-16" />
-      <Skeleton className="mt-2 h-3 w-28" />
+      <Skeleton className="mt-1 h-5 w-12" />
+      <Skeleton className="mt-0.5 h-2.5 w-20" />
     </div>
   )
 }

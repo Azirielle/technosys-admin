@@ -44,32 +44,32 @@ export function StatTile({
   const body = (
     <div
       className={cx(
-        'h-full rounded-card bg-surface p-card shadow-card transition-shadow',
+        'h-full rounded-card bg-surface px-3.5 py-2 shadow-card transition-shadow flex flex-col justify-between',
         (href || onClick) && 'hover:shadow-raised',
         className,
       )}
     >
       <div className="flex items-center justify-between gap-2">
-        <span className="truncate text-small font-medium text-ink-2">{label}</span>
+        <span className="truncate text-caption font-medium text-ink-2">{label}</span>
         {Icon && (
-          <span className="flex size-8 items-center justify-center rounded-pill bg-surface-soft text-ink-2">
-            <Icon className="size-4" aria-hidden />
+          <span className="flex size-5.5 shrink-0 items-center justify-center rounded-pill bg-surface-soft text-ink-2">
+            <Icon className="size-3" aria-hidden />
           </span>
         )}
       </div>
       {loading ? (
-        <>
-          <Skeleton className="mt-3 h-8 w-16" />
-          {hint && <Skeleton className="mt-2 h-3 w-28" />}
-        </>
+        <div className="mt-0.5">
+          <Skeleton className="h-5 w-12" />
+          {hint && <Skeleton className="mt-0.5 h-2.5 w-20" />}
+        </div>
       ) : (
-        <>
-          <div className="mt-2 text-display font-semibold text-ink tabular-nums">
+        <div className="mt-0.5">
+          <div className="text-heading font-semibold text-ink tabular-nums leading-tight">
             {value}
-            {total !== undefined && <span className="ml-0.5 text-heading font-medium text-ink-3">/{total}</span>}
+            {total !== undefined && <span className="ml-0.5 text-micro font-medium text-ink-3">/{total}</span>}
           </div>
-          {hint && <p className={cx('mt-1 text-caption font-medium', HINT[tone])}>{hint}</p>}
-        </>
+          {hint && <p className={cx('truncate text-micro font-medium leading-tight', HINT[tone])} title={typeof hint === 'string' ? hint : undefined}>{hint}</p>}
+        </div>
       )}
     </div>
   )

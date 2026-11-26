@@ -59,7 +59,7 @@ export function ApprovalsList({ reviews, overtime, onChanged }: { reviews: Revie
             <p className="text-small font-medium text-ink">{o.name} asks for overtime{o.requested_hours >= 8 ? ' (counts until they time out)' : ` (${o.requested_hours} h)`}</p>
             <p className="text-caption text-ink-2">{o.reason}</p>
           </div>
-          <Button size="sm" variant="decline" icon={X} disabled={busy === o.id} onClick={() => ot(o, false)}>Decline</Button>
+          <Button size="sm" variant="decline" icon={X} disabled={busy === o.id} loading={busy === o.id} onClick={() => ot(o, false)}>Decline</Button>
           <Button size="sm" variant="approve" icon={Check} loading={busy === o.id} onClick={() => ot(o, true)}>Approve</Button>
         </Card>
       ))}

@@ -3,7 +3,8 @@
 // itself when someone times in or out, and re-checks "missing" every minute.
 'use client'
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { Suspense, useCallback, useEffect, useMemo, useState } from 'react'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { AlertTriangle, CheckCircle2, Clock, ShieldCheck } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { Page, PageHeader, Pagination, StatRow, StatTile, TableContainer, Tabs, useToast } from '@/components/ui'
@@ -17,14 +18,31 @@ import { buildRows, jobsNeedingActingLead } from './todayStatus'
 type View = 'crew' | 'approvals'
 const PER_PAGE = 8
 
-export function TodayBoard() {
+function TodayContent() {
+  const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+  const currentView = (searchParams.get('view') === 'approvals' ? 'approvals' : 'crew') as View
+
   const supabase = useMemo(() => createClient(), [])
   const toast = useToast()
   const [data, setData] = useState<TodayData | null>(null)
-  const [view, setView] = useState<View>('crew')
   const [page, setPage] = useState(1)
   const [timingOut, setTimingOut] = useState<WorkDay | null>(null)
   const [, tick] = useState(0)
+
+  const setView = useCallback((v: View) => {
+    if (v === currentView) return // already there: no extra Back step
+    setPage(1)
+    const params = new URLSearchParams(searchParams.toString())
+    if (v === 'approvals') {
+      params.set('view', 'approvals')
+    } else {
+      params.delete('view')
+    }
+    const qs = params.toString()
+    router.push(qs ? `${pathname}?${qs}` : pathname, { scroll: false })
+  }, [currentView, pathname, router, searchParams])
 
   const load = useCallback(async () => {
     try { setData(await loadToday(supabase)) } catch (err) { toast.error(`Couldn't load today: ${(err as Error).message}`) }
@@ -52,20 +70,20 @@ export function TodayBoard() {
       <PageHeader title="Today" subtitle="Who's in, who's late or missing, and what needs your decision. Updates by itself." />
 
       <StatRow>
-        <StatTile loading={loading} icon={CheckCircle2} label="In" value={count(['in', 'late', 'review', 'done'])} hint={`of ${rows.length} scheduled`} tone="success" />
-        <StatTile loading={loading} icon={Clock} label="Late" value={count(['late'])} hint="Timed in after the start" tone={count(['late']) ? 'warning' : 'neutral'} />
-        <StatTile loading={loading} icon={AlertTriangle} label="Missing" value={count(['missing']) + earlierOpen.length} hint="No time-in, or no time-out" tone={count(['missing']) + earlierOpen.length ? 'danger' : 'neutral'} />
-        <StatTile loading={loading} icon={ShieldCheck} label="To approve" value={toApprove} hint="Selfies, time-outs, overtime" tone={toApprove ? 'warning' : 'neutral'} />
+        <StatTile loading={loading} icon={CheckCircle2} label="In" onClick={() => setView('crew')} value={count(['in', 'late', 'review', 'done'])} hint={`of ${rows.length} scheduled`} tone="success" />
+        <StatTile loading={loading} icon={Clock} label="Late" onClick={() => setView('crew')} value={count(['late'])} hint="Timed in after the start" tone={count(['late']) ? 'warning' : 'neutral'} />
+        <StatTile loading={loading} icon={AlertTriangle} label="Missing" onClick={() => setView('crew')} value={count(['missing']) + earlierOpen.length} hint="No time-in, or no time-out" tone={count(['missing']) + earlierOpen.length ? 'danger' : 'neutral'} />
+        <StatTile loading={loading} icon={ShieldCheck} label="To approve" onClick={() => setView('approvals')} value={toApprove} hint="Selfies, time-outs, overtime" tone={toApprove ? 'warning' : 'neutral'} />
       </StatRow>
 
       {data && leadless.map((job) => <ActingLeadPrompt key={job.id} job={job} rows={rows} onDone={load} />)}
 
-      <Tabs label="Show" value={view} onChange={(v) => { setView(v); setPage(1) }} items={[
+      <Tabs label="Show" value={currentView} onChange={setView} items={[
         { value: 'crew', label: 'Crew today', count: allCrewRows.length },
         { value: 'approvals', label: 'To approve', count: toApprove },
       ]} />
 
-      {view === 'crew' ? (
+      {currentView === 'crew' ? (
         <TableContainer>
           {data && (
             <>
@@ -92,5 +110,13 @@ export function TodayBoard() {
 
       <TimeOutModal day={timingOut} onClose={() => setTimingOut(null)} onDone={() => { setTimingOut(null); load() }} />
     </Page>
+  )
+}
+
+export function TodayBoard() {
+  return (
+    <Suspense fallback={<Page wide><PageHeader title="Today" subtitle="Who's in, who's late or missing, and what needs your decision. Updates by itself." /></Page>}>
+      <TodayContent />
+    </Suspense>
   )
 }

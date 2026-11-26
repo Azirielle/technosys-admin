@@ -102,34 +102,34 @@ export function ScheduleBoard({ readOnly = false }: { readOnly?: boolean }) {
   }
   const step = (n: number) => setDate(addDays(date, view === 'week' ? 7 * n : n))
   const onBoard = view === 'day' || view === 'week'
+  const dateLabel = view === 'week' ? weekLabel(weekStart(date)) : `${longDate(date)}${date === today ? ' · today' : ''}`
 
   return (
-    <Page wide className={onBoard ? 'lg:h-full' : undefined}>
+    <Page wide className={onBoard || view === 'list' ? 'lg:h-full' : undefined}>
       <div className="flex flex-col gap-3">
         <ScheduleToolbar view={view} onView={setView} vehicles={opts.vehicles.length} temps={tempList.filter((t) => t.status === 'active').length}
-          dateLabel={onBoard ? (view === 'week' ? weekLabel(weekStart(date)) : `${longDate(date)}${date === today ? ' · today' : ''}`) : null}
+          dateLabel={onBoard ? dateLabel : null} /* the date bar only where it changes something (Day, Week) */
           onStep={step} onToday={() => { setDate(today); setFreeOn(null) }} search={search} onSearch={setSearch}
           canAdd={!readOnly && !loading} onNew={() => setForm({ open: true, job: null })} onVip={vipJob} />
-        {onBoard && (
-          <div className="flex flex-col gap-2 border-y border-line py-2">
-            <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
-              <span className="flex items-center gap-2">
-                <span className="text-micro font-semibold tracking-wide text-ink-3 uppercase">Filters</span>
-                <Tabs label="Show" size="sm" value={who} onChange={setWho} items={[
-                  { value: 'all', label: 'Everyone' }, { value: 'technician', label: 'Technicians' }, { value: 'helper', label: 'Helpers' }, { value: 'free', label: 'Free' },
-                ]} />
-              </span>
-              <ScheduleStats S={S} date={date} today={today} now={now} />
-            </div>
-            <div className="flex flex-wrap items-center gap-2 text-micro text-ink-3">
-              <span>Kinds of work:</span>
-              <WorkTypeBadge workType="on_site" className="text-[10.5px] py-0 px-1.5" />
-              <WorkTypeBadge workType="in_house" className="text-[10.5px] py-0 px-1.5" />
-              <WorkTypeBadge workType="out_of_town" className="text-[10.5px] py-0 px-1.5" />
-              <WorkTypeBadge workType="office" className="text-[10.5px] py-0 px-1.5" />
-            </div>
+        <div className="flex flex-col gap-2 border-y border-line py-2">
+          {/* Filters and day stats only work on Day / Week; List, Vehicles and Helpers keep the same row with the legend */}
+          {onBoard && <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
+            <span className="flex items-center gap-2">
+              <span className="text-micro font-semibold tracking-wide text-ink-3 uppercase">Filters</span>
+              <Tabs label="Show" size="sm" value={who} onChange={setWho} items={[
+                { value: 'all', label: 'Everyone' }, { value: 'technician', label: 'Technicians' }, { value: 'helper', label: 'Helpers' }, { value: 'free', label: 'Free' },
+              ]} />
+            </span>
+            <ScheduleStats S={S} date={date} today={today} now={now} />
+          </div>}
+          <div className="flex flex-wrap items-center gap-2 text-micro text-ink-3">
+            <span>Kinds of work:</span>
+            <WorkTypeBadge workType="on_site" className="text-[10.5px] py-0 px-1.5" />
+            <WorkTypeBadge workType="in_house" className="text-[10.5px] py-0 px-1.5" />
+            <WorkTypeBadge workType="out_of_town" className="text-[10.5px] py-0 px-1.5" />
+            <WorkTypeBadge workType="office" className="text-[10.5px] py-0 px-1.5" />
           </div>
-        )}
+        </div>
       </div>
 
       {onBoard ? (
