@@ -32,7 +32,9 @@ Deno.serve(async (req) => {
 
     if (type === "INSERT") {
       title = "Request received";
-      body = `HR received "${name}" and will review it.`;
+      // Tool requests and tool problems go to the Coordinator, everything else to HR (Round 5 P6)
+      const who = ["Tool request", "Equipment / Tools"].includes(ticket.category) ? "The Coordinator" : "HR";
+      body = `${who} received "${name}" and will review it.`;
     } else {
       // Only when the status really changed, and only to the status it has now.
       if (payload.old_record?.status === ticket.status || record.status !== ticket.status) return ok("No status change");
