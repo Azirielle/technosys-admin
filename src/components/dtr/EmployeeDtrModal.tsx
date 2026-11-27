@@ -66,7 +66,7 @@ export function EmployeeDtrModal({
           <Summary label="Night diff" value={`${employee.nightDiffHours} h`} />
           <Summary label="Sick leave" value={`${employee.sickLeaveDays} d`} />
           <Summary label="Vacation leave" value={`${employee.vacationLeaveDays} d`} />
-          <Summary label="Salary deduction" value={`${employee.salaryDeductionDays} d`} />
+          <Summary label="Absent (no credits)" value={`${employee.salaryDeductionDays} d`} />
           {(employee.otherLeaveDays ?? 0) > 0 && (
             <Summary label="Other leave" value={`${employee.otherLeaveDays} d`} />
           )}

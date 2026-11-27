@@ -162,7 +162,7 @@ export function evaluateDay(ctx: DayEvaluationContext): DayEvaluationResult {
       salaryDeductionDays = 1
       approvedLeaves = 0
       absences = 1
-      note = 'Salary deduction (no credits)'
+      note = 'Leave without credits'
     } else {
       otherLeaveDays = 1
       note = leave.leave_type ? `${leave.leave_type} leave` : 'Other leave'
@@ -191,7 +191,7 @@ export function evaluateDay(ctx: DayEvaluationContext): DayEvaluationResult {
   }
 
   if (sched && sched.work_type === 'in_house' && !isSunday && !isHoliday) {
-    // In-house work: attendance kept at client building, no time-in on app (not absent, not salary deduction)
+    // In-house work: attendance kept at client building, no time-in on app (not absent)
     return {
       ...zeroMetrics,
       record: {
@@ -219,7 +219,7 @@ export function evaluateDay(ctx: DayEvaluationContext): DayEvaluationResult {
         scheduleClient: sched.client_name,
         holidayName: holiday?.name,
         status: 'absent',
-        notes: 'Salary deduction (absent)',
+        notes: 'Absent',
       },
     }
   }
@@ -257,7 +257,7 @@ export function evaluateDay(ctx: DayEvaluationContext): DayEvaluationResult {
       record: {
         ...rec,
         status: 'absent',
-        notes: 'Salary deduction (absent)',
+        notes: 'Absent',
       },
     }
   }

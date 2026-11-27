@@ -18,7 +18,7 @@ const HEADERS = [
   'Night diff (h)',
   'Sick leave',
   'Vacation leave',
-  'Salary deduction',
+  'Absent (no credits)',
 ]
 
 function round1(n: number) {

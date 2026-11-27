@@ -18,6 +18,7 @@ import { ArchiveAccountModal } from './ArchiveAccountModal'
 import { archiveAccount, createAccount, restoreAccount, type NewAccount } from '@/app/actions/accounts'
 
 type Filter = 'all' | 'incomplete' | 'warnings' | 'complete' | 'phone' | 'archived'
+const FILTERS: Filter[] = ['all', 'incomplete', 'warnings', 'complete', 'phone', 'archived']
 const PER_PAGE = 8
 
 function matches(emp: EmployeeFile, filter: Filter, phoneRequests: Set<string>) {
@@ -32,13 +33,14 @@ function matches(emp: EmployeeFile, filter: Filter, phoneRequests: Set<string>) 
   return true
 }
 
-export function FilesBoard() {
+/** show: the tab to open on (task 5: "Incomplete 201 files" on the HR overview opens ?show=incomplete) */
+export function FilesBoard({ show }: { show?: string }) {
   const supabase = useMemo(() => createClient(), [])
   const toast = useToast()
   const [employees, setEmployees] = useState<EmployeeFile[]>([])
   const [loading, setLoading] = useState(true)
   const [phoneRequests, setPhoneRequests] = useState<Set<string>>(new Set())
-  const [chosenFilter, setFilter] = useState<Filter>('all')
+  const [chosenFilter, setFilter] = useState<Filter>(FILTERS.includes(show as Filter) ? (show as Filter) : 'all')
   // Once the last phone request is handled (or the last archived person restored) its tab disappears: show everyone.
   const emptyTab = (chosenFilter === 'phone' && phoneRequests.size === 0) || (chosenFilter === 'archived' && !employees.some((e) => e.lifecycle_status === 'archived'))
   const filter: Filter = emptyTab ? 'all' : chosenFilter
@@ -180,10 +182,10 @@ export function FilesBoard() {
       />
 
       <StatRow>
-        <StatTile loading={loading} icon={Users} label="Field staff" value={counts.all} hint="Technicians and helpers" />
-        <StatTile loading={loading} icon={FileWarning} label="Missing documents" value={counts.incomplete} hint={counts.incomplete ? 'Files still incomplete' : 'Every file is complete'} tone={counts.incomplete ? 'warning' : 'success'} />
-        <StatTile loading={loading} icon={ShieldAlert} label="With warnings" value={counts.warnings} hint={counts.warnings ? 'Have at least one warning' : 'No warnings on record'} />
-        <StatTile loading={loading} icon={CheckCircle2} label="Complete" value={counts.complete} hint="All six documents received" tone={counts.complete ? 'success' : 'neutral'} />
+        <StatTile loading={loading} icon={Users} label="Field staff" onClick={() => setFilter('all')} value={counts.all} hint="Technicians and helpers" />
+        <StatTile loading={loading} icon={FileWarning} label="Missing documents" onClick={() => setFilter('incomplete')} value={counts.incomplete} hint={counts.incomplete ? 'Files still incomplete' : 'Every file is complete'} tone={counts.incomplete ? 'warning' : 'success'} />
+        <StatTile loading={loading} icon={ShieldAlert} label="With warnings" onClick={() => setFilter('warnings')} value={counts.warnings} hint={counts.warnings ? 'Have at least one warning' : 'No warnings on record'} />
+        <StatTile loading={loading} icon={CheckCircle2} label="Complete" onClick={() => setFilter('complete')} value={counts.complete} hint="All six documents received" tone={counts.complete ? 'success' : 'neutral'} />
       </StatRow>
 
       <div className="flex flex-wrap items-center justify-between gap-3">

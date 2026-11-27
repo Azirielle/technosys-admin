@@ -64,7 +64,7 @@ export function DtrSummaryTable({
           <TableHeaderCell numeric>Night diff</TableHeaderCell>
           <TableHeaderCell numeric>Sick leave</TableHeaderCell>
           <TableHeaderCell numeric>Vacation leave</TableHeaderCell>
-          <TableHeaderCell numeric>Salary deduction</TableHeaderCell>
+          <TableHeaderCell numeric>Absent (no credits)</TableHeaderCell>
           <TableHeaderCell align="right"><span className="sr-only">Action</span></TableHeaderCell>
         </tr>
       </TableHead>

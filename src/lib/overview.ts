@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
-import { waitingForHr } from '@/components/tickets/types'
+import { needsAttention, waitingForHr, type Ticket } from '@/components/tickets/types'
 
 /** "Today" for Technocycle is Philippine time (UTC+8), whatever the server's own time zone. */
 function manilaDayBounds(now = new Date()) {
@@ -19,6 +19,8 @@ export interface Overview {
   timedIn: { id: string; name: string; since: string; flagged: boolean }[]
   onLeaveToday: { id: string; name: string; type: string }[]
   flaggedPunchesToday: number
+  /** Who timed in with fake GPS or a selfie (outside the place) today: the list behind flaggedPunchesToday */
+  flaggedToday: { id: string; name: string; why: string; at: string }[]
   pendingLeaves: { id: string; name: string; type: string; start: string; end: string; filed: string }[]
   pendingOvertime: number
   /** waiting: HR owes the next reply (see waitingForHr) */
@@ -100,6 +102,9 @@ export async function getOverview(): Promise<Overview> {
     timedIn: openLogs.map((l) => ({ id: l.id, name: name(l.person_id), since: l.time_in as string, flagged: flagged(l) })),
     onLeaveToday: (leavesToday.data || []).map((l) => ({ id: l.id, name: name(l.technician_id), type: l.leave_type })),
     flaggedPunchesToday: (logs.data || []).filter(flagged).length,
+    flaggedToday: (logs.data || []).filter(flagged).map((l) => ({
+      id: l.id, name: name(l.person_id), why: l.is_mocked ? 'Fake GPS' : 'Selfie, outside the place', at: l.time_in as string,
+    })),
     pendingLeaves: (pendingLeaves.data || []).map((l) => ({
       id: l.id,
       name: name(l.technician_id),
@@ -109,7 +114,8 @@ export async function getOverview(): Promise<Overview> {
       filed: l.created_at as string,
     })),
     pendingOvertime: overtime.count || 0,
-    openTickets: (tickets.data || []).map((t) => ({
+    // Task 5: the same rule as the Tickets page's "Needs HR" tab, so the number opens exactly that list
+    openTickets: (tickets.data || []).filter((t) => needsAttention(t as unknown as Ticket)).map((t) => ({
       id: t.id,
       name: name(t.employee_id),
       title: t.title || t.category || 'Request',

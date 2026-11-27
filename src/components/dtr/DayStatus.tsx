@@ -30,7 +30,7 @@ export function DayStatus({ day }: { day: DailyAuditRecord }) {
       label = 'Vacation leave'
       tone = 'info'
     } else if (day.leaveCategory === 'without_credits') {
-      label = 'Salary deduction (no credits)'
+      label = 'Leave without credits'
       tone = 'danger'
     } else if (day.leaveType) {
       label = `Other leave (${day.leaveType})`
@@ -41,7 +41,7 @@ export function DayStatus({ day }: { day: DailyAuditRecord }) {
     }
   }
   if (day.status === 'absent') {
-    label = 'Salary deduction (absent)'
+    label = 'Absent'
     tone = 'danger'
   }
   if (day.status === 'holiday' && day.holidayName) label = day.holidayName

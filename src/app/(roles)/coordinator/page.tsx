@@ -19,8 +19,8 @@ export default async function CoordinatorOverviewPage() {
       <StatRow>
         <StatTile icon={Briefcase} label="Jobs today" value={o.jobsToday.length} hint={unstaffed ? `${unstaffed} without a lead technician` : 'All jobs have a lead'} tone={unstaffed ? 'danger' : 'neutral'} href="/coordinator/jobs" />
         <StatTile icon={MapPin} label="Crew timed in" value={o.timedIn.length} total={o.fieldStaff} hint={o.onLeaveToday.length ? `${o.onLeaveToday.length} on leave today` : 'No one on leave'} href="/coordinator/tracking" />
-        <StatTile icon={Wrench} label="Tools out" value={o.toolsOut.reduce((n, t) => n + t.qty, 0)} hint={`${o.toolsOut.length} borrowing${o.toolsOut.length === 1 ? '' : 's'} open`} href="/coordinator/inventory" />
-        <StatTile icon={PackageX} label="Out of stock" value={o.outOfStock.length} hint={o.outOfStock.length ? o.outOfStock.slice(0, 2).join(', ') : 'Every tool has stock'} tone={o.outOfStock.length ? 'danger' : 'success'} href="/coordinator/inventory" />
+        <StatTile icon={Wrench} label="Tools out" value={o.toolsOut.length} hint={`${o.toolsOut.reduce((n, t) => n + t.qty, 0)} pieces with crews`} href="/coordinator/inventory?tab=borrowed" />
+        <StatTile icon={PackageX} label="Out of stock" value={o.outOfStock.length} hint={o.outOfStock.length ? o.outOfStock.slice(0, 2).join(', ') : 'Every tool has stock'} tone={o.outOfStock.length ? 'danger' : 'success'} href="/coordinator/inventory?stock=out" />
       </StatRow>
 
       <div className="grid grid-cols-1 gap-section lg:grid-cols-2">
@@ -43,13 +43,13 @@ export default async function CoordinatorOverviewPage() {
           ))}
         </ListCard>
 
-        <ListCard title="Tools out with crews" count={o.toolsOut.length} href="/coordinator/inventory" linkLabel="Inventory" empty="All tools are in the warehouse.">
+        <ListCard title="Tools out with crews" count={o.toolsOut.length} href="/coordinator/inventory?tab=borrowed" linkLabel="Inventory" empty="All tools are in the warehouse.">
           {o.toolsOut.slice(0, 3).map((t) => (
             <ListRow key={t.id} primary={`${t.qty > 1 ? `${t.qty} × ` : ''}${t.tool}`} secondary={t.name} right={formatAgo(t.since)} />
           ))}
         </ListCard>
 
-        <ListCard title="Out of stock" count={o.outOfStock.length} href="/coordinator/inventory" linkLabel="Inventory" empty="Every tool has stock available.">
+        <ListCard title="Out of stock" count={o.outOfStock.length} href="/coordinator/inventory?stock=out" linkLabel="Inventory" empty="Every tool has stock available.">
           {o.outOfStock.slice(0, 3).map((name) => (
             <ListRow key={name} primary={name} badge={<Badge tone="danger">0 available</Badge>} />
           ))}

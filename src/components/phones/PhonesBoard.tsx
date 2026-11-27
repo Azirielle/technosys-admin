@@ -41,8 +41,7 @@ export function PhonesBoard() {
   const counts = useMemo(() => {
     const c = { waiting: 0, registered: 0, none: 0 }
     rows.forEach((r) => c[phoneState(r)]++)
-    // Someone waiting for a new phone usually still has their old one registered.
-    return { ...c, withPhone: rows.filter((r) => r.phone).length }
+    return c
   }, [rows])
 
   const shown = useMemo(() => {
@@ -95,10 +94,10 @@ export function PhonesBoard() {
       />
 
       <StatRow>
-        <StatTile loading={loading} icon={Users} label="Field staff" value={rows.length} hint="Technicians and helpers" />
-        <StatTile loading={loading} icon={Smartphone} label="Registered" value={counts.withPhone} hint="Have a work phone" tone="success" />
-        <StatTile loading={loading} icon={SmartphoneNfc} label="Wants a new phone" value={counts.waiting} hint={counts.waiting ? 'Waiting for you' : 'Nothing to approve'} tone={counts.waiting ? 'warning' : 'neutral'} />
-        <StatTile loading={loading} icon={RotateCcw} label="No phone yet" value={counts.none} hint="Pick one in the app's first-time setup" />
+        <StatTile loading={loading} icon={Users} label="Field staff" onClick={() => setFilter('all')} value={rows.length} hint="Technicians and helpers" />
+        <StatTile loading={loading} icon={Smartphone} label="Registered" onClick={() => setFilter('registered')} value={counts.registered} hint="Have a work phone" tone="success" /* task 5: the same count as the Registered tab */ />
+        <StatTile loading={loading} icon={SmartphoneNfc} label="Wants a new phone" onClick={() => setFilter('waiting')} value={counts.waiting} hint={counts.waiting ? 'Waiting for you' : 'Nothing to approve'} tone={counts.waiting ? 'warning' : 'neutral'} />
+        <StatTile loading={loading} icon={RotateCcw} label="No phone yet" onClick={() => setFilter('none')} value={counts.none} hint="Pick one in the app's first-time setup" />
       </StatRow>
 
       <div className="flex flex-wrap items-center justify-between gap-3">

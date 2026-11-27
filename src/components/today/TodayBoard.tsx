@@ -7,7 +7,7 @@ import { Suspense, useCallback, useEffect, useMemo, useState } from 'react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { AlertTriangle, CheckCircle2, Clock, ShieldCheck } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
-import { Page, PageHeader, Pagination, StatRow, StatTile, TableContainer, Tabs, useToast } from '@/components/ui'
+import { Button, Page, PageHeader, Pagination, StatRow, StatTile, TableContainer, Tabs, useToast } from '@/components/ui'
 import { CrewTodayTable } from './CrewTodayTable'
 import { ApprovalsList } from './ApprovalsList'
 import { ActingLeadPrompt } from './ActingLeadPrompt'
@@ -17,6 +17,14 @@ import { buildRows, jobsNeedingActingLead } from './todayStatus'
 
 type View = 'crew' | 'approvals'
 const PER_PAGE = 8
+
+type CrewRow = { role: string; state: string }
+/** Who each card counts, and the same rule filters the list it opens (task 5: the number = the list) */
+const FOCUS = {
+  in: { label: 'In', has: (r: CrewRow) => r.role !== 'earlier' && ['in', 'late', 'review', 'done'].includes(r.state) },
+  late: { label: 'Late', has: (r: CrewRow) => r.state === 'late' },
+  missing: { label: 'Missing', has: (r: CrewRow) => r.state === 'missing' || r.role === 'earlier' },
+}
 
 function TodayContent() {
   const router = useRouter()
@@ -29,6 +37,8 @@ function TodayContent() {
   const [data, setData] = useState<TodayData | null>(null)
   const [page, setPage] = useState(1)
   const [timingOut, setTimingOut] = useState<WorkDay | null>(null)
+  // Task 5: a card shows only its people (In / Late / Missing); null = everyone
+  const [focus, setFocus] = useState<keyof typeof FOCUS | null>(null)
   const [, tick] = useState(0)
 
   const setView = useCallback((v: View) => {
@@ -63,16 +73,18 @@ function TodayContent() {
     ...rows,
   ], [earlierOpen, rows])
 
-  const pageCrewRows = allCrewRows.slice((page - 1) * PER_PAGE, page * PER_PAGE)
+  const crewRows = focus ? allCrewRows.filter(FOCUS[focus].has) : allCrewRows
+  const pageCrewRows = crewRows.slice((page - 1) * PER_PAGE, page * PER_PAGE)
+  const openFocus = (f: keyof typeof FOCUS) => { setView('crew'); setFocus(f); setPage(1) }
 
   return (
     <Page wide>
       <PageHeader title="Today" subtitle="Who's in, who's late or missing, and what needs your decision. Updates by itself." />
 
       <StatRow>
-        <StatTile loading={loading} icon={CheckCircle2} label="In" onClick={() => setView('crew')} value={count(['in', 'late', 'review', 'done'])} hint={`of ${rows.length} scheduled`} tone="success" />
-        <StatTile loading={loading} icon={Clock} label="Late" onClick={() => setView('crew')} value={count(['late'])} hint="Timed in after the start" tone={count(['late']) ? 'warning' : 'neutral'} />
-        <StatTile loading={loading} icon={AlertTriangle} label="Missing" onClick={() => setView('crew')} value={count(['missing']) + earlierOpen.length} hint="No time-in, or no time-out" tone={count(['missing']) + earlierOpen.length ? 'danger' : 'neutral'} />
+        <StatTile loading={loading} icon={CheckCircle2} label="In" onClick={() => openFocus('in')} value={allCrewRows.filter(FOCUS.in.has).length} hint={`of ${rows.length} scheduled`} tone="success" />
+        <StatTile loading={loading} icon={Clock} label="Late" onClick={() => openFocus('late')} value={allCrewRows.filter(FOCUS.late.has).length} hint="Timed in after the start" tone={count(['late']) ? 'warning' : 'neutral'} />
+        <StatTile loading={loading} icon={AlertTriangle} label="Missing" onClick={() => openFocus('missing')} value={allCrewRows.filter(FOCUS.missing.has).length} hint="No time-in, or no time-out" tone={count(['missing']) + earlierOpen.length ? 'danger' : 'neutral'} />
         <StatTile loading={loading} icon={ShieldCheck} label="To approve" onClick={() => setView('approvals')} value={toApprove} hint="Selfies, time-outs, overtime" tone={toApprove ? 'warning' : 'neutral'} />
       </StatRow>
 
@@ -83,6 +95,12 @@ function TodayContent() {
         { value: 'approvals', label: 'To approve', count: toApprove },
       ]} />
 
+      {currentView === 'crew' && focus && (
+        <div className="flex items-center gap-2 text-small text-ink-2">
+          <span>Showing {FOCUS[focus].label.toLowerCase()} only ({crewRows.length})</span>
+          <Button size="sm" variant="ghost" onClick={() => { setFocus(null); setPage(1) }}>Show everyone</Button>
+        </div>
+      )}
       {currentView === 'crew' ? (
         <TableContainer>
           {data && (
@@ -91,11 +109,11 @@ function TodayContent() {
                 rows={pageCrewRows}
                 onTimeOut={(r) => setTimingOut(r.day)}
               />
-              {allCrewRows.length > PER_PAGE && (
+              {crewRows.length > PER_PAGE && (
                 <Pagination
                   currentPage={page}
-                  totalPages={Math.ceil(allCrewRows.length / PER_PAGE)}
-                  totalItems={allCrewRows.length}
+                  totalPages={Math.ceil(crewRows.length / PER_PAGE)}
+                  totalItems={crewRows.length}
                   itemsPerPage={PER_PAGE}
                   onPageChange={setPage}
                   itemNamePlural="crew members"

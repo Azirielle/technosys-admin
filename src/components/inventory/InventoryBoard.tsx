@@ -7,7 +7,7 @@ import { REQUEST_FIELDS, toRequest, type ToolRequest } from './toolRequests'
 import { finishTicket } from '@/components/tickets/ticketActions'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { usePageCommand } from '@/components/commands/pageCommands'
-import { Box, Package, Plus, Search, ShieldAlert, Wrench } from 'lucide-react'
+import { Box, Package, Plus, Search, ShieldAlert, Wrench, X } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { getTechnicians } from '@/app/actions/inventory'
 import { Button, Input, Page, PageHeader, Pagination, Select, StatRow, StatTile, TableContainer, Tabs, useToast } from '@/components/ui'
@@ -33,7 +33,8 @@ const BORROW_EMPTY: Record<BorrowFilter, string> = {
   all: 'Lend a tool from the Tools tab and it shows up here.',
 }
 
-export function InventoryBoard() {
+/** tab / stock: where to open (task 5: the Coordinator overview's "Tools out" opens ?tab=borrowed, "Out of stock" ?stock=out) */
+export function InventoryBoard({ tab: openTab, stock }: { tab?: string; stock?: string }) {
   const supabase = useMemo(() => createClient(), [])
   const toast = useToast()
   const [tools, setTools] = useState<Tool[]>([])
@@ -42,7 +43,8 @@ export function InventoryBoard() {
   const [reports, setReports] = useState<Map<string, string>>(new Map())
   const [people, setPeople] = useState<Person[]>([])
   const [loading, setLoading] = useState(true)
-  const [tab, setTab] = useState<Tab>('tools')
+  const [tab, setTab] = useState<Tab>(openTab === 'borrowed' || openTab === 'requests' ? openTab : 'tools')
+  const [onlyOutOfStock, setOnlyOutOfStock] = useState(stock === 'out')
   const [search, setSearch] = useState('')
   const [category, setCategory] = useState('')
   const [borrowFilter, setBorrowFilter] = useState<BorrowFilter>('checked_out')
@@ -118,7 +120,8 @@ export function InventoryBoard() {
       owned: tools.reduce((n, t) => n + (t.total_stock || 0), 0),
       inWarehouse: tools.reduce((n, t) => n + (t.available_stock || 0), 0),
       low: tools.filter((t) => t.status === 'active' && t.available_stock <= LOW_STOCK).length,
-      out: out.reduce((n, b) => n + (b.quantity || 1), 0),
+      out: out.length, // borrowings, the rows the Borrowed list shows (task 5: the number = the list)
+      pieces: out.reduce((n, b) => n + (b.quantity || 1), 0),
       overdue: out.filter(isOverdue).length,
       problems: borrowings.filter((b) => b.status === 'damaged' || b.status === 'lost').length,
     }
@@ -127,7 +130,7 @@ export function InventoryBoard() {
   const toCheck = useMemo(() => units.reduce<Record<string, number>>((m, u) => (u.status === 'needs_check' ? { ...m, [u.tool_id]: (m[u.tool_id] ?? 0) + 1 } : m), {}), [units])
   const q = search.trim().toLowerCase()
   const shownTools = tools.filter(
-    (t) => (!category || t.category === category) && (!q || [t.name, t.description, t.serial_number, t.category].some((v) => (v || '').toLowerCase().includes(q))),
+    (t) => (!onlyOutOfStock || (t.status === 'active' && (t.available_stock ?? 0) <= 0)) && (!category || t.category === category) && (!q || [t.name, t.description, t.serial_number, t.category].some((v) => (v || '').toLowerCase().includes(q))),
   )
   const shownBorrowings = borrowings.filter((b) => {
     const matchFilter =
@@ -150,7 +153,7 @@ export function InventoryBoard() {
       <StatRow>
         <StatTile loading={loading} icon={Package} label="Tools owned" onClick={() => show('tools')} value={totals.owned} hint={`${tools.length} kinds of tools`} />
         <StatTile loading={loading} icon={Box} label="In the warehouse" onClick={() => show('tools')} value={totals.inWarehouse} hint={totals.low ? `${totals.low} running low` : 'Stock looks fine'} tone={totals.low ? 'warning' : 'success'} />
-        <StatTile loading={loading} icon={Wrench} label="Out with crews" onClick={() => show('borrowed', 'checked_out')} value={totals.out} hint={totals.overdue ? `${totals.overdue} overdue` : 'None overdue'} tone={totals.overdue ? 'danger' : 'neutral'} />
+        <StatTile loading={loading} icon={Wrench} label="Out with crews" onClick={() => show('borrowed', 'checked_out')} value={totals.out} hint={`${totals.pieces} piece${totals.pieces === 1 ? '' : 's'} · ${totals.overdue ? `${totals.overdue} overdue` : 'none overdue'}`} tone={totals.overdue ? 'danger' : 'neutral'} />
         <StatTile loading={loading} icon={ShieldAlert} label="Damaged or lost" onClick={() => show('borrowed', 'problems')} value={totals.problems} hint="Checked in as damaged or lost" tone={totals.problems ? 'warning' : 'neutral'} />
       </StatRow>
 
@@ -165,6 +168,9 @@ export function InventoryBoard() {
             { value: 'requests', label: 'Requests', count: requests.length },
           ]}
         />
+        {tab === 'tools' && onlyOutOfStock && (
+          <Button size="sm" variant="secondary" icon={X} onClick={() => { setOnlyOutOfStock(false); setPage(1) }}>Only out of stock · show all</Button>
+        )}
         {tab === 'requests' ? null : tab === 'tools' ? (
           <Select aria-label="Category" className="w-52" placeholder="All categories" value={category} onChange={(e) => { setCategory(e.target.value); setPage(1) }} options={CATEGORIES.map((c) => ({ value: c, label: c }))} />
         ) : (
@@ -193,7 +199,7 @@ export function InventoryBoard() {
           <ToolsTable
             tools={shownTools.slice((page - 1) * PER_PAGE, page * PER_PAGE)}
             loading={loading}
-            filtered={Boolean(q || category)}
+            filtered={Boolean(q || category || onlyOutOfStock)}
             onLend={setLending}
             onOpen={setUnitsOf}
             toCheck={toCheck}
