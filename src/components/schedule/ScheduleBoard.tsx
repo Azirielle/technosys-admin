@@ -126,9 +126,7 @@ export function ScheduleBoard({ readOnly = false }: { readOnly?: boolean }) {
             <span>Kinds of work:</span>
             <WorkTypeBadge workType="on_site" className="text-[10.5px] py-0 px-1.5" />
             <WorkTypeBadge workType="in_house" className="text-[10.5px] py-0 px-1.5" />
-            <WorkTypeBadge workType="out_of_town" className="text-[10.5px] py-0 px-1.5" />
-            <WorkTypeBadge workType="office" className="text-[10.5px] py-0 px-1.5" />
-          </div>
+            <WorkTypeBadge workType="out_of_town" className="text-[10.5px] py-0 px-1.5" />          </div>
         </div>
       </div>
 

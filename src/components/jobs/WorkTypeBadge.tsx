@@ -1,7 +1,7 @@
-// WorkTypeBadge: plain badge showing one of the 4 kinds of work (B6)
-// On-site (info), Out-of-town (warning), Head office (VIP) (success), In-house (neutral).
+// WorkTypeBadge: plain badge showing one of the 3 kinds of work (B6; "office" removed 27 Nov, VIP is a flag on a job)
+// On-site (info), Out-of-town (warning), In-house (neutral).
 import { Badge, type Tone } from '@/components/ui'
-import { Briefcase, Building2, MapPin, Truck, type LucideIcon } from 'lucide-react'
+import { Briefcase, MapPin, Truck, type LucideIcon } from 'lucide-react'
 import type { WorkType } from './jobTypes'
 
 export const WORK_TYPE_META: Record<
@@ -11,7 +11,6 @@ export const WORK_TYPE_META: Record<
   on_site: { label: 'On-site', tone: 'info', icon: MapPin },
   in_house: { label: 'In-house', tone: 'neutral', icon: Briefcase },
   out_of_town: { label: 'Out-of-town', tone: 'warning', icon: Truck },
-  office: { label: 'Head office (VIP)', tone: 'success', icon: Building2 },
 }
 
 export function WorkTypeBadge({

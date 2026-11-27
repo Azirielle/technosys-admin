@@ -149,8 +149,7 @@ export function JobFormDrawer({ open, job, prefill, people, temps, vehicles, off
             <Field label="Kind of work" htmlFor="job-type" hint={form.work_type === 'in_house' ? 'No time-in on the app. They send updates through tickets.' : undefined}>
               <Select id="job-type" value={form.work_type} onChange={(e) => {
                 const wt = e.target.value as JobInput['work_type']
-                if (wt === 'office') set({ work_type: wt, report_to: 'hq' })
-                else if (wt === 'in_house') set({ work_type: wt, report_to: 'site' })
+                if (wt === 'in_house') set({ work_type: wt, report_to: 'site' })
                 else set({ work_type: wt })
               }} options={WORK_TYPES} />
             </Field>
@@ -165,8 +164,8 @@ export function JobFormDrawer({ open, job, prefill, people, temps, vehicles, off
 
         {step === 3 && <section className="flex flex-col gap-stack">
           <h3 className="text-small font-medium text-ink">Who</h3>
-          <Checkbox checked={form.is_vip} onChange={(e) => set({ is_vip: e.target.checked })} label="VIP client (squeeze-in)"
-            hint="May take people already booked at the same time. Saving moves them here; their other job asks you to call that client." />
+          <Checkbox checked={form.is_vip} onChange={(e) => set({ is_vip: e.target.checked })} label="VIP (urgent)"
+            hint="A client needs it right now, or management calls the technician to the Pacita office for a task (residential; put the Pacita office as the place). May take people already booked at the same time: saving moves them here, and their other job asks you to call that client." />
           <JobCrewFields value={crew} onChange={set} people={people} temps={temps} vehicles={vehicles} needsDriver={form.report_to === 'hq'} />
           <JobChecksList checks={checks} checking={checking} extra={extra} vip={form.is_vip} />
         </section>}

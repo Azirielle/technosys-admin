@@ -2,7 +2,7 @@
 // Tables: jobs, job_members, vehicles, job_events (see DATABASE_GUIDE.md, "Work v2").
 import type { Tone } from '@/components/ui'
 
-export type WorkType = 'on_site' | 'out_of_town' | 'office' | 'in_house'
+export type WorkType = 'on_site' | 'out_of_town' | 'in_house'
 export type ReportTo = 'site' | 'hq'
 export type JobStatus = 'planned' | 'ongoing' | 'done' | 'cancelled'
 export type MemberRole = 'lead' | 'crew' | 'driver' | 'helper'
@@ -109,7 +109,6 @@ export const WORK_TYPES: { value: WorkType; label: string }[] = [
   { value: 'on_site', label: 'On-site' },
   { value: 'in_house', label: 'In-house' },
   { value: 'out_of_town', label: 'Out-of-town' },
-  { value: 'office', label: 'Head office (Residential / VIP)' },
 ]
 
 export const REPORT_TO: { value: ReportTo; label: string; hint: string }[] = [
