@@ -9,7 +9,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
   const { message } = await searchParams
 
   return (
-    <div className="grid min-h-screen grid-cols-1 gap-4 bg-bg p-4 lg:grid-cols-2">
+    <div className="grid min-h-screen grid-cols-1 gap-4 bg-glow p-4 lg:grid-cols-2">
       <main className="flex items-center justify-center px-2 py-10">
         <div className="w-full max-w-sm">
           {/* Light and dark versions of the logo; CSS shows the one that fits the theme. */}
