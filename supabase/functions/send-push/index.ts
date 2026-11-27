@@ -1,4 +1,5 @@
-// Push notifications to a technician's phone when HR updates their ticket or replies to it.
+// Push notifications to a technician's phone, only for what the office did: HR replied, or resolved / closed their
+// ticket (Andrew 27 Nov: nothing for what they did themselves, such as sending a concern or ending a Techy chat).
 // Called only by database triggers on tickets and ticket_comments (trigger_push_notification).
 // Every value is re-read from the database, so a forged request can at most repeat a real, current notification.
 import { createClient } from "npm:@supabase/supabase-js@2";
@@ -30,24 +31,21 @@ Deno.serve(async (req) => {
     userId = ticket.employee_id;
     data = { type: "ticket", ticketId: ticket.id };
 
-    if (type === "INSERT") {
-      title = "Request received";
-      // Tool requests and tool problems go to the Coordinator, everything else to HR (Round 5 P6)
-      const who = ["Tool request", "Equipment / Tools"].includes(ticket.category) ? "The Coordinator" : "HR";
-      body = `${who} received "${name}" and will review it.`;
+    // Andrew 27 Nov: no push for what the technician did themselves. A new ticket is theirs (the app already says
+    // "sent"), and the only status change they can make is ending their own Techy chat (tickets_field_staff_limits).
+    if (type === "INSERT") return ok("Filed by the technician: no push");
+    const old = payload.old_record ?? {};
+    if (old.title === "Support Conversation" && old.handling_mode !== "ADMIN" && ticket.status === "closed") return ok("They ended their own chat: no push");
+    // Only when the status really changed, and only to the status it has now
+    if (old.status === ticket.status || record.status !== ticket.status) return ok("No status change");
+    if (ticket.status === "resolved") {
+      title = "Request approved";
+      body = `HR approved and resolved "${name}".`;
+    } else if (ticket.status === "closed") {
+      title = "Request closed";
+      body = `HR closed "${name}". Open the app to see why.`;
     } else {
-      // Only when the status really changed, and only to the status it has now.
-      if (payload.old_record?.status === ticket.status || record.status !== ticket.status) return ok("No status change");
-      if (ticket.status === "resolved") {
-        title = "Request approved";
-        body = `HR approved and resolved "${name}".`;
-      } else if (ticket.status === "closed") {
-        title = "Request closed";
-        body = `HR closed "${name}". Open the app to see why.`;
-      } else {
-        title = "Request updated";
-        body = `"${name}" is now ${String(ticket.status).replace(/_/g, " ")}.`;
-      }
+      return ok("Other status changes (HR opened it): no push; HR's reply pushes"); // was "…is now in progress"
     }
   } else if (table === "ticket_comments") {
     const { data: comment } = await admin
