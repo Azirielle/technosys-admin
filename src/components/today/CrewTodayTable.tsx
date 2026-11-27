@@ -56,8 +56,6 @@ export function CrewTodayTable({ rows, onTimeOut }: { rows: Row[]; onTimeOut: (r
                 <Badge tone={s.tone} dot>
                   {r.state === 'in_house'
                     ? `In-house · ${r.job?.client_name ?? 'Client'}`
-                    : r.state === 'at_office' && r.office_check_in_at
-                    ? `At office · ${hhmm(r.office_check_in_at)}`
                     : s.label}
                 </Badge>
               </TableCell>

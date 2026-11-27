@@ -35,11 +35,6 @@ export function attendanceOf(S: Sched, personId: string, date: string, today: st
     return { label: `Timed in ${tin}`, tone: 'success' }
   }
 
-  const office = S.officeCheckIns?.find((o) => o.person_id === personId && o.work_date === date)
-  if (office) {
-    return { label: `At office · ${clock12(manilaClock(office.checked_in_at))}`, tone: 'info' }
-  }
-
   const outOfTown = js.find((j) => j.work_type === 'out_of_town')
   if (outOfTown) {
     const until = new Date(`${outOfTown.end_date}T00:00:00Z`).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' })

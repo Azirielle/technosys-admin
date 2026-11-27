@@ -2,9 +2,9 @@
 // live status from their work day, and which jobs are at risk (someone not timed in 15 min after the start)
 // or need a check (leave waiting for HR, a helper as lead). Plain functions; no database calls.
 import type { Job, Person } from '@/components/jobs/jobTypes'
-import type { DayLog, LeaveDay, OfficeLog } from './scheduleData'
+import type { DayLog, LeaveDay } from './scheduleData'
 
-export type Sched = { jobs: Job[]; leaves: LeaveDay[]; days: DayLog[]; people: Person[]; officeCheckIns?: OfficeLog[] }
+export type Sched = { jobs: Job[]; leaves: LeaveDay[]; days: DayLog[]; people: Person[] }
 export type Tone = 'neutral' | 'info' | 'success' | 'warning' | 'danger'
 
 /** The board shows at least 6:00 AM to 7:00 PM, and stretches to fit a job that starts earlier or ends later. */

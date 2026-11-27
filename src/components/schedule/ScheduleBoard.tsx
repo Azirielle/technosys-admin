@@ -25,7 +25,7 @@ import { PersonDrawer } from './PersonDrawer'
 import { ScheduleStats } from './ScheduleStats'
 import { JobsList } from './JobsList'
 import { TempWorkersPanel } from './TempWorkersPanel'
-import { loadLeaveAndDays, loadTempWorkers, watchSchedule, type DayLog, type LeaveDay, type OfficeLog, type TempWorkerItem } from './scheduleData'
+import { loadLeaveAndDays, loadTempWorkers, watchSchedule, type DayLog, type LeaveDay, type TempWorkerItem } from './scheduleData'
 import { addDays, isFree, longDate, manilaNowMinutes, weekLabel, weekStart, type Sched } from './scheduleMath'
 
 type Who = 'all' | 'technician' | 'helper' | 'free'
@@ -42,7 +42,7 @@ export function ScheduleBoard({ readOnly = false }: { readOnly?: boolean }) {
   const [now, setNow] = useState(manilaNowMinutes)
   const [loading, setLoading] = useState(true)
   const [jobs, setJobs] = useState<Job[]>([])
-  const [extra, setExtra] = useState<{ leaves: LeaveDay[]; days: DayLog[]; officeCheckIns: OfficeLog[] }>({ leaves: [], days: [], officeCheckIns: [] })
+  const [extra, setExtra] = useState<{ leaves: LeaveDay[]; days: DayLog[] }>({ leaves: [], days: [] })
   const [opts, setOpts] = useState<{ people: Person[]; temps: TempWorker[]; vehicles: Vehicle[]; offices: Office[] }>({ people: [], temps: [], vehicles: [], offices: [] })
   const [tempList, setTempList] = useState<TempWorkerItem[]>([])
   const [openId, setOpenId] = useState<string | null>(null)
@@ -70,7 +70,7 @@ export function ScheduleBoard({ readOnly = false }: { readOnly?: boolean }) {
 
   const people = useMemo(() => [...opts.people].sort((a, b) =>
     (a.role === b.role ? 0 : a.role === 'technician' ? -1 : 1) || a.full_name.localeCompare(b.full_name)), [opts.people])
-  const S: Sched = useMemo(() => ({ jobs, leaves: extra.leaves, days: extra.days, people, officeCheckIns: extra.officeCheckIns }), [jobs, extra, people])
+  const S: Sched = useMemo(() => ({ jobs, leaves: extra.leaves, days: extra.days, people }), [jobs, extra, people])
   const q = search.trim().toLowerCase()
   const shown = people.filter((p) => (who === 'all' || who === 'free' || p.role === who) && (!q || p.full_name.toLowerCase().includes(q))
     && (who !== 'free' || isFree(S, p.id, date)) && (view !== 'week' || !freeOn || isFree(S, p.id, freeOn)))

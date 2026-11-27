@@ -22,7 +22,7 @@ const withName = (w: Record<string, unknown>) => ({ ...w, name: (w.person as { f
 
 export async function loadToday(supabase: Client) {
   const today = manilaToday()
-  const [jobs, days, leaves, reviews, overtime, office] = await Promise.all([
+  const [jobs, days, leaves, reviews, overtime] = await Promise.all([
     supabase.from('jobs')
       .select('id, client_name, start_time, end_time, report_to, work_type, job_members ( person_id, role, is_acting_lead, removed_at, person:profiles!job_members_person_id_fkey ( full_name, technician_level ) )')
       .in('status', ['planned', 'ongoing']).lte('start_date', today).gte('end_date', today).order('start_time'),
@@ -32,9 +32,8 @@ export async function loadToday(supabase: Client) {
     supabase.from('reviews').select(`id, kind, note, created_at, work_day:work_days ( ${WD_FIELDS} )`).eq('status', 'pending').order('created_at'),
     supabase.from('overtime_requests').select('id, technician_id, requested_hours, reason, request_date, person:profiles!overtime_requests_technician_id_fkey ( full_name )')
       .eq('status', 'pending').not('work_day_id', 'is', null).order('created_at'),
-    supabase.from('office_check_ins').select('person_id, checked_in_at').eq('work_date', today),
   ])
-  const failed = jobs.error || days.error || leaves.error || reviews.error || overtime.error || office.error
+  const failed = jobs.error || days.error || leaves.error || reviews.error || overtime.error
   if (failed) throw failed
 
   return {
@@ -48,7 +47,6 @@ export async function loadToday(supabase: Client) {
     })) as TodayJob[],
     days: (days.data ?? []).map((d) => withName(d as Record<string, unknown>)),
     onLeave: new Map((leaves.data ?? []).map((l) => [l.technician_id, l.leave_type as string])),
-    officeCheckIns: new Map((office.data ?? []).map((o) => [o.person_id, o.checked_in_at as string])),
     reviews: (reviews.data ?? []).filter((r) => r.work_day).map((r) => ({
       id: r.id, kind: r.kind, note: r.note, created_at: r.created_at, work_day: withName(r.work_day as unknown as Record<string, unknown>),
     })) as Review[],
@@ -77,7 +75,6 @@ export async function selfieLink(supabase: Client, path: string): Promise<string
 export function watchToday(supabase: Client, onChange: () => void): () => void {
   const channel = supabase.channel(`today-${Date.now()}`)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'work_days' }, onChange)
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'office_check_ins' }, onChange)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'reviews' }, onChange)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'overtime_requests' }, onChange)
     .subscribe()

@@ -18,7 +18,6 @@ export interface PunchLogData {
   is_mocked?: boolean | null
   gps_accuracy?: number | null
   is_suspicious?: boolean | null
-  office_check_in_at?: string | null
 }
 
 export interface EvaluatePunchParams {
@@ -160,11 +159,9 @@ export function evaluatePunch(params: EvaluatePunchParams): PunchEvaluationResul
   }
 
   // Late from the first minute after the start; the minutes count from the start time.
-  // When an office check-in exists (advance time-in at Pacita), late is judged by office check-in time (can't control van).
   let dayLateMins = 0
   let lateCount = 0
-  const lateCheckTime = log.office_check_in_at ? new Date(log.office_check_in_at).getTime() : inDate.getTime()
-  const minutesAfterStart = Math.floor((lateCheckTime - expectedStartTimeMs) / (1000 * 60))
+  const minutesAfterStart = Math.floor((inDate.getTime() - expectedStartTimeMs) / (1000 * 60))
   if (minutesAfterStart > GRACE_MINUTES) {
     dayLateMins = minutesAfterStart
     lateCount = 1
