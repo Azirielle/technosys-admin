@@ -1,6 +1,7 @@
 /*
  * TechnoSys design tokens — the ONE place for colours, fonts, sizes, spacing, radius and shadows.
- * Style: soft minimal ("Cloud"): cool white, near-black actions, soft shadows, round corners.
+ * Style: the phone app's look (Mobile-side src/ui/tokens.ts, "Cool air"): cool white, Technocycle blue actions
+ * (the logo), soft shadows, round corners, Plus Jakarta Sans. One look for admin and phone (Andrew, 28 Nov).
  * Pages never use hex values or one-off sizes: use the Tailwind classes these tokens create
  * (bg-surface, text-ink-2, rounded-card, shadow-card, p-card, gap-section, text-title …).
  * See README.md in this folder for what each token is for.
@@ -12,35 +13,35 @@
   color-scheme: light;
 
   /* Backgrounds, from back to front */
-  --tc-bg: #f4f5f7;            /* page canvas behind everything */
+  --tc-bg: #f3f6f9;            /* page canvas behind everything */
   --tc-surface: #ffffff;       /* cards, dock, modals */
-  --tc-surface-soft: #f1f2f4;  /* inside a card: table header, inputs, tab track */
-  --tc-surface-hover: #f7f8fa; /* hovered row or ghost button */
-  --tc-line: #ebecef;          /* hairline dividers */
-  --tc-line-strong: #d9dbe0;   /* input outline, secondary button ring */
+  --tc-surface-soft: #eef2f6;  /* inside a card: table header, inputs, tab track */
+  --tc-surface-hover: #f6f8fb; /* hovered row or ghost button */
+  --tc-line: #e6ebf0;          /* hairline dividers */
+  --tc-line-strong: #d3dbe4;   /* input outline, secondary button ring */
 
   /* Text */
-  --tc-ink: #1d1d1f;           /* headings and main text */
-  --tc-ink-2: #6e6e73;         /* supporting text */
-  --tc-ink-3: #8e8e93;         /* hints, placeholders, IDs, "of 18" */
+  --tc-ink: #16202b;           /* headings and main text */
+  --tc-ink-2: #5e6b78;         /* supporting text */
+  --tc-ink-3: #8a96a3;         /* hints, placeholders, IDs, "of 18" */
 
-  /* Actions: near-black, like the reference pictures */
-  --tc-action: #1d1d1f;
-  --tc-action-hover: #3a3a3d;
+  /* Actions: Technocycle blue, the same as the phone app */
+  --tc-action: #154c84;
+  --tc-action-hover: #0f3a66;
   --tc-on-action: #ffffff;
-  --tc-focus: #3b74f0;         /* keyboard focus ring only */
-  --tc-link: #1d1d1f;
+  --tc-focus: #22b8f0;         /* keyboard focus ring only */
+  --tc-link: #154c84;
 
   /* Status: only for status pills, alerts and numbers that mean good/attention/bad */
-  --tc-success: #1e7a47;
-  --tc-success-soft: #e8f6ee;
-  --tc-warning: #8a5a00;
-  --tc-warning-soft: #fff4db;
-  --tc-danger: #b42318;
-  --tc-danger-soft: #fdeceb;
+  --tc-success: #1e6b45;
+  --tc-success-soft: #e6f2eb;
+  --tc-warning: #7a6200;
+  --tc-warning-soft: #fff5c7;
+  --tc-danger: #8b2028;
+  --tc-danger-soft: #fbe8ea;
   --tc-danger-solid: #d92d20;  /* destructive button fill */
-  --tc-info: #1f55c7;
-  --tc-info-soft: #eaf1fe;
+  --tc-info: #154c84;
+  --tc-info-soft: #e6eff8;
 
   /* Soft shadows instead of borders */
   --tc-shadow-card: 0 1px 2px rgba(16, 17, 22, 0.04), 0 8px 24px rgba(16, 17, 22, 0.05);
@@ -52,32 +53,32 @@
 /* ---------- Dark ---------- */
 .dark {
   color-scheme: dark;
-  --tc-bg: #0f1013;
-  --tc-surface: #1a1b20;
-  --tc-surface-soft: #24252b;
-  --tc-surface-hover: #212228;
-  --tc-line: #2a2b31;
-  --tc-line-strong: #3a3b42;
+  --tc-bg: #0e1319;
+  --tc-surface: #18202a;
+  --tc-surface-soft: #212b36;
+  --tc-surface-hover: #1d2631;
+  --tc-line: #2a3440;
+  --tc-line-strong: #3a4654;
 
-  --tc-ink: #f2f2f4;
-  --tc-ink-2: #a1a1a8;
-  --tc-ink-3: #77777f;
+  --tc-ink: #eef3f8;
+  --tc-ink-2: #a3afbc;
+  --tc-ink-3: #788594;
 
-  --tc-action: #f2f2f4;
-  --tc-action-hover: #d9d9de;
-  --tc-on-action: #16171d;
-  --tc-focus: #7aa5ff;
-  --tc-link: #f2f2f4;
+  --tc-action: #7fb2ea;
+  --tc-action-hover: #a9ccf2;
+  --tc-on-action: #0e1319;
+  --tc-focus: #3cc6f5;
+  --tc-link: #7fb2ea;
 
-  --tc-success: #7fd3a0;
-  --tc-success-soft: #15291d;
-  --tc-warning: #f2c766;
-  --tc-warning-soft: #33280f;
-  --tc-danger: #f4a3a0;
-  --tc-danger-soft: #3a1717;
+  --tc-success: #5cc08a;
+  --tc-success-soft: #13301f;
+  --tc-warning: #e3c04a;
+  --tc-warning-soft: #33290a;
+  --tc-danger: #f08a8f;
+  --tc-danger-soft: #3a1519;
   --tc-danger-solid: #e5484d;
-  --tc-info: #9dbbf5;
-  --tc-info-soft: #16233d;
+  --tc-info: #7fb2ea;
+  --tc-info-soft: #1b2c40;
 
   --tc-shadow-card: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.35);
   --tc-shadow-raised: 0 2px 4px rgba(0, 0, 0, 0.35), 0 16px 40px rgba(0, 0, 0, 0.5);
@@ -88,9 +89,9 @@
 /* ---------- Tailwind classes made from the tokens ---------- */
 @theme inline {
   /* Fonts (loaded in app/layout.tsx) */
-  --font-sans: var(--font-geist), system-ui, sans-serif;
+  --font-sans: var(--font-jakarta), system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
-  --font-heading: var(--font-geist), system-ui, sans-serif;
+  --font-heading: var(--font-jakarta), system-ui, sans-serif;
 
   /* Colours → bg-*, text-*, border-*, ring-* */
   --color-bg: var(--tc-bg);

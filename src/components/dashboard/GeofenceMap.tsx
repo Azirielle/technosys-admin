@@ -53,7 +53,7 @@ function MapController({ position, setPosition, radius }: { position: [number, n
       >
         <Popup>Dispatch Location</Popup>
       </Marker>
-      <Circle center={position} radius={radius} pathOptions={{ color: '#4f46e5', fillColor: '#4f46e5', fillOpacity: 0.2 }} />
+      <Circle center={position} radius={radius} pathOptions={{ color: '#154c84', fillColor: '#154c84', fillOpacity: 0.2 }} />
     </>
   );
 }

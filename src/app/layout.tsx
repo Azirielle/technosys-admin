@@ -1,6 +1,6 @@
-// Root layout: loads the Geist fonts, the theme (light/dark) and the toast messages for every page.
+// Root layout: loads the fonts (Plus Jakarta Sans like the phone app, Geist Mono for codes), the theme (light/dark) and the toast messages for every page.
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist_Mono, Plus_Jakarta_Sans } from "next/font/google";
 import NextTopLoader from "nextjs-toploader";
 import "./globals.css";
 
@@ -8,8 +8,8 @@ import { MobileHardwareListener } from "@/components/mobile-hardware-listener";
 import { ThemeProvider } from "@/components/theme/ThemeProvider";
 import { ToastProvider } from "@/components/ui/Toast";
 
-const geist = Geist({
-  variable: "--font-geist",
+const jakarta = Plus_Jakarta_Sans({
+  variable: "--font-jakarta",
   subsets: ["latin"],
 });
 
@@ -32,7 +32,7 @@ export default function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      className={`${geist.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${jakarta.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-bg text-ink font-sans transition-colors duration-200">
         <ThemeProvider>
