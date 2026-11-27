@@ -7,7 +7,8 @@ import { ArrowLeft, Check, MessageSquare, UserRound, X } from 'lucide-react'
 import { Badge, Button, EmptyState, IconButton, Select } from '@/components/ui'
 import { ChatMessage, TypingBubble } from './ChatMessage'
 import { ReplyBox } from './ReplyBox'
-import { TICKET_PRIORITIES, aiAnswering, employeeName, isFinished, ticketStatus, type PeerTyping, type Ticket, type TicketMessage } from './types'
+import { ConcernCard } from './ConcernCard'
+import { TICKET_PRIORITIES, aiAnswering, employeeName, isFinished, kindOf, ticketStatus, type PeerTyping, type Ticket, type TicketMessage } from './types'
 
 /** The mobile app saves this text when a chat starts with the AI and has no real description. */
 const AI_CHAT_PLACEHOLDER = 'User initiated an AI support chat.'
@@ -30,6 +31,7 @@ export function TicketThread({
   onFinish,
   onPriority,
   onOpenImage,
+  onReload,
   onBack,
 }: {
   ticket: Ticket | null
@@ -49,6 +51,8 @@ export function TicketThread({
   onFinish: (outcome: 'resolved' | 'closed') => void
   onPriority: (priority: string) => void
   onOpenImage: (url: string) => void
+  /** After HR fixed a DTR from the concern card: reload the tickets */
+  onReload: () => void
   /** Small screens only: back to the ticket list. */
   onBack: () => void
 }) {
@@ -65,6 +69,7 @@ export function TicketThread({
   const name = employeeName(ticket)
   const finished = isFinished(ticket)
   const showDescription = ticket.description && ticket.description !== AI_CHAT_PLACEHOLDER
+  const isConcern = kindOf(ticket) !== 'chat'
 
   return (
     <div className="flex h-full min-w-0 flex-col">
@@ -98,7 +103,9 @@ export function TicketThread({
       </header>
 
       <div className="flex flex-1 flex-col gap-3 overflow-y-auto px-card py-4">
-        {showDescription && (
+        {/* A concern (DTR, tools, others) opens with its card: what they say, their photo, the record, HR's decision */}
+        {isConcern && <ConcernCard ticket={ticket} onOpenImage={onOpenImage} onFinish={onFinish} onDone={onReload} />}
+        {!isConcern && showDescription && (
           <div className="rounded-control border border-line p-3">
             <p className="text-micro font-medium text-ink-3">What {name} wrote</p>
             <p className="mt-1 whitespace-pre-wrap text-small text-ink">{ticket.description}</p>

@@ -179,6 +179,7 @@ export function TicketsBoard() {
             onFinish={setFinishing}
             onPriority={changePriority}
             onOpenImage={setLightbox}
+            onReload={loadTickets}
             onBack={() => setSelectedId(null)}
           />
         </section>
