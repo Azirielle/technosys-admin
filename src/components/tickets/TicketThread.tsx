@@ -7,7 +7,7 @@ import { ArrowLeft, Check, MessageSquare, UserRound, X } from 'lucide-react'
 import { Badge, Button, EmptyState, IconButton, Select } from '@/components/ui'
 import { ChatMessage, TypingBubble } from './ChatMessage'
 import { ReplyBox } from './ReplyBox'
-import { TICKET_PRIORITIES, employeeName, isFinished, ticketStatus, type PeerTyping, type Ticket, type TicketMessage } from './types'
+import { TICKET_PRIORITIES, aiAnswering, employeeName, isFinished, ticketStatus, type PeerTyping, type Ticket, type TicketMessage } from './types'
 
 /** The mobile app saves this text when a chat starts with the AI and has no real description. */
 const AI_CHAT_PLACEHOLDER = 'User initiated an AI support chat.'
@@ -88,7 +88,7 @@ export function TicketThread({
         </div>
         {!finished && (
           <div className="flex shrink-0 flex-wrap gap-inline">
-            {ticket.handling_mode !== 'ADMIN' && (
+            {aiAnswering(ticket) && ( // a concern needs no take-over: replying already does it
               <Button size="sm" icon={UserRound} onClick={onTakeOver} loading={takingOver}>Answer as HR</Button>
             )}
             <Button size="sm" variant="ghost" icon={X} onClick={() => onFinish('closed')}>Close</Button>

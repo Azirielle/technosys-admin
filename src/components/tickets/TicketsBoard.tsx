@@ -45,24 +45,22 @@ export function TicketsBoard() {
   })
 
   const selected = tickets.find((t) => t.id === selectedId) ?? null
-  const parentIdsWithChildren = useMemo(() => new Set(tickets.map((t) => t.from_ticket_id).filter(Boolean)), [tickets])
-  const visible = useMemo(() => tickets.filter((t) => !parentIdsWithChildren.has(t.id)), [tickets, parentIdsWithChildren])
   const counts = useMemo(
     () => ({
-      needs_attention: visible.filter(needsAttention).length,
-      in_progress: visible.filter((t) => matchesFilter(t, 'in_progress')).length,
-      done: visible.filter((t) => matchesFilter(t, 'done')).length,
+      needs_attention: tickets.filter(needsAttention).length,
+      in_progress: tickets.filter((t) => matchesFilter(t, 'in_progress')).length,
+      done: tickets.filter((t) => matchesFilter(t, 'done')).length,
     }),
-    [visible],
+    [tickets],
   )
   const shown = useMemo(() => {
     // The ticket number works with or without "#" (prof, 20 Nov: searching should find it right away)
     const q = search.trim().toLowerCase().replace(/^#/, '')
-    return visible.filter(
+    return tickets.filter(
       (t) => matchesFilter(t, filter) && (kind === 'all' || kindOf(t) === kind)
         && (!q || [t.title, t.category, employeeName(t), ticketRef(t)].some((s) => s.toLowerCase().includes(q))),
     ).sort((a, b) => rank(a) - rank(b)) // C24: urgent and high first; same priority keeps its order (newest first)
-  }, [visible, filter, search, kind])
+  }, [tickets, filter, search, kind])
 
   function openTicket(id: string) {
     setSelectedId(id)

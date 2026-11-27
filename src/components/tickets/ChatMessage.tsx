@@ -54,8 +54,8 @@ export function ChatMessage({
       >
         <p className={cx('mb-0.5 text-micro font-medium', fromHr ? 'opacity-70' : 'text-ink-3')}>{who}</p>
         {fromAi ? (
-          // The AI writes Markdown and adds a code that opens the phone's ticket form; show it formatted, without the code.
-          <FormattedPolicyDocument content={message.content.replace('[ACTION:OPEN_TICKET_FORM]', '').trim()} className="text-small" keepStatusLines />
+          // The AI writes Markdown and ends with a code the phone turns into a form or button ([FORM:…], [GO:…], old [ACTION:…]); show it without the code.
+          <FormattedPolicyDocument content={message.content.replace(/\[\s*(?:FORM|GO|ACTION)\s*:[^\]]*\]/gi, '').trim()} className="text-small" keepStatusLines />
         ) : (
           <p className="whitespace-pre-wrap">{message.content}</p>
         )}

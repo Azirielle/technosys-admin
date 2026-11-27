@@ -36,9 +36,6 @@ async function currentUserId(supabase: Client) {
 export async function takeOverTicket(supabase: Client, ticket: Ticket) {
   const { error } = await supabase.from('tickets').update({ handling_mode: 'ADMIN', status: 'in_progress' }).eq('id', ticket.id)
   if (error) throw error
-  if (ticket.from_ticket_id) {
-    await supabase.from('tickets').update({ handling_mode: 'ADMIN', status: 'in_progress' }).eq('id', ticket.from_ticket_id)
-  }
   await supabase.from('ticket_comments').insert({
     ticket_id: ticket.id,
     content: 'HR has joined the chat. The AI assistant is now off for this ticket.',
@@ -46,9 +43,6 @@ export async function takeOverTicket(supabase: Client, ticket: Ticket) {
     author_id: await currentUserId(supabase),
   })
   await notifyApp(supabase, ticket.id, ['new_comment', 'ticket_update'])
-  if (ticket.from_ticket_id) {
-    await notifyApp(supabase, ticket.from_ticket_id, ['new_comment', 'ticket_update'])
-  }
 }
 
 /**
@@ -91,9 +85,6 @@ export async function sendReply(
   if (error) throw error
   if (!internal) {
     await notifyApp(supabase, ticket.id, ['new_comment'])
-    if (ticket.from_ticket_id) {
-      await notifyApp(supabase, ticket.from_ticket_id, ['new_comment'])
-    }
   }
   return data as TicketMessage
 }
@@ -102,15 +93,12 @@ export async function sendReply(
  * Marks the ticket resolved or closed and posts HR's note to the employee.
  * Returns the status it ended with (someone else may have finished it first).
  */
-export async function finishTicket(supabase: Client, ticket: Pick<Ticket, 'id' | 'from_ticket_id'>, outcome: 'resolved' | 'closed', note: string, by = 'HR') {
+export async function finishTicket(supabase: Client, ticket: Pick<Ticket, 'id'>, outcome: 'resolved' | 'closed', note: string, by = 'HR') {
   const { data: latest } = await supabase.from('tickets').select('status').eq('id', ticket.id).single()
   if (latest?.status === 'resolved' || latest?.status === 'closed') return { status: latest.status, alreadyDone: true }
 
   const { error } = await supabase.from('tickets').update({ status: outcome, handling_mode: 'ADMIN' }).eq('id', ticket.id)
   if (error) throw error
-  if (ticket.from_ticket_id) {
-    await supabase.from('tickets').update({ status: outcome, handling_mode: 'ADMIN' }).eq('id', ticket.from_ticket_id)
-  }
 
   const heading = outcome === 'resolved' ? `Resolved by ${by}.` : `Closed by ${by}.`
   const fallback = outcome === 'resolved' ? 'Your concern has been resolved.' : 'This ticket was closed.'
@@ -121,9 +109,6 @@ export async function finishTicket(supabase: Client, ticket: Pick<Ticket, 'id' |
     sender_role: 'admin',
   })
   await notifyApp(supabase, ticket.id, ['ticket_update', 'new_comment'])
-  if (ticket.from_ticket_id) {
-    await notifyApp(supabase, ticket.from_ticket_id, ['ticket_update', 'new_comment'])
-  }
   return { status: outcome, alreadyDone: false }
 }
 

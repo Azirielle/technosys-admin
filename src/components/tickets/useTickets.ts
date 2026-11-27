@@ -31,10 +31,7 @@ export function useTickets(selectedId: string | null) {
 
   const loadMessages = useCallback(
     async (ticketId: string) => {
-      const cur = ticketsRef.current.find((t) => t.id === ticketId)
-      const child = ticketsRef.current.find((t) => t.from_ticket_id === ticketId)
-      const ids = [ticketId, ...(cur?.from_ticket_id ? [cur.from_ticket_id] : []), ...(child ? [child.id] : [])]
-      const { data } = await supabase.from('ticket_comments').select('*').in('ticket_id', ids).order('created_at', { ascending: true })
+      const { data } = await supabase.from('ticket_comments').select('*').eq('ticket_id', ticketId).order('created_at', { ascending: true })
       if (data && selectedRef.current === ticketId) setMessages(data as TicketMessage[])
       setLoadingMessages(false)
     },
@@ -57,13 +54,7 @@ export function useTickets(selectedId: string | null) {
         loadTickets()
         const commentTicketId = (change.new as TicketMessage).ticket_id
         const sel = selectedRef.current
-        if (sel) {
-          const cur = ticketsRef.current.find((t) => t.id === sel)
-          const child = ticketsRef.current.find((t) => t.from_ticket_id === sel)
-          if (commentTicketId === sel || commentTicketId === cur?.from_ticket_id || commentTicketId === child?.id) {
-            loadMessages(sel)
-          }
-        }
+        if (sel && commentTicketId === sel) loadMessages(sel)
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'tickets' }, () => loadTickets())
       .subscribe()

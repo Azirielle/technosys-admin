@@ -5,7 +5,7 @@ import { TicketRowSkeleton } from '@/components/loading/PageSkeletons'
 import { Bot, MessageSquare, UserRound } from 'lucide-react'
 import { formatTimeAgo } from '@/lib/hr-status'
 import { Avatar, Badge, EmptyState, cx, SkeletonArea } from '@/components/ui'
-import { employeeName, ticketPriority, ticketRef, ticketStatus, type Ticket } from './types'
+import { aiAnswering, employeeName, ticketPriority, ticketRef, ticketStatus, type Ticket } from './types'
 
 export function TicketList({
   tickets,
@@ -60,10 +60,12 @@ export function TicketList({
                   <span className="shrink-0 text-ink-3">{formatTimeAgo(ticket.created_at)}</span>
                 </span>
                 <span className="mt-1.5 inline-flex items-center gap-1 text-micro font-medium text-ink-3">
-                  {ticket.handling_mode === 'ADMIN' ? (
+                  {aiAnswering(ticket) ? (
+                    <><Bot className="size-3" aria-hidden /> AI is answering</>
+                  ) : ticket.handling_mode === 'ADMIN' ? (
                     <><UserRound className="size-3" aria-hidden /> HR is answering</>
                   ) : (
-                    <><Bot className="size-3" aria-hidden /> AI is answering</>
+                    <><UserRound className="size-3" aria-hidden /> Waiting for HR</>
                   )}
                 </span>
               </span>

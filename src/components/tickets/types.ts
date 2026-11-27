@@ -13,7 +13,6 @@ export type Ticket = {
   attachment_url?: string | null
   attachment_type?: string | null
   created_at: string
-  from_ticket_id?: string | null
   profiles?: { full_name: string; role?: string }
   assignee?: { full_name: string } | null
 }
@@ -65,8 +64,12 @@ export function isFinished(ticket: Ticket) {
   return ticket.status === 'resolved' || ticket.status === 'closed'
 }
 
-/** HR has to act: a new ticket, or one HR took over from the AI that is still open. */
+/** Techy (the AI) is answering: only an open Techy chat HR hasn't taken over. A concern (DTR, tools, others) never is. */
+export const aiAnswering = (t: { title: string | null; handling_mode: string | null }) => t.title === 'Support Conversation' && t.handling_mode !== 'ADMIN'
+
+/** HR has to act: a new concern, or one HR took over that is still open. Not a Techy chat Techy is answering. */
 export function needsAttention(ticket: Ticket) {
+  if (aiAnswering(ticket)) return false
   return ticket.status === 'open' || (ticket.status === 'in_progress' && ticket.handling_mode === 'ADMIN')
 }
 
@@ -109,7 +112,7 @@ type TicketRow = { title: string | null; handling_mode: string | null; ticket_co
 /** HR owes the next reply: nobody has answered yet, or the technician wrote last. A Techy chat HR hasn't taken over
  *  doesn't count: Techy is answering it (technicians often just ask Techy how the app works). */
 export function waitingForHr(t: TicketRow): boolean {
-  if (t.title === 'Support Conversation' && t.handling_mode !== 'ADMIN') return false
+  if (aiAnswering(t)) return false
   const last = t.ticket_comments.filter((c) => !c.is_internal).sort((a, b) => (a.created_at ?? '').localeCompare(b.created_at ?? '')).at(-1)
   return !last || last.sender_role === 'technician'
 }
