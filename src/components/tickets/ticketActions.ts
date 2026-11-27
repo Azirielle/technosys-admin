@@ -65,7 +65,7 @@ export async function sendReply(
     const path = `admin_${authorId || 'staff'}/${Date.now()}_${safeName}`
     const { error } = await supabase.storage.from('ticket_attachments').upload(path, file, { contentType: file.type })
     if (error) throw error
-    attachmentUrl = supabase.storage.from('ticket_attachments').getPublicUrl(path).data.publicUrl
+    attachmentUrl = path // private bucket: the admin opens it with a short-lived link (attachmentUrl.ts)
     attachmentType = file.type || 'application/octet-stream'
   }
 

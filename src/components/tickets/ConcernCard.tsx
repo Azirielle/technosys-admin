@@ -10,6 +10,7 @@ import { Check, X } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { Button, Field, Input, Textarea, useToast } from '@/components/ui'
 import { finishTicket } from './ticketActions'
+import { useAttachmentUrl } from './attachmentUrl'
 import { employeeName, kindOf, ticketRef, type Ticket } from './types'
 
 type Day = { id: string; time_in: string; time_out: string | null; late_minutes: number; hours: number | null; status: string; face_check: string | null }
@@ -28,6 +29,7 @@ export function ConcernCard({ ticket, onOpenImage, onFinish, onDone }: {
   const supabase = useMemo(() => createClient(), [])
   const toast = useToast()
   const name = employeeName(ticket)
+  const attachment = useAttachmentUrl(ticket.attachment_url)
   const lines = linesOf(ticket.description ?? '')
   const get = (label: string) => lines.find((l) => l.label === label)?.value ?? ''
   const isDtr = kindOf(ticket) === 'dtr'
@@ -105,14 +107,14 @@ export function ConcernCard({ ticket, onOpenImage, onFinish, onDone }: {
         </div>
       )}
 
-      {ticket.attachment_url && (ticket.attachment_type ?? '').startsWith('image/') && (
-        <button type="button" onClick={() => onOpenImage(ticket.attachment_url!)} className="mt-3 block" aria-label="Open the photo larger">
+      {attachment && (ticket.attachment_type ?? '').startsWith('image/') && (
+        <button type="button" onClick={() => onOpenImage(attachment)} className="mt-3 block" aria-label="Open the photo larger">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={ticket.attachment_url} alt={`Photo from ${name}`} className="max-h-48 rounded-control border border-line object-cover" />
+          <img src={attachment} alt={`Photo from ${name}`} className="max-h-48 rounded-control border border-line object-cover" />
         </button>
       )}
-      {ticket.attachment_url && !(ticket.attachment_type ?? '').startsWith('image/') && (
-        <a href={ticket.attachment_url} target="_blank" rel="noreferrer" className="mt-3 inline-block text-small text-link underline">Open the attached file</a>
+      {attachment && !(ticket.attachment_type ?? '').startsWith('image/') && (
+        <a href={attachment} target="_blank" rel="noreferrer" className="mt-3 inline-block text-small text-link underline">Open the attached file</a>
       )}
 
       {!finished && (fixing ? (

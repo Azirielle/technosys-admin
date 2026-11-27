@@ -7,6 +7,7 @@ import { Avatar, cx } from '@/components/ui'
 import FormattedPolicyDocument from '@/components/policies/FormattedPolicyDocument'
 import { isImage, type TicketMessage } from './types'
 import { TechyAvatar } from './TechyAvatar'
+import { useAttachmentUrl } from './attachmentUrl'
 
 const WHO: Record<string, string> = { admin: 'HR', ai: 'Techy · AI assistant', technician: 'Employee' }
 
@@ -19,6 +20,7 @@ export function ChatMessage({
   employeeName: string
   onOpenImage: (url: string) => void
 }) {
+  const attachment = useAttachmentUrl(message.attachment_url) // private storage: a link that works for an hour
   if (message.sender_role === 'system') {
     return (
       <p className="mx-auto w-fit rounded-pill bg-surface-soft px-3 py-1 text-center text-caption text-ink-2">{message.content}</p>
@@ -60,21 +62,21 @@ export function ChatMessage({
           <p className="whitespace-pre-wrap">{message.content}</p>
         )}
 
-        {message.attachment_url &&
+        {attachment &&
           (isImage(message.attachment_url, message.attachment_type) ? (
             <button
               type="button"
-              onClick={() => onOpenImage(message.attachment_url!)}
+              onClick={() => onOpenImage(attachment)}
               className="group relative mt-2 block w-full cursor-zoom-in overflow-hidden rounded-control"
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={message.attachment_url} alt="Attached photo" className="max-h-44 w-full object-cover" />
+              <img src={attachment} alt="Attached photo" className="max-h-44 w-full object-cover" />
               <span className="absolute inset-0 flex items-center justify-center gap-1 bg-scrim text-caption font-medium text-white opacity-0 transition-opacity group-hover:opacity-100">
                 <ZoomIn className="size-3.5" aria-hidden /> View larger
               </span>
             </button>
           ) : (
-            <a href={message.attachment_url} target="_blank" rel="noopener noreferrer" className="mt-2 inline-flex items-center gap-1.5 text-caption font-medium underline">
+            <a href={attachment} target="_blank" rel="noopener noreferrer" className="mt-2 inline-flex items-center gap-1.5 text-caption font-medium underline">
               <FileText className="size-3.5" aria-hidden /> Open attached file
             </a>
           ))}

@@ -116,3 +116,17 @@ export function waitingForHr(t: TicketRow): boolean {
   const last = t.ticket_comments.filter((c) => !c.is_internal).sort((a, b) => (a.created_at ?? '').localeCompare(b.created_at ?? '')).at(-1)
   return !last || last.sender_role === 'technician'
 }
+
+// Ticket photos and files (private storage since 28 Nov; shown with attachmentUrl.ts)
+const BUCKETS = ['ticket_attachments', 'chat-attachments']
+
+/** Where a saved attachment lives, or null for a link that isn't in our storage (shown as it is). */
+export function attachmentPlace(saved: string): { bucket: string; path: string } | null {
+  if (!saved.startsWith('http')) return { bucket: 'ticket_attachments', path: saved }
+  for (const bucket of BUCKETS) {
+    const i = saved.indexOf(`/${bucket}/`)
+    if (i >= 0) return { bucket, path: decodeURIComponent(saved.slice(i + bucket.length + 2).split('?')[0]) }
+  }
+  return null
+}
+
