@@ -4,6 +4,7 @@
 import React, { useState, useEffect } from 'react'
 import { AdminDock, NavItem, AdminRole } from './AdminDock'
 import { AdminQuickActionsModal } from './AdminQuickActionsModal'
+import { NotificationBell } from '@/components/notifications/NotificationBell'
 
 export interface AdminRoleLayoutProps {
   role: AdminRole
@@ -75,6 +76,8 @@ export function AdminRoleLayout({
 
       {/* 4. Global Role Quick Actions & Keyboard Shortcuts Palette */}
       <AdminQuickActionsModal role={role} />
+
+      <NotificationBell role={role} />
     </div>
   )
 }
