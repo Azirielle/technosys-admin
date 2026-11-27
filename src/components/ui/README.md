@@ -47,6 +47,7 @@ To change the look (for example, the warm "Sand" palette), edit only `tokens.css
 | `ListCard`, `ListRow` | A short list with a title and "Open →" link (overview pages) | Use it for long lists; use a table |
 | `StatTile`, `StatRow` | One big number with a label; `href` makes it a link to where you act on it | Show more than 4 in a row |
 | `TableContainer` … `TableCell` | Every table. `numeric` right-aligns numbers, `mono` for IDs, `TableEmptyState` when empty, `Pagination` under it | Use a plain `<table>` or a grid of cards for records |
+| `useFitRows` | The page size of every paged table: `const [tableRef, perPage] = useFitRows()` and `<TableContainer ref={tableRef}>`. It shows as many rows as fit on the screen, so tables page instead of scrolling | A fixed page size with a scroll inside the table |
 | `Tabs` | Switching views or filters inside a page (All / Pending / Approved) | Use it as the main navigation |
 | `Steps` | Numbered progress for a form in several parts (Job, Time, Team, Review) | Use it for one-screen forms |
 | `Modal` | Short confirmations and small forms (2–4 fields) | Put long forms in it; use a Drawer |

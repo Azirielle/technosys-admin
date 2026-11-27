@@ -25,11 +25,9 @@ import {
   TableRow,
   Tabs,
   useToast,
-  SkeletonTableRows,
-} from '@/components/ui'
+  SkeletonTableRows, useFitRows } from '@/components/ui'
 import { GROUPS, areaLabel, roleName } from './activityLabels'
 
-const PER_PAGE = 8
 const LOAD = 1000 // one month's actions (Supabase returns at most 1000 per request); shortcut: a busier month shows only the newest 1000
 const thisMonth = () => new Date(Date.now() + 8 * 3600000).toISOString().slice(0, 7) // Manila
 const shiftMonth = (month: string, by: number) => {
@@ -51,6 +49,7 @@ export function ActivityBoard() {
   const [group, setGroup] = useState('all')
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
+  const [tableRef, perPage] = useFitRows() // as many rows as fit on the screen: pages, no scroll
   const [month, setMonth] = useState(thisMonth) // C22: one month at a time
   const [open, setOpen] = useState<ActivityLog | null>(null)
 
@@ -108,7 +107,7 @@ export function ActivityBoard() {
         <Input icon={Search} className="w-full sm:w-72" aria-label="Search activity" placeholder="Search what happened or who" value={search} onChange={(e) => { setSearch(e.target.value); setPage(1) }} />
       </div>
 
-      <TableContainer>
+      <TableContainer ref={tableRef}>
         {!loading && shown.length === 0 ? (
           <EmptyState
             icon={History}
@@ -129,7 +128,7 @@ export function ActivityBoard() {
               {loading && (
                 <SkeletonTableRows cols={4} />
               )}
-              {shown.slice((page - 1) * PER_PAGE, page * PER_PAGE).map((l) => (
+              {shown.slice((page - 1) * perPage, page * perPage).map((l) => (
                 <TableRow key={l.id} onClick={() => setOpen(l)}>
                   <TableCell className="whitespace-nowrap text-ink-2">{when(l.created_at)}</TableCell>
                   <TableCell>
@@ -150,8 +149,8 @@ export function ActivityBoard() {
             </TableBody>
           </Table>
         )}
-        {shown.length > PER_PAGE && (
-          <Pagination currentPage={page} totalPages={Math.ceil(shown.length / PER_PAGE)} totalItems={shown.length} itemsPerPage={PER_PAGE} onPageChange={setPage} itemNamePlural="actions" />
+        {shown.length > perPage && (
+          <Pagination currentPage={page} totalPages={Math.ceil(shown.length / perPage)} totalItems={shown.length} itemsPerPage={perPage} onPageChange={setPage} itemNamePlural="actions" />
         )}
       </TableContainer>
 

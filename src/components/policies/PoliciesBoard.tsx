@@ -5,7 +5,7 @@ import { useMemo, useState } from 'react'
 import { usePageCommand } from '@/components/commands/pageCommands'
 import { BookOpen, CheckCircle2, FileClock, Plus, ScrollText, Search, Users } from 'lucide-react'
 import { dispatchPolicyReminder, forkPolicyRevision, submitPolicyForReview, type CompanyPolicy } from '@/app/actions/policies'
-import { Button, Input, Page, PageHeader, Pagination, StatRow, StatTile, TableContainer, Tabs, useToast } from '@/components/ui'
+import { Button, Input, Page, PageHeader, Pagination, StatRow, StatTile, TableContainer, Tabs, useToast, useFitRows } from '@/components/ui'
 import { usePolicies } from './usePolicies'
 import { PolicyTable } from './PolicyTable'
 import { PolicyDrawer } from './PolicyDrawer'
@@ -16,7 +16,6 @@ import { needsCoordinatorReview } from './policyLabels'
 
 type Filter = 'attention' | 'active' | 'drafts' | 'archived' | 'all'
 type Dialog = 'none' | 'form' | 'publish' | 'changes' | 'archive' | 'handbook'
-const PER_PAGE = 8
 
 const EMPTY: Record<Filter, [string, string]> = {
   attention: ["You're all caught up", 'No drafts, approvals or missing signatures.'],
@@ -32,6 +31,7 @@ export function PoliciesBoard() {
   const [filter, setFilter] = useState<Filter>('attention')
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
+  const [tableRef, perPage] = useFitRows() // as many rows as fit on the screen: pages, no scroll
   const [openId, setOpenId] = useState<string | null>(null)
   const [dialog, setDialog] = useState<Dialog>('none')
   const [editing, setEditing] = useState<CompanyPolicy | null>(null)
@@ -114,7 +114,7 @@ export function PoliciesBoard() {
   }
 
   const overlay = dialog !== 'none'
-  const pageRows = shown.slice((page - 1) * PER_PAGE, page * PER_PAGE)
+  const pageRows = shown.slice((page - 1) * perPage, page * perPage)
 
   return (
     <Page wide>
@@ -152,14 +152,14 @@ export function PoliciesBoard() {
         <Input icon={Search} className="w-full sm:w-64" aria-label="Search policies" placeholder="Search policies" value={search} onChange={(e) => { setSearch(e.target.value); setPage(1) }} />
       </div>
 
-      <TableContainer>
+      <TableContainer ref={tableRef}>
         <PolicyTable policies={pageRows} signatures={signatures} loading={loading} emptyTitle={search ? 'No policies match' : EMPTY[filter][0]} emptyText={search ? 'Try another search.' : EMPTY[filter][1]} onOpen={(p) => setOpenId(p.id)} />
-        {shown.length > PER_PAGE && (
+        {shown.length > perPage && (
           <Pagination
             currentPage={page}
-            totalPages={Math.ceil(shown.length / PER_PAGE)}
+            totalPages={Math.ceil(shown.length / perPage)}
             totalItems={shown.length}
-            itemsPerPage={PER_PAGE}
+            itemsPerPage={perPage}
             onPageChange={setPage}
             itemNamePlural="policies"
           />

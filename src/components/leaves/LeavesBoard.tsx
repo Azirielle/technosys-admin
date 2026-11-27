@@ -24,14 +24,12 @@ import {
   TableRow,
   Tabs,
   useToast,
-  SkeletonTableRows,
-} from '@/components/ui'
+  SkeletonTableRows, useFitRows } from '@/components/ui'
 import { notifyLeaveDecision } from '@/app/actions/notifications'
 import { LeaveReviewModal } from './LeaveReviewModal'
 import { LeaveDeclineModal } from './LeaveDeclineModal'
 import { applicantName, type LeaveFilter, type LeaveRecord } from './types'
 
-const PER_PAGE = 8
 
 const EMPTY_TEXT: Record<LeaveFilter, string> = {
   pending: 'Every leave request has a decision.',
@@ -47,6 +45,7 @@ export function LeavesBoard() {
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState<LeaveFilter>('pending')
   const [page, setPage] = useState(1)
+  const [tableRef, perPage] = useFitRows() // as many rows as fit on the screen: pages, no scroll
   const [selected, setSelected] = useState<LeaveRecord | null>(null)
   const [declining, setDeclining] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -83,13 +82,14 @@ export function LeavesBoard() {
     }
   }, [supabase, fetchLeaves])
 
-  async function setStatus(leave: LeaveRecord, status: 'approved' | 'rejected', rejectionReason?: string) {
+  async function setStatus(leave: LeaveRecord, status: 'approved' | 'rejected', rejectionReason?: string, sickDays = 0) {
     setSaving(true)
     const { error } = await supabase
       .from('leaves')
       .update({
         status,
         rejection_reason: status === 'rejected' ? rejectionReason ?? null : null,
+        sick_days: status === 'approved' ? sickDays : 0, // extra vacation days taken from sick credits
         updated_at: new Date().toISOString(),
       })
       .eq('id', leave.id)
@@ -114,7 +114,7 @@ export function LeavesBoard() {
     [leaves],
   )
   const shown = useMemo(() => (filter === 'all' ? leaves : leaves.filter((l) => l.status === filter)), [leaves, filter])
-  const pageRows = shown.slice((page - 1) * PER_PAGE, page * PER_PAGE)
+  const pageRows = shown.slice((page - 1) * perPage, page * perPage)
 
   // How many other people are already off (approved or pending) on overlapping days.
   const overlapping = useMemo(() => {
@@ -150,7 +150,7 @@ export function LeavesBoard() {
         ]}
       />
 
-      <TableContainer>
+      <TableContainer ref={tableRef}>
         {!loading && shown.length === 0 ? (
           <EmptyState icon={CalendarOff} title="No leave requests here" description={EMPTY_TEXT[filter]} />
         ) : (
@@ -206,12 +206,12 @@ export function LeavesBoard() {
             </TableBody>
           </Table>
         )}
-        {shown.length > PER_PAGE && (
+        {shown.length > perPage && (
           <Pagination
             currentPage={page}
-            totalPages={Math.ceil(shown.length / PER_PAGE)}
+            totalPages={Math.ceil(shown.length / perPage)}
             totalItems={shown.length}
-            itemsPerPage={PER_PAGE}
+            itemsPerPage={perPage}
             onPageChange={setPage}
             itemNamePlural="requests"
           />
@@ -223,7 +223,7 @@ export function LeavesBoard() {
         overlapping={overlapping}
         saving={saving}
         onClose={() => setSelected(null)}
-        onApprove={(leave) => setStatus(leave, 'approved')}
+        onApprove={(leave, sickDays) => setStatus(leave, 'approved', undefined, sickDays)}
         onDecline={() => setDeclining(true)}
       />
       <LeaveDeclineModal

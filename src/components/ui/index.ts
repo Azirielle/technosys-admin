@@ -21,6 +21,7 @@ export {
   TableCell,
   TableEmptyState,
 } from './DataTable'
+export { useFitRows } from './useFitRows'
 export { default as Pagination } from './Pagination'
 export { Tabs, type TabItem } from './Tabs'
 export { Steps } from './Steps'

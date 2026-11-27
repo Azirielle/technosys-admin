@@ -7,14 +7,13 @@ import { Plus, Search } from 'lucide-react'
 import { getAudienceCounts, listAnnouncements } from '@/app/actions/announcements'
 import { logAdminActivity } from '@/lib/auditLogger'
 import type { RoleKey } from '@/lib/overrides'
-import { Button, Input, Page, PageHeader, Pagination, Select, TableContainer, Tabs, useToast } from '@/components/ui'
+import { Button, Input, Page, PageHeader, Pagination, Select, TableContainer, Tabs, useToast, useFitRows } from '@/components/ui'
 import { AnnouncementList } from './AnnouncementList'
 import { AnnouncementForm } from './AnnouncementForm'
 import { AnnouncementDetailModal } from './AnnouncementDetailModal'
 import { PRIORITIES, type Announcement, type AnnouncementAudience, type AnnouncementStatus } from './types'
 
 type Filter = 'all' | AnnouncementStatus
-const PER_PAGE = 8
 
 export function AnnouncementsBoard({ currentRole, adminName, adminRoleLabel }: { currentRole: RoleKey | 'ceo'; adminName: string; adminRoleLabel: string }) {
   const toast = useToast()
@@ -25,6 +24,7 @@ export function AnnouncementsBoard({ currentRole, adminName, adminRoleLabel }: {
   const [priority, setPriority] = useState('')
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
+  const [tableRef, perPage] = useFitRows() // as many rows as fit on the screen: pages, no scroll
   const [viewing, setViewing] = useState<Announcement | null>(null)
   const [form, setForm] = useState<{ open: boolean; item: Announcement | null }>({ open: false, item: null })
 
@@ -87,19 +87,19 @@ export function AnnouncementsBoard({ currentRole, adminName, adminRoleLabel }: {
         <Input icon={Search} className="ml-auto w-full sm:w-64" aria-label="Search announcements" placeholder="Search announcements" value={search} onChange={(e) => { setSearch(e.target.value); setPage(1) }} />
       </div>
 
-      <TableContainer>
+      <TableContainer ref={tableRef}>
         <AnnouncementList
-          items={shown.slice((page - 1) * PER_PAGE, page * PER_PAGE)}
+          items={shown.slice((page - 1) * perPage, page * perPage)}
           loading={loading}
           emptyText={q || priority ? 'Try another search or priority.' : 'Write one with New announcement.'}
           onOpen={setViewing}
         />
-        {shown.length > PER_PAGE && (
+        {shown.length > perPage && (
           <Pagination
             currentPage={page}
-            totalPages={Math.ceil(shown.length / PER_PAGE)}
+            totalPages={Math.ceil(shown.length / perPage)}
             totalItems={shown.length}
-            itemsPerPage={PER_PAGE}
+            itemsPerPage={perPage}
             onPageChange={setPage}
             itemNamePlural="announcements"
           />

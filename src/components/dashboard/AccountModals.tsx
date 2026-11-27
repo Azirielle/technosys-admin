@@ -8,10 +8,10 @@ import { AlertTriangle, CheckCircle2, ChevronRight, KeyRound, LogOut } from 'luc
 import { createClient } from '@/lib/supabase/client'
 import { updateAdminPassword } from '@/app/actions/credentials'
 import { Avatar, Button, Field, Input, Modal, cx } from '@/components/ui'
+import { MIN_PASSWORD, passwordProblem } from '@/lib/password' // same rule as the server
 
 type Step = 'account' | 'password' | 'signout' | null
 
-const MIN_PASSWORD = 6 // same rule as updateAdminPassword on the server
 
 function ActionRow({ icon: Icon, label, danger, onClick }: { icon: typeof KeyRound; label: string; danger?: boolean; onClick: () => void }) {
   return (
@@ -60,7 +60,8 @@ export function AccountModals({ open, onClose, name, title }: { open: boolean; o
     e.preventDefault()
     setPasswordError(null)
     if (!currentPassword) return setPasswordError('Type your current password.')
-    if (newPassword.length < MIN_PASSWORD) return setPasswordError(`Use at least ${MIN_PASSWORD} characters.`)
+    const problem = passwordProblem(newPassword)
+    if (problem) return setPasswordError(problem)
     if (newPassword !== confirmPassword) return setPasswordError("The two passwords don't match.")
     setSaving(true)
     try {

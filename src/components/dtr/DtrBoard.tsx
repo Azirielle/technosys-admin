@@ -16,8 +16,7 @@ import {
   StatTile,
   TableContainer,
   Tabs,
-  useToast,
-} from '@/components/ui'
+  useToast, useFitRows } from '@/components/ui'
 import { recentCutoffs } from './cutoffs'
 import { exportDtrCsv, exportDtrExcel } from './dtrExport'
 import { DtrSummaryTable } from './DtrSummaryTable'
@@ -26,7 +25,6 @@ import { CorrectionModal } from './CorrectionModal'
 import { CorrectionHistoryModal, type HistoryTarget } from './CorrectionHistoryModal'
 
 type RoleFilter = 'all' | 'technician' | 'helper'
-const PER_PAGE = 8
 
 function round1(n: number) {
   return Math.round(n * 10) / 10
@@ -40,6 +38,7 @@ export function DtrBoard() {
   const [role, setRole] = useState<RoleFilter>('all')
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
+  const [tableRef, perPage] = useFitRows() // as many rows as fit on the screen: pages, no scroll
   const [records, setRecords] = useState<EmployeeAuditSummary[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -138,10 +137,10 @@ export function DtrBoard() {
         <Input icon={Search} className="ml-auto w-full sm:w-64" placeholder="Search name or level" aria-label="Search staff" value={search} onChange={(e) => { setSearch(e.target.value); setPage(1) }} />
       </div>
 
-      <TableContainer>
-        <DtrSummaryTable records={shown.slice((page - 1) * PER_PAGE, page * PER_PAGE)} loading={loading} error={error} onRetry={load} onOpen={(r) => setOpenId(r.id)} />
-        {shown.length > PER_PAGE && (
-          <Pagination currentPage={page} totalPages={Math.ceil(shown.length / PER_PAGE)} totalItems={shown.length} itemsPerPage={PER_PAGE} onPageChange={setPage} itemNamePlural="staff" />
+      <TableContainer ref={tableRef}>
+        <DtrSummaryTable records={shown.slice((page - 1) * perPage, page * perPage)} loading={loading} error={error} onRetry={load} onOpen={(r) => setOpenId(r.id)} />
+        {shown.length > perPage && (
+          <Pagination currentPage={page} totalPages={Math.ceil(shown.length / perPage)} totalItems={shown.length} itemsPerPage={perPage} onPageChange={setPage} itemNamePlural="staff" />
         )}
       </TableContainer>
 

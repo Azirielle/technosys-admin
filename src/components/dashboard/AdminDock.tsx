@@ -284,8 +284,8 @@ export function AdminDock({
  } bg-surface rounded-modal p-3 flex flex-col justify-between shadow-card hover:shadow-raised group/dock transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] overflow-hidden select-none`}
       >
         {/* Top Brand Section */}
-        {/* The page links scroll on a short window, so the profile (Sign out) below always stays on screen */}
-        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto overflow-x-hidden">
+        {/* No scroll here (Andrew, 28 Nov): the links fit; the profile (Sign out) below always stays on screen */}
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
           <div className="flex items-center justify-between min-w-0">
             <Link
               href={roleMeta.rootHref}

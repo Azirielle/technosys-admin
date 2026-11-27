@@ -3,16 +3,17 @@
 import { createClient } from '@/lib/supabase/server'
 import { supabaseAdmin } from '@/lib/supabase/admin'
 import { createClient as createPlainClient } from '@supabase/supabase-js'
+import { passwordProblem } from '@/lib/password'
 
 export async function updateAdminPassword(formData: FormData): Promise<{ success: boolean; error?: string }> {
   try {
     const currentPassword = (formData.get('current_password') as string || '')
-    const newPassword = (formData.get('new_password') as string || '').trim()
-    const confirmPassword = (formData.get('confirm_password') as string || '').trim()
+    // Not trimmed: the saved password is exactly what was typed (passwordProblem refuses spaces at the ends)
+    const newPassword = (formData.get('new_password') as string || '')
+    const confirmPassword = (formData.get('confirm_password') as string || '')
 
-    if (!newPassword || newPassword.length < 6) {
-      return { success: false, error: 'Password must be at least 6 characters in length.' }
-    }
+    const problem = passwordProblem(newPassword)
+    if (problem) return { success: false, error: problem }
 
     if (newPassword !== confirmPassword) {
       return { success: false, error: 'New password and confirmation password do not match.' }

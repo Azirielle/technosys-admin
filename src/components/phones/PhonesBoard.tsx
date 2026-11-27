@@ -5,13 +5,12 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { RotateCcw, Search, Smartphone, SmartphoneNfc, Users } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
-import { Button, Input, Modal, Page, PageHeader, Pagination, StatRow, StatTile, TableContainer, Tabs, useToast } from '@/components/ui'
+import { Button, Input, Modal, Page, PageHeader, Pagination, StatRow, StatTile, TableContainer, Tabs, useToast, useFitRows } from '@/components/ui'
 import { decidePhoneRequest, resetPhone } from '@/components/files/signInActions'
 import { PhonesTable } from './PhonesTable'
 import { loadWorkPhones, phoneState, type PhoneState, type WorkPhoneRow } from './phonesActions'
 
 type Filter = 'all' | PhoneState
-const PER_PAGE = 8
 
 export function PhonesBoard() {
   const supabase = useMemo(() => createClient(), [])
@@ -21,6 +20,7 @@ export function PhonesBoard() {
   const [filter, setFilter] = useState<Filter>('all')
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
+  const [tableRef, perPage] = useFitRows() // as many rows as fit on the screen: pages, no scroll
   const [busyId, setBusyId] = useState<string | null>(null)
   const [resetting, setResetting] = useState<WorkPhoneRow | null>(null)
 
@@ -84,7 +84,7 @@ export function PhonesBoard() {
     await run(row, () => resetPhone(supabase, row.id, row.full_name), `Phone reset. ${first(row)} picks a phone again in the app.`)
   }
 
-  const pageRows = shown.slice((page - 1) * PER_PAGE, page * PER_PAGE)
+  const pageRows = shown.slice((page - 1) * perPage, page * perPage)
 
   return (
     <Page wide>
@@ -115,14 +115,14 @@ export function PhonesBoard() {
         <Input icon={Search} className="w-full sm:w-64" placeholder="Search name or phone" aria-label="Search name or phone" value={search} onChange={(e) => { setSearch(e.target.value); setPage(1) }} />
       </div>
 
-      <TableContainer>
+      <TableContainer ref={tableRef}>
         <PhonesTable rows={pageRows} loading={loading} busyId={busyId} onDecide={decide} onReset={setResetting} />
-        {shown.length > PER_PAGE && (
+        {shown.length > perPage && (
           <Pagination
             currentPage={page}
-            totalPages={Math.ceil(shown.length / PER_PAGE)}
+            totalPages={Math.ceil(shown.length / perPage)}
             totalItems={shown.length}
-            itemsPerPage={PER_PAGE}
+            itemsPerPage={perPage}
             onPageChange={setPage}
             itemNamePlural="phones"
           />

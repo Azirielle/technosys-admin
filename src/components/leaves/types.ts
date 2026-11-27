@@ -10,6 +10,8 @@ export type LeaveRecord = {
   created_at: string
   attachment_url?: string | null
   rejection_reason?: string | null
+  /** Days of this vacation leave HR took from sick credits (28 Nov) */
+  sick_days?: number
   profiles?: {
     full_name?: string
     role?: string

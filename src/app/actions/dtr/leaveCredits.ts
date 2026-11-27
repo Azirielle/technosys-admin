@@ -4,7 +4,8 @@
 // - Counted Monday to Saturday only (Sunday is rest day; extract(isodow) <> 7).
 // - Sick leave uses sick credits first, then vacation credits.
 // - Vacation and emergency leave use vacation credits.
-// - Days past credits, and unpaid leave, are 'without_credits'.
+// - Days past credits, and unpaid leave, are 'without_credits', except vacation days HR took from sick
+//   credits on approval (the leave's sick_days, 28 Nov): those use sick credits.
 // - Other leave types (wedding, maternal, paternal) do NOT use credits; labeled 'other'.
 
 import type { LeaveCreditCategory } from './types'
@@ -16,6 +17,7 @@ export interface ApprovedLeaveRow {
   end_date: string
   leave_type: string
   status: string
+  sick_days?: number
 }
 
 export interface DayLeaveInfo {
@@ -50,7 +52,8 @@ export function buildEmployeeLeaveMap(
   const leaveMap = new Map<string, DayLeaveInfo>()
 
   // 1. Expand all approved leave days between yearStart and cutoffEnd, skipping Sundays
-  const candidateDays: { dateStr: string; leaveType: string }[] = []
+  const candidateDays: { dateStr: string; leaveType: string; leaveId: string }[] = []
+  const fromSick = new Map(leaves.map((l) => [l.id, l.sick_days ?? 0])) // days left that HR moved to sick credits
   const seenDays = new Set<string>()
 
   for (const l of leaves) {
@@ -65,7 +68,7 @@ export function buildEmployeeLeaveMap(
       if (dayOfWeek === 0) continue
 
       seenDays.add(dStr)
-      candidateDays.push({ dateStr: dStr, leaveType: l.leave_type })
+      candidateDays.push({ dateStr: dStr, leaveType: l.leave_type, leaveId: l.id })
     }
   }
 
@@ -93,6 +96,10 @@ export function buildEmployeeLeaveMap(
       if (vacationCredits > 0) {
         vacationCredits -= 1
         leaveMap.set(day.dateStr, { label: 'vacation', leaveType: day.leaveType })
+      } else if ((fromSick.get(day.leaveId) ?? 0) > 0 && sickCredits > 0) {
+        fromSick.set(day.leaveId, fromSick.get(day.leaveId)! - 1)
+        sickCredits -= 1
+        leaveMap.set(day.dateStr, { label: 'sick', leaveType: day.leaveType })
       } else {
         leaveMap.set(day.dateStr, { label: 'without_credits', leaveType: day.leaveType })
       }

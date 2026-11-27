@@ -24,11 +24,12 @@ export function LeaveReviewModal({
   overlapping: number
   saving: boolean
   onClose: () => void
-  onApprove: (leave: LeaveRecord) => void
+  onApprove: (leave: LeaveRecord, sickDays: number) => void
   onDecline: () => void
 }) {
   const [checkedDates, setCheckedDates] = useState(false)
   const [checkedDocs, setCheckedDocs] = useState(false)
+  const [sickDays, setSickDays] = useState(0) // extra days HR takes from sick credits (LeaveCredits)
 
   // Fresh checklist for every request (reset while rendering when a different leave opens).
   const [shownId, setShownId] = useState(leave?.id)
@@ -36,6 +37,7 @@ export function LeaveReviewModal({
     setShownId(leave?.id)
     setCheckedDates(false)
     setCheckedDocs(false)
+    setSickDays(0)
   }
 
   // Keyboard: A approves, D opens Decline (only for a request still waiting, and not while typing).
@@ -49,7 +51,7 @@ export function LeaveReviewModal({
       const key = e.key.toLowerCase()
       if (key === 'a') {
         e.preventDefault()
-        onApprove(leave)
+        onApprove(leave, sickDays)
       } else if (key === 'd') {
         e.preventDefault()
         onDecline()
@@ -57,7 +59,7 @@ export function LeaveReviewModal({
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [leave, saving, onApprove, onDecline])
+  }, [leave, saving, sickDays, onApprove, onDecline])
 
   if (!leave) return null
   const { dateRangeStr, daysCount } = formatLeaveDuration(leave.start_date, leave.end_date)
@@ -77,7 +79,7 @@ export function LeaveReviewModal({
         isPending ? (
           <>
             <Button variant="decline" icon={X} onClick={onDecline} disabled={saving}>Decline</Button>
-            <Button variant="approve" icon={Check} onClick={() => onApprove(leave)} loading={saving}>Approve leave</Button>
+            <Button variant="approve" icon={Check} onClick={() => onApprove(leave, sickDays)} loading={saving}>Approve leave</Button>
           </>
         ) : (
           <Button onClick={onClose}>Close</Button>
@@ -102,7 +104,7 @@ export function LeaveReviewModal({
 
         {leave.attachment_url && <CertificateLink attachment={leave.attachment_url} />}
 
-        <LeaveCredits leave={leave} />
+        <LeaveCredits leave={leave} sickDays={sickDays} onSickDays={setSickDays} />
 
         <p
           className={cx(

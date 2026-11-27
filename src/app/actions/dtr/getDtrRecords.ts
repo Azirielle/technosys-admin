@@ -126,7 +126,7 @@ export async function getDtrRecords(
     const yearStart = `${cutoffYear}-01-01`;
     const { data: leaves, error: leaveErr } = await supabaseAdmin
       .from('leaves')
-      .select('id, technician_id, start_date, end_date, leave_type, status')
+      .select('id, technician_id, start_date, end_date, leave_type, status, sick_days')
       .in('technician_id', profileIds)
       .lte('start_date', endDate)
       .gte('end_date', yearStart)

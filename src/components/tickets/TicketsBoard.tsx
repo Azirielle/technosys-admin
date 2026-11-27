@@ -135,28 +135,30 @@ export function TicketsBoard() {
     <div className="flex h-full flex-col gap-section px-page py-page-y">
       <PageHeader title="Tickets" subtitle="Concerns and requests from technicians. The AI answers first; HR makes every decision." />
 
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <Tabs
-          label="Ticket status"
-          value={filter}
-          onChange={setFilter}
-          items={[
-            { value: 'needs_attention', label: 'Needs HR', count: counts.needs_attention },
-            { value: 'in_progress', label: 'In progress', count: counts.in_progress },
-            { value: 'done', label: 'Done', count: counts.done },
-            { value: 'all', label: 'All', count: tickets.length },
-          ]}
-        />
-        <div className="flex w-full flex-wrap gap-2 sm:w-auto">
-          <Select aria-label="Type of concern" className="w-full sm:w-56" value={kind} onChange={(e) => setKind(e.target.value as TicketKind)} options={TICKET_KINDS} />
-          <Input icon={Search} className="w-full sm:w-72" placeholder="Search name, subject or ticket #" aria-label="Search tickets" value={search} onChange={(e) => setSearch(e.target.value)} />
-        </div>
-      </div>
-
+      {/* Andrew 28 Nov: the open ticket gets about 70% of the width and the full height; the list, its status tabs,
+          type filter and search share the left 30%. Both are shares of the page, so they follow the menu opening or closing. */}
       <div className="flex min-h-0 flex-1 gap-section">
-        <section aria-label="Tickets" className={cx('w-full shrink-0 overflow-y-auto rounded-card bg-surface shadow-card md:block md:w-[360px] lg:w-[400px]', selected && 'hidden')}>
-          <TicketList tickets={shown} loading={loading} selectedId={selectedId} emptyText={EMPTY_TEXT[filter]} onSelect={(t) => openTicket(t.id)} />
-        </section>
+        <div className={cx('flex w-full min-w-0 shrink-0 flex-col gap-3 md:flex md:w-[30%] md:min-w-[372px]', selected && 'hidden')}>
+          <Tabs
+            size="sm"
+            label="Ticket status"
+            value={filter}
+            onChange={setFilter}
+            items={[
+              { value: 'needs_attention', label: 'Needs HR', count: counts.needs_attention },
+              { value: 'in_progress', label: 'In progress', count: counts.in_progress },
+              { value: 'done', label: 'Done', count: counts.done },
+              { value: 'all', label: 'All', count: tickets.length },
+            ]}
+          />
+          <div className="flex gap-2">
+            <Select size="sm" aria-label="Type of concern" className="w-36 shrink-0" value={kind} onChange={(e) => setKind(e.target.value as TicketKind)} options={TICKET_KINDS} />
+            <Input size="sm" icon={Search} className="min-w-0 flex-1" placeholder="Search name or ticket #" aria-label="Search tickets by name, subject or ticket number" value={search} onChange={(e) => setSearch(e.target.value)} />
+          </div>
+          <section aria-label="Tickets" className="min-h-0 flex-1 overflow-y-auto rounded-card bg-surface shadow-card">
+            <TicketList tickets={shown} loading={loading} selectedId={selectedId} emptyText={EMPTY_TEXT[filter]} onSelect={(t) => openTicket(t.id)} />
+          </section>
+        </div>
         <section aria-label="Conversation" className={cx('min-w-0 flex-1 overflow-hidden rounded-card bg-surface shadow-card md:block', !selected && 'hidden')}>
           <TicketThread
             ticket={selected}

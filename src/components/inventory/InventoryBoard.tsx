@@ -10,7 +10,7 @@ import { usePageCommand } from '@/components/commands/pageCommands'
 import { Box, Package, Plus, Search, ShieldAlert, Wrench, X } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { getTechnicians } from '@/app/actions/inventory'
-import { Button, Input, Page, PageHeader, Pagination, Select, StatRow, StatTile, TableContainer, Tabs, useToast } from '@/components/ui'
+import { Button, Input, Page, PageHeader, Pagination, Select, StatRow, StatTile, TableContainer, Tabs, useToast, useFitRows } from '@/components/ui'
 import { ToolsTable } from './ToolsTable'
 import { BorrowingsTable } from './BorrowingsTable'
 import { ToolFormModal } from './ToolFormModal'
@@ -23,7 +23,6 @@ import { CATEGORIES, LOW_STOCK, isOverdue, type Borrowing, type Person, type Too
 
 type Tab = 'tools' | 'borrowed' | 'requests'
 type BorrowFilter = 'checked_out' | 'overdue' | 'returned' | 'problems' | 'all'
-const PER_PAGE = 8
 
 const BORROW_EMPTY: Record<BorrowFilter, string> = {
   checked_out: 'No tools are out with crews right now.',
@@ -49,6 +48,7 @@ export function InventoryBoard({ tab: openTab, stock }: { tab?: string; stock?: 
   const [category, setCategory] = useState('')
   const [borrowFilter, setBorrowFilter] = useState<BorrowFilter>('checked_out')
   const [page, setPage] = useState(1)
+  const [tableRef, perPage] = useFitRows() // as many rows as fit on the screen: pages, no scroll
   const [toolForm, setToolForm] = useState<{ open: boolean; tool: Tool | null }>({ open: false, tool: null })
   const [lending, setLending] = useState<Tool | null>(null)
   const [deleting, setDeleting] = useState<Tool | null>(null)
@@ -191,13 +191,13 @@ export function InventoryBoard({ tab: openTab, stock }: { tab?: string; stock?: 
         <Input icon={Search} className="ml-auto w-full sm:w-64" aria-label="Search" placeholder={tab === 'tools' ? 'Search tool or tag' : 'Search tool or person'} value={search} onChange={(e) => { setSearch(e.target.value); setPage(1) }} />
       </div>
 
-      <TableContainer>
+      <TableContainer ref={tableRef}>
         {tab === 'requests' ? (
           <ToolRequestsTable requests={requests} onDecline={declineRequest}
             onLend={(r) => { const tool = tools.find((x) => x.name === r.tool); if (tool) { setLendingFor(r); setLending(tool) } else toast.error(`"${r.tool}" isn't in the tool list any more.`) }} />
         ) : tab === 'tools' ? (
           <ToolsTable
-            tools={shownTools.slice((page - 1) * PER_PAGE, page * PER_PAGE)}
+            tools={shownTools.slice((page - 1) * perPage, page * perPage)}
             loading={loading}
             filtered={Boolean(q || category || onlyOutOfStock)}
             onLend={setLending}
@@ -208,7 +208,7 @@ export function InventoryBoard({ tab: openTab, stock }: { tab?: string; stock?: 
           />
         ) : (
           <BorrowingsTable
-            borrowings={shownBorrowings.slice((page - 1) * PER_PAGE, page * PER_PAGE)}
+            borrowings={shownBorrowings.slice((page - 1) * perPage, page * perPage)}
             loading={loading}
             emptyText={q ? 'Try another search.' : BORROW_EMPTY[borrowFilter]}
             onOpen={setViewing}
@@ -216,8 +216,8 @@ export function InventoryBoard({ tab: openTab, stock }: { tab?: string; stock?: 
             reports={reports}
           />
         )}
-        {rows > PER_PAGE && (
-          <Pagination currentPage={page} totalPages={Math.ceil(rows / PER_PAGE)} totalItems={rows} itemsPerPage={PER_PAGE} onPageChange={setPage} itemNamePlural={tab === 'tools' ? 'tools' : 'records'} />
+        {rows > perPage && (
+          <Pagination currentPage={page} totalPages={Math.ceil(rows / perPage)} totalItems={rows} itemsPerPage={perPage} onPageChange={setPage} itemNamePlural={tab === 'tools' ? 'tools' : 'records'} />
         )}
       </TableContainer>
 

@@ -4,13 +4,12 @@
 
 import { useMemo, useState } from 'react'
 import { Search } from 'lucide-react'
-import { Input, Pagination, Select, TableContainer, Tabs } from '@/components/ui'
+import { Input, Pagination, Select, TableContainer, Tabs, useFitRows } from '@/components/ui'
 import { addDays, weekStart } from './scheduleMath'
 import { JobsTable } from '@/components/jobs/JobsTable'
 import { manilaToday, type Job } from '@/components/jobs/jobTypes'
 
 type View = 'upcoming' | 'earlier' | 'cancelled'
-const PER_PAGE = 8
 
 /** The periods to pick from: this and last week, this and last month, and the 4 months before (about 6 months are loaded). */
 function periods(today: string) {
@@ -33,6 +32,7 @@ export function JobsList({ jobs, loading, onOpen }: { jobs: Job[]; loading: bool
   const [view, setView] = useState<View>('upcoming')
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
+  const [tableRef, perPage] = useFitRows() // as many rows as fit on the screen: pages, no scroll
   const today = manilaToday()
   const choices = useMemo(() => periods(today), [today])
   const [period, setPeriod] = useState('all')
@@ -45,7 +45,7 @@ export function JobsList({ jobs, loading, onOpen }: { jobs: Job[]; loading: bool
   const q = search.trim().toLowerCase()
   // A job counts in the period when any of its days falls inside it
   const shown = groups[view].filter((j) => j.start_date <= range.end && j.end_date >= range.start).filter((j) => !q || j.client_name.toLowerCase().includes(q) || j.address.toLowerCase().includes(q) || j.members.some((m) => m.name.toLowerCase().includes(q)))
-  const pageJobs = shown.slice((page - 1) * PER_PAGE, page * PER_PAGE)
+  const pageJobs = shown.slice((page - 1) * perPage, page * perPage)
 
   return (
     <div className="flex flex-col gap-stack flex-1 min-h-0">
@@ -60,15 +60,15 @@ export function JobsList({ jobs, loading, onOpen }: { jobs: Job[]; loading: bool
           <Input icon={Search} className="w-full sm:w-64" placeholder="Search client, address or person" aria-label="Search jobs" value={search} onChange={(e) => { setSearch(e.target.value); setPage(1) }} />
         </div>
       </div>
-      <TableContainer>
+      <TableContainer ref={tableRef}>
         <JobsTable jobs={pageJobs} loading={loading} onOpen={onOpen}
           empty={view === 'upcoming' ? 'No jobs coming up' : view === 'earlier' ? 'No earlier jobs' : 'No cancelled jobs'} />
-        {shown.length > PER_PAGE && (
+        {shown.length > perPage && (
           <Pagination
             currentPage={page}
-            totalPages={Math.ceil(shown.length / PER_PAGE)}
+            totalPages={Math.ceil(shown.length / perPage)}
             totalItems={shown.length}
-            itemsPerPage={PER_PAGE}
+            itemsPerPage={perPage}
             onPageChange={setPage}
             itemNamePlural="jobs"
           />

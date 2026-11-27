@@ -1,20 +1,22 @@
 // DataTable parts: every table in the admin is built from these (container, head, rows, cells, empty state).
 import type { LucideIcon } from 'lucide-react'
 import { Inbox } from 'lucide-react'
-import type { ReactNode } from 'react'
+import type { ReactNode, Ref } from 'react'
 import { Badge, StatusDot as Dot, type Tone } from './Badge'
 import { cx } from './cx'
 
 type Align = 'left' | 'center' | 'right'
 const ALIGN: Record<Align, string> = { left: 'text-left', center: 'text-center', right: 'text-right' }
 
-/** The rounded card around a table. On laptops (lg+) it fits the screen height and scrolls its rows inside, so the
- *  page buttons stay in view; on phones it keeps its natural height and the page scrolls (squeezed, it was 0 px tall). */
-export function TableContainer({ children, className, maxHeight }: { children: ReactNode; className?: string; maxHeight?: string }) {
+/** The rounded card around a table. On laptops (lg+) it fills the rest of the screen and never scrolls up and down:
+ *  give it the ref from useFitRows() and show that many rows per page (Andrew, 28 Nov: pages, not a scroll inside).
+ *  On phones it keeps its natural height and the page scrolls. A wide table can still scroll sideways. */
+export function TableContainer({ children, className, maxHeight, ref }: { children: ReactNode; className?: string; maxHeight?: string; ref?: Ref<HTMLDivElement> }) {
   return (
     <div
+      ref={ref}
       style={maxHeight ? { maxHeight } : undefined}
-      className={cx('relative flex shrink-0 flex-col overflow-auto rounded-card bg-surface shadow-card lg:min-h-0 lg:flex-1 lg:shrink', className)}
+      className={cx('relative flex shrink-0 flex-col overflow-x-auto overflow-y-hidden rounded-card bg-surface shadow-card lg:min-h-0 lg:flex-1 lg:shrink', className)}
     >
       {children}
     </div>

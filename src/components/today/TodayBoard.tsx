@@ -7,7 +7,7 @@ import { Suspense, useCallback, useEffect, useMemo, useState } from 'react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { AlertTriangle, CheckCircle2, Clock, ShieldCheck } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
-import { Button, Page, PageHeader, Pagination, StatRow, StatTile, TableContainer, Tabs, useToast } from '@/components/ui'
+import { Button, Page, PageHeader, Pagination, StatRow, StatTile, TableContainer, Tabs, useToast, useFitRows } from '@/components/ui'
 import { CrewTodayTable } from './CrewTodayTable'
 import { ApprovalsList } from './ApprovalsList'
 import { ActingLeadPrompt } from './ActingLeadPrompt'
@@ -16,7 +16,6 @@ import { loadToday, watchToday, type TodayData, type WorkDay } from './todayData
 import { buildRows, jobsNeedingActingLead } from './todayStatus'
 
 type View = 'crew' | 'approvals'
-const PER_PAGE = 8
 
 type CrewRow = { role: string; state: string }
 /** Who each card counts, and the same rule filters the list it opens (task 5: the number = the list) */
@@ -36,6 +35,7 @@ function TodayContent() {
   const toast = useToast()
   const [data, setData] = useState<TodayData | null>(null)
   const [page, setPage] = useState(1)
+  const [tableRef, perPage] = useFitRows() // as many rows as fit on the screen: pages, no scroll
   const [timingOut, setTimingOut] = useState<WorkDay | null>(null)
   // Task 5: a card shows only its people (In / Late / Missing); null = everyone
   const [focus, setFocus] = useState<keyof typeof FOCUS | null>(null)
@@ -74,7 +74,7 @@ function TodayContent() {
   ], [earlierOpen, rows])
 
   const crewRows = focus ? allCrewRows.filter(FOCUS[focus].has) : allCrewRows
-  const pageCrewRows = crewRows.slice((page - 1) * PER_PAGE, page * PER_PAGE)
+  const pageCrewRows = crewRows.slice((page - 1) * perPage, page * perPage)
   const openFocus = (f: keyof typeof FOCUS) => { setView('crew'); setFocus(f); setPage(1) }
 
   return (
@@ -102,19 +102,19 @@ function TodayContent() {
         </div>
       )}
       {currentView === 'crew' ? (
-        <TableContainer>
+        <TableContainer ref={tableRef}>
           {data && (
             <>
               <CrewTodayTable
                 rows={pageCrewRows}
                 onTimeOut={(r) => setTimingOut(r.day)}
               />
-              {crewRows.length > PER_PAGE && (
+              {crewRows.length > perPage && (
                 <Pagination
                   currentPage={page}
-                  totalPages={Math.ceil(crewRows.length / PER_PAGE)}
+                  totalPages={Math.ceil(crewRows.length / perPage)}
                   totalItems={crewRows.length}
-                  itemsPerPage={PER_PAGE}
+                  itemsPerPage={perPage}
                   onPageChange={setPage}
                   itemNamePlural="crew members"
                 />

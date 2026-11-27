@@ -3,9 +3,9 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { usePageCommand } from '@/components/commands/pageCommands'
-import { CheckCircle2, Download, FileWarning, Search, ShieldAlert, UserPlus, Users } from 'lucide-react'
+import { Download, Search, UserPlus } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
-import { Button, Input, Page, PageHeader, Pagination, StatRow, StatTile, TableContainer, Tabs, useToast } from '@/components/ui'
+import { Button, Input, Page, PageHeader, Pagination, TableContainer, Tabs, useToast, useFitRows } from '@/components/ui'
 import { FilesTable } from './FilesTable'
 import { EmployeeFileDrawer } from './EmployeeFileDrawer'
 import { WarningModal } from './WarningModal'
@@ -19,7 +19,6 @@ import { archiveAccount, createAccount, restoreAccount, type NewAccount } from '
 
 type Filter = 'all' | 'incomplete' | 'warnings' | 'complete' | 'phone' | 'archived'
 const FILTERS: Filter[] = ['all', 'incomplete', 'warnings', 'complete', 'phone', 'archived']
-const PER_PAGE = 8
 
 function matches(emp: EmployeeFile, filter: Filter, phoneRequests: Set<string>) {
   // Archived people show only on their own tab.
@@ -46,6 +45,7 @@ export function FilesBoard({ show }: { show?: string }) {
   const filter: Filter = emptyTab ? 'all' : chosenFilter
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
+  const [tableRef, perPage] = useFitRows() // as many rows as fit on the screen: pages, no scroll
   const [openId, setOpenId] = useState<string | null>(null)
   // Quick actions: open a person's 201 file by id.
   usePageCommand(['open'], (_command, id) => id && setOpenId(id))
@@ -181,13 +181,6 @@ export function FilesBoard({ show }: { show?: string }) {
         }
       />
 
-      <StatRow>
-        <StatTile loading={loading} icon={Users} label="Field staff" onClick={() => setFilter('all')} value={counts.all} hint="Technicians and helpers" />
-        <StatTile loading={loading} icon={FileWarning} label="Missing documents" onClick={() => setFilter('incomplete')} value={counts.incomplete} hint={counts.incomplete ? 'Files still incomplete' : 'Every file is complete'} tone={counts.incomplete ? 'warning' : 'success'} />
-        <StatTile loading={loading} icon={ShieldAlert} label="With warnings" onClick={() => setFilter('warnings')} value={counts.warnings} hint={counts.warnings ? 'Have at least one warning' : 'No warnings on record'} />
-        <StatTile loading={loading} icon={CheckCircle2} label="Complete" onClick={() => setFilter('complete')} value={counts.complete} hint="All six documents received" tone={counts.complete ? 'success' : 'neutral'} />
-      </StatRow>
-
       <div className="flex flex-wrap items-center justify-between gap-3">
         <Tabs
           label="Show"
@@ -208,10 +201,10 @@ export function FilesBoard({ show }: { show?: string }) {
         <Input icon={Search} className="w-full sm:w-64" placeholder="Search name" aria-label="Search staff" value={search} onChange={(e) => { setSearch(e.target.value); setPage(1) }} />
       </div>
 
-      <TableContainer>
-        <FilesTable employees={shown.slice((page - 1) * PER_PAGE, page * PER_PAGE)} loading={loading} onOpen={(e) => setOpenId(e.id)} />
-        {shown.length > PER_PAGE && (
-          <Pagination currentPage={page} totalPages={Math.ceil(shown.length / PER_PAGE)} totalItems={shown.length} itemsPerPage={PER_PAGE} onPageChange={setPage} itemNamePlural="staff" />
+      <TableContainer ref={tableRef}>
+        <FilesTable employees={shown.slice((page - 1) * perPage, page * perPage)} loading={loading} onOpen={(e) => setOpenId(e.id)} />
+        {shown.length > perPage && (
+          <Pagination currentPage={page} totalPages={Math.ceil(shown.length / perPage)} totalItems={shown.length} itemsPerPage={perPage} onPageChange={setPage} itemNamePlural="staff" />
         )}
       </TableContainer>
 
