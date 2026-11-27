@@ -5,6 +5,7 @@ import { sendPushToUser } from '@/lib/push'
 import { sendSmsToUser } from '@/lib/sms'
 import { supabaseAdmin } from '@/lib/supabase/admin'
 import { LEAVE_LABELS } from '@/lib/labels'
+import { daysOut, isOverdue, type Borrowing } from '@/components/inventory/types'
 
 /** Office staff send a push notification to one employee's phone (e.g. "please submit your 201 requirements"). */
 export async function notifyEmployee(userId: string, title: string, body: string, type: string) {
@@ -48,4 +49,26 @@ export async function notifyPinChanged(profileId: string) {
   const { authorized } = await verifyRoleAccess('employees', true)
   if (!authorized) return
   await sendSmsToUser(profileId, "HR set a new sign-in PIN for you. Ask HR for it. Didn't expect this? Call HR.", 'PIN')
+}
+
+/** Coordinator, 28 Nov: an overdue tool. Push + SMS to the person who has it, asking them to bring it back now.
+ *  Built from the saved borrowing, so it only goes out for a tool still out past the overdue limit. */
+export async function remindToolReturn(borrowingId: string): Promise<{ sent: boolean; error?: string }> {
+  const { authorized } = await verifyRoleAccess('inventory', true)
+  if (!authorized) return { sent: false, error: 'Not allowed' }
+  const { data: b } = await supabaseAdmin.from('tool_borrowings')
+    .select('technician_id, status, handed_over_at, quantity, tool:tools ( name )').eq('id', borrowingId).single()
+  if (!b?.technician_id || !b.handed_over_at || b.status !== 'checked_out') return { sent: false, error: 'This tool is no longer out.' }
+  // Same overdue rule as the Inventory table (Manila days)
+  const row = { status: b.status, handed_over_at: b.handed_over_at, returned_at: null } as Borrowing
+  if (!isOverdue(row)) return { sent: false, error: 'This tool is not overdue yet.' }
+  const days = daysOut(row)
+  const tool = (Array.isArray(b.tool) ? b.tool[0] : b.tool)?.name ?? 'tool'
+  const what = `${b.quantity > 1 ? `${b.quantity} × ` : ''}${tool}`
+  const text = `Please bring back the ${what} you borrowed on ${new Date(b.handed_over_at).toLocaleDateString('en-PH', { month: 'short', day: 'numeric', timeZone: 'Asia/Manila' })} today. It is ${days} days out (overdue).`
+  const [push, sms] = await Promise.all([
+    sendPushToUser(b.technician_id, 'Return the tool today', text, { type: 'tool_overdue' }),
+    sendSmsToUser(b.technician_id, text, 'TOOL'),
+  ])
+  return push.success || sms.success ? { sent: true } : { sent: false, error: "Couldn't reach their phone (no app sign-in or mobile number)." }
 }

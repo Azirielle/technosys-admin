@@ -1,8 +1,11 @@
 // BorrowingsTable: who has which tool, since when, and whether it's overdue. "Check in" takes it back.
+// Overdue: "Remind" sends the borrower a push + SMS to bring it back now (Coordinator, 28 Nov).
 // A tool the borrower reported a problem with (from the phone) shows "Problem reported" with what's wrong.
 'use client'
 
-import { Undo2, Wrench } from 'lucide-react'
+import { useState } from 'react'
+import { BellRing, Undo2, Wrench } from 'lucide-react'
+import { remindToolReturn } from '@/app/actions/notifications'
 import { formatDay } from '@/lib/format'
 import {
   Avatar,
@@ -16,6 +19,7 @@ import {
   TableHeaderCell,
   TableRow,
   SkeletonTableRows,
+  useToast,
 } from '@/components/ui'
 import { BORROW_STATUS, CONDITIONS, daysOut, isOverdue, type Borrowing } from './types'
 
@@ -34,6 +38,17 @@ export function BorrowingsTable({
   onReturn: (b: Borrowing) => void
   reports: Map<string, string>
 }) {
+  const toast = useToast()
+  const [reminding, setReminding] = useState<string | null>(null)
+  const [reminded, setReminded] = useState<Set<string>>(new Set()) // reminded while this page is open
+  async function remind(b: Borrowing) {
+    setReminding(b.id)
+    const r = await remindToolReturn(b.id).catch(() => ({ sent: false, error: "Couldn't send. Try again." }))
+    setReminding(null)
+    if (!r.sent) return toast.error(r.error ?? "Couldn't send. Try again.")
+    setReminded((s) => new Set(s).add(b.id))
+    toast.success(`${b.profiles?.full_name || 'They'} got a reminder to bring it back today.`)
+  }
   if (!loading && borrowings.length === 0) {
     return <EmptyState icon={Wrench} title="Nothing here" description={emptyText} />
   }
@@ -87,7 +102,13 @@ export function BorrowingsTable({
                 </TableCell>
                 <TableCell align="right">
                   {b.status === 'checked_out' && (
-                    <span onClick={(e) => e.stopPropagation()}>
+                    <span className="inline-flex gap-2" onClick={(e) => e.stopPropagation()}>
+                      {isOverdue(b) && (
+                        <Button size="sm" variant="ghost" icon={BellRing} loading={reminding === b.id} disabled={reminded.has(b.id)}
+                          title="Send them a push and a text to bring the tool back today" onClick={() => remind(b)}>
+                          {reminded.has(b.id) ? 'Reminded' : 'Remind'}
+                        </Button>
+                      )}
                       <Button size="sm" icon={Undo2} onClick={() => onReturn(b)}>Check in</Button>
                     </span>
                   )}
