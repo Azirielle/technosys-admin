@@ -20,7 +20,7 @@ export interface CrewLocation {
   status: CrewStatus
   /** Time-in of today's open shift, if any. */
   timeIn: string | null
-  /** Client of today's job (planned or ongoing), if any. */
+  /** Client of today's job (not cancelled; a finished job still counts while the crew times out), if any. */
   jobName: string | null
 }
 
@@ -53,7 +53,7 @@ export function useCrewLocations() {
         supabase.from('work_days').select('person_id, time_in').is('time_out', null).eq('work_date', today),
         // One query for everyone's job today (not one per person).
         supabase.from('job_members').select('person_id, job:jobs!inner(client_name, project_name)')
-          .is('removed_at', null).in('job.status', ['planned', 'ongoing']).lte('job.start_date', today).gte('job.end_date', today),
+          .is('removed_at', null).neq('job.status', 'cancelled').lte('job.start_date', today).gte('job.end_date', today),
       ])
       const jobOf = new Map((jobs.data ?? []).map((j) => [j.person_id, j.job?.project_name || j.job?.client_name || null]))
       const open = new Map((shifts.data ?? []).map((s) => [s.person_id, s.time_in as string | null]))

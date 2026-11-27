@@ -25,7 +25,7 @@ export async function loadToday(supabase: Client) {
   const [jobs, days, leaves, reviews, overtime] = await Promise.all([
     supabase.from('jobs')
       .select('id, client_name, start_time, end_time, report_to, work_type, job_members ( person_id, role, is_acting_lead, removed_at, person:profiles!job_members_person_id_fkey ( full_name, technician_level ) )')
-      .in('status', ['planned', 'ongoing']).lte('start_date', today).gte('end_date', today).order('start_time'),
+      .neq('status', 'cancelled').lte('start_date', today).gte('end_date', today).order('start_time'),
     // Today's days, plus any earlier day still without a time-out
     supabase.from('work_days').select(WD_FIELDS).or(`work_date.eq.${today},time_out.is.null`).order('time_in'),
     supabase.from('leaves').select('technician_id, leave_type').eq('status', 'approved').lte('start_date', today).gte('end_date', today),
