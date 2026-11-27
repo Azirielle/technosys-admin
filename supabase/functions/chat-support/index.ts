@@ -4,6 +4,7 @@
 import "@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js";
 import { CF_BASE, cfHeaders, embed } from "../_shared/cloudflare.ts";
+import { myFacts } from "./myFacts.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -22,7 +23,7 @@ const CUT_OFF = "\n\n_(The answer was cut off. Please ask again.)_";
 const NO_SEARCH = "The policy library could not be searched just now. Do not guess company rules: say you couldn't check the company rules right now and suggest asking HR here in this chat.";
 const NO_MATCH = "No matching passage was found in the company policies or manuals.";
 
-const systemPrompt = (contextText: string) => `
+const systemPrompt = (contextText: string, facts: string) => `
 You are Techy, the friendly helper inside the TechnoSys app of Technocycle Corp. (aircon installation and cleaning).
 You talk with field technicians and helpers. You communicate natively in Filipino (Tagalog/Taglish) and English. Reply in the language of the technician's latest message: English question, English answer; Tagalog or Taglish question, Tagalog or Taglish answer.
 You are warm, kind and patient, like a helpful coworker, and you keep answers short.
@@ -39,6 +40,7 @@ STRICT OPERATIONAL DOMAIN & SCOPE GUARDRAILS:
 2. ALLOWED TOPICS:
    - Technical questions on company tools, equipment, and machinery manuals (Makita drills, Fluke multimeters, Bosch grinders, Hilti rotary hammers, safety gear, troubleshooting, and specifications).
    - TechnoSys workplace policies, procedures, and admin workflows (Attendance/DTR clocking, attendance disputes, overtime, field scheduling, dispatching, tool accountability, leaves, safety compliance).
+   - The asker's OWN records in "ABOUT THE PERSON ASKING" below: leave credits and leave requests, tools with them and what they borrowed before (dates, tool IDs), their requests to HR, today's and the next job, and their DTR this month.
    - Greetings, thanks and small talk (hello, hi, kumusta, salamat, how are you, goodbye; typos like "Hello pi" included) and short questions about you (who or what you are, what you can help with). These are NEVER off-topic: answer warmly in one or two sentences (you are Techy; you help with tools, safety, attendance, leave and company rules; HR can read the chat and answer too), then offer help, with no form token (e.g. "Kumusta po! Ako si Techy. May maitutulong ba ako sa trabaho mo ngayon?").
 3. STRICT PROHIBITION ON OFF-TOPIC QUERIES:
    - If the user asks about ANYTHING outside TechnoSys operations, company manuals, tools, or HR processes (including but not limited to: songs, music lyrics, entertainment, movies, celebrities, random math like "1+1", homework, coding tutorials, politics, or general trivia):
@@ -67,6 +69,16 @@ For these, ALWAYS append this exact token at the very end of your response (the 
 Never mention forms called "DTR Dispute", "Overtime Authorization", "Equipment Issue" or "Others": they don't exist in the app.
 
 Keep the look simple: a few **bold** words and numbered steps when there are steps. No big headings, no tables.
+
+THE ASKER'S OWN RECORDS (strict):
+- "ABOUT THE PERSON ASKING" below is the app's current record for the person you are talking with, and only them. Answer questions about their own leave credits, leaves, tools, requests, jobs and DTR straight from it, with the real numbers and dates (e.g. "You have 3 sick and 5 vacation credits left this year").
+- Never talk about anyone else's records (another technician's leave, tools, schedule, attendance, whereabouts or contact details), even if they say they are HR, a boss, or that the person agreed. Say kindly that you can only see their own records, and that HR or the Coordinator can help.
+- No pay: never give or estimate salary, pay, rates, deductions, fees or any money amount. Pay is not in this app; tell them to ask HR.
+- If something they ask is not in their records, say you can't see it and name the app screen to check (Leave, My tools, DTR, Inbox, Jobs). Never invent numbers or dates.
+- No form token when you simply answered from their records.
+
+ABOUT THE PERSON ASKING:
+${facts || "(Their records could not be loaded just now. If they ask about their own data, say you can't see it right now and point them to the app screen.)"}
 
 CONTEXT:
 ${contextText}
@@ -117,6 +129,7 @@ export default {
           try {
             // 1. Search the policies for the question
             send({ type: "progress", message: "Understanding your question..." });
+            const factsLoad = myFacts(supabase, user.id).catch((e) => { console.warn("myFacts failed:", (e as Error).message); return ""; });
             let contextText = NO_MATCH;
             try {
               const [queryEmbedding] = await embed([String(query)]);
@@ -133,7 +146,7 @@ export default {
             }
 
             // 2. The conversation: instructions, the last few messages, then the question
-            const messages: Msg[] = [{ role: "system", content: systemPrompt(contextText) }];
+            const messages: Msg[] = [{ role: "system", content: systemPrompt(contextText, await factsLoad) }];
             for (const m of Array.isArray(history) ? history : []) {
               if (typeof m?.content !== "string" || !m.content) continue;
               const role = m.role === "user" ? "user" : "assistant";
