@@ -61,7 +61,7 @@ export async function loadFeed(supabase: SupabaseClient, role: FeedRole): Promis
       title: 'Leave request',
       body: `${who(l.technician_id)}: ${l.leave_type} leave, ${day(l.start_date)} to ${day(l.end_date)}`,
       at: l.created_at,
-      href: role === 'hr' ? '/hr/leaves' : null,
+      href: role === 'hr' ? `/hr/leaves?do=open&id=${l.id}` : null, // opens that person's leave (usePageCommand)
     })
   }
   for (const k of tools) {

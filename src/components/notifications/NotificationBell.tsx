@@ -6,6 +6,17 @@ import { Bell, CalendarClock, MessageSquare, ScanFace, Wrench, type LucideIcon }
 import { Button, Drawer, EmptyState, IconButton, cx } from '@/components/ui'
 import { createClient } from '@/lib/supabase/client'
 import { loadFeed, type FeedItem, type FeedRole } from './notificationFeed'
+import type { CommandDetail, PageCommand } from '@/components/commands/pageCommands'
+
+/** Already on that page: a ?do=open link wouldn't reload it, so tell the page directly (same event as Quick actions). */
+function openHere(e: { preventDefault: () => void }, href: string) {
+  const url = new URL(href, window.location.origin)
+  const command = url.searchParams.get('do') as PageCommand | null
+  if (!command || url.pathname !== window.location.pathname) return
+  e.preventDefault()
+  const detail: CommandDetail = { path: url.pathname, command, id: url.searchParams.get('id') ?? undefined }
+  window.dispatchEvent(new CustomEvent<CommandDetail>('admin-page-command', { detail }))
+}
 
 const ICONS: Record<FeedItem['kind'], LucideIcon> = { ticket: MessageSquare, leave: CalendarClock, tool: Wrench, face: ScanFace }
 
@@ -128,7 +139,7 @@ export function NotificationBell({ role }: { role: FeedRole }) {
               return (
                 <li key={it.id}>
                   {it.href ? (
-                    <Link href={it.href} onClick={closePanel} className={cx(cls, 'hover:bg-surface-soft')}>
+                    <Link href={it.href} onClick={(e) => { closePanel(); openHere(e, it.href!) }} className={cx(cls, 'hover:bg-surface-soft')}>
                       {row}
                     </Link>
                   ) : (
