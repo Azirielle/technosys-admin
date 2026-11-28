@@ -3,12 +3,13 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { KeyRound, Lock, RotateCcw, Smartphone } from 'lucide-react'
+import { Camera, KeyRound, Lock, RotateCcw, Smartphone } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { formatDay } from '@/lib/format'
 import { Badge, Button, Field, Input, SkeletonText, useToast } from '@/components/ui'
 import { decidePhoneRequest, loadSignInInfo, resetFace, resetPhone, setPin, type SignInInfo } from './signInActions'
 import type { EmployeeFile } from './requirements'
+import { enrolledFacePath, selfieLink } from '@/components/today/todayData'
 
 export function SignInPanel({ employee, onChanged }: { employee: EmployeeFile; onChanged: () => void }) {
   const supabase = useMemo(() => createClient(), [])
@@ -108,6 +109,13 @@ export function SignInPanel({ employee, onChanged }: { employee: EmployeeFile; o
         {/* Face check (B15): a bad first photo, or a new look. They save their face again at the next time-in. */}
         <Button size="sm" variant="ghost" icon={RotateCcw} className="mt-2" loading={busy === 'face'} disabled={!!busy}
           onClick={() => act('face', () => resetFace(supabase, employee.id, employee.full_name), 'Face reset: they save it again at their next time-in')}>Reset face</Button>
+        {/* The reference photo the phone compares every time-in against (saved at first-time setup). */}
+        <Button size="sm" variant="ghost" icon={Camera} className="mt-2" disabled={!!busy}
+          onClick={async () => {
+            const path = await enrolledFacePath(supabase, employee.id)
+            const url = path ? await selfieLink(supabase, path) : null
+            if (url) window.open(url, '_blank', 'noopener'); else toast.error(path ? "Couldn't open the photo." : 'No enrolled face yet.')
+          }}>View enrolled face</Button>
       </section>
 
       <section>
