@@ -23,6 +23,10 @@ function Num({ value, unit = '', tone }: { value: number; unit?: string; tone?: 
   return <span className={`font-medium ${colour}`}>{value}{unit}</span>
 }
 
+// 11 number columns: titles may wrap and padding is tighter, so the table fits the page without a sideways scrollbar.
+const HEAD = 'whitespace-normal px-2.5 leading-tight'
+const CELL = 'px-2.5'
+
 export function DtrSummaryTable({
   records,
   loading,
@@ -55,16 +59,16 @@ export function DtrSummaryTable({
       <TableHead sticky>
         <tr>
           <TableHeaderCell>Employee</TableHeaderCell>
-          <TableHeaderCell numeric>Days worked</TableHeaderCell>
-          <TableHeaderCell numeric>Late</TableHeaderCell>
-          <TableHeaderCell numeric>Regular OT</TableHeaderCell>
-          <TableHeaderCell numeric>Sunday</TableHeaderCell>
-          <TableHeaderCell numeric>Regular hol.</TableHeaderCell>
-          <TableHeaderCell numeric>Special hol.</TableHeaderCell>
-          <TableHeaderCell numeric>Night diff</TableHeaderCell>
-          <TableHeaderCell numeric>Sick leave</TableHeaderCell>
-          <TableHeaderCell numeric>Vacation leave</TableHeaderCell>
-          <TableHeaderCell numeric>Absent (no credits)</TableHeaderCell>
+          <TableHeaderCell numeric className={HEAD}>Days worked</TableHeaderCell>
+          <TableHeaderCell numeric className={HEAD}>Late</TableHeaderCell>
+          <TableHeaderCell numeric className={HEAD}>Regular OT</TableHeaderCell>
+          <TableHeaderCell numeric className={HEAD}>Sunday</TableHeaderCell>
+          <TableHeaderCell numeric className={HEAD}>Regular hol.</TableHeaderCell>
+          <TableHeaderCell numeric className={HEAD}>Special hol.</TableHeaderCell>
+          <TableHeaderCell numeric className={HEAD}>Night diff</TableHeaderCell>
+          <TableHeaderCell numeric className={HEAD}>Sick leave</TableHeaderCell>
+          <TableHeaderCell numeric className={HEAD}>Vacation leave</TableHeaderCell>
+          <TableHeaderCell numeric className={HEAD}>Absent (no credits)</TableHeaderCell>
           <TableHeaderCell align="right"><span className="sr-only">Action</span></TableHeaderCell>
         </tr>
       </TableHead>
@@ -82,22 +86,22 @@ export function DtrSummaryTable({
                   </span>
                 </span>
               </TableCell>
-              <TableCell numeric>
+              <TableCell numeric className={CELL}>
                 <span className="font-medium">{r.daysWorked}</span>
                 <span className="ml-1 text-caption text-ink-3">({r.totalHours} h)</span>
               </TableCell>
-              <TableCell numeric>
+              <TableCell numeric className={CELL}>
                 <Num value={r.lateCount} tone="warning" />
                 {r.lateCount > 0 && <span className="ml-1 text-caption text-ink-3">({r.totalLateMinutes} min)</span>}
               </TableCell>
-              <TableCell numeric><Num value={r.regOtHours} unit=" h" /></TableCell>
-              <TableCell numeric><Num value={r.sundayHours} unit=" h" /></TableCell>
-              <TableCell numeric><Num value={r.regularHolidayHours} unit=" h" /></TableCell>
-              <TableCell numeric><Num value={r.specialHolidayHours} unit=" h" /></TableCell>
-              <TableCell numeric><Num value={r.nightDiffHours} unit=" h" /></TableCell>
-              <TableCell numeric><Num value={r.sickLeaveDays} unit=" d" /></TableCell>
-              <TableCell numeric><Num value={r.vacationLeaveDays} unit=" d" /></TableCell>
-              <TableCell numeric><Num value={r.salaryDeductionDays} tone="danger" unit=" d" /></TableCell>
+              <TableCell numeric className={CELL}><Num value={r.regOtHours} unit=" h" /></TableCell>
+              <TableCell numeric className={CELL}><Num value={r.sundayHours} unit=" h" /></TableCell>
+              <TableCell numeric className={CELL}><Num value={r.regularHolidayHours} unit=" h" /></TableCell>
+              <TableCell numeric className={CELL}><Num value={r.specialHolidayHours} unit=" h" /></TableCell>
+              <TableCell numeric className={CELL}><Num value={r.nightDiffHours} unit=" h" /></TableCell>
+              <TableCell numeric className={CELL}><Num value={r.sickLeaveDays} unit=" d" /></TableCell>
+              <TableCell numeric className={CELL}><Num value={r.vacationLeaveDays} unit=" d" /></TableCell>
+              <TableCell numeric className={CELL}><Num value={r.salaryDeductionDays} tone="danger" unit=" d" /></TableCell>
               <TableCell align="right">
                 <Button size="sm" variant="ghost" iconRight={ArrowRight}>Open DTR</Button>
               </TableCell>
