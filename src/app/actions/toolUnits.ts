@@ -9,7 +9,6 @@ const PROBLEM: Record<string, string> = {
   none_picked: 'Pick at least one tool ID.',
   bad_person: 'That person can’t borrow tools (not an active technician or helper).',
   not_found: 'One of the tools is gone. Close this window and try again.',
-  mixed_tools: 'Lend one kind of tool at a time.',
 }
 
 export async function lendUnits(personId: string, unitIds: string[], notes: string, delivery: 'pickup' | 'driver'): Promise<{ error?: string; tags?: string[] }> {

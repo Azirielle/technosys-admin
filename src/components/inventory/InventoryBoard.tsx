@@ -7,7 +7,7 @@ import { REQUEST_FIELDS, toRequest, type ToolRequest } from './toolRequests'
 import { finishTicket } from '@/components/tickets/ticketActions'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { usePageCommand } from '@/components/commands/pageCommands'
-import { Box, Package, Plus, Search, ShieldAlert, Wrench, X } from 'lucide-react'
+import { Box, HandHelping, Package, Plus, Search, ShieldAlert, Wrench, X } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { getTechnicians } from '@/app/actions/inventory'
 import { Button, Input, Page, PageHeader, Pagination, Select, StatRow, StatTile, TableContainer, Tabs, useToast, useFitRows } from '@/components/ui'
@@ -50,7 +50,7 @@ export function InventoryBoard({ tab: openTab, stock }: { tab?: string; stock?: 
   const [page, setPage] = useState(1)
   const [tableRef, perPage] = useFitRows() // as many rows as fit on the screen: pages, no scroll
   const [toolForm, setToolForm] = useState<{ open: boolean; tool: Tool | null }>({ open: false, tool: null })
-  const [lending, setLending] = useState<Tool | null>(null)
+  const [lending, setLending] = useState<Tool | 'all' | null>(null)
   const [deleting, setDeleting] = useState<Tool | null>(null)
   const [returning, setReturning] = useState<Borrowing | null>(null)
   const [viewing, setViewing] = useState<Borrowing | null>(null)
@@ -146,7 +146,10 @@ export function InventoryBoard({ tab: openTab, stock }: { tab?: string; stock?: 
       <PageHeader
         title="Inventory"
         subtitle="Tools in the warehouse, and who has them. Lend a tool from the Tools tab; check it in from Borrowed."
-        actions={<Button variant="primary" icon={Plus} onClick={() => setToolForm({ open: true, tool: null })}>Add tool</Button>}
+        actions={<>
+          <Button variant="secondary" icon={HandHelping} onClick={() => setLending('all')}>Lend tools</Button>
+          <Button variant="primary" icon={Plus} onClick={() => setToolForm({ open: true, tool: null })}>Add tool</Button>
+        </>}
       />
 
       {/* Each number opens the list behind it */}
@@ -226,8 +229,8 @@ export function InventoryBoard({ tab: openTab, stock }: { tab?: string; stock?: 
         onClose={() => { setLending(null); setLendingFor(null) }}
         onDone={async (tags) => {
           // A request: tell the technician in their chat (with the tool IDs) and close it
-          if (lendingFor) await finishTicket(supabase, lendingFor, 'resolved', `Approved: ${lending?.name} (${tags.join(', ')}) is lent to you. It shows under My tools.`, 'the Coordinator').catch(() => null)
-          done('Tool lent', () => { setLending(null); setLendingFor(null) })
+          if (lendingFor) await finishTicket(supabase, lendingFor, 'resolved', `Approved: ${lending !== 'all' && lending?.name} (${tags.join(', ')}) is lent to you. It shows under My tools.`, 'the Coordinator').catch(() => null)
+          done(tags.length > 1 ? `${tags.length} tools lent` : 'Tool lent', () => { setLending(null); setLendingFor(null) })
         }} />
       <ToolUnitsModal tool={unitsOf} units={units.filter((u) => u.tool_id === unitsOf?.id)} borrowings={borrowings} onClose={() => setUnitsOf(null)} onChanged={load} />
       <DeleteToolModal tool={deleting} onClose={() => setDeleting(null)} onDone={() => done('Tool deleted', () => setDeleting(null))} />

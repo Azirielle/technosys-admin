@@ -1,6 +1,6 @@
 // LendToolModal: hand tools to a technician or helper: who, WHICH ones (each tool has its own ID, e.g. TC-DEW-0003),
 // how it gets there (picks up at the office / driver delivers) and notes. From a tool request the borrower is the
-// person who asked (locked) and the number they asked for is ticked first.
+// person who asked (locked) and the number they asked for is ticked first. tool = 'all': bulk lend, any IDs of any tools.
 'use client'
 
 import { useEffect, useMemo, useState, useTransition } from 'react'
@@ -11,7 +11,7 @@ import { Button, Field, Input, Modal, SearchSelect, Tabs, cx } from '@/component
 import type { Person, Tool } from './types'
 
 const ROLE: Record<string, string> = { technician: 'Technician', helper: 'Helper' }
-type Unit = { id: string; tag: string }
+type Unit = { id: string; tag: string; tools?: { name: string } | null }
 
 export function LendToolModal({
   tool,
@@ -20,7 +20,7 @@ export function LendToolModal({
   onDone,
   start,
 }: {
-  tool: Tool | null
+  tool: Tool | 'all' | null
   people: Person[]
   /** From a tool request: who asked (locked) and how many they asked for */
   start?: { personId: string; qty: number; delivery?: 'pickup' | 'driver' }
@@ -47,16 +47,21 @@ export function LendToolModal({
     setNotes('')
     setTried(false)
     setServerError(null)
-    supabase.from('tool_units').select('id, tag').eq('tool_id', tool.id).eq('status', 'available').order('tag')
+    const all = tool === 'all'
+    const q = supabase.from('tool_units').select('id, tag, tools(name)').eq('status', 'available').order('tag')
+    ;(all ? q : q.eq('tool_id', tool.id))
       .then(({ data }) => {
-        const list = (data ?? []) as Unit[]
+        const list = (data ?? []) as unknown as Unit[]
         setUnits(list)
-        setPicked(list.slice(0, Math.max(1, start?.qty ?? 1)).map((u) => u.id))
+        setPicked(all ? [] : list.slice(0, Math.max(1, start?.qty ?? 1)).map((u) => u.id))
       })
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tool?.id])
+  }, [tool === 'all' ? 'all' : tool?.id])
 
   if (!tool) return null
+  const all = tool === 'all'
+  // Bulk: the IDs under each tool's name
+  const groups = Object.entries(Object.groupBy(units ?? [], (u) => (all ? u.tools?.name ?? 'Other' : '')))
   const requester = start ? people.find((p) => p.id === start.personId) : null
   const personError = tried && !personId ? 'Choose who is borrowing it.' : null
   const pickError = tried && !picked.length ? 'Tick at least one tool ID.' : null
@@ -78,7 +83,7 @@ export function LendToolModal({
       isOpen
       onClose={onClose}
       icon={HandHelping}
-      title={`Lend ${tool.name}`}
+      title={all ? 'Lend tools' : `Lend ${tool.name}`}
       subtitle={units === null ? 'Loading…' : units.length ? `${units.length} in the warehouse` : 'None left in the warehouse'}
       maxWidth="md"
       footer={
@@ -109,18 +114,25 @@ export function LendToolModal({
           )}
         </Field>
         <Field label={`Which ones (${picked.length} picked)`} htmlFor="lend-units" required error={pickError}
-          hint={start && start.qty > 1 ? `They asked for ${start.qty}.` : 'Tick the tool IDs you hand over.'}>
-          <div id="lend-units" role="group" className="flex flex-wrap gap-2">
-            {(units ?? []).map((u) => {
-              const on = picked.includes(u.id)
-              return (
-                <button key={u.id} type="button" aria-pressed={on} onClick={() => toggle(u.id)}
-                  className={cx('rounded-control border px-2.5 py-1 font-mono text-small transition-colors',
-                    on ? 'border-action bg-action text-on-action' : 'border-line bg-surface text-ink hover:bg-surface-soft')}>
-                  {u.tag}
-                </button>
-              )
-            })}
+          hint={start && start.qty > 1 ? `They asked for ${start.qty}.` : all ? 'Tick every tool ID you hand over, from any tool.' : 'Tick the tool IDs you hand over.'}>
+          <div id="lend-units" role="group" className={cx('flex flex-col gap-3', all && 'max-h-80 overflow-y-auto pr-1')}>
+            {groups.map(([name, list]) => (
+              <div key={name}>
+                {all && <p className="mb-1 text-caption font-medium text-ink-2">{name}</p>}
+                <div className="flex flex-wrap gap-2">
+                  {(list ?? []).map((u) => {
+                    const on = picked.includes(u.id)
+                    return (
+                      <button key={u.id} type="button" aria-pressed={on} onClick={() => toggle(u.id)}
+                        className={cx('rounded-control border px-2.5 py-1 font-mono text-small transition-colors',
+                          on ? 'border-action bg-action text-on-action' : 'border-line bg-surface text-ink hover:bg-surface-soft')}>
+                        {u.tag}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            ))}
           </div>
         </Field>
         <Field label="How it gets there" htmlFor="lend-delivery">
